@@ -1,0 +1,321 @@
+{# templates/doctor/patient-list.html.twig #}
+{# Doctor Patient List - Overview Dashboard with Search, Filter, and Status Indicators #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Liste des Patients'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Liste des Patients'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div x-data="patientList()" x-init="init()">
+    {# Header Section #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-users-medical text-wellcare-500"></i>
+                        {{ 'Liste des Patients'|trans }}
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Gérez vos patients, consultez leurs dossiers et suivez leur évolution'|trans }}
+                    </p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button 
+                        @click="openAddPatientModal()"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        {{ 'Nouveau Patient'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        {# Stats Overview #}
+        <div class="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Patients actifs'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="stats.totalPatients">0</p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="text-xl fa-solid fa-users"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Alertes critiques'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-rose-600 dark:text-rose-400" x-text="stats.criticalAlerts">0</p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                        <i class="text-xl fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Suivi requis'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-amber-600 dark:text-amber-400" x-text="stats.followUp">0</p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                        <i class="text-xl fa-solid fa-clipboard-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Consultations aujourd\'hui'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="stats.todayAppointments">0</p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <i class="text-xl fa-solid fa-calendar-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Filters and Search #}
+        <div class="p-4 mb-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center">
+                <div class="relative flex-1">
+                    <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search left-3 top-1/2"></i>
+                    <input 
+                        type="text" 
+                        x-model="searchQuery"
+                        @input="filterPatients()"
+                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                        placeholder="{{ 'Rechercher par nom, condition, numéro de dossier...'|trans }}"
+                    >
+                </div>
+                
+                <div class="flex flex-wrap gap-3">
+                    <select 
+                        x-model="statusFilter" 
+                        @change="filterPatients()"
+                        class="px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    >
+                        <option value="all">{{ 'Tous les statuts'|trans }}</option>
+                        <option value="active">{{ 'Actif'|trans }}</option>
+                        <option value="critical">{{ 'Critique'|trans }}</option>
+                        <option value="follow-up">{{ 'Suivi requis'|trans }}</option>
+                        <option value="stable">{{ 'Stable'|trans }}</option>
+                    </select>
+
+                    <select 
+                        x-model="sortBy" 
+                        @change="sortPatients()"
+                        class="px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    >
+                        <option value="name">{{ 'Trier par nom'|trans }}</option>
+                        <option value="lastVisit">{{ 'Dernière visite'|trans }}</option>
+                        <option value="healthScore">{{ 'Score santé'|trans }}</option>
+                        <option value="alerts">{{ 'Priorité'|trans }}</option>
+                    </select>
+
+                    <select 
+                        x-model="conditionFilter" 
+                        @change="filterPatients()"
+                        class="px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    >
+                        <option value="all">{{ 'Toutes conditions'|trans }}</option>
+                        <option value="hypertension">{{ 'Hypertension'|trans }}</option>
+                        <option value="diabetes">{{ 'Diabète'|trans }}</option>
+                        <option value="cardiac">{{ 'Cardiaque'|trans }}</option>
+                        <option value="respiratory">{{ 'Respiratoire'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {# Patient List #}
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{{ 'Patient'|trans }}</th>
+                            <th class="px-6 py-4 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{{ 'Statut'|trans }}</th>
+                            <th class="px-6 py-4 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{{ 'Score Santé'|trans }}</th>
+                            <th class="px-6 py-4 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{{ 'Conditions'|trans }}</th>
+                            <th class="px-6 py-4 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{{ 'Dernière Visite'|trans }}</th>
+                            <th class="px-6 py-4 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">{{ 'Actions'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <template x-for="patient in filteredPatients" :key="patient.id">
+                            <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <img 
+                                            :src="patient.avatar" 
+                                            :alt="patient.name"
+                                            class="object-cover w-10 h-10 border-2 border-gray-200 rounded-full dark:border-gray-700"
+                                        >
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.name"></div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                <span x-text="patient.age"></span> ans • 
+                                                <span x-text="patient.gender === 'M' ? 'Homme' : 'Femme'"></span>
+                                            </div>
+                                            <div class="text-xs text-gray-400 dark:text-gray-500" x-text="'#' + patient.fileNumber"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span 
+                                        :class="getStatusBadgeClass(patient.status)"
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                    >
+                                        <span 
+                                            :class="getStatusDotClass(patient.status)"
+                                            class="w-1.5 h-1.5 rounded-full mr-1.5"
+                                        ></span>
+                                        <span x-text="getStatusLabel(patient.status)"></span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="flex-1 w-24 h-2 mr-3 bg-gray-200 rounded-full dark:bg-gray-700">
+                                            <div 
+                                                class="h-2 transition-all duration-500 rounded-full"
+                                                :class="getHealthScoreColor(patient.healthScore)"
+                                                :style="`width: ${patient.healthScore}%`"
+                                            ></div>
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.healthScore"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="condition in patient.conditions" :key="condition">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                <span x-text="condition"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 dark:text-white" x-text="patient.lastVisitDate"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="patient.lastVisitTime"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <a 
+                                            :href="`/doctor/patient/${patient.id}/chart`"
+                                            class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 hover:text-wellcare-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-wellcare-400"
+                                            title="{{ 'Voir le dossier'|trans }}"
+                                        >
+                                            <i class="fa-solid fa-file-medical"></i>
+                                        </a>
+                                        <button 
+                                            @click="openMessageModal(patient)"
+                                            class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 hover:text-wellcare-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-wellcare-400"
+                                            title="{{ 'Envoyer un message'|trans }}"
+                                        >
+                                            <i class="fa-solid fa-comment-medical"></i>
+                                        </button>
+                                        <button 
+                                            @click="scheduleAppointment(patient)"
+                                            class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 hover:text-wellcare-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-wellcare-400"
+                                            title="{{ 'Planifier un RDV'|trans }}"
+                                        >
+                                            <i class="fa-solid fa-calendar-plus"></i>
+                                        </button>
+                                        <div class="relative" x-data="{ open: false }">
+                                            <button 
+                                                @click="open = !open"
+                                                class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 hover:text-wellcare-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-wellcare-400"
+                                            >
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                            <div 
+                                                x-show="open" 
+                                                @click.away="open = false"
+                                                class="absolute right-0 z-10 w-48 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-900 dark:border-gray-700"
+                                                style="display: none;"
+                                            >
+                                                <a :href="`/doctor/patient/${patient.id}/notes`" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                                    <i class="mr-2 fa-solid fa-notes-medical"></i> {{ 'Notes cliniques'|trans }}
+                                                </a>
+                                                <a :href="`/doctor/patient/${patient.id}/communication`" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                                    <i class="mr-2 fa-solid fa-comments"></i> {{ 'Communications'|trans }}
+                                                </a>
+                                                <button @click="printPatientChart(patient)" class="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                                    <i class="mr-2 fa-solid fa-print"></i> {{ 'Imprimer'|trans }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            {# Empty State #}
+            <div x-show="filteredPatients.length === 0" class="p-12 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                    <i class="text-2xl text-gray-400 fa-solid fa-users-slash"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Aucun patient trouvé'|trans }}</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ 'Essayez de modifier vos critères de recherche'|trans }}</p>
+            </div>
+
+            {# Pagination #}
+            <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ 'Affichage de'|trans }} <span x-text="filteredPatients.length"></span> {{ 'sur'|trans }} <span x-text="patients.length"></span> {{ 'patients'|trans }}
+                </div>
+                <div class="flex gap-2">
+                    <button 
+                        @click="previousPage()"
+                        :disabled="currentPage === 1"
+                        class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300"
+                    >
+                        {{ 'Précédent'|trans }}
+                    </button>
+                    <button 
+                        @click="nextPage()"
+                        :disabled="currentPage >= totalPages"
+                        class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300"
+                    >
+                        {{ 'Suivant'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/doctor-dashboard.js') }}"></script>
+{% endblock %}
+{% endblock %}

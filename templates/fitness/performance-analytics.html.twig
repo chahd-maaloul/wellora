@@ -1,0 +1,675 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Performance Analytics - WellCare Connect' }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('fitness') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('fitness') }}
+{% endblock %}
+
+{% block body %}
+<div x-data="performanceAnalytics()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('fitness_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-chart-line text-wellcare-500"></i>
+                            {{ 'Performance Analytics' }}
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Track your progress and performance trends' }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <select x-model="timeRange" class="text-gray-700 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-wellcare-500 focus:border-wellcare-500">
+                        <option value="week">{{ 'This Week' }}</option>
+                        <option value="month">{{ 'This Month' }}</option>
+                        <option value="3months">{{ '3 Months' }}</option>
+                        <option value="year">{{ 'This Year' }}</option>
+                        <option value="all">{{ 'All Time' }}</option>
+                    </select>
+                    <button class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="mr-2 fas fa-download"></i>{{ 'Export' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            <!-- Main Content -->
+            <div class="space-y-6 lg:col-span-3">
+                <!-- Overview Stats -->
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Total Workouts' }}</span>
+                            <span class="text-xs text-green-500">+12%</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">48</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'This month' }}</p>
+                    </div>
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Total Hours' }}</span>
+                            <span class="text-xs text-green-500">+8%</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">36.5</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Training hours' }}</p>
+                    </div>
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Calories Burned' }}</span>
+                            <span class="text-xs text-green-500">+15%</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">12,450</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'This month' }}</p>
+                    </div>
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Avg RPE' }}</span>
+                            <span class="text-xs text-wellcare-500">Stable</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">7.2</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Intensity score' }}</p>
+                    </div>
+                </div>
+
+                <!-- Strength Progress Chart -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-dumbbell text-wellcare-500"></i>
+                                {{ 'Strength Progress' }}
+                            </h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ '1RM (One Rep Max) tracking over time' }}</p>
+                        </div>
+                        <select x-model="strengthExercise" class="text-sm text-gray-700 border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-wellcare-500 focus:border-wellcare-500">
+                            <option value="bench">{{ 'Bench Press' }}</option>
+                            <option value="squat">{{ 'Back Squat' }}</option>
+                            <option value="deadlift">{{ 'Deadlift' }}</option>
+                            <option value="overhead">{{ 'Overhead Press' }}</option>
+                        </select>
+                    </div>
+                    <div class="h-72">
+                        <canvas id="strengthChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Two Column Charts -->
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <!-- Volume Load Chart -->
+                    <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-layer-group text-wellcare-500"></i>
+                                {{ 'Volume Load' }}
+                            </h2>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
+                        <div class="p-3 mt-4 rounded-lg bg-green-50 dark:bg-green-900/20">
+                            <p class="text-sm text-green-700 dark:text-green-300">
+                                <i class="mr-1 fas fa-arrow-up"></i>{{ '+18% increase from last week' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Heart Rate Zones -->
+                    <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 text-red-500 fas fa-heartbeat"></i>
+                                {{ 'Heart Rate Zones' }}
+                            </h2>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="hrZoneChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+                            <div class="p-2 rounded bg-gray-50 dark:bg-gray-700/50">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Resting HR' }}</p>
+                                <p class="font-bold text-gray-900 dark:text-white">62<span class="text-xs">bpm</span></p>
+                            </div>
+                            <div class="p-2 rounded bg-gray-50 dark:bg-gray-700/50">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Max HR' }}</p>
+                                <p class="font-bold text-gray-900 dark:text-white">168<span class="text-xs">bpm</span></p>
+                            </div>
+                            <div class="p-2 rounded bg-gray-50 dark:bg-gray-700/50">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Avg HR' }}</p>
+                                <p class="font-bold text-gray-900 dark:text-white">128<span class="text-xs">bpm</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Endurance Metrics -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-running text-wellcare-500"></i>
+                                {{ 'Endurance Metrics' }}
+                            </h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Cardio and endurance performance' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
+                        <div class="p-4 text-center bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                                <i class="text-blue-500 fas fa-tachometer-alt"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">42</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'VO2 Max (est.)' }}</p>
+                            <span class="text-xs text-green-500">{{ '+2 from last month' }}</span>
+                        </div>
+                        <div class="p-4 text-center bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                                <i class="text-purple-500 fas fa-clock"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">2:45</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ '500m Row Time' }}</p>
+                            <span class="text-xs text-green-500">{{ '-8 sec improvement' }}</span>
+                        </div>
+                        <div class="p-4 text-center bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-orange-100 rounded-full dark:bg-orange-900/30">
+                                <i class="text-orange-500 fas fa-stopwatch"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">28</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'HR Recovery (bpm)' }}</p>
+                            <span class="text-xs text-green-500">{{ '+5 improvement' }}</span>
+                        </div>
+                        <div class="p-4 text-center bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-2 bg-green-100 rounded-full dark:bg-green-900/30">
+                                <i class="text-green-500 fas fa-percentage"></i>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white">78</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Zone Training %' }}</p>
+                            <span class="text-xs text-wellcare-500">{{ 'On target' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recovery & Readiness -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-bed text-wellcare-500"></i>
+                                {{ 'Recovery & Readiness' }}
+                            </h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Training load vs. recovery balance' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <!-- Readiness Score -->
+                        <div class="text-center">
+                            <div class="relative w-32 h-32 mx-auto mb-4">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="none" class="text-gray-200 dark:text-gray-600"/>
+                                    <circle 
+                                        cx="64" cy="64" r="56" 
+                                        stroke="currentColor" 
+                                        stroke-width="8" 
+                                        fill="none"
+                                        class="text-green-500"
+                                        stroke-dasharray="{{ 352 }}"
+                                        stroke-dashoffset="{{ 352 - (352 * 82 / 100) }}"
+                                        stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div>
+                                        <p class="text-3xl font-bold text-green-500">82</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Score' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">{{ 'Readiness' }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Ready for intense workout' }}</p>
+                        </div>
+
+                        <!-- Sleep Quality -->
+                        <div class="text-center">
+                            <div class="relative w-32 h-32 mx-auto mb-4">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="none" class="text-gray-200 dark:text-gray-600"/>
+                                    <circle 
+                                        cx="64" cy="64" r="56" 
+                                        stroke="currentColor" 
+                                        stroke-width="8" 
+                                        fill="none"
+                                        class="text-wellcare-500"
+                                        stroke-dasharray="{{ 352 }}"
+                                        stroke-dashoffset="{{ 352 - (352 * 75 / 100) }}"
+                                        stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div>
+                                        <p class="text-3xl font-bold text-wellcare-500">7.5</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Hours' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">{{ 'Sleep' }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Quality: Good' }}</p>
+                        </div>
+
+                        <!-- Training Load -->
+                        <div class="text-center">
+                            <div class="relative w-32 h-32 mx-auto mb-4">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="none" class="text-gray-200 dark:text-gray-600"/>
+                                    <circle 
+                                        cx="64" cy="64" r="56" 
+                                        stroke="currentColor" 
+                                        stroke-width="8" 
+                                        fill="none"
+                                        class="text-orange-500"
+                                        stroke-dasharray="{{ 352 }}"
+                                        stroke-dashoffset="{{ 352 - (352 * 65 / 100) }}"
+                                        stroke-linecap="round"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div>
+                                        <p class="text-3xl font-bold text-orange-500">65</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ '%' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">{{ 'Training Load' }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Optimal range' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Recovery Chart -->
+                    <div class="h-48 mt-6">
+                        <canvas id="recoveryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Plateau Detection -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 text-orange-500 fas fa-exclamation-triangle"></i>
+                                {{ 'Progress Insights' }}
+                            </h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'AI-powered analysis of your training' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 border border-orange-200 rounded-lg bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full dark:bg-orange-900/30">
+                                    <i class="text-orange-500 fas fa-exclamation-circle"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-orange-800 dark:text-orange-200">{{ 'Plateau Detected: Bench Press' }}</h4>
+                                    <p class="mt-1 text-sm text-orange-700 dark:text-orange-300">
+                                        {{ 'Your bench press has remained stable at 185lbs for the past 3 weeks. Consider changing your rep ranges or adding variations.' }}
+                                    </p>
+                                    <div class="flex gap-2 mt-3">
+                                        <button class="px-3 py-1 text-sm font-medium text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
+                                            {{ 'View Suggestions' }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border border-green-200 rounded-lg bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-green-100 rounded-full dark:bg-green-900/30">
+                                    <i class="text-green-500 fas fa-check-circle"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-green-800 dark:text-green-200">{{ 'Great Progress: Squat Strength' }}</h4>
+                                    <p class="mt-1 text-sm text-green-700 dark:text-green-300">
+                                        {{ 'Your squat has improved by 8% this month! Your consistency and progressive overload strategy is working well.' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                                    <i class="text-blue-500 fas fa-lightbulb"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-blue-800 dark:text-blue-200">{{ 'Recovery Tip' }}</h4>
+                                    <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                                        {{ 'Your HRV shows signs of accumulated fatigue. Consider an active recovery day this week to prevent overtraining.' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6 lg:col-span-1">
+                <!-- Quick Stats -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-trophy text-wellcare-500"></i>
+                        {{ 'Personal Records' }}
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        {% for lift in [
+                            {name: 'Bench Press', weight: 185, unit: 'lbs', date: '2 weeks ago'},
+                            {name: 'Back Squat', weight: 225, unit: 'lbs', date: '1 week ago'},
+                            {name: 'Deadlift', weight: 315, unit: 'lbs', date: '3 weeks ago'},
+                            {name: 'Overhead Press', weight: 135, unit: 'lbs', date: '1 month ago'}
+                        ] %}
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ lift.name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ lift.date }}</p>
+                            </div>
+                            <p class="text-lg font-bold text-wellcare-600 dark:text-wellcare-400">{{ lift.weight }}<span class="ml-1 text-xs">{{ lift.unit }}</span></p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Streaks -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-orange-500 fas fa-fire"></i>
+                        {{ 'Activity Streaks' }}
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ 'Workout Streak' }}</span>
+                                <span class="text-lg font-bold text-orange-500">12 {{ 'days' }}</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-2 bg-orange-500 rounded-full" style="width: 85%"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ 'Best: 21 days' }}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ 'Steps Goal' }}</span>
+                                <span class="text-lg font-bold text-wellcare-500">8 {{ 'days' }}</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-2 rounded-full bg-wellcare-500" style="width: 65%"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ 'Best: 15 days' }}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ 'Sleep Target' }}</span>
+                                <span class="text-lg font-bold text-purple-500">5 {{ 'days' }}</span>
+                            </div>
+                            <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-2 bg-purple-500 rounded-full" style="width: 45%"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ 'Best: 10 days' }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-yellow-500 fas fa-medal"></i>
+                        {{ 'Recent Badges' }}
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        {% for badge in [
+                            {name: 'Iron Will', icon: 'fa-dumbbell', color: 'bg-gray-100 dark:bg-gray-700', iconColor: 'text-gray-500'},
+                            {name: 'Speed Demon', icon: 'fa-bolt', color: 'bg-yellow-100 dark:bg-yellow-900/30', iconColor: 'text-yellow-500'},
+                            {name: 'Early Bird', icon: 'fa-sun', color: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-500'}
+                        ] %}
+                        <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center {{ badge.color }}">
+                                <i class="fas {{ badge.icon }} {{ badge.iconColor }}"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ badge.name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Earned this week' }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Coach Notes -->
+                <div class="p-6 border bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl border-wellcare-200 dark:border-wellcare-800">
+                    <h3 class="mb-4 font-semibold text-wellcare-800 dark:text-wellcare-200">
+                        <i class="mr-2 fas fa-comment-medical"></i>{{ 'Coach Feedback' }}
+                    </h3>
+                    
+                    <div class="p-4 bg-white rounded-lg dark:bg-gray-800">
+                        <p class="text-sm italic text-gray-700 dark:text-gray-300">
+                            "{{ 'Great progress on your squat form! Focus on keeping your chest up during the ascent. Adding 5lbs next session should be manageable.' }}"
+                        </p>
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ '- Coach Sarah' }}</p>
+                    </div>
+                    
+                    <button class="w-full px-4 py-2 mt-4 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="mr-2 fas fa-reply"></i>{{ 'Reply to Coach' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Emergency Stop Button -->
+    <div class="fixed bottom-6 right-6">
+        <button @click="emergencyStop()" class="flex items-center justify-center text-white transition-all duration-200 bg-red-500 rounded-full shadow-lg w-14 h-14 hover:bg-red-600 hover:scale-110">
+            <i class="text-xl fas fa-stop"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('performanceAnalytics', () => ({
+        darkMode: false,
+        timeRange: 'month',
+        strengthExercise: 'bench',
+
+        init() {
+            this.darkMode = localStorage.getItem('theme') === 'dark';
+            this.$nextTick(() => {
+                this.initCharts();
+            });
+        },
+
+        initCharts() {
+            // Strength Progress Chart
+            const strengthCtx = document.getElementById('strengthChart');
+            if (strengthCtx) {
+                new Chart(strengthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'],
+                        datasets: [{
+                            label: '1RM (lbs)',
+                            data: [165, 170, 172, 175, 178, 180, 182, 185],
+                            borderColor: 'rgb(0, 167, 144)',
+                            backgroundColor: 'rgba(0, 167, 144, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Volume Load Chart
+            const volumeCtx = document.getElementById('volumeChart');
+            if (volumeCtx) {
+                new Chart(volumeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Volume (lbs)',
+                            data: [8500, 12000, 9500, 11000, 13000, 8000, 4500],
+                            backgroundColor: 'rgba(0, 167, 144, 0.7)',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value / 1000 + 'k';
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Heart Rate Zones Chart
+            const hrCtx = document.getElementById('hrZoneChart');
+            if (hrCtx) {
+                new Chart(hrCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5'],
+                        datasets: [{
+                            data: [25, 35, 20, 15, 5],
+                            backgroundColor: [
+                                'rgba(156, 163, 175, 0.7)',
+                                'rgba(59, 130, 246, 0.7)',
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(245, 158, 11, 0.7)',
+                                'rgba(239, 68, 68, 0.7)'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 8
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Recovery Chart
+            const recoveryCtx = document.getElementById('recoveryChart');
+            if (recoveryCtx) {
+                new Chart(recoveryCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [
+                            {
+                                label: 'Readiness',
+                                data: [85, 78, 72, 80, 75, 82, 82],
+                                borderColor: 'rgb(0, 167, 144)',
+                                tension: 0.4,
+                                pointRadius: 3
+                            },
+                            {
+                                label: 'Training Load',
+                                data: [60, 75, 85, 70, 80, 65, 65],
+                                borderColor: 'rgb(249, 115, 22)',
+                                tension: 0.4,
+                                pointRadius: 3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        },
+
+        emergencyStop() {
+            if (confirm('Are you experiencing any discomfort?')) {
+                window.location.href = '/emergency';
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}

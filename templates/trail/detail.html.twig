@@ -1,0 +1,210 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Forest Wellness Path - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+    {{ encore_entry_link_tags('trail-maps-css') }}
+{% endblock %}
+
+{% block body %}
+<!-- Hero Section -->
+<div class="relative -mt-4 -mx-4 h-[40vh] min-h-[300px]">
+    <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=400&fit=crop" alt="Forest Trail" class="object-cover w-full h-full">
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+    
+    <!-- Quick Actions -->
+    <div class="absolute flex gap-2 top-4 right-4">
+        <button class="flex items-center justify-center w-8 h-8 text-white transition rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
+            <i class="fa-solid fa-heart"></i>
+        </button>
+        <button class="flex items-center justify-center w-8 h-8 text-white transition rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
+            <i class="fa-solid fa-share-nodes"></i>
+        </button>
+        <button class="flex items-center justify-center w-8 h-8 text-white transition rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
+            <i class="fa-solid fa-flag"></i>
+        </button>
+    </div>
+    
+    <!-- Trail Info Overlay -->
+    <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
+        <div class="px-4 mx-auto">
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 text-xs font-medium bg-green-500 rounded-full">Easy</span>
+                <span class="px-2 py-0.5 text-xs rounded-full bg-white/20">Loop Trail</span>
+            </div>
+            <h1 class="text-xl font-bold font-display">Forest Wellness Path</h1>
+            <p class="text-sm text-white/80"><i class="mr-1 fa-solid fa-location-dot"></i>Central Park, Downtown</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="px-4 mx-auto">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <!-- Left Column: Trail Details -->
+        <div class="space-y-4 lg:col-span-2">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="p-3 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <i class="mb-1 fa-solid fa-ruler text-wellcare-500"></i>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">5.2 km</p>
+                    <p class="text-xs text-gray-500">Distance</p>
+                </div>
+                <div class="p-3 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <i class="mb-1 fa-solid fa-clock text-wellcare-500"></i>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">1h 30m</p>
+                    <p class="text-xs text-gray-500">Duration</p>
+                </div>
+                <div class="p-3 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <i class="mb-1 fa-solid fa-mountain text-wellcare-500"></i>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">150m</p>
+                    <p class="text-xs text-gray-500">Elevation</p>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h2 class="mb-3 font-semibold text-gray-900 dark:text-white">About This Trail</h2>
+                <p class="mb-3 text-sm text-gray-600 dark:text-gray-300">
+                    The Forest Wellness Path is a beautiful 5.2 km loop trail perfect for beginners and families. 
+                    Well-maintained paths wind through ancient redwood groves with plenty of rest areas and scenic viewpoints.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-1 text-xs bg-gray-100 rounded-full dark:bg-gray-700"><i class="mr-1 fa-solid fa-tree"></i>Forest</span>
+                    <span class="px-2 py-1 text-xs bg-gray-100 rounded-full dark:bg-gray-700"><i class="mr-1 fa-solid fa-paw"></i>Wildlife</span>
+                    <span class="px-2 py-1 text-xs bg-gray-100 rounded-full dark:bg-gray-700"><i class="mr-1 fa-solid fa-camera"></i>Scenic Views</span>
+                </div>
+            </div>
+
+            <!-- Map -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">Trail Map</h2>
+                    <button class="px-2 py-1 text-xs text-wellcare-500 hover:text-wellcare-600">
+                        <i class="mr-1 fa-solid fa-download"></i>Download GPX
+                    </button>
+                </div>
+                <div class="flex items-center justify-center h-48 bg-gray-100 rounded-lg dark:bg-gray-700">
+                    <p class="text-sm text-gray-500"><i class="mr-2 fa-solid fa-map"></i>Interactive Map Loading...</p>
+                </div>
+            </div>
+
+            <!-- Publications -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">Reviews & Publications</h2>
+                    <a href="/trail/publication/create" class="px-3 py-1 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="mr-1 fa-solid fa-plus"></i>Add Review
+                    </a>
+                </div>
+                
+                <!-- Review 1 -->
+                <div class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <img src="https://ui-avatars.com/api/?name=John+Doe&background=00A790&color=fff" alt="User" class="w-8 h-8 rounded-full">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">John Doe</p>
+                            <p class="text-xs text-gray-500">2 days ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2 text-xs">
+                        <span class="flex items-center text-gray-600 dark:text-gray-400">
+                            <i class="mr-1 fa-solid fa-star text-amber-400"></i> Ambiance: 5/5
+                        </span>
+                        <span class="flex items-center text-gray-600 dark:text-gray-400">
+                            <i class="mr-1 text-green-500 fa-solid fa-shield-halved"></i> Safety: 4/5
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Amazing trail! The forest scenery is breathtaking. Perfect for a morning walk.</p>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="pb-4 border-b border-gray-100 dark:border-gray-700 last:border-0 last:pb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <img src="https://ui-avatars.com/api/?name=Sarah+Smith&background=00DBB6&color=fff" alt="User" class="w-8 h-8 rounded-full">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">Sarah Smith</p>
+                            <p class="text-xs text-gray-500">5 days ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2 text-xs">
+                        <span class="flex items-center text-gray-600 dark:text-gray-400">
+                            <i class="mr-1 fa-solid fa-star text-amber-400"></i> Ambiance: 5/5
+                        </span>
+                        <span class="flex items-center text-gray-600 dark:text-gray-400">
+                            <i class="mr-1 text-green-500 fa-solid fa-shield-halved"></i> Safety: 5/5
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Great for families! Well-maintained and safe. Highly recommend.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <div class="space-y-4">
+            <!-- Rating Summary -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Overall Rating</h3>
+                    <div class="flex items-center">
+                        <i class="mr-1 fa-solid fa-star text-amber-400"></i>
+                        <span class="font-bold">4.9</span>
+                        <span class="ml-1 text-sm text-gray-500">(28)</span>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center text-xs">
+                        <span class="w-12">5 stars</span>
+                        <div class="flex-1 h-2 mx-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                            <div class="h-full rounded-full bg-amber-400" style="width: 80%"></div>
+                        </div>
+                        <span class="w-8 text-right">80%</span>
+                    </div>
+                    <div class="flex items-center text-xs">
+                        <span class="w-12">4 stars</span>
+                        <div class="flex-1 h-2 mx-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                            <div class="h-full rounded-full bg-amber-400" style="width: 15%"></div>
+                        </div>
+                        <span class="w-8 text-right">15%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amenities -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">Amenities</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <i class="w-6 text-green-500 fa-solid fa-check-circle"></i> Restrooms
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <i class="w-6 text-green-500 fa-solid fa-check-circle"></i> Parking
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <i class="w-6 text-green-500 fa-solid fa-check-circle"></i> Water Fountain
+                    </div>
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <i class="w-6 text-green-500 fa-solid fa-check-circle"></i> Picnic Area
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <button class="w-full px-4 py-2.5 mb-2 text-sm font-medium text-white bg-wellcare-500 rounded-lg hover:bg-wellcare-600">
+                    <i class="mr-1 fa-solid fa-play"></i> Start Trail
+                </button>
+                <button class="w-full px-4 py-2.5 text-sm font-medium text-wellcare-600 bg-wellcare-50 dark:bg-wellcare-900/30 dark:text-wellcare-400 rounded-lg hover:bg-wellcare-100">
+                    <i class="mr-1 fa-solid fa-heart"></i> Save to Favorites
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

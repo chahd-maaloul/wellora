@@ -1,0 +1,400 @@
+{# templates/health/analytics/report-generator.html.twig #}
+{# Medical Report Generator - PDF Reports with Customizable Templates #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Générateur de Rapports Médicaux'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="reportGenerator()" x-init="init()">
+    {# Header Section #}
+    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-file-medical text-wellcare-500"></i>
+                        {{ 'Générateur de Rapports Médicaux'|trans }}
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Créez des rapports médicaux personnalisés pour vos patients'|trans }}
+                    </p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button @click="loadTemplate" class="btn-outline">
+                        <i class="mr-2 fa-solid fa-folder-open"></i>
+                        {{ 'Charger modèle'|trans }}
+                    </button>
+                    <button @click="saveTemplate" class="btn-outline">
+                        <i class="mr-2 fa-solid fa-save"></i>
+                        {{ 'Sauvegarder'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {# Configuration Panel #}
+            <div class="space-y-6 lg:col-span-1">
+                {# Patient Selection #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                            <i class="text-lg fa-solid fa-user"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Sélection du Patient'|trans }}</h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label">{{ 'Patient'|trans }}</label>
+                            <select x-model="selectedPatient" @change="loadPatientData" class="input">
+                                <option value="">{{ 'Choisir un patient...'|trans }}</option>
+                                <template x-for="patient in patients" :key="patient.id">
+                                    <option :value="patient.id" x-text="patient.name + ' (' + patient.id + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <div x-show="selectedPatient" x-transition class="p-4 bg-gray-50 rounded-xl dark:bg-gray-800">
+                            <div class="flex items-center gap-3">
+                                <img :src="patientData?.avatar" class="w-12 h-12 rounded-full" :alt="patientData?.name">
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white" x-text="patientData?.name"></p>
+                                    <p class="text-xs text-gray-500" x-text="patientData?.age + ' ans - ' + patientData?.gender"></p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mt-3">
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500">{{ 'N° dossier'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white" x-text="patientData?.fileNumber"></p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500">{{ 'Dernière visite'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white" x-text="patientData?.lastVisit"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Report Configuration #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex items-center justify-center w-10 h-10 text-blue-600 rounded-xl bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
+                            <i class="text-lg fa-solid fa-sliders"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Configuration'|trans }}</h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label">{{ 'Type de rapport'|trans }}</label>
+                            <select x-model="reportConfig.type" class="input">
+                                <option value="consultation">{{ 'Compte-rendu de consultation'|trans }}</option>
+                                <option value="summary">{{ 'Résumé clinique'|trans }}</option>
+                                <option value="detailed">{{ 'Rapport détaillé'|trans }}</option>
+                                <option value="trends">{{ 'Analyse des tendances'|trans }}</option>
+                                <option value="medication">{{ 'Bilan médicamenteux'|trans }}</option>
+                                <option value="custom">{{ 'Personnalisé'|trans }}</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">{{ 'Période couverte'|trans }}</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" x-ref="startDate" class="input" placeholder="{{ 'Date début'|trans }}">
+                                <input type="text" x-ref="endDate" class="input" placeholder="{{ 'Date fin'|trans }}">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="label">{{ 'Langue du rapport'|trans }}</label>
+                            <select x-model="reportConfig.language" class="input">
+                                <option value="fr">{{ 'Français'|trans }}</option>
+                                <option value="en">{{ 'English'|trans }}</option>
+                                <option value="ar">{{ 'العربية'|trans }}</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">{{ 'Format de sortie'|trans }}</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button @click="reportConfig.format = 'pdf'" 
+                                        :class="reportConfig.format === 'pdf' ? 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'"
+                                        class="flex flex-col items-center gap-1 p-3 text-xs font-medium transition-colors border rounded-lg">
+                                    <i class="text-lg fa-solid fa-file-pdf"></i>
+                                    PDF
+                                </button>
+                                <button @click="reportConfig.format = 'docx'" 
+                                        :class="reportConfig.format === 'docx' ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'"
+                                        class="flex flex-col items-center gap-1 p-3 text-xs font-medium transition-colors border rounded-lg">
+                                    <i class="text-lg fa-solid fa-file-word"></i>
+                                    Word
+                                </button>
+                                <button @click="reportConfig.format = 'html'" 
+                                        :class="reportConfig.format === 'html' ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'"
+                                        class="flex flex-col items-center gap-1 p-3 text-xs font-medium transition-colors border rounded-lg">
+                                    <i class="text-lg fa-solid fa-file-code"></i>
+                                    HTML
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Sections to Include #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                            <i class="text-lg fa-solid fa-list-check"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Sections à inclure'|trans }}</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.patientInfo" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Informations patient'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Données démographiques et contact'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-user"></i>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.vitalSigns" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Signes vitaux'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Tension, pouls, température, etc.'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-heart-pulse"></i>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.symptoms" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Symptômes'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Historique et fréquence des symptômes'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-notes-medical"></i>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.medications" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Traitements'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Médicaments et observance'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-pills"></i>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.charts" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Graphiques'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Tendances et visualisations'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-chart-line"></i>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.aiInsights" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Insights IA'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Analyses et recommandations IA'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-robot"></i>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <input type="checkbox" x-model="reportConfig.sections.recommendations" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Recommandations'|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ 'Conseils et plan de suivi'|trans }}</p>
+                            </div>
+                            <i class="text-gray-400 fa-solid fa-clipboard-list"></i>
+                        </label>
+                    </div>
+                </div>
+
+                {# Generate Button #}
+                <button @click="generateReport" :disabled="!canGenerate" 
+                        class="w-full py-3 text-base btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="mr-2 fa-solid fa-wand-magic-sparkles"></i>
+                    {{ 'Générer le rapport'|trans }}
+                </button>
+            </div>
+
+            {# Preview Panel #}
+            <div class="lg:col-span-2">
+                <div class="sticky p-6 bg-white border border-gray-100 shadow-sm top-6 rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 text-purple-600 rounded-xl bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400">
+                                <i class="text-lg fa-solid fa-eye"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Aperçu du Rapport'|trans }}</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="zoomOut" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                <i class="fa-solid fa-magnifying-glass-minus"></i>
+                            </button>
+                            <span class="text-sm text-gray-500" x-text="zoomLevel + '%'"></span>
+                            <button @click="zoomIn" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {# Report Preview #}
+                    <div class="overflow-auto bg-gray-100 rounded-lg dark:bg-gray-800" style="height: 800px;">
+                        <div class="p-8 mx-auto bg-white shadow-lg dark:bg-gray-900" 
+                             :style="`width: 210mm; min-height: 297mm; transform: scale(${zoomLevel / 100}); transform-origin: top center;`">
+                            
+                            {# Report Header #}
+                            <div class="pb-6 mb-6 border-b-2 border-wellcare-500">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white" x-text="getReportTitle()"></h1>
+                                        <p class="mt-1 text-sm text-gray-500" x-text="'Généré le ' + new Date().toLocaleDateString('fr-FR')"></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <img src="/images/logo.svg" alt="WellCare" class="h-12 mb-2">
+                                        <p class="text-xs text-gray-500">WellCare Connect</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Patient Info Section #}
+                            <div x-show="reportConfig.sections.patientInfo && selectedPatient" class="mb-6">
+                                <h2 class="mb-3 text-lg font-semibold text-gray-900 border-b border-gray-200 dark:text-white dark:border-gray-700">
+                                    {{ 'Informations du Patient'|trans }}
+                                </h2>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">{{ 'Nom:'|trans }}</span>
+                                        <span class="ml-2 font-medium text-gray-900 dark:text-white" x-text="patientData?.name"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">{{ 'Date de naissance:'|trans }}</span>
+                                        <span class="ml-2 font-medium text-gray-900 dark:text-white" x-text="patientData?.birthDate"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">{{ 'Sexe:'|trans }}</span>
+                                        <span class="ml-2 font-medium text-gray-900 dark:text-white" x-text="patientData?.gender"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">{{ 'N° dossier:'|trans }}</span>
+                                        <span class="ml-2 font-medium text-gray-900 dark:text-white" x-text="patientData?.fileNumber"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Vital Signs Section #}
+                            <div x-show="reportConfig.sections.vitalSigns" class="mb-6">
+                                <h2 class="mb-3 text-lg font-semibold text-gray-900 border-b border-gray-200 dark:text-white dark:border-gray-700">
+                                    {{ 'Signes Vitaux'|trans }}
+                                </h2>
+                                <div class="grid grid-cols-4 gap-4">
+                                    <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <i class="mb-2 text-2xl fa-solid fa-heart-pulse text-rose-500"></i>
+                                        <p class="text-xs text-gray-500">{{ 'Fréquence cardiaque'|trans }}</p>
+                                        <p class="text-lg font-bold text-gray-900 dark:text-white">72 bpm</p>
+                                    </div>
+                                    <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <i class="mb-2 text-2xl text-blue-500 fa-solid fa-stethoscope"></i>
+                                        <p class="text-xs text-gray-500">{{ 'Tension artérielle'|trans }}</p>
+                                        <p class="text-lg font-bold text-gray-900 dark:text-white">120/80</p>
+                                    </div>
+                                    <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <i class="mb-2 text-2xl fa-solid fa-temperature-half text-amber-500"></i>
+                                        <p class="text-xs text-gray-500">{{ 'Température'|trans }}</p>
+                                        <p class="text-lg font-bold text-gray-900 dark:text-white">36.6°C</p>
+                                    </div>
+                                    <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <i class="mb-2 text-2xl fa-solid fa-lungs text-emerald-500"></i>
+                                        <p class="text-xs text-gray-500">{{ 'Saturation O2'|trans }}</p>
+                                        <p class="text-lg font-bold text-gray-900 dark:text-white">98%</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Charts Section #}
+                            <div x-show="reportConfig.sections.charts" class="mb-6">
+                                <h2 class="mb-3 text-lg font-semibold text-gray-900 border-b border-gray-200 dark:text-white dark:border-gray-700">
+                                    {{ 'Graphiques et Tendances'|trans }}
+                                </h2>
+                                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <div class="flex items-center justify-center h-48 text-gray-400">
+                                        <div class="text-center">
+                                            <i class="mb-2 text-4xl fa-solid fa-chart-line"></i>
+                                            <p>{{ 'Les graphiques seront générés dans le rapport final'|trans }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Clinical Summary #}
+                            <div x-show="reportConfig.sections.aiInsights" class="mb-6">
+                                <h2 class="mb-3 text-lg font-semibold text-gray-900 border-b border-gray-200 dark:text-white dark:border-gray-700">
+                                    {{ 'Résumé Clinique'|trans }}
+                                </h2>
+                                <div class="p-4 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                                    <p class="text-sm text-gray-700 dark:text-gray-300">
+                                        {{ 'Le patient présente une amélioration globale de son état de santé sur la période analysée. 
+                                        L\'adhérence au traitement est satisfaisante à 87%. Les signes vitaux sont stables et dans les normes. 
+                                        Aucun symptôme alarmant n\'a été signalé.'|trans }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {# Recommendations #}
+                            <div x-show="reportConfig.sections.recommendations" class="mb-6">
+                                <h2 class="mb-3 text-lg font-semibold text-gray-900 border-b border-gray-200 dark:text-white dark:border-gray-700">
+                                    {{ 'Recommandations'|trans }}
+                                </h2>
+                                <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <li class="flex items-start gap-2">
+                                        <i class="mt-1 fa-solid fa-check text-emerald-500"></i>
+                                        <span>{{ 'Continuer le traitement actuel'|trans }}</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="mt-1 fa-solid fa-check text-emerald-500"></i>
+                                        <span>{{ 'Maintenir une activité physique régulière'|trans }}</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="mt-1 fa-solid fa-check text-emerald-500"></i>
+                                        <span>{{ 'Surveillance du sommeil recommandée'|trans }}</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            {# Footer #}
+                            <div class="pt-6 mt-12 text-xs text-center text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                                <p>WellCare Connect - {{ 'Rapport médical confidentiel'|trans }}</p>
+                                <p class="mt-1" x-text="'Page 1 sur 1 - ' + new Date().toLocaleDateString('fr-FR')"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+{% endblock %} 
+  
+{% block javascripts %} 
+    {{ parent() }} 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script> 
+    <script src="{{ asset('build/health-analytics.js') }}"></script> 
+{% endblock %} 

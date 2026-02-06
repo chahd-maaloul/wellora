@@ -1,0 +1,378 @@
+{# templates/health/analytics/doctor-view.html.twig #}
+{# Doctor Analytics Dashboard - Multi-Patient Monitoring & Medical Reports #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Tableau de Bord Médecin'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="doctorAnalytics()" x-init="init()">
+    {# Header Section #}
+    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-user-doctor text-wellcare-500"></i>
+                        {{ 'Tableau de Bord Médecin'|trans }}
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Surveillance des patients, alertes et génération de rapports médicaux'|trans }}
+                    </p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search left-3 top-1/2"></i>
+                        <input 
+                            type="text" 
+                            x-model="patientSearch"
+                            @input="filterPatients"
+                            class="pl-10 input"
+                            placeholder="{{ 'Rechercher un patient...'|trans }}"
+                        >
+                    </div>
+                    <select x-model="alertFilter" @change="filterByAlerts" class="w-40 input">
+                        <option value="all">{{ 'Tous les patients'|trans }}</option>
+                        <option value="critical">{{ 'Alertes critiques'|trans }}</option>
+                        <option value="warning">{{ 'Alertes modérées'|trans }}</option>
+                        <option value="stable">{{ 'Stables'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        {# Stats Overview #}
+        <div class="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Patients actifs'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="totalPatients"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="text-xl fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 mt-4 text-sm">
+                    <span class="text-emerald-600 dark:text-emerald-400">
+                        <i class="fa-solid fa-arrow-trend-up"></i> +3
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ 'ce mois'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Alertes critiques'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-rose-600 dark:text-rose-400" x-text="criticalAlerts"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                        <i class="text-xl fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 mt-4 text-sm">
+                    <span class="text-rose-600 dark:text-rose-400">
+                        <i class="fa-solid fa-arrow-trend-up"></i> +2
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ 'cette semaine'|trans }}</span>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Consultations aujourd\'hui'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="todayAppointments"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                        <i class="text-xl fa-solid fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 mt-4 text-sm">
+                    <span class="text-gray-500 dark:text-gray-400" x-text="nextAppointment"></span>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Rapports générés'|trans }}</p>
+                        <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="reportsGenerated"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 text-blue-600 rounded-xl bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
+                        <i class="text-xl fa-solid fa-file-medical"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 mt-4 text-sm">
+                    <span class="text-emerald-600 dark:text-emerald-400">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ 'Ce mois'|trans }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {# Patient List with Alerts #}
+            <div class="lg:col-span-2">
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                                <i class="text-lg fa-solid fa-user-injured"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Surveillance des Patients'|trans }}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Vue d\'ensemble et alertes'|trans }}</p>
+                            </div>
+                        </div>
+                        <button @click="refreshPatientData" :disabled="isRefreshing" class="btn-outline">
+                            <i class="fa-solid fa-rotate" :class="isRefreshing ? 'fa-spin' : ''"></i>
+                        </button>
+                    </div>
+
+                    {# Patient Table #}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3">{{ 'Patient'|trans }}</th>
+                                    <th class="px-4 py-3">{{ 'Score Santé'|trans }}</th>
+                                    <th class="px-4 py-3">{{ 'Tendance'|trans }}</th>
+                                    <th class="px-4 py-3">{{ 'Alertes'|trans }}</th>
+                                    <th class="px-4 py-3">{{ 'Dernière entrée'|trans }}</th>
+                                    <th class="px-4 py-3">{{ 'Actions'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="patient in filteredPatients" :key="patient.id">
+                                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-3">
+                                                <img :src="patient.avatar" class="w-10 h-10 rounded-full" :alt="patient.name">
+                                                <div>
+                                                    <p class="font-medium text-gray-900 dark:text-white" x-text="patient.name"></p>
+                                                    <p class="text-xs text-gray-500" x-text="patient.id"></p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-16 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                                    <div class="h-2 transition-all duration-500 rounded-full"
+                                                         :class="patient.healthScore >= 80 ? 'bg-emerald-500' : (patient.healthScore >= 60 ? 'bg-amber-500' : 'bg-rose-500')"
+                                                         :style="`width: ${patient.healthScore}%`"></div>
+                                                </div>
+                                                <span class="text-xs font-medium" x-text="patient.healthScore"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center gap-1 text-xs"
+                                                  :class="patient.trend === 'improving' ? 'text-emerald-600 dark:text-emerald-400' : (patient.trend === 'declining' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-500 dark:text-gray-400')">
+                                                <i class="fa-solid" :class="patient.trend === 'improving' ? 'fa-arrow-trend-up' : (patient.trend === 'declining' ? 'fa-arrow-trend-down' : 'fa-minus')"></i>
+                                                <span x-text="patient.trendLabel"></span>
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-1">
+                                                <template x-for="alert in patient.alerts" :key="alert.id">
+                                                    <span class="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white rounded-full"
+                                                          :class="alert.severity === 'critical' ? 'bg-rose-500' : (alert.severity === 'warning' ? 'bg-amber-500' : 'bg-blue-500')"
+                                                          :title="alert.message">
+                                                        <i :class="alert.icon"></i>
+                                                    </span>
+                                                </template>
+                                                <span x-show="patient.alerts.length === 0" class="text-xs text-gray-400">-</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400" x-text="patient.lastEntry"></span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-2">
+                                                <button @click="viewPatientDetails(patient.id)" class="p-2 text-blue-600 rounded-lg hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30" title="{{ 'Voir détails'|trans }}">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button @click="generateReport(patient.id)" class="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30" title="{{ 'Générer rapport'|trans }}">
+                                                    <i class="fa-solid fa-file-medical"></i>
+                                                </button>
+                                                <button @click="sendMessage(patient.id)" class="p-2 rounded-lg text-wellcare-600 hover:bg-wellcare-50 dark:text-wellcare-400 dark:hover:bg-wellcare-900/30" title="{{ 'Envoyer message'|trans }}">
+                                                    <i class="fa-solid fa-envelope"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {# Treatment Effectiveness Chart #}
+                <div class="p-6 mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                <i class="text-lg fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Efficacité des Traitements'|trans }}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Suivi comparatif par patient'|trans }}</p>
+                            </div>
+                        </div>
+                        <select x-model="treatmentMetric" @change="updateTreatmentChart" class="w-40 input">
+                            <option value="symptoms">{{ 'Réduction symptômes'|trans }}</option>
+                            <option value="adherence">{{ 'Adhérence'|trans }}</option>
+                            <option value="satisfaction">{{ 'Satisfaction'|trans }}</option>
+                        </select>
+                    </div>
+                    <div class="relative h-72">
+                        <canvas id="treatmentEffectivenessChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            {# Sidebar #}
+            <div class="space-y-8">
+                {# Critical Alerts Panel #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Alertes Récentes'|trans }}</h3>
+                        <span class="px-2 py-1 text-xs font-medium text-white rounded-full bg-rose-500" x-text="recentAlerts.length"></span>
+                    </div>
+                    <div class="space-y-4">
+                        <template x-for="alert in recentAlerts" :key="alert.id">
+                            <div class="p-4 border-l-4 rounded-r-lg" 
+                                 :class="alert.severity === 'critical' ? 'bg-rose-50 border-rose-500 dark:bg-rose-900/20' : 'bg-amber-50 border-amber-500 dark:bg-amber-900/20'">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-medium" 
+                                                  :class="alert.severity === 'critical' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'"
+                                                  x-text="alert.severity === 'critical' ? '{{ 'CRITIQUE'|trans }}' : '{{ 'ATTENTION'|trans }}'"></span>
+                                            <span class="text-xs text-gray-400" x-text="alert.time"></span>
+                                        </div>
+                                        <p class="mt-1 font-medium text-gray-900 dark:text-white" x-text="alert.patientName"></p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300" x-text="alert.message"></p>
+                                    </div>
+                                    <button @click="acknowledgeAlert(alert.id)" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="recentAlerts.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="mb-2 text-3xl fa-solid fa-check-circle text-emerald-500"></i>
+                            <p>{{ 'Aucune alerte active'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Quick Report Generator #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex items-center justify-center w-10 h-10 text-blue-600 rounded-xl bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
+                            <i class="text-lg fa-solid fa-file-export"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Rapport Rapide'|trans }}</h3>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label">{{ 'Patient'|trans }}</label>
+                            <select x-model="reportPatient" class="input">
+                                <option value="">{{ 'Sélectionner un patient...'|trans }}</option>
+                                <template x-for="patient in patients" :key="patient.id">
+                                    <option :value="patient.id" x-text="patient.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">{{ 'Type de rapport'|trans }}</label>
+                            <select x-model="reportType" class="input">
+                                <option value="summary">{{ 'Résumé clinique'|trans }}</option>
+                                <option value="detailed">{{ 'Rapport détaillé'|trans }}</option>
+                                <option value="trends">{{ 'Analyse des tendances'|trans }}</option>
+                                <option value="medication">{{ 'Suivi médicaments'|trans }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">{{ 'Période'|trans }}</label>
+                            <select x-model="reportPeriod" class="input">
+                                <option value="7d">{{ '7 derniers jours'|trans }}</option>
+                                <option value="30d">{{ '30 derniers jours'|trans }}</option>
+                                <option value="3m">{{ '3 derniers mois'|trans }}</option>
+                                <option value="custom">{{ 'Personnalisé'|trans }}</option>
+                            </select>
+                        </div>
+                        <button @click="generateQuickReport" :disabled="!reportPatient" 
+                                class="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="mr-2 fa-solid fa-file-pdf"></i>
+                            {{ 'Générer le rapport'|trans }}
+                        </button>
+                    </div>
+                </div>
+
+                {# Data Export #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Export de Données'|trans }}</h3>
+                    <div class="space-y-3">
+                        <button @click="exportAllData('csv')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-file-csv"></i>
+                            {{ 'Export CSV (tous patients)'|trans }}
+                        </button>
+                        <button @click="exportAllData('excel')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-file-excel"></i>
+                            {{ 'Export Excel'|trans }}
+                        </button>
+                        <button @click="printDashboard" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-print"></i>
+                            {{ 'Version imprimable'|trans }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Patient Detail Modal #}
+        <div x-show="showPatientModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" style="display: none;">
+            <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl dark:bg-gray-900" @click.away="showPatientModal = false">
+                <div class="sticky top-0 flex items-center justify-between p-6 bg-white border-b dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-4">
+                        <img :src="selectedPatient?.avatar" class="w-12 h-12 rounded-full" :alt="selectedPatient?.name">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white" x-text="selectedPatient?.name"></h3>
+                            <p class="text-sm text-gray-500" x-text="selectedPatient?.id"></p>
+                        </div>
+                    </div>
+                    <button @click="showPatientModal = false" class="p-2 text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <i class="text-xl fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    {# Patient detail content would go here #}
+                    <p class="text-gray-600 dark:text-gray-300">{{ 'Chargement des détails du patient...'|trans }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+    <script src="{{ asset('build/health-analytics.js') }}"></script>
+{% endblock %}

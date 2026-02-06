@@ -1,0 +1,197 @@
+{# templates/health/billing.html.twig #}
+{# Billing Page - Patient Invoices and Payments #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Facturation'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Facturation'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="text-xl fa-solid fa-credit-card text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Facturation'|trans }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Vos factures et paiements'|trans }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Summary Cards #}
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+        <div class="p-5 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-900/30">
+                    <i class="text-green-600 fa-solid fa-check-circle dark:text-green-400"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Payé'|trans }}</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">450 TND</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-5 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-yellow-100 rounded-lg dark:bg-yellow-900/30">
+                    <i class="text-yellow-600 fa-solid fa-clock dark:text-yellow-400"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'En attente'|trans }}</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">120 TND</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-5 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg dark:bg-blue-900/30">
+                    <i class="text-blue-600 fa-solid fa-file-invoice dark:text-blue-400"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Total Factures'|trans }}</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">570 TND</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Invoices List #}
+    <div class="overflow-hidden bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+        <div class="p-5 border-b border-gray-100 dark:border-gray-800">
+            <h2 class="font-semibold text-gray-900 dark:text-white">{{ 'Historique des Factures'|trans }}</h2>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-800/50">
+                    <tr>
+                        <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {{ 'N° Facture'|trans }}
+                        </th>
+                        <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {{ 'Date'|trans }}
+                        </th>
+                        <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {{ 'Description'|trans }}
+                        </th>
+                        <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {{ 'Montant'|trans }}
+                        </th>
+                        <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {{ 'Statut'|trans }}
+                        </th>
+                        <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                            {{ 'Actions'|trans }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td class="px-5 py-4 text-sm font-medium text-wellcare-600 dark:text-wellcare-400">
+                            #INV-2024-001
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                            15/01/2024
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white">
+                            Consultation Dr. Sophie Martin
+                        </td>
+                        <td class="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                            50 TND
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                <i class="mr-1 fa-solid fa-check"></i>
+                                {{ 'Payé'|trans }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4">
+                            <button class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td class="px-5 py-4 text-sm font-medium text-wellcare-600 dark:text-wellcare-400">
+                            #INV-2024-002
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                            20/01/2024
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white">
+                            Analyse de sang complète
+                        </td>
+                        <td class="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                            70 TND
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                <i class="mr-1 fa-solid fa-check"></i>
+                                {{ 'Payé'|trans }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4">
+                            <button class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td class="px-5 py-4 text-sm font-medium text-wellcare-600 dark:text-wellcare-400">
+                            #INV-2024-003
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-400">
+                            01/02/2024
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white">
+                            Consultation Dr. Ahmed Ben Ali
+                        </td>
+                        <td class="px-5 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                            120 TND
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                                <i class="mr-1 fa-solid fa-clock"></i>
+                                {{ 'En attente'|trans }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-4">
+                            <button class="text-xs btn-primary">
+                                {{ 'Payer'|trans }}
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

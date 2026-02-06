@@ -1,0 +1,317 @@
+{# templates/health/partials/recent-entries.html.twig #}
+{# Recent Journal Entries Timeline #}
+
+<div class="bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800" x-data="recentEntries()" x-init="init()">
+    <div class="p-6 border-b border-gray-100 dark:border-gray-800">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                    <i class="text-lg fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Entrées Récentes'|trans }}</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Vos 5 dernières entrées journalières'|trans }}</p>
+                </div>
+            </div>
+            <a href="/health/entries" class="inline-flex items-center gap-1.5 text-sm font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 transition-colors">
+                {{ 'Voir tout'|trans }}
+                <i class="text-xs fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="p-6">
+        {# Loading State #}
+        <div x-show="isLoading" class="space-y-4">
+            <template x-for="i in 5" :key="i">
+                <div class="flex gap-4 animate-pulse">
+                    <div class="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-xl dark:bg-gray-800"></div>
+                    <div class="flex-1 space-y-2">
+                        <div class="w-1/3 h-4 bg-gray-200 rounded dark:bg-gray-800"></div>
+                        <div class="w-1/2 h-3 bg-gray-200 rounded dark:bg-gray-800"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {# Empty State #}
+        <div x-show="!isLoading && entries.length === 0" class="py-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                <i class="text-2xl text-gray-400 fa-solid fa-clipboard-list dark:text-gray-500"></i>
+            </div>
+            <h4 class="mb-1 text-sm font-medium text-gray-900 dark:text-white">{{ 'Aucune entrée pour le moment'|trans }}</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Commencez à suivre votre santé en ajoutant votre première entrée.'|trans }}</p>
+        </div>
+
+        {# Entries Timeline #}
+        <div x-show="!isLoading && entries.length > 0" class="space-y-4">
+            <template x-for="(entry, index) in entries" :key="entry.id">
+                <div class="relative group">
+                    {# Timeline connector #}
+                    <div x-show="index < entries.length - 1" class="absolute bottom-0 w-px -mb-4 bg-gray-200 left-6 top-12 dark:bg-gray-700"></div>
+                    
+                    <div class="flex gap-4">
+                        {# Date/Mood Column #}
+                        <div class="flex flex-col items-center flex-shrink-0">
+                            <div class="flex items-center justify-center w-12 h-12 text-2xl transition-transform rounded-xl group-hover:scale-110"
+                                 :class="getMoodBgClass(entry.mood)">
+                                <span x-text="getMoodEmoji(entry.mood)"></span>
+                            </div>
+                            <span class="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400" x-text="formatDate(entry.date)"></span>
+                        </div>
+
+                        {# Entry Content #}
+                        <div class="flex-1 min-w-0">
+                            <div class="p-4 transition-all border border-gray-100 rounded-xl bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700/50 group-hover:bg-gray-100 dark:group-hover:bg-gray-800">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                                                  :class="getEnergyClass(entry.energy)">
+                                                <i class="fa-solid fa-bolt"></i>
+                                                <span x-text="entry.energy + '/10'"></span>
+                                            </span>
+                                            <template x-for="symptom in entry.symptoms.slice(0, 2)" :key="symptom">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                                    <i :class="getSymptomIcon(symptom)" class="text-xs"></i>
+                                                    <span x-text="getSymptomLabel(symptom)"></span>
+                                                </span>
+                                            </template>
+                                            <span x-show="entry.symptoms.length > 2" class="text-xs text-gray-400 dark:text-gray-500">
+                                                +<span x-text="entry.symptoms.length - 2"></span>
+                                            </span>
+                                        </div>
+                                        <p x-show="entry.notes" class="mt-2 text-sm text-gray-600 dark:text-gray-300 line-clamp-2" x-text="entry.notes"></p>
+                                    </div>
+                                    
+                                    {# Actions #}
+                                    <div class="flex items-center gap-1 transition-opacity opacity-0 group-hover:opacity-100">
+                                        <button 
+                                            @click="editEntry(entry.id)"
+                                            class="p-1.5 rounded-lg text-gray-400 hover:text-wellcare-600 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/30 transition-colors"
+                                            :aria-label="'{{ 'Modifier'|trans }}'"
+                                        >
+                                            <i class="text-xs fa-solid fa-pen"></i>
+                                        </button>
+                                        <button 
+                                            @click="deleteEntry(entry.id)"
+                                            class="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
+                                            :aria-label="'{{ 'Supprimer'|trans }}'"
+                                        >
+                                            <i class="text-xs fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {# View All Button #}
+        <div x-show="!isLoading && entries.length > 0" class="pt-4 mt-6 border-t border-gray-100 dark:border-gray-800">
+            <a href="/health/entries" class="flex items-center justify-center w-full gap-2 py-3 text-sm font-medium text-gray-700 transition-colors border border-gray-200 rounded-xl hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+                <i class="fa-solid fa-list-ul"></i>
+                {{ 'Voir toutes les entrées'|trans }}
+            </a>
+        </div>
+    </div>
+
+    {# Delete Confirmation Modal #}
+    <div
+        x-show="showDeleteModal"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        style="display: none;"
+    >
+        <div
+            x-show="showDeleteModal"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            @click.away="showDeleteModal = false"
+            class="w-full max-w-sm p-6 bg-white shadow-xl rounded-2xl dark:bg-gray-900"
+        >
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-rose-100 dark:bg-rose-900/30">
+                <i class="text-xl fa-solid fa-triangle-exclamation text-rose-600 dark:text-rose-400"></i>
+            </div>
+            <h3 class="mb-2 text-lg font-semibold text-center text-gray-900 dark:text-white">
+                {{ 'Confirmer la suppression'|trans }}
+            </h3>
+            <p class="mb-6 text-sm text-center text-gray-500 dark:text-gray-400">
+                {{ 'Êtes-vous sûr de vouloir supprimer cette entrée ? Cette action est irréversible.'|trans }}
+            </p>
+            <div class="flex gap-3">
+                <button
+                    @click="showDeleteModal = false"
+                    class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors"
+                >
+                    {{ 'Annuler'|trans }}
+                </button>
+                <button
+                    @click="confirmDelete"
+                    class="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 text-sm font-medium text-white hover:bg-rose-700 transition-colors"
+                >
+                    {{ 'Supprimer'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function recentEntries() {
+    return {
+        isLoading: true,
+        entries: [],
+        showDeleteModal: false,
+        entryToDelete: null,
+        moodEmojis: {
+            1: '😢',
+            2: '😕',
+            3: '😐',
+            4: '🙂',
+            5: '😄'
+        },
+        moodBgClasses: {
+            1: 'bg-rose-100 dark:bg-rose-900/30',
+            2: 'bg-amber-100 dark:bg-amber-900/30',
+            3: 'bg-gray-100 dark:bg-gray-800',
+            4: 'bg-emerald-100 dark:bg-emerald-900/30',
+            5: 'bg-wellcare-100 dark:bg-wellcare-900/30'
+        },
+        symptomIcons: {
+            'headache': 'fa-solid fa-brain',
+            'fatigue': 'fa-solid fa-battery-quarter',
+            'nausea': 'fa-solid fa-face-dizzy',
+            'pain': 'fa-solid fa-bolt',
+            'fever': 'fa-solid fa-temperature-high',
+            'cough': 'fa-solid fa-head-side-cough',
+            'insomnia': 'fa-solid fa-moon',
+            'anxiety': 'fa-solid fa-heart-crack',
+            'appetite_loss': 'fa-solid fa-utensils',
+            'dizziness': 'fa-solid fa-arrows-spin'
+        },
+        symptomLabels: {
+            'headache': 'Mal de tête',
+            'fatigue': 'Fatigue',
+            'nausea': 'Nausées',
+            'pain': 'Douleur',
+            'fever': 'Fièvre',
+            'cough': 'Toux',
+            'insomnia': 'Insomnie',
+            'anxiety': 'Anxiété',
+            'appetite_loss': 'Perte d\'appétit',
+            'dizziness': 'Vertiges'
+        },
+        init() {
+            // Simulate loading data
+            setTimeout(() => {
+                this.loadEntries();
+                this.isLoading = false;
+            }, 1000);
+        },
+        loadEntries() {
+            // Simulated data - in production this would come from an API
+            this.entries = [
+                {
+                    id: 1,
+                    date: new Date(),
+                    mood: 4,
+                    energy: 7,
+                    symptoms: ['headache'],
+                    notes: 'Bonne journée malgré un léger mal de tête en fin d\'après-midi.'
+                },
+                {
+                    id: 2,
+                    date: new Date(Date.now() - 86400000),
+                    mood: 5,
+                    energy: 9,
+                    symptoms: [],
+                    notes: 'Excellente journée ! Beaucoup d\'énergie et bonne humeur.'
+                },
+                {
+                    id: 3,
+                    date: new Date(Date.now() - 172800000),
+                    mood: 3,
+                    energy: 5,
+                    symptoms: ['fatigue', 'insomnia'],
+                    notes: 'Nuit difficile, fatigue ressentie pendant la journée.'
+                },
+                {
+                    id: 4,
+                    date: new Date(Date.now() - 259200000),
+                    mood: 4,
+                    energy: 8,
+                    symptoms: [],
+                    notes: 'Journée productive et agréable.'
+                },
+                {
+                    id: 5,
+                    date: new Date(Date.now() - 345600000),
+                    mood: 2,
+                    energy: 3,
+                    symptoms: ['fever', 'cough', 'fatigue'],
+                    notes: 'Début de symptômes grippaux. Repos nécessaire.'
+                }
+            ];
+        },
+        formatDate(date) {
+            const d = new Date(date);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (d.toDateString() === today.toDateString()) {
+                return 'Aujourd\'hui';
+            } else if (d.toDateString() === yesterday.toDateString()) {
+                return 'Hier';
+            } else {
+                return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+            }
+        },
+        getMoodEmoji(mood) {
+            return this.moodEmojis[mood] || '😐';
+        },
+        getMoodBgClass(mood) {
+            return this.moodBgClasses[mood] || 'bg-gray-100';
+        },
+        getEnergyClass(energy) {
+            if (energy <= 3) return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
+            if (energy <= 6) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
+            return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+        },
+        getSymptomIcon(symptom) {
+            return this.symptomIcons[symptom] || 'fa-solid fa-circle';
+        },
+        getSymptomLabel(symptom) {
+            return this.symptomLabels[symptom] || symptom;
+        },
+        editEntry(id) {
+            // Navigate to edit page or open edit modal
+            window.location.href = `/health/entry/${id}/edit`;
+        },
+        deleteEntry(id) {
+            this.entryToDelete = id;
+            this.showDeleteModal = true;
+        },
+        confirmDelete() {
+            if (this.entryToDelete) {
+                // Simulate deletion
+                this.entries = this.entries.filter(e => e.id !== this.entryToDelete);
+                this.showDeleteModal = false;
+                this.entryToDelete = null;
+            }
+        }
+    }
+}
+</script>

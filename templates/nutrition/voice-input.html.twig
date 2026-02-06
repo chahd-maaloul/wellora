@@ -1,0 +1,774 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Voice Input - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+    <style>
+        .voice-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .voice-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .voice-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .voice-subtitle {
+            color: #6b7280;
+        }
+        
+        .voice-main {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .voice-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+        
+        .voice-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .voice-button.listening {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+        }
+        
+        .voice-icon {
+            font-size: 3rem;
+            color: white;
+        }
+        
+        .voice-status {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        
+        .voice-hint {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        
+        .voice-input-area {
+            margin-top: 32px;
+        }
+        
+        .voice-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+        
+        .voice-textarea:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        
+        .voice-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+        
+        .voice-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .voice-btn.primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .voice-btn.secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .voice-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .parsed-results {
+            margin-top: 32px;
+            text-align: left;
+        }
+        
+        .parsed-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .parsed-item {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .parsed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .parsed-text {
+            font-weight: 500;
+            color: #374151;
+            font-style: italic;
+        }
+        
+        .parsed-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .parsed-status.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .parsed-status.pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .parsed-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .parsed-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .entry-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .entry-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .entry-calories {
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        .entry-meal {
+            font-size: 0.75rem;
+            background: #e5e7eb;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #6b7280;
+        }
+        
+        .patterns-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .patterns-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .patterns-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .pattern-group {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .pattern-label {
+            font-weight: 500;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+        }
+        
+        .pattern-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .pattern-item {
+            padding: 4px 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        
+        .recent-entries {
+            margin-top: 32px;
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .recent-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .recent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .recent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        
+        .recent-text {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .recent-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .recent-entries-count {
+            font-size: 0.75rem;
+            background: #e5e7eb;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #6b7280;
+        }
+        
+        .recent-calories {
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        .recording-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .recording-indicator.active {
+            display: flex;
+        }
+        
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .transcript {
+            min-height: 60px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 1.125rem;
+            color: #374151;
+        }
+        
+        .tips-section {
+            margin-top: 32px;
+            padding: 24px;
+            background: #f0fdf4;
+            border-radius: 16px;
+        }
+        
+        .tips-title {
+            font-weight: 600;
+            color: #166534;
+            margin-bottom: 12px;
+        }
+        
+        .tips-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .tips-list li {
+            padding: 8px 0;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="voice-container">
+        <div class="voice-header">
+            <h1 class="voice-title">🎤 Voice Food Logger</h1>
+            <p class="voice-subtitle">Simply describe what you eat and we'll log it for you</p>
+        </div>
+        
+        <div class="voice-main">
+            <button class="voice-button" id="voiceButton" onclick="toggleRecording()">
+                <span class="voice-icon">🎤</span>
+            </button>
+            
+            <div class="recording-indicator" id="recordingIndicator">
+                <div class="recording-dot"></div>
+                <span>Recording...</span>
+            </div>
+            
+            <div class="voice-status" id="voiceStatus">Tap to start speaking</div>
+            <p class="voice-hint" id="voiceHint">Describe your meal naturally, e.g., "I had toast with jam and coffee for breakfast"</p>
+            
+            <div class="voice-input-area">
+                <textarea class="voice-textarea" id="voiceTranscript" placeholder="Your spoken text will appear here..."></textarea>
+                <div class="voice-actions">
+                    <button class="voice-btn secondary" onclick="clearTranscript()">
+                        🗑️ Clear
+                    </button>
+                    <button class="voice-btn primary" onclick="processTranscript()">
+                        ⚡ Parse & Log
+                    </button>
+                </div>
+            </div>
+            
+            <div class="parsed-results" id="parsedResults" style="display: none;">
+                <h3 class="parsed-title">Detected Foods</h3>
+                <div id="parsedItems"></div>
+            </div>
+            
+            <div class="patterns-section">
+                <h3 class="patterns-title">Voice Command Patterns</h3>
+                <div class="patterns-grid">
+                    <div class="pattern-group">
+                        <div class="pattern-label">Numbers</div>
+                        <div class="pattern-items">
+                            {% for num in quantityPatterns.numbers %}
+                                <span class="pattern-item">{{ num }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="pattern-group">
+                        <div class="pattern-label">Units</div>
+                        <div class="pattern-items">
+                            {% for unit in quantityPatterns.units %}
+                                <span class="pattern-item">{{ unit }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="pattern-group">
+                        <div class="pattern-label">Containers</div>
+                        <div class="pattern-items">
+                            {% for container in quantityPatterns.containers %}
+                                <span class="pattern-item">{{ container }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recent-entries">
+            <h3 class="recent-title">Recent Voice Entries</h3>
+            <div class="recent-list">
+                {% for entry in recentVoiceEntries %}
+                    <div class="recent-item" onclick="loadEntry('{{ entry.text|escape('js') }}')">
+                        <span class="recent-text">"{{ entry.text }}"</span>
+                        <div class="recent-meta">
+                            <span class="recent-entries-count">{{ entry.entries }} foods</span>
+                            <span class="recent-calories">{{ entry.calories }} cal</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="tips-section">
+            <h3 class="tips-title">💡 Tips for Best Results</h3>
+            <ul class="tips-list">
+                <li>🍽️ Be specific about portions: "2 slices of bread" instead of "some bread"</li>
+                <li>🥗 Mention the meal type: "For lunch, I had a chicken salad"</li>
+                <li>📦 Include containers: "One banana" or "A bowl of cereal"</li>
+                <li>🏷️ Add brands if known: "A McDonald's hamburger"</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        let isRecording = false;
+        let recognition = null;
+        let finalTranscript = '';
+        
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+            } else if ('SpeechRecognition' in window) {
+                recognition = new SpeechRecognition();
+            } else {
+                document.getElementById('voiceStatus').textContent = 'Speech recognition not supported';
+                document.getElementById('voiceButton').disabled = true;
+                return;
+            }
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'fr-FR';
+            
+            recognition.onstart = function() {
+                isRecording = true;
+                document.getElementById('voiceButton').classList.add('listening');
+                document.getElementById('recordingIndicator').classList.add('active');
+                document.getElementById('voiceStatus').textContent = 'Listening...';
+                document.getElementById('voiceHint').textContent = 'Speak now, describe your meal';
+            };
+            
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                
+                document.getElementById('voiceTranscript').value = finalTranscript + interimTranscript;
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                stopRecording();
+                document.getElementById('voiceStatus').textContent = 'Error: ' + event.error;
+            };
+            
+            recognition.onend = function() {
+                if (isRecording) {
+                    // Restart if still should be recording
+                    recognition.start();
+                }
+            };
+        }
+        
+        function toggleRecording() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+            
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            finalTranscript = document.getElementById('voiceTranscript').value;
+            recognition.start();
+        }
+        
+        function stopRecording() {
+            isRecording = false;
+            recognition.stop();
+            document.getElementById('voiceButton').classList.remove('listening');
+            document.getElementById('recordingIndicator').classList.remove('active');
+            document.getElementById('voiceStatus').textContent = 'Tap to start speaking';
+            document.getElementById('voiceHint').textContent = 'Describe your meal naturally';
+        }
+        
+        function clearTranscript() {
+            document.getElementById('voiceTranscript').value = '';
+            finalTranscript = '';
+            document.getElementById('parsedResults').style.display = 'none';
+        }
+        
+        function loadEntry(text) {
+            document.getElementById('voiceTranscript').value = text;
+            finalTranscript = text;
+        }
+        
+        function processTranscript() {
+            const transcript = document.getElementById('voiceTranscript').value.trim();
+            
+            if (!transcript) {
+                alert('Please speak or type what you ate first.');
+                return;
+            }
+            
+            document.getElementById('voiceStatus').textContent = 'Processing...';
+            
+            // Simulated NLP processing - replace with actual NLP service
+            setTimeout(() => {
+                const parsedFoods = parseFoodDescription(transcript);
+                displayParsedResults(parsedFoods);
+                document.getElementById('voiceStatus').textContent = 'Processing complete';
+            }, 1000);
+        }
+        
+        function parseFoodDescription(text) {
+            // Simulated NLP - in production, use a proper NLP service
+            const commonFoods = {
+                'café': { calories: 5, proteins: 0.3, carbs: 0, fats: 0 },
+                'coffee': { calories: 5, proteins: 0.3, carbs: 0, fats: 0 },
+                'pain': { calories: 80, proteins: 3, carbs: 15, fats: 1 },
+                'bread': { calories: 80, proteins: 3, carbs: 15, fats: 1 },
+                'oeuf': { calories: 78, proteins: 6, carbs: 0.6, fats: 5 },
+                'egg': { calories: 78, proteins: 6, carbs: 0.6, fats: 5 },
+                'pomme': { calories: 95, proteins: 0.5, carbs: 25, fats: 0.3 },
+                'apple': { calories: 95, proteins: 0.5, carbs: 25, fats: 0.3 },
+                'banane': { calories: 105, proteins: 1.3, carbs: 27, fats: 0.4 },
+                'banana': { calories: 105, proteins: 1.3, carbs: 27, fats: 0.4 },
+                'yaourt': { calories: 120, proteins: 10, carbs: 6, fats: 6 },
+                'yogurt': { calories: 120, proteins: 10, carbs: 6, fats: 6 },
+                'poulet': { calories: 165, proteins: 31, carbs: 0, fats: 3.6 },
+                'chicken': { calories: 165, proteins: 31, carbs: 0, fats: 3.6 },
+                'riz': { calories: 130, proteins: 2.7, carbs: 28, fats: 0.3 },
+                'rice': { calories: 130, proteins: 2.7, carbs: 28, fats: 0.3 },
+                'salade': { calories: 20, proteins: 1, carbs: 3, fats: 0.2 },
+                'salad': { calories: 20, proteins: 1, carbs: 3, fats: 0.2 }
+            };
+            
+            // Detect meal type
+            let mealType = 'snack';
+            const lowerText = text.toLowerCase();
+            
+            if (lowerText.includes('breakfast') || lowerText.includes('déjeuner') || lowerText.includes('petit-déjeuner')) {
+                mealType = 'breakfast';
+            } else if (lowerText.includes('lunch') || lowerText.includes('déjeuner')) {
+                mealType = 'lunch';
+            } else if (lowerText.includes('dinner') || lowerText.includes('dîner') || lowerText.includes('diner')) {
+                mealType = 'dinner';
+            }
+            
+            // Detect quantities
+            const numberMap = {
+                'un': 1, 'une': 1, 'one': 1,
+                'deux': 2, 'two': 2,
+                'trois': 3, 'three': 3,
+                'quatre': 4, 'four': 4,
+                'cinq': 5, 'five': 5,
+                'six': 6, 'six': 6,
+                'sept': 7, 'seven': 7,
+                'huit': 8, 'eight': 8,
+                'neuf': 9, 'nine': 9,
+                'dix': 10, 'ten': 10
+            };
+            
+            // Parse foods from text (simplified)
+            const words = text.toLowerCase().split(/\s+/);
+            const foods = [];
+            let i = 0;
+            
+            while (i < words.length) {
+                // Check for quantity
+                let quantity = 1;
+                if (numberMap[words[i]]) {
+                    quantity = numberMap[words[i]];
+                    i++;
+                } else if (/^\d+$/.test(words[i])) {
+                    quantity = parseInt(words[i]);
+                    i++;
+                }
+                
+                // Check for unit
+                let unit = 'serving';
+                const units = ['tasse', 'cup', 'verre', 'glass', 'assiette', 'plate', 'portion', 'slice', 'tranche', 'piece', 'morceau'];
+                if (units.includes(words[i])) {
+                    unit = words[i];
+                    i++;
+                }
+                
+                // Find food name
+                let foodName = '';
+                while (i < words.length && !numberMap[words[i]] && !/^\d+$/.test(words[i])) {
+                    foodName += words[i] + ' ';
+                    i++;
+                }
+                
+                foodName = foodName.trim();
+                
+                // Check if it's a known food
+                for (const [key, data] of Object.entries(commonFoods)) {
+                    if (foodName.includes(key) || key.includes(foodName)) {
+                        foods.push({
+                            name: foodName || key,
+                            quantity: quantity,
+                            unit: unit,
+                            calories: Math.round(data.calories * quantity),
+                            proteins: (data.proteins * quantity).toFixed(1),
+                            carbs: (data.carbs * quantity).toFixed(1),
+                            fats: (data.fats * quantity).toFixed(1),
+                            mealType: mealType
+                        });
+                        break;
+                    }
+                }
+            }
+            
+            // Default entry if nothing parsed
+            if (foods.length === 0) {
+                foods.push({
+                    name: text.substring(0, 30) + '...',
+                    quantity: 1,
+                    unit: 'serving',
+                    calories: 0,
+                    proteins: 0,
+                    carbs: 0,
+                    fats: 0,
+                    mealType: mealType
+                });
+            }
+            
+            return foods;
+        }
+        
+        function displayParsedResults(foods) {
+            const container = document.getElementById('parsedItems');
+            const resultsSection = document.getElementById('parsedResults');
+            
+            container.innerHTML = foods.map((food, index) => `
+                <div class="parsed-item">
+                    <div class="parsed-header">
+                        <span class="parsed-text">"{{ food.name }}"</span>
+                        <span class="parsed-status success">✓ Parsed</span>
+                    </div>
+                    <div class="parsed-entries">
+                        <div class="parsed-entry">
+                            <span class="entry-name">${food.quantity} ${food.unit} ${food.name}</span>
+                            <div class="entry-details">
+                                <span class="entry-calories">${food.calories} cal</span>
+                                <span class="entry-meal">${food.mealType}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            resultsSection.style.display = 'block';
+            
+            // Save to localStorage
+            saveParsedFoods(foods);
+        }
+        
+        function saveParsedFoods(foods) {
+            const logKey = `foodLog_${new Date().toISOString().split('T')[0]}`;
+            let foodLog = JSON.parse(localStorage.getItem(logKey) || '{}');
+            
+            foods.forEach(food => {
+                const mealType = food.mealType;
+                if (!foodLog[mealType]) {
+                    foodLog[mealType] = [];
+                }
+                foodLog[mealType].push({
+                    name: food.name,
+                    quantity: food.quantity,
+                    unit: food.unit,
+                    calories: food.calories,
+                    proteins: food.proteins,
+                    carbs: food.carbs,
+                    fats: food.fats
+                });
+            });
+            
+            localStorage.setItem(logKey, JSON.stringify(foodLog));
+        }
+        
+        // Initialize speech recognition on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initSpeechRecognition();
+        });
+    </script>
+{% endblock %}

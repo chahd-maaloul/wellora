@@ -1,0 +1,256 @@
+{# templates/health/partials/quick-entry.html.twig #}
+{# Daily Health Journal Quick Entry Form #}
+
+<div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800" x-data="quickEntry()" x-init="init()">
+    <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                <i class="text-lg fa-solid fa-pen-to-square"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Nouvelle Entrée Journalière'|trans }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="currentDate"></p>
+            </div>
+        </div>
+        <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-wellcare-50 text-wellcare-700 dark:bg-wellcare-900/30 dark:text-wellcare-300">
+            <i class="fa-solid fa-calendar-day mr-1.5"></i>
+            {{ 'Aujourd\'hui'|trans }}
+        </span>
+    </div>
+
+    <form @submit.prevent="submitEntry" class="space-y-5">
+        {# Mood Tracker #}
+        <div>
+            <label class="block mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ 'Comment vous sentez-vous ?'|trans }}
+            </label>
+            <div class="flex items-center justify-between gap-2">
+                <template x-for="(mood, index) in moods" :key="index">
+                    <button
+                        type="button"
+                        @click="selectedMood = index + 1"
+                        class="flex flex-col items-center gap-2 p-3 transition-all duration-200 rounded-xl"
+                        :class="selectedMood === index + 1 ? 'bg-wellcare-50 dark:bg-wellcare-900/30 scale-110' : 'hover:bg-gray-50 dark:hover:bg-gray-800'"
+                        :aria-label="mood.label"
+                        :aria-pressed="selectedMood === index + 1"
+                    >
+                        <span class="text-3xl transition-transform" :class="selectedMood === index + 1 ? 'scale-125' : ''" x-text="mood.emoji"></span>
+                        <span class="text-xs font-medium" :class="selectedMood === index + 1 ? 'text-wellcare-700 dark:text-wellcare-300' : 'text-gray-500 dark:text-gray-400'" x-text="mood.label"></span>
+                    </button>
+                </template>
+            </div>
+            <input type="hidden" name="mood" x-model="selectedMood" required>
+        </div>
+
+        {# Energy Level Slider #}
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ 'Niveau d\'énergie'|trans }}
+                </label>
+                <span class="text-sm font-bold" :class="getEnergyColor(energyLevel)" x-text="energyLevel + '/10'"></span>
+            </div>
+            <div class="relative">
+                <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    x-model="energyLevel"
+                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-wellcare-500"
+                    aria-label="{{ 'Niveau d\'énergie'|trans }}"
+                >
+                <div class="flex justify-between mt-1 text-xs text-gray-400 dark:text-gray-500">
+                    <span>{{ 'Épuisé'|trans }}</span>
+                    <span>{{ 'Énergique'|trans }}</span>
+                </div>
+            </div>
+            <input type="hidden" name="energy_level" x-model="energyLevel">
+        </div>
+
+        {# Quick Symptom Selector #}
+        <div>
+            <label class="block mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ 'Symptômes (sélectionnez tous ceux qui s\'appliquent)'|trans }}
+            </label>
+            <div class="flex flex-wrap gap-2">
+                <template x-for="(symptom, index) in commonSymptoms" :key="index">
+                    <button
+                        type="button"
+                        @click="toggleSymptom(symptom.id)"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
+                        :class="selectedSymptoms.includes(symptom.id) 
+                            ? 'bg-wellcare-100 text-wellcare-800 border-2 border-wellcare-500 dark:bg-wellcare-900/50 dark:text-wellcare-200 dark:border-wellcare-400' 
+                            : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
+                        :aria-pressed="selectedSymptoms.includes(symptom.id)"
+                    >
+                        <i :class="symptom.icon" class="text-xs"></i>
+                        <span x-text="symptom.label"></span>
+                        <i x-show="selectedSymptoms.includes(symptom.id)" class="fa-solid fa-check text-xs ml-0.5"></i>
+                    </button>
+                </template>
+            </div>
+            <input type="hidden" name="symptoms" :value="JSON.stringify(selectedSymptoms)">
+        </div>
+
+        {# Notes Field with Character Counter #}
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label for="entry-notes" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ 'Notes'|trans }}
+                </label>
+                <span class="text-xs" :class="notes.length > 450 ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'">
+                    <span x-text="notes.length"></span>/500
+                </span>
+            </div>
+            <textarea
+                id="entry-notes"
+                x-model="notes"
+                maxlength="500"
+                rows="3"
+                class="w-full px-4 py-3 text-gray-900 placeholder-gray-400 transition-all bg-white border border-gray-200 resize-none rounded-xl focus:border-wellcare-500 focus:ring-2 focus:ring-wellcare-200 dark:bg-gray-950 dark:border-gray-700 dark:text-white dark:focus:border-wellcare-400 dark:focus:ring-wellcare-800"
+                placeholder="{{ 'Décrivez votre journée, vos ressentis, ou toute observation importante...'|trans }}"
+                aria-describedby="notes-help"
+            ></textarea>
+            <p id="notes-help" class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                {{ 'Ces informations sont confidentielles et accessibles uniquement à vous et à votre médecin.'|trans }}
+            </p>
+        </div>
+
+        {# Submit Button #}
+        <div class="flex items-center gap-3 pt-2">
+            <button
+                type="submit"
+                class="inline-flex items-center justify-center flex-1 gap-2 px-6 py-3 font-medium text-white transition-all rounded-xl bg-wellcare-600 hover:bg-wellcare-700 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="isSubmitting || !isValid()"
+            >
+                <i x-show="!isSubmitting" class="fa-solid fa-plus"></i>
+                <i x-show="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
+                <span x-text="isSubmitting ? '{{ 'Enregistrement...'|trans }}' : '{{ 'Ajouter l\'entrée'|trans }}'"></span>
+            </button>
+            <button
+                type="button"
+                @click="resetForm"
+                class="px-4 py-3 font-medium text-gray-700 transition-all border border-gray-200 rounded-xl hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+                {{ 'Réinitialiser'|trans }}
+            </button>
+        </div>
+    </form>
+
+    {# Success Message #}
+    <div
+        x-show="showSuccess"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-2"
+        class="p-4 mt-4 border rounded-xl bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800"
+        role="alert"
+    >
+        <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-800">
+                <i class="fa-solid fa-check text-emerald-600 dark:text-emerald-400"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                    {{ 'Entrée enregistrée avec succès !'|trans }}
+                </p>
+                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    {{ 'Votre suivi de santé a été mis à jour.'|trans }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickEntry() {
+    return {
+        currentDate: new Date().toLocaleDateString('fr-FR', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        }),
+        selectedMood: null,
+        energyLevel: 5,
+        notes: '',
+        selectedSymptoms: [],
+        isSubmitting: false,
+        showSuccess: false,
+        moods: [
+            { emoji: '😢', label: 'Très mal', value: 1 },
+            { emoji: '😕', label: 'Mal', value: 2 },
+            { emoji: '😐', label: 'Neutre', value: 3 },
+            { emoji: '🙂', label: 'Bien', value: 4 },
+            { emoji: '😄', label: 'Très bien', value: 5 }
+        ],
+        commonSymptoms: [
+            { id: 'headache', label: 'Mal de tête', icon: 'fa-solid fa-brain' },
+            { id: 'fatigue', label: 'Fatigue', icon: 'fa-solid fa-battery-quarter' },
+            { id: 'nausea', label: 'Nausées', icon: 'fa-solid fa-face-dizzy' },
+            { id: 'pain', label: 'Douleur', icon: 'fa-solid fa-bolt' },
+            { id: 'fever', label: 'Fièvre', icon: 'fa-solid fa-temperature-high' },
+            { id: 'cough', label: 'Toux', icon: 'fa-solid fa-head-side-cough' },
+            { id: 'insomnia', label: 'Insomnie', icon: 'fa-solid fa-moon' },
+            { id: 'anxiety', label: 'Anxiété', icon: 'fa-solid fa-heart-crack' },
+            { id: 'appetite_loss', label: 'Perte d\'appétit', icon: 'fa-solid fa-utensils' },
+            { id: 'dizziness', label: 'Vertiges', icon: 'fa-solid fa-arrows-spin' }
+        ],
+        init() {
+            // Initialize date
+            this.updateDate();
+        },
+        updateDate() {
+            this.currentDate = new Date().toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        },
+        getEnergyColor(level) {
+            if (level <= 3) return 'text-rose-500';
+            if (level <= 6) return 'text-amber-500';
+            return 'text-emerald-500';
+        },
+        toggleSymptom(symptomId) {
+            const index = this.selectedSymptoms.indexOf(symptomId);
+            if (index > -1) {
+                this.selectedSymptoms.splice(index, 1);
+            } else {
+                this.selectedSymptoms.push(symptomId);
+            }
+        },
+        isValid() {
+            return this.selectedMood !== null && this.energyLevel >= 1;
+        },
+        async submitEntry() {
+            if (!this.isValid()) return;
+            
+            this.isSubmitting = true;
+            
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            this.isSubmitting = false;
+            this.showSuccess = true;
+            
+            // Reset form after success
+            setTimeout(() => {
+                this.resetForm();
+                this.showSuccess = false;
+            }, 3000);
+        },
+        resetForm() {
+            this.selectedMood = null;
+            this.energyLevel = 5;
+            this.notes = '';
+            this.selectedSymptoms = [];
+            this.showSuccess = false;
+        }
+    }
+}
+</script>

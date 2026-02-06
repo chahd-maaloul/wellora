@@ -1,0 +1,398 @@
+{# templates/doctor/communication.html.twig #}
+{# Doctor-Patient Communication Interface - Secure Messaging, File Sharing, Teleconsultation #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Communication'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="doctorCommunication()" x-init="init()">
+    {# Header #}
+    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="/doctor/patients" class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-comments text-wellcare-500"></i>
+                            {{ 'Communication'|trans }}
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Messagerie sécurisée, partage de fichiers et téléconsultation'|trans }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button 
+                        @click="scheduleTeleconsultation()"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                    >
+                        <i class="fa-solid fa-video"></i>
+                        {{ 'Téléconsultation'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
+            {# Sidebar - Patient List & Quick Info #}
+            <div class="space-y-6 lg:col-span-1">
+                {# Search Patients #}
+                <div class="p-4 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="relative">
+                        <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search left-3 top-1/2"></i>
+                        <input 
+                            type="text" 
+                            x-model="patientSearch"
+                            @input="filterPatients()"
+                            class="w-full py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            placeholder="{{ 'Rechercher un patient...'|trans }}"
+                        >
+                    </div>
+                </div>
+
+                {# Patient List #}
+                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Conversations'|trans }}</h3>
+                    </div>
+                    <div class="overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 max-h-96">
+                        <template x-for="patient in filteredPatients" :key="patient.id">
+                            <div 
+                                @click="selectPatient(patient)"
+                                class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                :class="selectedPatient?.id === patient.id ? 'bg-wellcare-50 dark:bg-wellcare-900/20 border-l-4 border-wellcare-500' : ''"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <img 
+                                            :src="patient.avatar" 
+                                            :alt="patient.name"
+                                            class="object-cover w-10 h-10 rounded-full"
+                                        >
+                                        <span 
+                                            x-show="patient.unreadCount > 0"
+                                            class="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white rounded-full -top-1 -right-1 bg-rose-500"
+                                            x-text="patient.unreadCount"
+                                        ></span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-sm font-medium text-gray-900 truncate dark:text-white" x-text="patient.name"></h4>
+                                        <p class="text-xs text-gray-500 truncate dark:text-gray-400" x-text="patient.lastMessage"></p>
+                                    </div>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500" x-text="patient.lastMessageTime"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {# Quick Stats #}
+                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Statistiques'|trans }}</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Messages non lus'|trans }}</span>
+                            <span class="text-sm font-medium text-rose-600 dark:text-rose-400" x-text="stats.unreadMessages">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Téléconsultations'|trans }}</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="stats.teleconsultations">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Fichiers partagés'|trans }}</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="stats.sharedFiles">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Main Chat Area #}
+            <div class="lg:col-span-3">
+                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800 h-[calc(100vh-250px)] flex flex-col">
+                    {# Chat Header #}
+                    <div x-show="selectedPatient" class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-4">
+                            <img 
+                                :src="selectedPatient?.avatar" 
+                                :alt="selectedPatient?.name"
+                                class="object-cover w-10 h-10 rounded-full"
+                            >
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white" x-text="selectedPatient?.name"></h3>
+                                <div class="flex items-center gap-2">
+                                    <span 
+                                        class="w-2 h-2 rounded-full"
+                                        :class="selectedPatient?.isOnline ? 'bg-emerald-500' : 'bg-gray-400'"
+                                    ></span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400" x-text="selectedPatient?.isOnline ? 'En ligne' : 'Hors ligne'"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="startVoiceCall()" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" title="{{ 'Appel vocal'|trans }}">
+                                <i class="fa-solid fa-phone"></i>
+                            </button>
+                            <button @click="startVideoCall()" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" title="{{ 'Appel vidéo'|trans }}">
+                                <i class="fa-solid fa-video"></i>
+                            </button>
+                            <button @click="viewPatientChart()" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" title="{{ 'Voir le dossier'|trans }}">
+                                <i class="fa-solid fa-file-medical"></i>
+                            </button>
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div x-show="open" @click.away="open = false" class="absolute right-0 z-10 w-48 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-900 dark:border-gray-700" style="display: none;">
+                                    <button @click="blockPatient()" class="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                        <i class="mr-2 fa-solid fa-ban"></i> {{ 'Bloquer'|trans }}
+                                    </button>
+                                    <button @click="reportConversation()" class="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+                                        <i class="mr-2 fa-solid fa-flag"></i> {{ 'Signaler'|trans }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Empty State #}
+                    <div x-show="!selectedPatient" class="flex items-center justify-center flex-1">
+                        <div class="text-center">
+                            <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                                <i class="text-2xl text-gray-400 fa-solid fa-comments"></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Sélectionnez un patient'|trans }}</h3>
+                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ 'Choisissez un patient pour commencer la conversation'|trans }}</p>
+                        </div>
+                    </div>
+
+                    {# Messages Area #}
+                    <div x-show="selectedPatient" class="flex-1 p-4 space-y-4 overflow-y-auto" x-ref="messagesContainer">
+                        <template x-for="message in messages" :key="message.id">
+                            <div 
+                                class="flex"
+                                :class="message.isDoctor ? 'justify-end' : 'justify-start'"
+                            >
+                                <div 
+                                    class="max-w-[70%] px-4 py-2 rounded-2xl"
+                                    :class="message.isDoctor ? 'bg-wellcare-500 text-white rounded-br-none' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white rounded-bl-none'"
+                                >
+                                    {# Message Content #}
+                                    <p class="text-sm" x-text="message.content"></p>
+                                    
+                                    {# File Attachment #}
+                                    <template x-if="message.file">
+                                        <div 
+                                            class="flex items-center gap-2 p-2 mt-2 rounded-lg"
+                                            :class="message.isDoctor ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                                        >
+                                            <i class="fa-solid fa-file-medical"></i>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-xs font-medium truncate" x-text="message.file.name"></p>
+                                                <p class="text-xs opacity-75" x-text="message.file.size"></p>
+                                            </div>
+                                            <button @click="downloadFile(message.file)" class="p-1 rounded hover:bg-white/20">
+                                                <i class="fa-solid fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+
+                                    {# Image Attachment #}
+                                    <template x-if="message.image">
+                                        <div class="mt-2">
+                                            <img :src="message.image" class="max-w-full rounded-lg cursor-pointer hover:opacity-90" @click="openImageModal(message.image)">
+                                        </div>
+                                    </template>
+
+                                    {# Message Meta #}
+                                    <div 
+                                        class="flex items-center gap-1 mt-1 text-xs"
+                                        :class="message.isDoctor ? 'text-wellcare-100' : 'text-gray-500 dark:text-gray-400'"
+                                    >
+                                        <span x-text="message.time"></span>
+                                        <template x-if="message.isDoctor">
+                                            <i 
+                                                class="fa-solid fa-check-double"
+                                                :class="message.read ? 'text-blue-300' : ''"
+                                            ></i>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        {# Typing Indicator #}
+                        <div x-show="isTyping" class="flex justify-start">
+                            <div class="px-4 py-2 bg-gray-100 rounded-bl-none dark:bg-gray-800 rounded-2xl">
+                                <div class="flex gap-1">
+                                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                                    <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Input Area #}
+                    <div x-show="selectedPatient" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                        {# Reply/Quote Preview #}
+                        <div x-show="replyingTo" class="flex items-center justify-between p-2 mb-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <i class="fa-solid fa-reply"></i>
+                                <span x-text="'En réponse à: ' + replyingTo?.preview"></span>
+                            </div>
+                            <button @click="cancelReply()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex items-end gap-2">
+                            <div class="relative flex-1">
+                                <textarea 
+                                    x-model="newMessage"
+                                    @keydown.enter.prevent="sendMessage()"
+                                    rows="1"
+                                    class="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                    placeholder="{{ 'Écrivez votre message...'|trans }}"
+                                    x-ref="messageInput"
+                                    @input="adjustTextareaHeight()"
+                                ></textarea>
+                                <div class="absolute flex items-center gap-1 right-2 bottom-2">
+                                    <button @click="openFilePicker()" class="p-1.5 text-gray-400 hover:text-wellcare-500 transition-colors" title="{{ 'Joindre un fichier'|trans }}">
+                                        <i class="fa-solid fa-paperclip"></i>
+                                    </button>
+                                    <button @click="openImagePicker()" class="p-1.5 text-gray-400 hover:text-wellcare-500 transition-colors" title="{{ 'Joindre une image'|trans }}">
+                                        <i class="fa-solid fa-image"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button 
+                                @click="sendMessage()"
+                                :disabled="!newMessage.trim()"
+                                class="px-4 py-2 text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
+                            >
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+
+                        {# Quick Responses #}
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <template x-for="quickReply in quickReplies" :key="quickReply">
+                                <button 
+                                    @click="newMessage = quickReply; sendMessage()"
+                                    class="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                                    x-text="quickReply"
+                                ></button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                {# Shared Files Panel (Collapsible) #}
+                <div x-show="selectedPatient && showFilesPanel" class="mt-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-folder-open text-wellcare-500"></i>
+                            {{ 'Fichiers partagés'|trans }}
+                        </h3>
+                        <button @click="showFilesPanel = false" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+                            <template x-for="file in sharedFiles" :key="file.id">
+                                <div class="relative p-3 transition-colors border border-gray-200 rounded-lg group hover:border-wellcare-500 dark:border-gray-700 dark:hover:border-wellcare-500">
+                                    <div class="flex items-center justify-center mb-2 rounded aspect-square bg-gray-50 dark:bg-gray-800">
+                                        <i :class="getFileIcon(file.type) + ' text-3xl text-gray-400'"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-900 truncate dark:text-white" x-text="file.name"></p>
+                                    <p class="text-xs text-gray-400" x-text="file.date"></p>
+                                    <div class="absolute inset-0 flex items-center justify-center gap-2 transition-opacity rounded-lg opacity-0 bg-black/50 group-hover:opacity-100">
+                                        <button @click="previewFile(file)" class="p-2 text-white hover:text-wellcare-300">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button @click="downloadFile(file)" class="p-2 text-white hover:text-wellcare-300">
+                                            <i class="fa-solid fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Teleconsultation Modal #}
+    <div 
+        x-show="showTeleconsultationModal" 
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        style="display: none;"
+        x-transition
+    >
+        <div class="w-full max-w-lg p-6 mx-4 bg-white shadow-xl dark:bg-gray-900 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Planifier une téléconsultation'|trans }}</h3>
+                <button @click="showTeleconsultationModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Patient'|trans }}</label>
+                    <select x-model="teleconsultation.patientId" class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                        <option value="">{{ 'Sélectionner un patient...'|trans }}</option>
+                        <template x-for="patient in patients" :key="patient.id">
+                            <option :value="patient.id" x-text="patient.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Date'|trans }}</label>
+                        <input type="date" x-model="teleconsultation.date" class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Heure'|trans }}</label>
+                        <input type="time" x-model="teleconsultation.time" class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Motif'|trans }}</label>
+                    <textarea x-model="teleconsultation.reason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white" placeholder="{{ 'Motif de la consultation...'|trans }}"></textarea>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" x-model="teleconsultation.sendReminder" id="sendReminder" class="border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                    <label for="sendReminder" class="text-sm text-gray-700 dark:text-gray-300">{{ 'Envoyer un rappel au patient'|trans }}</label>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button @click="showTeleconsultationModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                    {{ 'Annuler'|trans }}
+                </button>
+                <button @click="scheduleTeleconsultationConfirm()" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600">
+                    {{ 'Planifier'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/doctor-dashboard.js') }}"></script>
+{% endblock %}
+{% endblock %}

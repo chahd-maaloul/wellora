@@ -1,0 +1,411 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Outils de Sécurité - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('trail-community') }}
+{% endblock %}
+
+{% block body %}
+<div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen" x-data="{
+    sosMode: 'tap',
+    sosCount: 0,
+    locationEnabled: true,
+    currentWeather: {
+        temp: 18,
+        condition: 'Partiellement nuageux',
+        humidity: 65,
+        wind: 12
+    }
+}">
+    {# Header #}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                <i class="fas fa-shield-alt text-wellcare-500 mr-2"></i>
+                Outils de Sécurité
+            </h1>
+            <p class="mt-1 text-gray-500 dark:text-gray-400">
+                Restez en sécurité sur vos sentiers
+            </p>
+        </div>
+    </div>
+
+    {# SOS Emergency Banner #}
+    <div class="emergency-banner bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 mb-6 text-white">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold mb-2">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Bouton SOS d'Urgence
+                </h2>
+                <p class="text-red-100">
+                    En cas d'urgence, appuyez 3 fois sur le bouton ou maintenez-le appuyé pendant 3 secondes
+                </p>
+            </div>
+            <button 
+                @click="triggerSOS()"
+                @contextmenu.prevent="triggerSOS()"
+                class="sos-button w-24 h-24 bg-white rounded-full flex items-center justify-center text-red-600 shadow-lg hover:bg-red-50 transition-colors"
+                :class="sosCount > 0 ? 'animate-pulse' : ''">
+                <div class="text-center">
+                    <i class="fas fa-phone-alt text-3xl mb-1"></i>
+                    <span class="text-xs font-bold">SOS</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    {# Main Content Grid #}
+    <div class="grid lg:grid-cols-3 gap-6">
+        {# Left Column: Weather & Conditions #}
+        <div class="lg:col-span-2 space-y-6">
+            {# Current Weather Widget #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fas fa-cloud-sun text-wellcare-500 mr-2"></i>
+                        Conditions Météo Actuelles
+                    </h2>
+                    <span class="text-sm text-green-500 flex items-center gap-1">
+                        <i class="fas fa-circle text-xs"></i>
+                        En direct
+                    </span>
+                </div>
+                
+                <div class="flex flex-col md:flex-row md:items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="text-6xl text-wellcare-500 weather-icon">
+                            <i class="fas fa-cloud-sun"></i>
+                        </div>
+                        <div>
+                            <p class="text-4xl font-bold text-gray-900 dark:text-white" x-text="currentWeather.temp + '°C'">18°C</p>
+                            <p class="text-gray-500 dark:text-gray-400" x-text="currentWeather.condition">Partiellement nuageux</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+                            <i class="fas fa-tint text-blue-500 mb-1"></i>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Humidité</p>
+                            <p class="font-semibold text-gray-900 dark:text-white" x-text="currentWeather.humidity + '%'">65%</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+                            <i class="fas fa-wind text-teal-500 mb-1"></i>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Vent</p>
+                            <p class="font-semibold text-gray-900 dark:text-white" x-text="currentWeather.wind + ' km/h'">12 km/h</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
+                            <i class="fas fa-sun text-amber-500 mb-1"></i>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">UV</p>
+                            <p class="font-semibold text-gray-900 dark:text-white">Modéré</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Weather Forecast #}
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Prévisions sur 5 jours</h3>
+                    <div class="flex justify-between">
+                        {% for day in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'] %}
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ day }}</p>
+                            <i class="fas fa-sun text-wellcare-500 my-2"></i>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ 16 + loop.index0 }}°</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Trail Conditions Report #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-map-marked-alt text-wellcare-500 mr-2"></i>
+                    État des Trails à Proximité
+                </h2>
+                
+                <div class="space-y-4">
+                    {# Trail 1 #}
+                    <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=100&h=100&fit=crop" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" alt="Trail">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Sentier des Cascades</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">8.5 km • Modéré</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="condition-open px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-check-circle"></i> Ouvert
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">Mis à jour: il y a 2h</span>
+                            </div>
+                        </div>
+                        <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
+                            Détails
+                        </button>
+                    </div>
+                    
+                    {# Trail 2 #}
+                    <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&h=100&fit=crop" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" alt="Trail">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Montagne Bleue</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">12.3 km • Difficile</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="condition-open px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-check-circle"></i> Ouvert
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">Mis à jour: il y a 4h</span>
+                            </div>
+                        </div>
+                        <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
+                            Détails
+                        </button>
+                    </div>
+                    
+                    {# Trail 3 #}
+                    <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" alt="Trail">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Forêt de Pins</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">5.2 km • Facile</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-exclamation-triangle"></i> Attention
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">Chutes de branches signalées</span>
+                            </div>
+                        </div>
+                        <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
+                            Détails
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="w-full mt-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-wellcare-600 dark:text-wellcare-400">
+                    <i class="fas fa-sync-alt mr-1"></i> Actualiser les conditions
+                </button>
+            </div>
+
+            {# Offline Maps #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-download text-wellcare-500 mr-2"></i>
+                    Cartes Hors Ligne
+                </h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">
+                    Téléchargez les cartes de vos trails favoris pour les consulter sans connexion internet.
+                </p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <i class="fas fa-map text-wellcare-500 mb-2"></i>
+                        <p class="font-medium text-gray-900 dark:text-white">Sentier des Cascades</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">12.5 Mo • Téléchargé</p>
+                    </button>
+                    <button class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-left">
+                        <i class="fas fa-cloud-download-alt text-gray-400 mb-2"></i>
+                        <p class="font-medium text-gray-900 dark:text-white">Montagne Bleue</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">24.8 Mo • À télécharger</p>
+                    </button>
+                </div>
+                <button class="w-full mt-4 py-2 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition-colors">
+                    <i class="fas fa-plus mr-1"></i> Ajouter une carte
+                </button>
+            </div>
+        </div>
+
+        {# Right Column: Emergency Contacts & GPS #}
+        <div class="space-y-6">
+            {# GPS Location #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-map-marker-alt text-wellcare-500 mr-2"></i>
+                    Ma Position
+                </h2>
+                
+                <div class="bg-gray-100 dark:bg-gray-900 rounded-lg h-48 flex items-center justify-center mb-4">
+                    <div class="text-center">
+                        <i class="fas fa-location-arrow text-4xl text-wellcare-500 mb-2 animate-pulse"></i>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Carte en cours de chargement...</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Latitude</span>
+                        <span class="font-mono text-gray-900 dark:text-white">45.7640° N</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Longitude</span>
+                        <span class="font-mono text-gray-900 dark:text-white">4.8357° E</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Altitude</span>
+                        <span class="font-mono text-gray-900 dark:text-white">270m</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 dark:text-gray-400">Précision</span>
+                        <span class="font-mono text-green-500">±5m</span>
+                    </div>
+                </div>
+                
+                <button class="w-full mt-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-crosshairs mr-1"></i> Actualiser la position
+                </button>
+            </div>
+
+            {# Emergency Contacts #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-phone-alt text-wellcare-500 mr-2"></i>
+                    Contacts d'Urgence
+                </h2>
+                
+                <div class="space-y-3">
+                    <button class="w-full flex items-center gap-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                        <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <p class="font-semibold text-gray-900 dark:text-white">SAMU</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Urgences médicales</p>
+                        </div>
+                        <span class="font-bold text-red-600">15</span>
+                    </button>
+                    
+                    <button class="w-full flex items-center gap-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <p class="font-semibold text-gray-900 dark:text-white">Police / Gendarmerie</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Secours et urgences</p>
+                        </div>
+                        <span class="font-bold text-blue-600">17</span>
+                    </button>
+                    
+                    <button class="w-full flex items-center gap-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                        <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-fire-extinguisher"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <p class="font-semibold text-gray-900 dark:text-white">Pompiers</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Incendies et secours</p>
+                        </div>
+                        <span class="font-bold text-orange-600">18</span>
+                    </button>
+                    
+                    <button class="w-full flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <div class="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-life-ring"></i>
+                        </div>
+                        <div class="text-left flex-1">
+                            <p class="font-semibold text-gray-900 dark:text-white">Numéro d'urgence UE</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Toutes urgences</p>
+                        </div>
+                        <span class="font-bold text-gray-600">112</span>
+                    </button>
+                </div>
+                
+                <button class="w-full mt-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-user-plus mr-1"></i> Ajouter un contact
+                </button>
+            </div>
+
+            {# Quick Tips #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-lightbulb text-amber-400 mr-2"></i>
+                    Conseils de Sécurité
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Vérifiez la météo avant chaque sortie</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Prévenez quelqu'un de votre itinerary</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Emportez suffisamment d'eau et de nourriture</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Ayez toujours votre téléphone chargé</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Restez sur les sentiers balisés</p>
+                    </div>
+                </div>
+            </div>
+
+            {# Check-in Feature #}
+            <div class="bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl p-6 border border-wellcare-200 dark:border-wellcare-800">
+                <h2 class="text-lg font-semibold text-wellcare-700 dark:text-wellcare-300 mb-2">
+                    <i class="fas fa-clipboard-check mr-2"></i>
+                    Check-in de Sécurité
+                </h2>
+                <p class="text-sm text-wellcare-600 dark:text-wellcare-400 mb-4">
+                    Activez le check-in automatique pour que vos proches soient prévenus si vous ne terminez pas votre trail à temps.
+                </p>
+                <button class="w-full py-2 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition-colors">
+                    <i class="fas fa-clock mr-1"></i> Activer le Check-in
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Share Location Modal #}
+    <div x-data="{ open: false }" 
+         x-show="open"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+         style="display: none;">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-share-alt mr-2"></i>
+                Partager ma position
+            </h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">
+                Votre position actuelle sera partagée avec vos contacts d'urgence.
+            </p>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-4">
+                <p class="font-mono text-gray-900 dark:text-white">45.7640° N, 4.8357° E</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Mis à jour: il y a 2 minutes</p>
+            </div>
+            <div class="flex gap-3">
+                <button @click="open = false" class="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    Annuler
+                </button>
+                <button @click="open = false" class="flex-1 py-2 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600">
+                    Envoyer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

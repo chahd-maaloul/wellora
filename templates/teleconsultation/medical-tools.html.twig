@@ -1,0 +1,447 @@
+{# templates/teleconsultation/medical-tools.html.twig #}
+{# Medical Tools Panel for Teleconsultation #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Outils Médicaux'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/teleconsultation.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-950" x-data="medicalTools()" x-init="init()">
+    
+    {# Header #}
+    <div class="max-w-6xl mx-auto mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-stethoscope text-wellcare-500"></i>
+                    {{ "Outils Médicaux"|trans }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ "Outils d'aide à la consultation pour télémedicine"|trans }}
+                </p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <select 
+                    x-model="selectedPatient"
+                    class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
+                    <option value="P001">Marie Dupont</option>
+                    <option value="P002">Jean Martin</option>
+                </select>
+                
+                <button 
+                    @click="closeTools()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                    <i class="mr-2 fa-solid fa-times"></i>
+                    {{ "Fermer"|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {# Main Content #}
+    <div class="grid max-w-6xl grid-cols-1 gap-6 mx-auto lg:grid-cols-4">
+        
+        {# Tool Selector #}
+        <div class="lg:col-span-1">
+            <div class="overflow-hidden bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Outils"|trans }}</h2>
+                </div>
+                
+                <div class="p-2 space-y-1">
+                    <template x-for="tool in tools" :key="tool.id">
+                        <button 
+                            @click="activeTool = tool.id"
+                            class="flex items-center w-full gap-3 px-4 py-3 text-left transition-colors rounded-lg"
+                            :class="activeTool === tool.id ? 'bg-wellcare-50 dark:bg-wellcare-900/20 text-wellcare-600 dark:text-wellcare-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                        >
+                            <div 
+                                class="flex items-center justify-center w-10 h-10 rounded-lg"
+                                :class="activeTool === tool.id ? 'bg-wellcare-100 dark:bg-wellcare-900/40' : 'bg-gray-100 dark:bg-gray-800'"
+                            >
+                                <i :class="tool.icon + ' ' + (activeTool === tool.id ? 'text-wellcare-500' : 'text-gray-500')"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium" x-text="tool.name"></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="tool.description"></p>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+            
+            {# Quick Actions #}
+            <div class="p-4 mt-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">{{ "Actions Rapides"|trans }}</h3>
+                <div class="space-y-2">
+                    <button 
+                        @click="openPrescription()"
+                        class="flex items-center w-full gap-3 px-4 py-3 text-left transition-colors rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                        <i class="fa-solid fa-prescription text-wellcare-500"></i>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ "Nouvelle Ordonnance"|trans }}</span>
+                    </button>
+                    <button 
+                        @click="openReferral()"
+                        class="flex items-center w-full gap-3 px-4 py-3 text-left transition-colors rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                        <i class="fa-solid fa-user-md text-wellcare-500"></i>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ "Orientation Spécialiste"|trans }}</span>
+                    </button>
+                    <button 
+                        @click="openLabOrder()"
+                        class="flex items-center w-full gap-3 px-4 py-3 text-left transition-colors rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                        <i class="fa-solid fa-flask text-wellcare-500"></i>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ "Demande de Bilan"|trans }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        {# Tool Content Area #}
+        <div class="lg:col-span-3">
+            
+            {# Body Map Tool #}
+            <div x-show="activeTool === 'bodyMap'" class="overflow-hidden bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div>
+                        <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Carte Corporelle"|trans }}</h2>
+                        <p class="text-sm text-gray-500">{{ "Cliquez sur les zones pour noter les symptômes"|trans }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button 
+                            @click="bodyMapView = 'front'"
+                            class="px-3 py-1 text-sm transition-colors rounded-lg"
+                            :class="bodyMapView === 'front' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                        >
+                            {{ "Face"|trans }}
+                        </button>
+                        <button 
+                            @click="bodyMapView = 'back'"
+                            class="px-3 py-1 text-sm transition-colors rounded-lg"
+                            :class="bodyMapView === 'back' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                        >
+                            {{ "Dos"|trans }}
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div class="flex flex-col gap-6 lg:flex-row">
+                        {# Body Map SVG #}
+                        <div class="flex-1">
+                            <div class="aspect-[1/2] bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center relative">
+                                <svg viewBox="0 0 200 400" class="w-full h-full max-w-xs">
+                                    {# Simplified body outline #}
+                                    <ellipse cx="100" cy="40" rx="25" ry="30" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('head')"/>
+                                    <rect x="70" y="75" width="60" height="100" rx="10" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('chest')"/>
+                                    <rect x="70" y="180" width="60" height="80" rx="10" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('abdomen')"/>
+                                    <rect x="30" y="80" width="35" height="90" rx="5" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('leftArm')"/>
+                                    <rect x="135" y="80" width="35" height="90" rx="5" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('rightArm')"/>
+                                    <rect x="45" y="265" width="25" height="100" rx="5" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('leftLeg')"/>
+                                    <rect x="130" y="265" width="25" height="100" rx="5" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2" class="transition-colors cursor-pointer hover:fill-wellcare-200 body-region" @click="selectBodyRegion('rightLeg')"/>
+                                </svg>
+                                
+                                {# Selected Regions #}
+                                <template x-for="region in selectedRegions" :key="region.id">
+                                    <div 
+                                        class="absolute px-2 py-1 text-xs text-white rounded-full shadow-lg bg-wellcare-500"
+                                        :style="{ top: region.y + 'px', left: region.x + 'px' }"
+                                        x-text="region.name"
+                                    ></div>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        {# Region Details #}
+                        <div class="w-full space-y-4 lg:w-80">
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <h3 class="mb-2 font-medium text-gray-900 dark:text-white">{{ "Région sélectionnée"|trans }}</h3>
+                                <template x-if="!selectedRegion">
+                                    <p class="text-sm text-gray-500">{{ "Cliquez sur une zone du corps pour sélectionner"|trans }}</p>
+                                </template>
+                                <template x-if="selectedRegion">
+                                    <div>
+                                        <p class="text-lg font-semibold text-wellcare-600" x-text="selectedRegion"></p>
+                                        
+                                        <div class="mt-4 space-y-3">
+                                            <div>
+                                                <label class="text-xs text-gray-500">{{ "Type de symptôme"|trans }}</label>
+                                                <select 
+                                                    x-model="symptomDetails.type"
+                                                    class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700"
+                                                >
+                                                    <option value="">{{ "Sélectionner..."|trans }}</option>
+                                                    <option value="pain">{{ "Douleur"|trans }}</option>
+                                                    <option value="rash">{{ "Éruption"|trans }}</option>
+                                                    <option value="swelling">{{ "Gonflement"|trans }}</option>
+                                                    <option value="numbness">{{ "Engourdissement"|trans }}</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="text-xs text-gray-500">{{ "Intensité"|trans }}</label>
+                                                <div class="flex items-center gap-2 mt-1">
+                                                    <input 
+                                                        type="range" 
+                                                        x-model="symptomDetails.intensity"
+                                                        min="1" 
+                                                        max="10"
+                                                        class="flex-1"
+                                                    >
+                                                    <span class="w-8 text-sm font-medium text-center" x-text="symptomDetails.intensity"></span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="text-xs text-gray-500">{{ "Description"|trans }}</label>
+                                                <textarea 
+                                                    x-model="symptomDetails.description"
+                                                    class="w-full px-3 py-2 mt-1 text-sm border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700"
+                                                    rows="2"
+                                                    placeholder="{{ "Détails du symptôme..."|trans }}"
+                                                ></textarea>
+                                            </div>
+                                            
+                                            <button 
+                                                @click="addSymptom()"
+                                                class="w-full py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
+                                            >
+                                                <i class="mr-2 fa-solid fa-plus"></i>
+                                                {{ "Ajouter le symptôme"|trans }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            {# Symptoms List #}
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <h3 class="mb-2 font-medium text-gray-900 dark:text-white">{{ "Symptômes notés"|trans }}</h3>
+                                <div class="space-y-2">
+                                    <template x-for="symptom in recordedSymptoms" :key="symptom.id">
+                                        <div class="p-3 bg-white rounded-lg dark:bg-gray-700">
+                                            <div class="flex items-center justify-between">
+                                                <p class="font-medium text-gray-900 dark:text-white" x-text="symptom.region"></p>
+                                                <button 
+                                                    @click="removeSymptom(symptom.id)"
+                                                    class="text-gray-400 hover:text-red-500"
+                                                >
+                                                    <i class="fa-solid fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <p class="mt-1 text-sm text-gray-500" x-text="symptom.type"></p>
+                                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300" x-text="symptom.description"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# Whiteboard Tool #}
+            <div x-show="activeTool === 'whiteboard'" class="overflow-hidden bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div>
+                        <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Tableau Blanc"|trans }}</h2>
+                        <p class="text-sm text-gray-500">{{ "Dessinez pour expliquer au patient"|trans }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button 
+                            @click="whiteboardColor = '#000000'"
+                            class="w-8 h-8 border-2 rounded-full"
+                            :class="whiteboardColor === '#000000' ? 'border-wellcare-500' : 'border-gray-300'"
+                            style="background-color: #000000"
+                        ></button>
+                        <button 
+                            @click="whiteboardColor = '#ef4444'"
+                            class="w-8 h-8 border-2 rounded-full"
+                            :class="whiteboardColor === '#ef4444' ? 'border-wellcare-500' : 'border-gray-300'"
+                            style="background-color: #ef4444"
+                        ></button>
+                        <button 
+                            @click="whiteboardColor = '#22c55e'"
+                            class="w-8 h-8 border-2 rounded-full"
+                            :class="whiteboardColor === '#22c55e' ? 'border-wellcare-500' : 'border-gray-300'"
+                            style="background-color: #22c55e"
+                        ></button>
+                        <button 
+                            @click="whiteboardColor = '#3b82f6'"
+                            class="w-8 h-8 border-2 rounded-full"
+                            :class="whiteboardColor === '#3b82f6' ? 'border-wellcare-500' : 'border-gray-300'"
+                            style="background-color: #3b82f6"
+                        ></button>
+                        <div class="w-px h-6 mx-2 bg-gray-300"></div>
+                        <button 
+                            @click="clearWhiteboard()"
+                            class="px-3 py-1 text-sm transition-colors bg-gray-100 rounded-lg dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                        >
+                            <i class="mr-1 fa-solid fa-trash"></i>
+                            {{ "Effacer"|trans }}
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <canvas 
+                        x-ref="whiteboard"
+                        class="w-full bg-white border border-gray-200 h-96 dark:bg-gray-800 dark:border-gray-700 rounded-xl cursor-crosshair"
+                        @mousedown="startDrawing($event)"
+                        @mousemove="draw($event)"
+                        @mouseup="stopDrawing()"
+                        @mouseleave="stopDrawing()"
+                    ></canvas>
+                </div>
+            </div>
+            
+            {# Visual Acuity Tool #}
+            <div x-show="activeTool === 'acuity'" class="overflow-hidden bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Test d'Acuité Visuelle"|trans }}</h2>
+                </div>
+                
+                <div class="p-6">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="mb-8 text-center">
+                            <p class="mb-4 text-sm text-gray-500">{{ "À quelle distance vous trouvez-vous de l'ecran?"|trans }}</p>
+                            <div class="flex items-center justify-center gap-4">
+                                <button 
+                                    @click="acuityDistance = 2"
+                                    class="px-4 py-2 transition-colors rounded-lg"
+                                    :class="acuityDistance === 2 ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                                >
+                                    2m
+                                </button>
+                                <button 
+                                    @click="acuityDistance = 3"
+                                    class="px-4 py-2 transition-colors rounded-lg"
+                                    :class="acuityDistance === 3 ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                                >
+                                    3m
+                                </button>
+                                <button 
+                                    @click="acuityDistance = 4"
+                                    class="px-4 py-2 transition-colors rounded-lg"
+                                    :class="acuityDistance === 4 ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                                >
+                                    4m
+                                </button>
+                                <button 
+                                    @click="acuityDistance = 5"
+                                    class="px-4 py-2 transition-colors rounded-lg"
+                                    :class="acuityDistance === 5 ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                                >
+                                    5m
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {# Snellen Chart #}
+                        <div class="p-8 bg-white border border-gray-200 shadow-lg rounded-xl">
+                            <div class="space-y-6">
+                                <div class="text-center">
+                                    <p class="text-6xl font-bold tracking-widest text-gray-900">E</p>
+                                    <p class="mt-2 text-sm text-gray-500">20/200</p>
+                                </div>
+                                <div class="flex justify-center gap-8">
+                                    <div class="text-center">
+                                        <p class="text-3xl font-bold text-gray-900">F P</p>
+                                        <p class="mt-1 text-xs text-gray-500">20/100</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-center gap-4">
+                                    <div class="text-center">
+                                        <p class="text-xl font-bold text-gray-900">T O Z</p>
+                                        <p class="mt-1 text-xs text-gray-500">20/70</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-center gap-2">
+                                    <div class="text-center">
+                                        <p class="text-sm font-bold text-gray-900">L P E D</p>
+                                        <p class="mt-1 text-xs text-gray-500">20/50</p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-center gap-1">
+                                    <div class="text-center">
+                                        <p class="text-xs font-bold text-gray-900">P E C F D</p>
+                                        <p class="text-[10px] text-gray-500 mt-1">20/40</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-center gap-8 mt-6">
+                            <div class="text-center">
+                                <p class="text-sm font-medium text-gray-700">{{ "Œil Gauche"|trans }}</p>
+                                <select 
+                                    x-model="acuityResults.left"
+                                    class="px-3 py-2 mt-1 border border-gray-300 rounded-lg"
+                                >
+                                    <option value="">{{ "Non testé"|trans }}</option>
+                                    <option value="20/20">20/20</option>
+                                    <option value="20/25">20/25</option>
+                                    <option value="20/30">20/30</option>
+                                    <option value="20/40">20/40</option>
+                                    <option value="20/50">20/50</option>
+                                    <option value="20/60">20/60</option>
+                                    <option value="20/70">20/70</option>
+                                    <option value="20/100">20/100</option>
+                                    <option value="20/200">20/200</option>
+                                </select>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-sm font-medium text-gray-700">{{ "Œil Droit"|trans }}</p>
+                                <select 
+                                    x-model="acuityResults.right"
+                                    class="px-3 py-2 mt-1 border border-gray-300 rounded-lg"
+                                >
+                                    <option value="">{{ "Non testé"|trans }}</option>
+                                    <option value="20/20">20/20</option>
+                                    <option value="20/25">20/25</option>
+                                    <option value="20/30">20/30</option>
+                                    <option value="20/40">20/40</option>
+                                    <option value="20/50">20/50</option>
+                                    <option value="20/60">20/60</option>
+                                    <option value="20/70">20/70</option>
+                                    <option value="20/100">20/100</option>
+                                    <option value="20/200">20/200</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# Default Tool Placeholder #}
+            <div x-show="['bodyMap', 'whiteboard', 'acuity'].indexOf(activeTool) === -1" class="p-12 text-center bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <div class="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                    <i class="text-3xl text-gray-400 fa-solid fa-tools"></i>
+                </div>
+                <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                    {{ "Sélectionnez un outil"|trans }}
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400">
+                    {{ "Choisissez un outil médical dans la liste de gauche pour commencer"|trans }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/teleconsultation.js') }}"></script>
+{% endblock %}

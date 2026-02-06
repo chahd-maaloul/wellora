@@ -1,0 +1,345 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'SMART Goal Editor - WellCare Connect' | trans }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('fitness-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-800" x-data="smartGoalEditor()">
+    {# Header #}
+    <div class="bg-white shadow-sm dark:bg-gray-900">
+        <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ path('fitness_dashboard') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ 'SMART Goal Editor' | trans }}</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Edit and refine your fitness goals' | trans }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button @click="showHistory = !showHistory" class="px-4 py-2 text-gray-700 transition-colors rounded-lg dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <svg class="inline w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {{ 'History' | trans }}
+                    </button>
+                    <button @click="saveGoal()" class="px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        {{ 'Save Changes' | trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {# Goals List #}
+            <div class="lg:col-span-1">
+                <div class="p-4 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                    <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'My Goals' | trans }}</h2>
+                    
+                    <div class="space-y-3">
+                        {% for goal in goals %}
+                        <div @click="selectGoal({{ goal.id }})" 
+                             class="p-4 transition-all duration-200 border-2 rounded-lg cursor-pointer"
+                             :class="selectedGoalId === {{ goal.id }} ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full
+                                    {% if goal.status == 'active' %}bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400
+                                    {% elseif goal.status == 'paused' %}bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400
+                                    {% else %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400{% endif %}">
+                                    {{ goal.statusLabel | trans }}
+                                </span>
+                                <span class="text-xs text-gray-500">{{ goal.progress }}%</span>
+                            </div>
+                            <h3 class="font-medium text-gray-900 dark:text-white">{{ goal.title }}</h3>
+                            <div class="w-full h-2 mt-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-2 rounded-full bg-wellcare-500" style="width: {{ goal.progress }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button @click="createNewGoal()" class="w-full py-3 mt-4 text-gray-500 transition-colors border-2 border-gray-300 border-dashed rounded-lg dark:border-gray-600 dark:text-gray-400 hover:border-wellcare-500 hover:text-wellcare-500">
+                        + {{ 'Create New Goal' | trans }}
+                    </button>
+                </div>
+
+                {# Goal Timeline #}
+                <div class="p-4 mt-4 bg-white shadow-sm dark:bg-gray-900 rounded-xl" x-show="showHistory">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Goal Timeline' | trans }}</h3>
+                    <div class="space-y-4">
+                        {% for event in goalTimeline %}
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-wellcare-500"></div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ event.action }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ event.date }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Goal Editor #}
+            <div class="lg:col-span-2" x-show="selectedGoalId">
+                {# Selected Goal Header #}
+                <div class="p-6 mb-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white" x-text="currentGoal.title"></h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="currentGoal.category"></p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <select x-model="currentGoal.status" class="px-3 py-1 text-sm border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800">
+                                <option value="active">{{ 'Active' | trans }}</option>
+                                <option value="paused">{{ 'Paused' | trans }}</option>
+                                <option value="completed">{{ 'Completed' | trans }}</option>
+                                <option value="archived">{{ 'Archived' | trans }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {# Progress Overview #}
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="currentGoal.progress + '%'"></p>
+                            <p class="text-xs text-gray-500">{{ 'Complete' | trans }}</p>
+                        </div>
+                        <div class="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="currentGoal.daysRemaining"></p>
+                            <p class="text-xs text-gray-500">{{ 'Days Left' | trans }}</p>
+                        </div>
+                        <div class="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="currentGoal.milestonesCompleted"></p>
+                            <p class="text-xs text-gray-500">{{ 'Milestones' | trans }}</p>
+                        </div>
+                        <div class="p-4 text-center rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="currentGoal.streak"></p>
+                            <p class="text-xs text-gray-500">{{ 'Day Streak' | trans }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# SMART Criteria Editor #}
+                <div class="p-6 mb-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'SMART Criteria' | trans }}</h3>
+                    
+                    <div class="space-y-6">
+                        {# Specific #}
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-blue-500 rounded-full">S</span>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Specific' | trans }}</label>
+                            </div>
+                            <textarea x-model="currentGoal.specific" 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800 dark:text-white"
+                                      rows="3"></textarea>
+                            <p class="mt-1 text-xs text-gray-500">{{ 'What exactly do you want to achieve?' | trans }}</p>
+                        </div>
+
+                        {# Measurable #}
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-green-500 rounded-full">M</span>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Measurable' | trans }}</label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="text" x-model="currentGoal.startValue" 
+                                       class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800 dark:text-white"
+                                       :placeholder="'Starting ' + currentGoal.metric">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 mx-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                    </svg>
+                                    <input type="text" x-model="currentGoal.targetValue" 
+                                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800 dark:text-white"
+                                           :placeholder="'Target ' + currentGoal.metric">
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">{{ 'Define your starting point and target' | trans }}</p>
+                        </div>
+
+                        {# Achievable #}
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-yellow-500 rounded-full">A</span>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Achievability Assessment' | trans }}</label>
+                            </div>
+                            <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Difficulty Level' | trans }}</span>
+                                    <span class="text-sm font-medium text-wellcare-500" x-text="currentGoal.difficultyLabel"></span>
+                                </div>
+                                <input type="range" min="1" max="5" x-model="currentGoal.difficulty" class="w-full">
+                                <div class="flex justify-between mt-1 text-xs text-gray-500">
+                                    <span>{{ 'Easy' | trans }}</span>
+                                    <span>{{ 'Moderate' | trans }}</span>
+                                    <span>{{ 'Hard' | trans }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Relevant #}
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-purple-500 rounded-full">R</span>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Relevance' | trans }}</label>
+                            </div>
+                            <textarea x-model="currentGoal.relevant" 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800 dark:text-white"
+                                      rows="2"></textarea>
+                            <p class="mt-1 text-xs text-gray-500">{{ 'Why is this goal important to you?' | trans }}</p>
+                        </div>
+
+                        {# Time-bound #}
+                        <div>
+                            <div class="flex items-center mb-2">
+                                <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-red-500 rounded-full">T</span>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Timeline' | trans }}</label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-500">{{ 'Start Date' | trans }}</label>
+                                    <input type="date" x-model="currentGoal.startDate" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-500">{{ 'Target Date' | trans }}</label>
+                                    <input type="date" x-model="currentGoal.targetDate" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-800 dark:text-white">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Milestones #}
+                <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Milestones' | trans }}</h3>
+                        <button @click="addMilestone()" class="px-3 py-1 text-sm text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            + {{ 'Add Milestone' | trans }}
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        {% for milestone in milestones %}
+                        <div class="flex items-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <input type="checkbox" {% if milestone.completed %}checked{% endif %} 
+                                   @change="toggleMilestone({{ milestone.id }})"
+                                   class="w-5 h-5 mr-4 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-900 dark:text-white" {% if milestone.completed %}class="text-gray-400 line-through"{% endif %}>{{ milestone.title }}</h4>
+                                <p class="text-xs text-gray-500">{{ milestone.targetDate }} • {{ milestone.value }}</p>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full {% if milestone.completed %}bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400{% else %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400{% endif %}">
+                                {% if milestone.completed %}{{ 'Completed' | trans }}{% else %}{{ 'Pending' | trans }}{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Empty State #}
+            <div class="lg:col-span-2" x-show="!selectedGoalId">
+                <div class="p-12 text-center bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Select a Goal' | trans }}</h3>
+                    <p class="mb-4 text-gray-500 dark:text-gray-400">{{ 'Choose a goal from the list to edit or create a new one' | trans }}</p>
+                    <button @click="createNewGoal()" class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        {{ 'Create New Goal' | trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Success Notification #}
+    <div x-show="showSuccess" x-cloak 
+         class="fixed flex items-center px-6 py-3 text-white rounded-lg shadow-lg bottom-4 right-4 bg-wellcare-500"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-4"
+         x-transition:enter-end="opacity-100 transform translate-y-0">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        {{ 'Changes saved successfully!' | trans }}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('fitness') }}
+    <script>
+        function smartGoalEditor() {
+            return {
+                selectedGoalId: 1,
+                showHistory: false,
+                showSuccess: false,
+                currentGoal: {
+                    id: 1,
+                    title: 'Run a Half Marathon',
+                    category: 'Endurance',
+                    status: 'active',
+                    progress: 65,
+                    daysRemaining: 45,
+                    milestonesCompleted: 3,
+                    streak: 12,
+                    specific: 'Complete a half marathon (21.1km) without stopping',
+                    metric: 'Distance',
+                    startValue: '5km',
+                    targetValue: '21.1km',
+                    difficulty: 4,
+                    difficultyLabel: 'Challenging',
+                    relevant: 'This goal will improve my cardiovascular health and mental discipline',
+                    startDate: '2024-01-15',
+                    targetDate: '2024-04-01'
+                },
+                goals: [
+                    { id: 1, title: 'Run a Half Marathon', status: 'active', statusLabel: 'Active', progress: 65 },
+                    { id: 2, title: 'Lose 10kg', status: 'active', statusLabel: 'Active', progress: 40 },
+                    { id: 3, title: 'Do 20 Pull-ups', status: 'paused', statusLabel: 'Paused', progress: 75 }
+                ],
+                milestones: [
+                    { id: 1, title: 'Run 10km continuously', targetDate: 'Feb 15', value: '10km', completed: true },
+                    { id: 2, title: 'Complete 15km run', targetDate: 'Mar 1', value: '15km', completed: true },
+                    { id: 3, title: 'Run 18km at race pace', targetDate: 'Mar 15', value: '18km', completed: true },
+                    { id: 4, title: 'Complete half marathon', targetDate: 'Apr 1', value: '21.1km', completed: false }
+                ],
+                selectGoal(id) {
+                    this.selectedGoalId = id;
+                },
+                createNewGoal() {
+                    // Navigate to goal wizard
+                    window.location.href = '{{ path('fitness_goal_wizard') }}';
+                },
+                saveGoal() {
+                    this.showSuccess = true;
+                    setTimeout(() => this.showSuccess = false, 3000);
+                },
+                addMilestone() {
+                    alert('Add milestone functionality');
+                },
+                toggleMilestone(id) {
+                    // Toggle milestone completion
+                }
+            };
+        }
+    </script>
+{% endblock %}

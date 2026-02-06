@@ -1,0 +1,182 @@
+<div class="trail-map-component" x-data="trailMap()" x-init="initMap()">
+    <!-- Map Container -->
+    <div id="{{ mapId|default('trail-map') }}" class="w-full h-full min-h-[300px] rounded-lg"></div>
+    
+    <!-- Map Controls -->
+    <div class="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
+        <button @click="zoomIn()" class="flex items-center justify-center w-10 h-10 text-gray-700 transition bg-white rounded-lg shadow-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+        <button @click="zoomOut()" class="flex items-center justify-center w-10 h-10 text-gray-700 transition bg-white rounded-lg shadow-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-minus"></i>
+        </button>
+        <button @click="centerOnTrail()" class="flex items-center justify-center w-10 h-10 text-gray-700 transition bg-white rounded-lg shadow-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-crosshairs"></i>
+        </button>
+        <button @click="toggleLayer()" class="flex items-center justify-center w-10 h-10 text-gray-700 transition bg-white rounded-lg shadow-md dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-layer-group"></i>
+        </button>
+    </div>
+    
+    <!-- Trail Info Overlay -->
+    <div x-show="showInfo" x-transition class="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 z-[1000]">
+        <div class="flex items-start gap-4">
+            <img :src="trail.image" :alt="trail.name" class="object-cover w-20 h-16 rounded-lg">
+            <div class="flex-1">
+                <h4 class="font-semibold text-gray-900 dark:text-white" x-text="trail.name"></h4>
+                <p class="text-sm text-gray-500"><span x-text="trail.distance"></span> km • <span x-text="trail.difficulty"></span></p>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="px-2 py-0.5 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 rounded-full text-xs">
+                        <i class="mr-1 fa-solid fa-star text-amber-500"></i><span x-text="trail.rating"></span>
+                    </span>
+                </div>
+            </div>
+            <button @click="showInfo = false" class="p-1 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Distance Tool -->
+    <div class="absolute bottom-4 right-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 z-[1000]">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-ruler text-wellcare-500"></i>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">Distance:</span>
+            <span class="text-sm text-gray-600 dark:text-gray-400" x-text="measuredDistance + ' km'"></span>
+        </div>
+        <button @click="startDistanceMeasure()" x-show="!measuring" class="mt-2 w-full px-3 py-1.5 text-xs bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition">
+            Measure Distance
+        </button>
+        <button @click="stopDistanceMeasure()" x-show="measuring" class="mt-2 w-full px-3 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+            Stop Measuring
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('trailMap', () => ({
+        map: null,
+        trailLayer: null,
+        measuring: false,
+        measuredDistance: 0,
+        showInfo: true,
+        currentLayer: 'street',
+        trail: {
+            id: {{ trailId|default(1) }},
+            name: '{{ trailName|default('Forest Wellness Path') }}',
+            distance: {{ distance|default(5.2) }},
+            difficulty: '{{ difficulty|default('Easy') }}',
+            rating: {{ rating|default(4.9) }},
+            image: '{{ trailImage|default('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop') }}',
+            coordinates: {{ coordinates|default('[[40.7829, -73.9654], [40.7835, -73.9650], [40.7840, -73.9645], [40.7845, -73.9640], [40.7850, -73.9635]]')|raw }}
+        },
+        
+        initMap() {
+            if (typeof L === 'undefined') return;
+            
+            const mapId = '{{ mapId|default('trail-map') }}';
+            this.map = L.map(mapId).setView([40.7829, -73.9654], 14);
+            
+            // Add tile layer
+            this.addTileLayer();
+            
+            // Add trail route
+            this.addTrailRoute();
+            
+            // Add markers
+            this.addMarkers();
+        },
+        
+        addTileLayer() {
+            const urls = {
+                street: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                topo: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+            };
+            
+            L.tileLayer(urls[this.currentLayer], {
+                attribution: this.currentLayer === 'satellite' ? '© Esri' : '© OpenStreetMap contributors'
+            }).addTo(this.map);
+        },
+        
+        addTrailRoute() {
+            const coordinates = this.trail.coordinates;
+            this.trailLayer = L.polyline(coordinates, {
+                color: '#00A790',
+                weight: 5,
+                opacity: 0.8
+            }).addTo(this.map);
+            
+            this.map.fitBounds(this.trailLayer.getBounds());
+        },
+        
+        addMarkers() {
+            // Start marker
+            L.marker(this.trail.coordinates[0])
+                .addTo(this.map)
+                .bindPopup('<b>Trailhead</b><br>Starting point');
+            
+            // End marker
+            L.marker(this.trail.coordinates[this.trail.coordinates.length - 1])
+                .addTo(this.map)
+                .bindPopup('<b>End Point</b><br>Finish line');
+            
+            // POI markers
+            const pois = [
+                { coords: this.trail.coordinates[2], name: 'Scenic Viewpoint', icon: 'fa-binoculars' },
+                { coords: this.trail.coordinates[3], name: 'Rest Area', icon: 'fa-chair' }
+            ];
+            
+            pois.forEach(poi => {
+                const icon = L.divIcon({
+                    html: `<div class="flex items-center justify-center w-8 h-8 text-white rounded-full shadow-lg bg-wellcare-500"><i class="fa-solid ${poi.icon}"></i></div>`,
+                    className: 'poi-marker',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+                
+                L.marker(poi.coords, { icon })
+                    .addTo(this.map)
+                    .bindPopup(`<b>${poi.name}</b>`);
+            });
+        },
+        
+        zoomIn() {
+            this.map.zoomIn();
+        },
+        
+        zoomOut() {
+            this.map.zoomOut();
+        },
+        
+        centerOnTrail() {
+            this.map.fitBounds(this.trailLayer.getBounds());
+            this.showInfo = true;
+        },
+        
+        toggleLayer() {
+            const layers = ['street', 'satellite', 'topo'];
+            const currentIndex = layers.indexOf(this.currentLayer);
+            this.currentLayer = layers[(currentIndex + 1) % layers.length];
+            
+            this.map.eachLayer(layer => {
+                if (layer instanceof L.TileLayer) {
+                    this.map.removeLayer(layer);
+                }
+            });
+            this.addTileLayer();
+        },
+        
+        startDistanceMeasure() {
+            this.measuring = true;
+            this.measuredDistance = 0;
+            // Distance measurement logic would go here
+        },
+        
+        stopDistanceMeasure() {
+            this.measuring = false;
+        }
+    }));
+});
+</script>

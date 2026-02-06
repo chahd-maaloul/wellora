@@ -1,0 +1,533 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Groupes - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('trail-community') }}
+{% endblock %}
+
+{% block body %}
+<div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen" x-data="{
+    activeTab: 'discover',
+    filterCategory: ''
+}">
+    {# Header #}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                <i class="fas fa-users text-wellcare-500 mr-2"></i>
+                Groupes Communautaires
+            </h1>
+            <p class="mt-1 text-gray-500 dark:text-gray-400">
+                Rejoignez des groupes de randonneurs et participez à des événements
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex gap-3">
+            <a href="#" class="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-medium flex items-center gap-2">
+                <i class="fas fa-users-cog"></i>
+                Gérer mes groupes
+            </a>
+            <button class="btn-primary px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2">
+                <i class="fas fa-plus"></i>
+                Créer un groupe
+            </button>
+        </div>
+    </div>
+
+    {# Stats #}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Mes groupes</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">5</p>
+                </div>
+                <div class="w-10 h-10 bg-wellcare-100 dark:bg-wellcare-900/30 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Événements à venir</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+                </div>
+                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-purple-600 dark:text-purple-400"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Membres totaux</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">847</p>
+                </div>
+                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-user-friends text-blue-600 dark:text-blue-400"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Badges obtenus</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">12</p>
+                </div>
+                <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-medal text-amber-600 dark:text-amber-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Tabs #}
+    <div class="flex gap-2 mb-6 overflow-x-auto">
+        <button @click="activeTab = 'discover'" 
+                class="px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'discover' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'">
+            <i class="fas fa-compass mr-1"></i> Découvrir
+        </button>
+        <button @click="activeTab = 'my-groups'"
+                class="px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'my-groups' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'">
+            <i class="fas fa-user-friends mr-1"></i> Mes groupes
+        </button>
+        <button @click="activeTab = 'events'"
+                class="px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'events' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'">
+            <i class="fas fa-calendar mr-1"></i> Événements
+        </button>
+    </div>
+
+    {# Discover Groups #}
+    <div x-show="activeTab === 'discover'" class="space-y-6">
+        {# Filters #}
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+            <div class="flex flex-wrap gap-3">
+                <select x-model="filterCategory" class="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                    <option value="">Toutes catégories</option>
+                    <option value="mountain">Montagne</option>
+                    <option value="forest">Forêt</option>
+                    <option value="coastal">Côtier</option>
+                    <option value="beginners">Débutants</option>
+                    <option value="advanced">Avancés</option>
+                    <option value="family">Famille</option>
+                </select>
+                <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-filter mr-1"></i> Plus de filtres
+                </button>
+            </div>
+        </div>
+
+        {# Groups Grid #}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {# Group Card 1 #}
+            <div class="group-card bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-wellcare-500 to-wellcare-light-500 relative">
+                    <div class="absolute -bottom-6 left-4">
+                        <div class="w-16 h-16 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&h=100&fit=crop" class="w-full h-full rounded-lg object-cover" alt="Montagne">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 p-4">
+                    <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">Montagne</span>
+                    <h3 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">Amis de la Montagne</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        Groupe de passionnés de randonnée en montagne. Partage d'expériences, conseils et organisation de sorties collectives.
+                    </p>
+                    
+                    {# Stats #}
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-users mr-1"></i> 342</span>
+                        <span><i class="fas fa-calendar mr-1"></i> 12 événements</span>
+                    </div>
+                    
+                    {# Member Avatars #}
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="member-avatar-stack flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+339</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600 transition-colors">
+                            Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Group Card 2 #}
+            <div class="group-card bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-green-500 to-emerald-500 relative">
+                    <div class="absolute -bottom-6 left-4">
+                        <div class="w-16 h-16 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=100&h=100&fit=crop" class="w-full h-full rounded-lg object-cover" alt="Forêt">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 p-4">
+                    <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">Forêt</span>
+                    <h3 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">Explorateurs des Bois</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        Découvrir les sentiers forestiers de France. Randonnées douces, observation de la faune et flore.
+                    </p>
+                    
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-users mr-1"></i> 189</span>
+                        <span><i class="fas fa-calendar mr-1"></i> 8 événements</span>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="member-avatar-stack flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+186</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600 transition-colors">
+                            Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Group Card 3 #}
+            <div class="group-card bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-orange-400 to-amber-500 relative">
+                    <div class="absolute -bottom-6 left-4">
+                        <div class="w-16 h-16 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100&h=100&fit=crop" class="w-full h-full rounded-lg object-cover" alt="Côtier">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 p-4">
+                    <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs rounded-full">Côtier</span>
+                    <h3 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">Randonneurs Côtiers</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        Les sentiers littoraux de notre belle France. Falaises, plages et paysages marins exceptionnels.
+                    </p>
+                    
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-users mr-1"></i> 256</span>
+                        <span><i class="fas fa-calendar mr-1"></i> 15 événements</span>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="member-avatar-stack flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+253</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600 transition-colors">
+                            Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Group Card 4 #}
+            <div class="group-card bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-purple-500 to-pink-500 relative">
+                    <div class="absolute -bottom-6 left-4">
+                        <div class="w-16 h-16 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=100&h=100&fit=crop" class="w-full h-full rounded-lg object-cover" alt="Famille">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 p-4">
+                    <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">Famille</span>
+                    <h3 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">Rando en Famille</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        Sorties adaptées aux familles avec enfants. Moments partagés et découverte de la nature.
+                    </p>
+                    
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-users mr-1"></i> 423</span>
+                        <span><i class="fas fa-calendar mr-1"></i> 24 événements</span>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="member-avatar-stack flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+420</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600 transition-colors">
+                            Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Group Card 5 #}
+            <div class="group-card bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-red-500 to-orange-500 relative">
+                    <div class="absolute -bottom-6 left-4">
+                        <div class="w-16 h-16 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=100&h=100&fit=crop" class="w-full h-full rounded-lg object-cover" alt="Expert">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 p-4">
+                    <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs rounded-full">Avancés</span>
+                    <h3 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">Experts de l'Extrême</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        Pour les randonneurs expérimentés recherchant des défis. Trails techniques et haute montagne.
+                    </p>
+                    
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-users mr-1"></i> 156</span>
+                        <span><i class="fas fa-calendar mr-1"></i> 6 événements</span>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="member-avatar-stack flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-black to-gray-700 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+153</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600 transition-colors">
+                            Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Group Card 6 #}
+            <div class="group-card bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-24 bg-gradient-to-r from-teal-500 to-cyan-500 relative">
+                    <div class="absolute -bottom-6 left-4">
+                        <div class="w-16 h-16 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop" class="w-full h-full rounded-lg object-cover" alt="Photo">
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 p-4">
+                    <span class="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-xs rounded-full">Photo</span>
+                    <h3 class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">Photographes de Nature</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                        Capturer les plus beaux moments de nos randonnées. Conseils photo et partage de clichés.
+                    </p>
+                    
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-users mr-1"></i> 278</span>
+                        <span><i class="fas fa-calendar mr-1"></i> 9 événements</span>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="member-avatar-stack flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+275</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600 transition-colors">
+                            Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# View More #}
+        <div class="text-center mt-8">
+            <button class="px-6 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <i class="fas fa-plus mr-2"></i>Voir plus de groupes
+            </button>
+        </div>
+    </div>
+
+    {# My Groups #}
+    <div x-show="activeTab === 'my-groups'" style="display: none;">
+        <div class="grid md:grid-cols-2 gap-4">
+            {# My Group 1 #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-r from-wellcare-500 to-wellcare-light-500 flex items-center justify-center text-white text-2xl">
+                        <i class="fas fa-mountain"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Amis de la Montagne</h3>
+                            <span class="px-2 py-0.5 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300 text-xs rounded-full">Admin</span>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">342 membres • 12 événements</p>
+                        <div class="mt-4 flex gap-2">
+                            <button class="flex-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-cog mr-1"></i> Gérer
+                            </button>
+                            <button class="flex-1 px-3 py-1.5 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <i class="fas fa-calendar mr-1"></i> Événements
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# My Group 2 #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl">
+                        <i class="fas fa-child"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Rando en Famille</h3>
+                            <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">Membre</span>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">423 membres • 24 événements</p>
+                        <div class="mt-4 flex gap-2">
+                            <button class="flex-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-calendar mr-1"></i> Événements
+                            </button>
+                            <button class="flex-1 px-3 py-1.5 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Quitter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# My Group 3 #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center text-white text-2xl">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Photographes de Nature</h3>
+                            <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">Membre</span>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">278 membres • 9 événements</p>
+                        <div class="mt-4 flex gap-2">
+                            <button class="flex-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-calendar mr-1"></i> Événements
+                            </button>
+                            <button class="flex-1 px-3 py-1.5 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Quitter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Events #}
+    <div x-show="activeTab === 'events'" style="display: none;">
+        <div class="space-y-4">
+            {# Event Card 1 #}
+            <div class="event-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                    <div class="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-wellcare-400 to-wellcare-600 rounded-xl flex flex-col items-center justify-center text-white">
+                        <span class="text-xs font-medium">JAN</span>
+                        <span class="text-2xl font-bold">15</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Randonnée Dominicale - Montagne Bleue</h3>
+                            <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">Ouvert</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <i class="fas fa-map-marker-alt mr-1"></i> Départ: Parking du Col • 9:00
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
+                            Rejoignez-nous pour une belle randonnée de 10km avec un dénivelé de 600m. Niveau modéré, ouvert à tous !
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+12</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600">
+                            S'inscrire
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Event Card 2 #}
+            <div class="event-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                    <div class="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex flex-col items-center justify-center text-white">
+                        <span class="text-xs font-medium">JAN</span>
+                        <span class="text-2xl font-bold">22</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Sortie Photo - Lac de Haute Montagne</h3>
+                            <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs rounded-full">Places limitées</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <i class="fas fa-map-marker-alt mr-1"></i> Départ: Bureau du groupe • 7:00
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
+                            Session photo special sunrise. Amenez votre trépied et vos meilleurs objectifs !
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+6</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600">
+                            S'inscrire
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Event Card 3 #}
+            <div class="event-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                    <div class="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex flex-col items-center justify-center text-white">
+                        <span class="text-xs font-medium">JAN</span>
+                        <span class="text-2xl font-bold">29</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Rando Familiale - Forêt de Pins</h3>
+                            <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">Ouvert</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <i class="fas fa-map-marker-alt mr-1"></i> Départ: Entrée forestière • 10:00
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
+                            Une sortie douce adaptée aux familles avec enfants. 5km sur un sentier ombragé.
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-red-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white dark:border-gray-800"></div>
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">+18</div>
+                        </div>
+                        <button class="px-4 py-1.5 bg-wellcare-500 text-white rounded-lg text-sm hover:bg-wellcare-600">
+                            S'inscrire
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

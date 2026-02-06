@@ -1,0 +1,382 @@
+/* Coach Module Styles */
+
+/* Dashboard Styles */
+.coach-dashboard {
+    @apply bg-gray-50 dark:bg-gray-900;
+}
+
+.coach-stat-card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6;
+}
+
+.coach-stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+}
+
+.coach-stat-icon.blue {
+    @apply bg-blue-100 dark:bg-blue-900/30;
+}
+
+.coach-stat-icon.green {
+    @apply bg-green-100 dark:bg-green-900/30;
+}
+
+.coach-stat-icon.purple {
+    @apply bg-purple-100 dark:bg-purple-900/30;
+}
+
+.coach-stat-icon.amber {
+    @apply bg-amber-100 dark:bg-amber-900/30;
+}
+
+.coach-stat-icon.wellcare {
+    @apply bg-wellcare-100 dark:bg-wellcare-900/30;
+}
+
+/* Activity Feed */
+.activity-item {
+    @apply flex items-start gap-4 p-4 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50;
+}
+
+.activity-icon {
+    @apply w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0;
+}
+
+.activity-icon.green {
+    @apply bg-green-100 dark:bg-green-900/30 text-green-500;
+}
+
+.activity-icon.amber {
+    @apply bg-amber-100 dark:bg-amber-900/30 text-amber-500;
+}
+
+.activity-icon.blue {
+    @apply bg-blue-100 dark:bg-blue-900/30 text-blue-500;
+}
+
+.activity-icon.purple {
+    @apply bg-purple-100 dark:bg-purple-900/30 text-purple-500;
+}
+
+.activity-icon.red {
+    @apply bg-red-100 dark:bg-red-900/30 text-red-500;
+}
+
+/* Session Cards */
+.session-card {
+    @apply p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 transition-all hover:shadow-md;
+}
+
+.session-card.confirmed {
+    @apply border-l-4 border-l-green-500;
+}
+
+.session-card.pending {
+    @apply border-l-4 border-l-amber-500;
+}
+
+.session-card.cancelled {
+    @apply border-l-4 border-l-red-500 opacity-60;
+}
+
+/* Client Cards */
+.client-card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-all hover:shadow-md;
+}
+
+.client-avatar {
+    @apply w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 flex items-center justify-center text-wellcare-600 dark:text-wellcare-400 font-medium;
+}
+
+.client-status {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.client-status.active {
+    @apply bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400;
+}
+
+.client-status.paused {
+    @apply bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400;
+}
+
+.client-status.inactive {
+    @apply bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.client-status.new {
+    @apply bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+/* Progress Bars */
+.progress-bar {
+    @apply w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2;
+}
+
+.progress-bar-fill {
+    @apply h-2 rounded-full transition-all duration-500;
+}
+
+.progress-bar-fill.green {
+    @apply bg-green-500;
+}
+
+.progress-bar-fill.blue {
+    @apply bg-blue-500;
+}
+
+.progress-bar-fill.amber {
+    @apply bg-amber-500;
+}
+
+.progress-bar-fill.red {
+    @apply bg-red-500;
+}
+
+.progress-bar-fill.wellcare {
+    @apply bg-wellcare-500;
+}
+
+/* Program Designer */
+.program-builder {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700;
+}
+
+.exercise-library {
+    @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4;
+}
+
+.exercise-item {
+    @apply flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 cursor-pointer transition-all hover:shadow-sm;
+}
+
+.exercise-item.selected {
+    @apply ring-2 ring-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20;
+}
+
+.exercise-category {
+    @apply flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors;
+}
+
+.exercise-category.active {
+    @apply bg-wellcare-500 text-white;
+}
+
+.exercise-category:not(.active) {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600;
+}
+
+/* Communication Hub */
+.conversation-item {
+    @apply flex items-center gap-3 p-4 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.conversation-item.active {
+    @apply bg-wellcare-50 dark:bg-wellcare-900/20;
+}
+
+.conversation-avatar {
+    @apply w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 flex items-center justify-center text-wellcare-600 dark:text-wellcare-400 font-medium flex-shrink-0;
+}
+
+.chat-bubble {
+    @apply max-w-md p-3 rounded-lg;
+}
+
+.chat-bubble.sent {
+    @apply bg-wellcare-500 text-white rounded-br-md;
+}
+
+.chat-bubble.received {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md;
+}
+
+.chat-bubble.sent .chat-time {
+    @apply text-white/70 text-right;
+}
+
+.chat-bubble.received .chat-time {
+    @apply text-gray-400 text-left;
+}
+
+/* Reporting Tools */
+.report-config-card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700;
+}
+
+.report-type-option {
+    @apply p-4 text-left border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.report-type-option.selected {
+    @apply ring-2 ring-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-500;
+}
+
+.metric-checkbox {
+    @apply flex items-center gap-2 p-3 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700;
+}
+
+.metric-checkbox input:checked + span {
+    @apply text-wellcare-600 dark:text-wellcare-400;
+}
+
+.quick-export-btn {
+    @apply flex items-center justify-between w-full p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50;
+}
+
+.quick-export-btn:hover i {
+    @apply text-wellcare-500;
+}
+
+/* Charts Container */
+.chart-container {
+    @apply bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4;
+}
+
+/* Calendar Integration */
+.fc-coach-theme {
+    @apply bg-white dark:bg-gray-800 rounded-lg;
+}
+
+.fc-event {
+    @apply bg-wellcare-500 border-wellcare-500 rounded px-2 py-1 text-sm;
+}
+
+.fc-event.session-confirmed {
+    @apply bg-green-500 border-green-500;
+}
+
+.fc-event.session-pending {
+    @apply bg-amber-500 border-amber-500;
+}
+
+.fc-event.session-cancelled {
+    @apply bg-red-500 border-red-500;
+}
+
+/* Tables */
+.coach-table {
+    @apply w-full text-sm text-left;
+}
+
+.coach-table th {
+    @apply px-4 py-3 font-semibold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700;
+}
+
+.coach-table td {
+    @apply px-4 py-3 border-b border-gray-100 dark:border-gray-700;
+}
+
+.coach-table tr:hover td {
+    @apply bg-gray-50 dark:bg-gray-700/30;
+}
+
+/* Badges */
+.coach-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.coach-badge.success {
+    @apply bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400;
+}
+
+.coach-badge.warning {
+    @apply bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400;
+}
+
+.coach-badge.danger {
+    @apply bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.coach-badge.info {
+    @apply bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+/* Buttons */
+.coach-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.coach-btn.primary {
+    @apply bg-wellcare-500 text-white hover:bg-wellcare-600 focus:ring-wellcare-500;
+}
+
+.coach-btn.secondary {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500;
+}
+
+.coach-btn.success {
+    @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-500;
+}
+
+.coach-btn.danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
+}
+
+.coach-btn.icon {
+    @apply p-2 rounded-lg;
+}
+
+/* Forms */
+.coach-input {
+    @apply w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500;
+}
+
+.coach-select {
+    @apply w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500;
+}
+
+/* Tabs */
+.coach-tabs {
+    @apply flex gap-2 border-b border-gray-200 dark:border-gray-700;
+}
+
+.coach-tab {
+    @apply px-4 py-2 font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent transition-colors hover:text-gray-700 dark:hover:text-gray-300;
+}
+
+.coach-tab.active {
+    @apply text-wellcare-500 border-wellcare-500;
+}
+
+/* Animations */
+@keyframes pulse-activity {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse-activity {
+    animation: pulse-activity 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .coach-dashboard .stat-cards {
+        @apply grid-cols-2;
+    }
+    
+    .coach-dashboard .activity-feed {
+        @apply order-first;
+    }
+    
+    .conversation-list {
+        @apply max-h-64;
+    }
+}
+
+/* Dark Mode Specific */
+.dark .coach-table th {
+    @apply bg-gray-700/50;
+}
+
+.dark .coach-table td {
+    @apply border-gray-700;
+}
+
+.dark .coach-table tr:hover td {
+    @apply bg-gray-700/30;
+}

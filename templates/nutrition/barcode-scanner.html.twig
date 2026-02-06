@@ -1,0 +1,945 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Barcode Scanner - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+    <style>
+        .scanner-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .scanner-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .scanner-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 1024px) {
+            .scanner-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .camera-section {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .camera-preview {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #1f2937;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .camera-placeholder {
+            color: #9ca3af;
+            text-align: center;
+        }
+        
+        .camera-placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+        
+        .scan-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 40%;
+            border: 3px solid #10b981;
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+        
+        .scan-area::before,
+        .scan-area::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-color: #10b981;
+            border-style: solid;
+        }
+        
+        .scan-area::before {
+            top: -3px;
+            left: -3px;
+            border-width: 4px 0 0 4px;
+            border-radius: 12px 0 0 0;
+        }
+        
+        .scan-area::after {
+            bottom: -3px;
+            right: -3px;
+            border-width: 0 4px 4px 0;
+            border-radius: 0 0 12px 0;
+        }
+        
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #10b981;
+            animation: scan 2s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+        
+        .camera-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .camera-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .camera-btn.primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .camera-btn.secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .camera-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .camera-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .manual-entry {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .manual-entry-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        
+        .barcode-input {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .barcode-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .barcode-input input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        
+        .product-section {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+        
+        .product-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .product-brand {
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .product-barcode {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .nutrition-info {
+            margin-bottom: 20px;
+        }
+        
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .nutrition-item {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .nutrition-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .nutrition-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .macro-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .macro-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .macro-header {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .macro-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .macro-value {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .macro-progress {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .macro-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .macro-fill.proteins { background: #f97316; }
+        .macro-fill.carbs { background: #3b82f6; }
+        .macro-fill.fats { background: #a855f7; }
+        
+        .serving-selector {
+            margin-bottom: 20px;
+        }
+        
+        .serving-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        
+        .serving-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .serving-option {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .serving-option:hover {
+            background: #e5e7eb;
+        }
+        
+        .serving-option.active {
+            background: #10b981;
+            color: white;
+        }
+        
+        .custom-serving {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .custom-serving input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        
+        .custom-serving input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+        
+        .add-to-log {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .add-to-log:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .recent-scans {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 24px;
+        }
+        
+        .recent-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        
+        .recent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .recent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .recent-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .recent-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .recent-barcode {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        
+        .recent-calories {
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        .recent-time {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        
+        .scan-history-empty {
+            text-align: center;
+            padding: 32px;
+            color: #9ca3af;
+        }
+        
+        .scan-history-empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f4f6;
+            border-top-color: #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-message {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .status-message.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .status-message.success {
+            background: #10b981;
+        }
+        
+        .status-message.error {
+            background: #ef4444;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="scanner-container">
+        <div class="scanner-header">
+            <h1 class="scanner-title">📷 Barcode Scanner</h1>
+            <a href="{{ path('nutrition_food_logger') }}" class="add-to-log" style="width: auto; padding: 10px 20px;">
+                ← Back to Food Logger
+            </a>
+        </div>
+        
+        <div class="scanner-grid">
+            <div class="camera-section">
+                <div class="camera-preview" id="cameraPreview">
+                    <div class="camera-placeholder" id="cameraPlaceholder">
+                        <div class="camera-placeholder-icon">📷</div>
+                        <p>Camera preview will appear here</p>
+                        <p style="font-size: 0.875rem; margin-top: 8px;">Position the barcode within the frame</p>
+                    </div>
+                    <div class="scan-area" id="scanArea" style="display: none;">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button class="camera-btn primary" id="startScanBtn" onclick="startCamera()">
+                        📷 Start Camera
+                    </button>
+                    <button class="camera-btn secondary" id="stopScanBtn" onclick="stopCamera()" style="display: none;">
+                        ⏹️ Stop Camera
+                    </button>
+                    <button class="camera-btn secondary" onclick="captureImage()">
+                        📸 Capture
+                    </button>
+                </div>
+                
+                <div class="manual-entry">
+                    <div class="manual-entry-title">Or enter barcode manually:</div>
+                    <div class="barcode-input">
+                        <input type="text" id="manualBarcode" placeholder="Enter barcode number...">
+                        <button class="camera-btn primary" onclick="lookupBarcode()">🔍 Look Up</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-section" id="productSection">
+                <div class="scan-history-empty" id="emptyState">
+                    <div class="scan-history-empty-icon">📊</div>
+                    <h3 style="color: #374151; margin-bottom: 8px;">No Product Selected</h3>
+                    <p>Scan a barcode or enter one manually to view product information</p>
+                </div>
+                
+                <div id="productInfo" style="display: none;">
+                    <div class="product-header">
+                        <div>
+                            <div class="product-name" id="productName">--</div>
+                            <div class="product-brand" id="productBrand">--</div>
+                        </div>
+                        <div class="product-barcode" id="productBarcode">--</div>
+                    </div>
+                    
+                    <div class="serving-selector">
+                        <div class="serving-title">Serving Size</div>
+                        <div class="serving-options" id="servingOptions">
+                            {% for suggestion in servingSuggestions %}
+                                <div class="serving-option" data-size="{{ suggestion.size }}" data-unit="{{ suggestion.unit }}" onclick="selectServing(this)">
+                                    {{ suggestion.size }} {{ suggestion.unit }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="custom-serving">
+                            <input type="number" id="customServing" placeholder="Custom amount" onchange="updateCustomServing()">
+                            <select id="customUnit">
+                                <option value="ml">ml</option>
+                                <option value="g">g</option>
+                                <option value="oz">oz</option>
+                                <option value="piece">piece</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="nutrition-info">
+                        <div class="nutrition-grid">
+                            <div class="nutrition-item">
+                                <div class="nutrition-value" id="servingCalories">0</div>
+                                <div class="nutrition-label">Calories</div>
+                            </div>
+                            <div class="nutrition-item">
+                                <div class="nutrition-value" id="servingProteins">0g</div>
+                                <div class="nutrition-label">Protein</div>
+                            </div>
+                            <div class="nutrition-item">
+                                <div class="nutrition-value" id="servingCarbs">0g</div>
+                                <div class="nutrition-label">Carbs</div>
+                            </div>
+                            <div class="nutrition-item">
+                                <div class="nutrition-value" id="servingFats">0g</div>
+                                <div class="nutrition-label">Fats</div>
+                            </div>
+                        </div>
+                        
+                        <div class="macro-bars">
+                            <div class="macro-bar">
+                                <div class="macro-header">
+                                    <span class="macro-name">Protein</span>
+                                    <span class="macro-value"><span id="totalProteins">0</span>g</span>
+                                </div>
+                                <div class="macro-progress">
+                                    <div class="macro-fill proteins" id="proteinBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="macro-bar">
+                                <div class="macro-header">
+                                    <span class="macro-name">Carbohydrates</span>
+                                    <span class="macro-value"><span id="totalCarbs">0</span>g</span>
+                                </div>
+                                <div class="macro-progress">
+                                    <div class="macro-fill carbs" id="carbsBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="macro-bar">
+                                <div class="macro-header">
+                                    <span class="macro-name">Fats</span>
+                                    <span class="macro-value"><span id="totalFats">0</span>g</span>
+                                </div>
+                                <div class="macro-progress">
+                                    <div class="macro-fill fats" id="fatsBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" for="mealTypeSelect">Add to meal:</label>
+                        <select class="form-input" id="mealTypeSelect">
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snacks</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" for="productQuantity">Quantity:</label>
+                        <input type="number" class="form-input" id="productQuantity" value="1" step="0.5">
+                    </div>
+                    
+                    <button class="add-to-log" onclick="addProductToLog()">
+                        ➕ Add to Food Log
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recent-scans">
+            <h3 class="recent-title">Recent Scans</h3>
+            <div class="recent-list" id="recentScans">
+                {% for scan in recentScans %}
+                    <div class="recent-item" onclick="lookupScannedProduct('{{ scan.barcode }}')">
+                        <div>
+                            <div class="recent-name">{{ scan.name }}</div>
+                            <div class="recent-barcode">{{ scan.barcode }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="recent-calories">{{ scan.calories }} cal</div>
+                            <div class="recent-time">{{ scan.scannedAt|date('M j, H:i') }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <div class="status-message" id="statusMessage"></div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/barcode-scanner.js') }}"></script>
+    <script>
+        let currentProduct = null;
+        let selectedServing = { size: 100, unit: 'ml' };
+        let mediaStream = null;
+        
+        function startCamera() {
+            const preview = document.getElementById('cameraPreview');
+            const placeholder = document.getElementById('cameraPlaceholder');
+            const scanArea = document.getElementById('scanArea');
+            const startBtn = document.getElementById('startScanBtn');
+            const stopBtn = document.getElementById('stopScanBtn');
+            
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(function(stream) {
+                        mediaStream = stream;
+                        const video = document.createElement('video');
+                        video.srcObject = stream;
+                        video.autoplay = true;
+                        video.playsInline = true;
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        video.style.borderRadius = '12px';
+                        
+                        placeholder.style.display = 'none';
+                        scanArea.style.display = 'block';
+                        startBtn.style.display = 'none';
+                        stopBtn.style.display = 'flex';
+                        
+                        preview.insertBefore(video, scanArea);
+                        
+                        // Start barcode detection
+                        startBarcodeDetection(video);
+                    })
+                    .catch(function(error) {
+                        console.error('Camera access denied:', error);
+                        showStatus('Camera access denied. Please check permissions.', 'error');
+                        placeholder.innerHTML = `
+                            <div class="scan-history-empty-icon">🚫</div>
+                            <p>Camera access denied</p>
+                            <p style="font-size: 0.875rem; margin-top: 8px;">Please allow camera permissions or use manual entry</p>
+                        `;
+                    });
+            } else {
+                showStatus('Camera not supported on this device', 'error');
+            }
+        }
+        
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            const preview = document.getElementById('cameraPreview');
+            const placeholder = document.getElementById('cameraPlaceholder');
+            const scanArea = document.getElementById('scanArea');
+            const video = preview.querySelector('video');
+            const startBtn = document.getElementById('startScanBtn');
+            const stopBtn = document.getElementById('stopScanBtn');
+            
+            if (video) {
+                video.remove();
+            }
+            
+            placeholder.style.display = 'block';
+            placeholder.innerHTML = `
+                <div class="scan-history-empty-icon">📷</div>
+                <p>Camera preview will appear here</p>
+                <p style="font-size: 0.875rem; margin-top: 8px;">Position the barcode within the frame</p>
+            `;
+            scanArea.style.display = 'none';
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+        }
+        
+        function startBarcodeDetection(video) {
+            // In production, you would use a library like ZXing or Dynamsoft
+            // For demo purposes, we'll simulate detection
+            console.log('Barcode detection started...');
+            
+            // Simulated detection for demo
+            setTimeout(() => {
+                // This would be replaced with actual barcode detection
+            }, 1000);
+        }
+        
+        function captureImage() {
+            if (!mediaStream) {
+                showStatus('Please start the camera first', 'error');
+                return;
+            }
+            
+            const video = document.querySelector('#cameraPreview video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // In production, process the image to detect barcode
+            console.log('Image captured for barcode detection');
+            showStatus('Processing image...', 'success');
+        }
+        
+        function lookupBarcode() {
+            const barcode = document.getElementById('manualBarcode').value.trim();
+            if (!barcode) {
+                showStatus('Please enter a barcode number', 'error');
+                return;
+            }
+            
+            lookupScannedProduct(barcode);
+        }
+        
+        function lookupScannedProduct(barcode) {
+            showLoading(true);
+            
+            // Simulated API call - replace with actual API
+            setTimeout(() => {
+                // Demo product data
+                const products = {
+                    '5000293781234': { name: 'Coca-Cola Zero', brand: 'Coca-Cola', calories: 0, proteins: 0, carbs: 0, fats: 0, servingSize: 100, servingUnit: 'ml' },
+                    '8718112311111': { name: 'Lait demi-écrémé', brand: 'Candia', calories: 46, proteins: 3.4, carbs: 5, fats: 1.5, servingSize: 100, servingUnit: 'ml' },
+                    '7622301278923': { name: 'Barre chocolatée', brand: 'Kinder', calories: 230, proteins: 4, carbs: 26, fats: 12, servingSize: 1, servingUnit: 'piece' }
+                };
+                
+                const product = products[barcode];
+                
+                if (product) {
+                    displayProduct(barcode, product);
+                    showStatus('Product found!', 'success');
+                } else {
+                    showStatus('Product not found in database', 'error');
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('productInfo').style.display = 'none';
+                }
+                
+                showLoading(false);
+            }, 1000);
+        }
+        
+        function displayProduct(barcode, product) {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('productInfo').style.display = 'block';
+            
+            currentProduct = { barcode, ...product };
+            
+            document.getElementById('productName').textContent = product.name;
+            document.getElementById('productBrand').textContent = product.brand || 'Unknown';
+            document.getElementById('productBarcode').textContent = barcode;
+            
+            updateNutritionDisplay();
+        }
+        
+        function selectServing(element) {
+            document.querySelectorAll('.serving-option').forEach(opt => opt.classList.remove('active'));
+            element.classList.add('active');
+            
+            selectedServing = {
+                size: parseFloat(element.dataset.size),
+                unit: element.dataset.unit
+            };
+            
+            updateNutritionDisplay();
+        }
+        
+        function updateCustomServing() {
+            const customSize = parseFloat(document.getElementById('customServing').value);
+            const customUnit = document.getElementById('customUnit').value;
+            
+            if (customSize && customSize > 0) {
+                selectedServing = { size: customSize, unit: customUnit };
+                document.querySelectorAll('.serving-option').forEach(opt => opt.classList.remove('active'));
+                updateNutritionDisplay();
+            }
+        }
+        
+        function updateNutritionDisplay() {
+            if (!currentProduct) return;
+            
+            const baseSize = currentProduct.servingSize;
+            const ratio = selectedServing.size / baseSize;
+            
+            const calories = Math.round(currentProduct.calories * ratio);
+            const proteins = (currentProduct.proteins * ratio).toFixed(1);
+            const carbs = (currentProduct.carbs * ratio).toFixed(1);
+            const fats = (currentProduct.fats * ratio).toFixed(1);
+            
+            document.getElementById('servingCalories').textContent = calories;
+            document.getElementById('servingProteins').textContent = proteins + 'g';
+            document.getElementById('servingCarbs').textContent = carbs + 'g';
+            document.getElementById('servingFats').textContent = fats + 'g';
+            
+            document.getElementById('totalProteins').textContent = proteins;
+            document.getElementById('totalCarbs').textContent = carbs;
+            document.getElementById('totalFats').textContent = fats;
+            
+            // Update progress bars (assuming max values)
+            document.getElementById('proteinBar').style.width = Math.min(proteins, 50) * 2 + '%';
+            document.getElementById('carbsBar').style.width = Math.min(carbs, 100) + '%';
+            document.getElementById('fatsBar').style.width = Math.min(fats, 50) * 2 + '%';
+        }
+        
+        function addProductToLog() {
+            if (!currentProduct) {
+                showStatus('No product selected', 'error');
+                return;
+            }
+            
+            const mealType = document.getElementById('mealTypeSelect').value;
+            const quantity = parseFloat(document.getElementById('productQuantity').value) || 1;
+            
+            const baseSize = currentProduct.servingSize;
+            const ratio = selectedServing.size / baseSize;
+            
+            const productData = {
+                name: currentProduct.name,
+                brand: currentProduct.brand,
+                quantity: quantity,
+                unit: selectedServing.unit,
+                calories: Math.round(currentProduct.calories * ratio * quantity),
+                proteins: parseFloat((currentProduct.proteins * ratio * quantity).toFixed(1)),
+                carbs: parseFloat((currentProduct.carbs * ratio * quantity).toFixed(1)),
+                fats: parseFloat((currentProduct.fats * ratio * quantity).toFixed(1))
+            };
+            
+            // Store in localStorage for the food logger
+            const logKey = `foodLog_${new Date().toISOString().split('T')[0]}`;
+            let foodLog = JSON.parse(localStorage.getItem(logKey) || '{}');
+            
+            if (!foodLog[mealType]) {
+                foodLog[mealType] = [];
+            }
+            
+            foodLog[mealType].push(productData);
+            localStorage.setItem(logKey, JSON.stringify(foodLog));
+            
+            showStatus(`${currentProduct.name} added to ${mealType}!`, 'success');
+            
+            // Redirect to food logger
+            setTimeout(() => {
+                window.location.href = '{{ path('nutrition_food_logger') }}';
+            }, 1000);
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('active', show);
+        }
+        
+        function showStatus(message, type = 'success') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = 'status-message active ' + type;
+            
+            setTimeout(() => {
+                statusEl.classList.remove('active');
+            }, 3000);
+        }
+    </script>
+{% endblock %}
