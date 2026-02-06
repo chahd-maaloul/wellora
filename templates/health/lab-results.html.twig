@@ -1,0 +1,147 @@
+{# templates/health/lab-results.html.twig #}
+{# Lab Results Page - Patient Laboratory Test Results #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Résultats de Laboratoire'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Résultats de Laboratoire'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl dark:bg-purple-900/30">
+                    <i class="text-xl text-purple-600 fa-solid fa-flask dark:text-purple-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Résultats de Laboratoire'|trans }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Vos analyses et résultats d\'examens'|trans }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Lab Results List #}
+    <div class="space-y-6">
+        {% for result in labResults %}
+            <div class="overflow-hidden bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                {# Result Header #}
+                <div class="p-5 border-b border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl dark:bg-purple-900/30">
+                                <i class="text-xl text-purple-600 fa-solid fa-microscope dark:text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">
+                                    {{ result.name }}
+                                </h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    {{ result.date|date('d/m/Y') }}
+                                </p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
+                            {{ 'Terminé'|trans }}
+                        </span>
+                    </div>
+                </div>
+                
+                {# Test Results Table #}
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 dark:bg-gray-800/50">
+                            <tr>
+                                <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                                    {{ 'Test'|trans }}
+                                </th>
+                                <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                                    {{ 'Résultat'|trans }}
+                                </th>
+                                <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                                    {{ 'Valeur normale'|trans }}
+                                </th>
+                                <th class="px-5 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-400">
+                                    {{ 'Statut'|trans }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                            {% for test in result.results %}
+                                <tr>
+                                    <td class="px-5 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ test.test }}
+                                    </td>
+                                    <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">
+                                        {{ test.value }} {{ test.unit }}
+                                    </td>
+                                    <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                        {{ test.normal }}
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        {% if test.value|replace({'<': '', '>': ''})|number_format > 0 %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                                {% if test.value > test.normal|replace({'<': '', '>': ''})|number_format or test.value < test.normal|replace({'<': '', '>': ''})|number_format %}
+                                                    bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400
+                                                {% else %}
+                                                    bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
+                                                {% endif %}">
+                                                <i class="mr-1 fa-solid fa-check"></i>
+                                                {{ 'Normal'|trans }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {# Actions #}
+                <div class="flex items-center justify-end gap-3 p-4 bg-gray-50 dark:bg-gray-800/50">
+                    <button class="text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">
+                        <i class="mr-1 fa-solid fa-print"></i>
+                        {{ 'Imprimer'|trans }}
+                    </button>
+                    <button class="text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">
+                        <i class="mr-1 fa-solid fa-download"></i>
+                        {{ 'Télécharger PDF'|trans }}
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <div class="p-8 text-center bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <i class="mb-4 text-4xl text-gray-300 fa-solid fa-flask-vial dark:text-gray-700"></i>
+                <p class="text-gray-500 dark:text-gray-400">
+                    {{ 'Aucun résultat de laboratoire trouvé'|trans }}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

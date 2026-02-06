@@ -1,0 +1,693 @@
+/**
+ * Teleconsultation Platform Styles
+ * Custom CSS for video consultations and medical tools
+ */
+
+/* ============================================
+   VIRTUAL WAITING ROOM
+   ============================================ */
+
+.waiting-room-container {
+    @apply min-h-screen bg-gray-50 dark:bg-gray-950;
+}
+
+.waiting-room-card {
+    @apply max-w-2xl mx-auto overflow-hidden bg-white shadow-xl dark:bg-gray-900 rounded-2xl;
+}
+
+.waiting-room-header {
+    @apply p-6 text-white bg-gradient-to-r from-wellcare-500 to-wellcare-light-500;
+}
+
+.waiting-room-progress {
+    @apply flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800;
+}
+
+.progress-step {
+    @apply flex items-center gap-2;
+}
+
+.progress-step-icon {
+    @apply flex items-center justify-center w-8 h-8 text-sm font-medium rounded-full;
+}
+
+.progress-step-icon.completed {
+    @apply text-white bg-emerald-500;
+}
+
+.progress-step-icon.current {
+    @apply text-white bg-wellcare-500 animate-pulse;
+}
+
+.progress-step-icon.pending {
+    @apply text-gray-500 bg-gray-200 dark:bg-gray-700 dark:text-gray-400;
+}
+
+.preparation-content {
+    @apply p-6 space-y-6;
+}
+
+.connection-test-grid {
+    @apply grid grid-cols-3 gap-4;
+}
+
+.connection-test-item {
+    @apply p-4 text-center bg-gray-50 dark:bg-gray-800 rounded-xl;
+}
+
+.connection-test-icon {
+    @apply flex items-center justify-center w-12 h-12 mx-auto mb-2 rounded-full;
+}
+
+.connection-test-icon.success {
+    @apply bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400;
+}
+
+.connection-test-icon.error {
+    @apply text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.connection-test-icon.pending {
+    @apply text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500;
+}
+
+.preparation-checklist {
+    @apply space-y-3;
+}
+
+.checklist-item {
+    @apply flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800;
+}
+
+.checklist-item.completed {
+    @apply bg-emerald-50 dark:bg-emerald-900/10;
+}
+
+.checklist-checkbox {
+    @apply flex items-center justify-center w-6 h-6 border-2 rounded-full;
+}
+
+.checklist-checkbox.checked {
+    @apply text-white bg-wellcare-500 border-wellcare-500;
+}
+
+.checklist-checkbox.unchecked {
+    @apply border-gray-300 dark:border-gray-600;
+}
+
+/* ============================================
+   VIDEO CONSULTATION ROOM
+   ============================================ */
+
+.consultation-room {
+    @apply flex flex-col min-h-screen bg-gray-900 dark:bg-gray-950;
+}
+
+.video-grid {
+    @apply grid flex-1 grid-cols-4 gap-4 p-4;
+}
+
+.video-container {
+    @apply relative overflow-hidden bg-gray-800 rounded-xl;
+}
+
+.video-container.main {
+    @apply col-span-3;
+}
+
+.video-container.self {
+    @apply col-span-1;
+}
+
+.video-element {
+    @apply object-cover w-full h-full;
+}
+
+.video-overlay {
+    @apply absolute inset-0 flex items-end justify-between p-4 bg-gradient-to-t from-black/60 to-transparent;
+}
+
+.video-overlay-info {
+    @apply text-white;
+}
+
+.video-controls {
+    @apply absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent;
+}
+
+.video-controls-bar {
+    @apply flex items-center justify-center gap-4;
+}
+
+.video-control-btn {
+    @apply flex items-center justify-center w-12 h-12 transition-all duration-200 rounded-full;
+}
+
+.video-control-btn.primary {
+    @apply text-white bg-wellcare-500 hover:bg-wellcare-600;
+}
+
+.video-control-btn.danger {
+    @apply text-white bg-red-500 hover:bg-red-600;
+}
+
+.video-control-btn.secondary {
+    @apply text-white bg-gray-700 hover:bg-gray-600;
+}
+
+.video-control-btn.active {
+    @apply text-white bg-wellcare-500;
+}
+
+.video-control-btn.muted {
+    @apply text-white bg-red-500;
+}
+
+.connection-quality {
+    @apply absolute flex items-center gap-2 px-3 py-1 text-sm text-white rounded-full top-4 right-4 bg-black/50;
+}
+
+.connection-quality.good {
+    @apply text-emerald-400;
+}
+
+.connection-quality.fair {
+    @apply text-amber-400;
+}
+
+.connection-quality.poor {
+    @apply text-red-400;
+}
+
+.consultation-sidebar {
+    @apply bg-white border-l border-gray-200 dark:bg-gray-900 dark:border-gray-800;
+    transition: width 0.3s ease;
+}
+
+.consultation-sidebar.collapsed {
+    @apply w-0 overflow-hidden;
+}
+
+.consultation-sidebar.expanded {
+    @apply w-96;
+}
+
+.sidebar-tab {
+    @apply flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors;
+}
+
+.sidebar-tab.active {
+    @apply border-b-2 border-wellcare-500 text-wellcare-600 dark:text-wellcare-400;
+}
+
+.sidebar-tab.inactive {
+    @apply text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300;
+}
+
+.chat-messages {
+    @apply flex-1 p-4 space-y-3 overflow-y-auto;
+}
+
+.chat-message {
+    @apply max-w-[80%] p-3 rounded-xl;
+}
+
+.chat-message.doctor {
+    @apply ml-auto text-white bg-wellcare-500;
+}
+
+.chat-message.patient {
+    @apply text-gray-900 bg-gray-100 dark:bg-gray-800 dark:text-white;
+}
+
+.chat-input {
+    @apply flex items-center gap-2 p-4 border-t border-gray-200 dark:border-gray-700;
+}
+
+.chat-input-field {
+    @apply flex-1 px-4 py-2 bg-gray-100 border-0 rounded-full dark:bg-gray-800 focus:ring-2 focus:ring-wellcare-500;
+}
+
+/* ============================================
+   PATIENT INFO PANEL
+   ============================================ */
+
+.patient-info-panel {
+    @apply p-4 space-y-4;
+}
+
+.patient-info-header {
+    @apply flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.patient-info-avatar {
+    @apply object-cover w-16 h-16 border-2 rounded-full border-wellcare-500;
+}
+
+.patient-info-name {
+    @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.patient-info-details {
+    @apply space-y-2;
+}
+
+.patient-info-item {
+    @apply flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400;
+}
+
+.patient-info-item-label {
+    @apply font-medium text-gray-500 dark:text-gray-500;
+}
+
+/* ============================================
+   MEDICAL TOOLS
+   ============================================ */
+
+.medical-tools-container {
+    @apply overflow-hidden bg-white dark:bg-gray-900 rounded-xl;
+}
+
+.tool-selector {
+    @apply flex items-center gap-2 p-2 border-b border-gray-200 dark:border-gray-700;
+}
+
+.tool-btn {
+    @apply p-3 transition-colors rounded-lg;
+}
+
+.tool-btn.active {
+    @apply bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400;
+}
+
+.tool-btn.inactive {
+    @apply text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800;
+}
+
+/* Body Map Styles */
+.body-map-container {
+    @apply relative w-full aspect-[1/2] bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden;
+}
+
+.body-map {
+    @apply w-full h-full;
+}
+
+.body-region {
+    @apply absolute transition-all duration-200 cursor-pointer;
+}
+
+.body-region:hover {
+    @apply scale-110;
+}
+
+.body-region.selected {
+    @apply fill-wellcare-500;
+}
+
+.body-region-pulse {
+    animation: regionPulse 2s ease-in-out infinite;
+}
+
+@keyframes regionPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Visual Acuity Chart */
+.visual-acuity-chart {
+    @apply grid grid-cols-2 gap-4;
+}
+
+.acuity-row {
+    @apply flex items-center gap-2;
+}
+
+.acuity-letter {
+    @apply flex items-center justify-center w-8 h-8 text-xl font-bold text-gray-900 dark:text-white;
+}
+
+/* Dermatology Image */
+.dermatology-container {
+    @apply space-y-4;
+}
+
+.dermatology-upload {
+    @apply p-8 text-center border-2 border-gray-300 border-dashed dark:border-gray-600 rounded-xl;
+}
+
+.dermatology-upload:hover {
+    @apply border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/10;
+}
+
+.dermatology-preview {
+    @apply relative overflow-hidden rounded-xl;
+}
+
+.dermatology-annotation {
+    @apply absolute cursor-crosshair;
+}
+
+/* Whiteboard */
+.whiteboard-container {
+    @apply relative overflow-hidden bg-white rounded-lg dark:bg-gray-800;
+}
+
+.whiteboard-canvas {
+    @apply w-full h-full cursor-crosshair;
+}
+
+.whiteboard-tools {
+    @apply flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700;
+}
+
+.whiteboard-color-picker {
+    @apply w-8 h-8 border-2 border-gray-300 rounded-full cursor-pointer dark:border-gray-600;
+}
+
+/* ============================================
+   SOAP NOTES
+   ============================================ */
+
+.soap-notes-container {
+    @apply overflow-hidden bg-white dark:bg-gray-900 rounded-xl;
+}
+
+.soap-section-tabs {
+    @apply flex border-b border-gray-200 dark:border-gray-700;
+}
+
+.soap-section-tab {
+    @apply px-4 py-3 text-sm font-medium transition-colors;
+}
+
+.soap-section-tab.active {
+    @apply border-b-2 border-wellcare-500 text-wellcare-600 dark:text-wellcare-400;
+}
+
+.soap-section-tab.inactive {
+    @apply text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300;
+}
+
+.soap-content {
+    @apply p-6 space-y-4;
+}
+
+.soap-field {
+    @apply space-y-1;
+}
+
+.soap-field-label {
+    @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.soap-field-input {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:text-white;
+}
+
+.soap-field-textarea {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg resize-none dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:text-white;
+}
+
+.soap-section-divider {
+    @apply my-4 border-t border-gray-200 dark:border-gray-700;
+}
+
+/* Vitals Grid */
+.vitals-grid {
+    @apply grid grid-cols-2 gap-4 md:grid-cols-4;
+}
+
+.vitals-item {
+    @apply space-y-1;
+}
+
+.vitals-item-label {
+    @apply text-xs font-medium text-gray-500 uppercase dark:text-gray-400;
+}
+
+.vitals-item-value {
+    @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.vitals-item-unit {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+/* ============================================
+   PRESCRIPTION WRITER
+   ============================================ */
+
+.prescription-container {
+    @apply overflow-hidden bg-white dark:bg-gray-900 rounded-xl;
+}
+
+.prescription-header {
+    @apply flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.prescription-patient {
+    @apply flex items-center gap-4;
+}
+
+.prescription-patient-avatar {
+    @apply object-cover w-12 h-12 rounded-full;
+}
+
+.prescription-drug-search {
+    @apply relative;
+}
+
+.prescription-search-results {
+    @apply absolute z-10 w-full mt-1 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700 max-h-64;
+}
+
+.prescription-drug-item {
+    @apply px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.prescription-medication-list {
+    @apply divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.prescription-medication-item {
+    @apply p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50;
+}
+
+.prescription-interaction {
+    @apply p-4 rounded-lg;
+}
+
+.prescription-interaction.critical {
+    @apply border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800;
+}
+
+.prescription-interaction.moderate {
+    @apply border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800;
+}
+
+.prescription-interaction.minor {
+    @apply border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800;
+}
+
+.prescription-pharmacy {
+    @apply p-4 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700;
+}
+
+.prescription-pharmacy.selected {
+    @apply border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .video-container.main {
+        @apply col-span-4;
+    }
+    
+    .video-container.self {
+        @apply absolute z-10 w-32 h-24 col-span-1 bottom-20 right-4;
+    }
+    
+    .consultation-sidebar {
+        @apply fixed top-0 bottom-0 right-0 z-20;
+    }
+}
+
+@media (max-width: 768px) {
+    .connection-test-grid {
+        @apply grid-cols-1;
+    }
+    
+    .video-controls-bar {
+        @apply flex-wrap gap-2;
+    }
+    
+    .video-control-btn {
+        @apply w-10 h-10;
+    }
+    
+    .soap-section-tabs {
+        @apply overflow-x-auto;
+    }
+    
+    .prescription-patient {
+        @apply flex-col text-center;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulseRing {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.video-connected-indicator {
+    @apply relative;
+}
+
+.video-connected-indicator::before {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-wellcare-500;
+    animation: pulseRing 1.5s ease-out infinite;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.consultation-sidebar {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+    .video-container,
+    .video-controls,
+    .consultation-sidebar,
+    .tool-selector {
+        display: none !important;
+    }
+    
+    .soap-notes-container,
+    .prescription-container {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.focus-visible:focus {
+    @apply outline-none ring-2 ring-wellcare-500 ring-offset-2;
+}
+
+.video-control-btn:focus-visible {
+    @apply ring-2 ring-wellcare-500 ring-offset-2;
+}
+
+.chat-message:focus-within {
+    @apply ring-2 ring-wellcare-500;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .video-controls {
+        @apply bg-black border border-white;
+    }
+    
+    .video-control-btn {
+        @apply border border-white;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.loading-spinner {
+    @apply w-8 h-8 border-4 border-gray-200 rounded-full border-t-wellcare-500 animate-spin;
+}
+
+.loading-skeleton {
+    @apply bg-gray-200 rounded dark:bg-gray-700 animate-pulse;
+}
+
+/* ==========================================
+    ANIMATIONS
+    ========================================== */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+
+.toast {
+    @apply fixed z-50 p-4 rounded-lg shadow-lg bottom-4 right-4;
+    animation: slideIn 0.3s ease-out;
+}
+
+.toast.success {
+    @apply text-white bg-emerald-500;
+}
+
+.toast.error {
+    @apply text-white bg-red-500;
+}
+
+.toast.warning {
+    @apply text-white bg-amber-500;
+}
+
+.toast.info {
+    @apply text-white bg-blue-500;
+}

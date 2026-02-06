@@ -1,0 +1,270 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Gestion du garde-manger - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8" x-data="pantryManagement()" x-init="init()">
+    <div class="max-w-6xl px-4 mx-auto">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Garde-manger</h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Gérez votre inventaire et évitez le gaspillage</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button @click="showAddModal = true" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-plus"></i>Ajouter article
+                </button>
+                <button @click="generateShoppingList()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-shopping-cart"></i>Liste de courses
+                </button>
+            </div>
+        </div>
+
+        {# Stats Cards #}
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total articles</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white" x-text="items.length"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl dark:bg-blue-900/30">
+                        <i class="text-xl text-blue-500 fas fa-boxes"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Expirent bientôt</p>
+                        <p class="text-3xl font-bold text-amber-500" x-text="expiringItems.length"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30">
+                        <i class="text-xl fas fa-exclamation-triangle text-amber-500"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Manquants</p>
+                        <p class="text-3xl font-bold text-red-500" x-text="lowStockItems.length"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-xl dark:bg-red-900/30">
+                        <i class="text-xl text-red-500 fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Valeur estimée</p>
+                        <p class="text-3xl font-bold text-green-500" x-text="totalValue.toFixed(2) + ' €'"></p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl dark:bg-green-900/30">
+                        <i class="text-xl text-green-500 fas fa-euro-sign"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Alerts #}
+        <div x-show="expiringItems.length > 0" class="p-4 mb-6 border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 rounded-2xl">
+            <div class="flex items-start gap-3">
+                <i class="mt-1 fas fa-exclamation-triangle text-amber-500"></i>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-amber-800 dark:text-amber-200">Articles expirant bientôt</h3>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <template x-for="item in expiringItems.slice(0, 5)" :key="item.id">
+                            <span class="px-3 py-1 text-sm font-medium rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300" x-text="item.name"></span>
+                        </template>
+                        <span x-show="expiringItems.length > 5" class="px-3 py-1 text-sm font-medium rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700">+<span x-text="expiringItems.length - 5"></span> autres</span>
+                    </div>
+                </div>
+                <button @click="showExpiringItems()" class="text-sm font-medium text-amber-600 hover:text-amber-800">Voir tout</button>
+            </div>
+        </div>
+
+        {# Search & Filters #}
+        <div class="p-4 mb-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <div class="flex flex-col gap-4 lg:flex-row">
+                <div class="relative flex-1">
+                    <input type="text" x-model="search" placeholder="Rechercher dans le garde-manger..."
+                           class="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500">
+                    <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <select x-model="categoryFilter" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Toutes catégories</option>
+                        <option value="produce">Fruits & Légumes</option>
+                        <option value="dairy">Produits laitiers</option>
+                        <option value="meat">Viandes</option>
+                        <option value="grains">Céréales</option>
+                        <option value="canned">Conserves</option>
+                        <option value="spices">Épices</option>
+                        <option value="oils">Huiles</option>
+                        <option value="beverages">Boissons</option>
+                        <option value="other">Autre</option>
+                    </select>
+                    <select x-model="sortBy" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="name">Nom</option>
+                        <option value="quantity">Quantité</option>
+                        <option value="expiry">Date d'expiration</option>
+                        <option value="added">Date d'ajout</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {# Pantry Grid #}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <template x-for="item in filteredItems" :key="item.id">
+                <div class="p-4 transition-shadow bg-white shadow-lg dark:bg-gray-800 rounded-2xl hover:shadow-xl"
+                     :class="{'ring-2 ring-amber-500': isExpiringSoon(item), 'ring-2 ring-red-500': isExpired(item)}">
+                    {# Item Header #}
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-12 h-12 rounded-xl" :class="getCategoryClass(item.category)">
+                                <i :class="getCategoryIcon(item.category) + ' text-white'"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="item.name"></h3>
+                                <p class="text-sm text-gray-500" x-text="item.brand || 'Sans marque'"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button @click="editItem(item)" class="p-1 text-gray-400 transition-colors hover:text-wellcare-500">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button @click="deleteItem(item)" class="p-1 text-gray-400 transition-colors hover:text-red-500">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {# Quantity & Expiry #}
+                    <div class="mb-3 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Quantité</span>
+                            <span class="font-medium text-gray-900 dark:text-white" x-text="item.quantity + ' ' + item.unit"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Expiration</span>
+                            <span class="font-medium" 
+                                  :class="{'text-green-500': !isExpiringSoon(item), 'text-amber-500': isExpiringSoon(item) && !isExpired(item), 'text-red-500': isExpired(item)}"
+                                  x-text="formatDate(item.expiryDate)"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Ajouté le</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400" x-text="formatDate(item.addedDate)"></span>
+                        </div>
+                    </div>
+
+                    {# Progress Bar #}
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-1 text-xs">
+                            <span class="text-gray-500">Quantité restante</span>
+                            <span :class="getQuantityClass(item)" x-text="Math.round(item.quantity / item.initialQuantity * 100) + '%'"></span>
+                        </div>
+                        <div class="h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                            <div class="h-full transition-all rounded-full"
+                                 :class="getQuantityBarClass(item)"
+                                 :style="'width: ' + (item.quantity / item.initialQuantity * 100) + '%'"></div>
+                        </div>
+                    </div>
+
+                    {# Quick Actions #}
+                    <div class="flex items-center gap-2">
+                        <button @click="updateQuantity(item, -1)" class="flex-1 py-2 text-gray-600 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button @click="updateQuantity(item, 1)" class="flex-1 py-2 text-gray-600 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button @click="useItem(item)" class="flex-1 py-2 text-sm text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            Utiliser
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {# Empty State #}
+        <div x-show="items.length === 0" class="py-12 text-center">
+            <i class="mb-4 text-6xl text-gray-300 fas fa-box-open dark:text-gray-600"></i>
+            <h3 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">Votre garde-manger est vide</h3>
+            <p class="mb-4 text-gray-500 dark:text-gray-400">Commencez par ajouter vos premiers articles</p>
+            <button @click="showAddModal = true" class="px-6 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                <i class="mr-2 fas fa-plus"></i>Ajouter un article
+            </button>
+        </div>
+
+        {# Add/Edit Item Modal #}
+        <div x-show="showAddModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="fixed inset-0 bg-black/50" @click="showAddModal = false"></div>
+                <div class="relative z-10 w-full max-w-lg p-6 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white" x-text="editingItem ? 'Modifier l\'article' : 'Ajouter un article'"></h3>
+                    <form @submit.prevent="saveItem()" class="space-y-4">
+                        <div>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
+                            <input type="text" x-model="currentItem.name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Quantité</label>
+                                <input type="number" x-model="currentItem.quantity" min="0" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Unité</label>
+                                <select x-model="currentItem.unit" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    <option value="pcs">Pièces</option>
+                                    <option value="kg">Kg</option>
+                                    <option value="g">g</option>
+                                    <option value="L">L</option>
+                                    <option value="ml">ml</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Catégorie</label>
+                            <select x-model="currentItem.category" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <option value="produce">Fruits & Légumes</option>
+                                <option value="dairy">Produits laitiers</option>
+                                <option value="meat">Viandes</option>
+                                <option value="grains">Céréales</option>
+                                <option value="canned">Conserves</option>
+                                <option value="spices">Épices</option>
+                                <option value="oils">Huiles</option>
+                                <option value="beverages">Boissons</option>
+                                <option value="other">Autre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Date d'expiration</label>
+                            <input type="date" x-model="currentItem.expiryDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" @click="closeModal()" class="flex-1 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
+                            <button type="submit" class="flex-1 py-2 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" x-text="editingItem ? 'Modifier' : 'Ajouter'"></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/meal-planner.js') }}"></script>
+{% endblock %}

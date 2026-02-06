@@ -1,0 +1,424 @@
+{# templates/health/partials/health-charts.html.twig #}
+{# Health Metrics Charts using Chart.js #}
+
+<div class="space-y-6" x-data="healthCharts()" x-init="init()">
+    {# Charts Grid #}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {# Weekly Energy Trend Chart #}
+        <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="text-lg fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ 'Évolution de l\'énergie'|trans }}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ '7 derniers jours'|trans }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                        +12%
+                    </span>
+                </div>
+            </div>
+            <div class="relative h-64">
+                <canvas id="energyChart" aria-label="{{ 'Graphique d\'évolution du niveau d\'énergie sur 7 jours'|trans }}" role="img"></canvas>
+            </div>
+        </div>
+
+        {# Mood Distribution Pie Chart #}
+        <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="text-lg fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ 'Distribution des humeurs'|trans }}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Ce mois-ci'|trans }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="relative flex items-center justify-center h-64">
+                <canvas id="moodChart" aria-label="{{ 'Graphique de distribution des humeurs'|trans }}" role="img"></canvas>
+            </div>
+            {# Mood Legend #}
+            <div class="grid grid-cols-5 gap-2 mt-4 text-center">
+                <div class="flex flex-col items-center">
+                    <span class="text-lg">😢</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Très mal</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-lg">😕</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Mal</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-lg">😐</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Neutre</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-lg">🙂</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Bien</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-lg">😄</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Très bien</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Symptom Frequency Bar Chart #}
+    <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                    <i class="text-lg fa-solid fa-chart-column"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ 'Fréquence des symptômes'|trans }}</h3>
+                    <p class="text-xs text-gray-gray-500 dark:text-gray-400">{{ 'Occurrences sur 30 jours'|trans }}</p>
+                </div>
+            </div>
+            <button 
+                @click="exportChartData"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-wellcare-600 hover:bg-wellcare-50 dark:text-wellcare-400 dark:hover:bg-wellcare-900/30 transition-colors"
+            >
+                <i class="fa-solid fa-download"></i>
+                {{ 'Exporter'|trans }}
+            </button>
+        </div>
+        <div class="relative h-72">
+            <canvas id="symptomChart" aria-label="{{ 'Graphique de fréquence des symptômes'|trans }}" role="img"></canvas>
+        </div>
+    </div>
+
+    {# Health Insights Cards #}
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="p-4 border rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 dark:from-emerald-900/20 dark:to-emerald-800/20 dark:border-emerald-800">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-emerald-500">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">{{ 'Meilleur jour'|trans }}</p>
+                    <p class="text-lg font-bold text-emerald-900 dark:text-emerald-100">{{ 'Samedi'|trans }}</p>
+                </div>
+            </div>
+            <p class="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
+                {{ 'Votre niveau d\'énergie est en moyenne 23% plus élevé le weekend.'|trans }}
+            </p>
+        </div>
+
+        <div class="p-4 border rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 dark:border-amber-800">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-amber-500">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-amber-800 dark:text-amber-200">{{ 'Symptôme fréquent'|trans }}</p>
+                    <p class="text-lg font-bold text-amber-900 dark:text-amber-100">{{ 'Fatigue'|trans }}</p>
+                </div>
+            </div>
+            <p class="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                {{ 'Signalé 8 fois ce mois. Envisagez de consulter votre médecin.'|trans }}
+            </p>
+        </div>
+
+        <div class="p-4 border rounded-xl bg-gradient-to-br from-wellcare-50 to-wellcare-100 border-wellcare-200 dark:from-wellcare-900/20 dark:to-wellcare-800/20 dark:border-wellcare-800">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-wellcare-500">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-wellcare-800 dark:text-wellcare-200">{{ 'Jours suivis'|trans }}</p>
+                    <p class="text-lg font-bold text-wellcare-900 dark:text-wellcare-100">24/30</p>
+                </div>
+            </div>
+            <p class="mt-2 text-xs text-wellcare-700 dark:text-wellcare-300">
+                {{ 'Vous avez enregistré votre santé 80% du temps ce mois-ci.'|trans }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+function healthCharts() {
+    return {
+        energyChart: null,
+        moodChart: null,
+        symptomChart: null,
+        isDark: false,
+        init() {
+            // Check initial theme
+            this.isDark = document.documentElement.classList.contains('dark');
+            
+            // Wait for DOM to be ready
+            this.$nextTick(() => {
+                this.initCharts();
+            });
+
+            // Watch for theme changes
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class') {
+                        const newIsDark = document.documentElement.classList.contains('dark');
+                        if (newIsDark !== this.isDark) {
+                            this.isDark = newIsDark;
+                            this.updateChartTheme();
+                        }
+                    }
+                });
+            });
+            observer.observe(document.documentElement, { attributes: true });
+        },
+        getChartColors() {
+            return {
+                text: this.isDark ? '#9ca3af' : '#6b7280',
+                grid: this.isDark ? '#374151' : '#e5e7eb',
+                background: this.isDark ? '#111827' : '#ffffff'
+            };
+        },
+        initCharts() {
+            const colors = this.getChartColors();
+            
+            // Energy Trend Chart (Line)
+            const energyCtx = document.getElementById('energyChart');
+            if (energyCtx) {
+                this.energyChart = new Chart(energyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                        datasets: [{
+                            label: 'Niveau d\'énergie',
+                            data: [5, 6, 4, 7, 6, 8, 7],
+                            borderColor: '#00A790',
+                            backgroundColor: 'rgba(0, 167, 144, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#00A790',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
+                                titleColor: this.isDark ? '#f3f4f6' : '#111827',
+                                bodyColor: this.isDark ? '#d1d5db' : '#374151',
+                                borderColor: this.isDark ? '#374151' : '#e5e7eb',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Énergie: ' + context.parsed.y + '/10';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10,
+                                ticks: {
+                                    color: colors.text,
+                                    stepSize: 2
+                                },
+                                grid: {
+                                    color: colors.grid
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: colors.text
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Mood Distribution Chart (Doughnut)
+            const moodCtx = document.getElementById('moodChart');
+            if (moodCtx) {
+                this.moodChart = new Chart(moodCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Très mal', 'Mal', 'Neutre', 'Bien', 'Très bien'],
+                        datasets: [{
+                            data: [2, 5, 8, 12, 5],
+                            backgroundColor: [
+                                '#f43f5e',  // rose-500
+                                '#f59e0b',  // amber-500
+                                '#9ca3af',  // gray-400
+                                '#10b981',  // emerald-500
+                                '#00A790'   // wellcare-500
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
+                                titleColor: this.isDark ? '#f3f4f6' : '#111827',
+                                bodyColor: this.isDark ? '#d1d5db' : '#374151',
+                                borderColor: this.isDark ? '#374151' : '#e5e7eb',
+                                borderWidth: 1,
+                                padding: 12,
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        return context.label + ': ' + context.parsed + ' jours (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Symptom Frequency Chart (Bar)
+            const symptomCtx = document.getElementById('symptomChart');
+            if (symptomCtx) {
+                this.symptomChart = new Chart(symptomCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Fatigue', 'Mal de tête', 'Insomnie', 'Nausées', 'Douleur', 'Toux', 'Fièvre', 'Anxiété'],
+                        datasets: [{
+                            label: 'Occurrences',
+                            data: [8, 5, 4, 3, 3, 2, 1, 4],
+                            backgroundColor: [
+                                'rgba(245, 158, 11, 0.8)',   // amber
+                                'rgba(244, 63, 94, 0.8)',    // rose
+                                'rgba(99, 102, 241, 0.8)',   // indigo
+                                'rgba(168, 85, 247, 0.8)',   // purple
+                                'rgba(236, 72, 153, 0.8)',   // pink
+                                'rgba(14, 165, 233, 0.8)',   // sky
+                                'rgba(239, 68, 68, 0.8)',    // red
+                                'rgba(245, 158, 11, 0.8)'    // amber
+                            ],
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
+                                titleColor: this.isDark ? '#f3f4f6' : '#111827',
+                                bodyColor: this.isDark ? '#d1d5db' : '#374151',
+                                borderColor: this.isDark ? '#374151' : '#e5e7eb',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: colors.text,
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    color: colors.grid
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: colors.text
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        },
+        updateChartTheme() {
+            const colors = this.getChartColors();
+            
+            // Update Energy Chart
+            if (this.energyChart) {
+                this.energyChart.options.scales.y.ticks.color = colors.text;
+                this.energyChart.options.scales.y.grid.color = colors.grid;
+                this.energyChart.options.scales.x.ticks.color = colors.text;
+                this.energyChart.options.plugins.tooltip.backgroundColor = this.isDark ? '#1f2937' : '#ffffff';
+                this.energyChart.options.plugins.tooltip.titleColor = this.isDark ? '#f3f4f6' : '#111827';
+                this.energyChart.options.plugins.tooltip.bodyColor = this.isDark ? '#d1d5db' : '#374151';
+                this.energyChart.options.plugins.tooltip.borderColor = this.isDark ? '#374151' : '#e5e7eb';
+                this.energyChart.update();
+            }
+
+            // Update Mood Chart
+            if (this.moodChart) {
+                this.moodChart.options.plugins.tooltip.backgroundColor = this.isDark ? '#1f2937' : '#ffffff';
+                this.moodChart.options.plugins.tooltip.titleColor = this.isDark ? '#f3f4f6' : '#111827';
+                this.moodChart.options.plugins.tooltip.bodyColor = this.isDark ? '#d1d5db' : '#374151';
+                this.moodChart.options.plugins.tooltip.borderColor = this.isDark ? '#374151' : '#e5e7eb';
+                this.moodChart.update();
+            }
+
+            // Update Symptom Chart
+            if (this.symptomChart) {
+                this.symptomChart.options.scales.y.ticks.color = colors.text;
+                this.symptomChart.options.scales.y.grid.color = colors.grid;
+                this.symptomChart.options.scales.x.ticks.color = colors.text;
+                this.symptomChart.options.plugins.tooltip.backgroundColor = this.isDark ? '#1f2937' : '#ffffff';
+                this.symptomChart.options.plugins.tooltip.titleColor = this.isDark ? '#f3f4f6' : '#111827';
+                this.symptomChart.options.plugins.tooltip.bodyColor = this.isDark ? '#d1d5db' : '#374151';
+                this.symptomChart.options.plugins.tooltip.borderColor = this.isDark ? '#374151' : '#e5e7eb';
+                this.symptomChart.update();
+            }
+        },
+        exportChartData() {
+            // Simulate data export
+            const data = {
+                symptoms: this.symptomChart?.data || {},
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `health-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    }
+}
+</script>

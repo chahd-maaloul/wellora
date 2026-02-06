@@ -1,0 +1,249 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Analyse nutritionnelle - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8" x-data="nutritionAnalysis()" x-init="init()">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Analyse nutritionnelle</h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Outils d'analyse et de suivi des patients</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <select x-model="selectedPatientId" class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    <option value="">Sélectionner un patient...</option>
+                    <template x-for="patient in patients" :key="patient.id">
+                        <option :value="patient.id" x-text="patient.name"></option>
+                    </template>
+                </select>
+                <button @click="generateReport()" class="px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-file-export"></i>Exporter rapport
+                </button>
+            </div>
+        </div>
+
+        {# Analysis Type Tabs #}
+        <div class="flex gap-2 mb-6 overflow-x-auto">
+            <template x-for="tab in analysisTabs" :key="tab.id">
+                <button @click="activeTab = tab.id"
+                        class="px-4 py-2 transition-colors rounded-lg whitespace-nowrap"
+                        :class="activeTab === tab.id ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'">
+                    <i :class="tab.icon + ' mr-2'"></i><span x-text="tab.name"></span>
+                </button>
+            </template>
+        </div>
+
+        {# Patient Overview #}
+        <div x-show="activeTab === 'overview'" class="space-y-6">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                {# Patient Info #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Informations patient</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="text-2xl font-bold text-wellcare-500">JL</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Jean Dupont</h3>
+                                <p class="text-sm text-gray-500">34 ans • Homme</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <div>
+                                <p class="text-sm text-gray-500">IMC</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">27.4</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Poids</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">82 kg</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Taille</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">173 cm</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Tour de taille</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">94 cm</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Nutrition Summary #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Bilan nutritionnel</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Calories</span>
+                                <span class="font-medium" x-text="nutritionData.calories.consumed + ' / ' + nutritionData.calories.target + ' kcal'"></span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full rounded-full bg-wellcare-500" :style="'width: ' + (nutritionData.calories.consumed / nutritionData.calories.target * 100) + '%'"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Protéines</span>
+                                <span class="font-medium" x-text="nutritionData.protein.consumed + ' / ' + nutritionData.protein.target + 'g'"></span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-blue-500 rounded-full" :style="'width: ' + (nutritionData.protein.consumed / nutritionData.protein.target * 100) + '%'"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Glucides</span>
+                                <span class="font-medium" x-text="nutritionData.carbs.consumed + ' / ' + nutritionData.carbs.target + 'g'"></span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full rounded-full bg-amber-500" :style="'width: ' + (nutritionData.carbs.consumed / nutritionData.carbs.target * 100) + '%'"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Lipides</span>
+                                <span class="font-medium" x-text="nutritionData.fats.consumed + ' / ' + nutritionData.fats.target + 'g'"></span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-red-500 rounded-full" :style="'width: ' + (nutritionData.fats.consumed / nutritionData.fats.target * 100) + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Micronutrients #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Micronutriments</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <template x-for="micro in micronutrients" :key="micro.name">
+                            <div class="p-3 rounded-lg" :class="micro.status === 'good' ? 'bg-green-50 dark:bg-green-900/20' : (micro.status === 'low' ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-red-50 dark:bg-red-900/20')">
+                                <p class="text-xs text-gray-500" x-text="micro.name"></p>
+                                <p class="font-semibold" 
+                                   :class="micro.status === 'good' ? 'text-green-600' : (micro.status === 'low' ? 'text-amber-600' : 'text-red-600')"
+                                   x-text="micro.value"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            {# Charts Row #}
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {# Weekly Progress Chart #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Progression hebdomadaire</h2>
+                    <div class="flex items-center justify-center h-64 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <p class="text-gray-400">Graphique de progression (Chart.js)</p>
+                    </div>
+                </div>
+
+                {# Food Group Distribution #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Répartition des groupes alimentaires</h2>
+                    <div class="flex items-center justify-center h-64 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <p class="text-gray-400">Diagramme circulaire (Chart.js)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Food Diary Review #}
+        <div x-show="activeTab === 'diary'" class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-6 text-lg font-bold text-gray-900 dark:text-white">Journal alimentaire</h2>
+            <div class="space-y-6">
+                <template x-for="day in foodDiary" :key="day.date">
+                    <div class="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="p-4 bg-gray-50 dark:bg-gray-700/50">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="day.dayName + ' ' + day.date"></h3>
+                                <span class="text-sm font-medium text-wellcare-500" x-text="day.totalCalories + ' kcal'"></span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <template x-for="meal in day.meals" :key="meal.type">
+                                <div>
+                                    <p class="mb-2 text-sm font-medium text-gray-500" x-text="meal.type"></p>
+                                    <template x-for="food in meal.foods" :key="food.name">
+                                        <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                                    <i :class="food.icon + ' text-gray-400'"></i>
+                                                </div>
+                                                <span class="text-gray-700 dark:text-gray-300" x-text="food.name"></span>
+                                            </div>
+                                            <span class="text-sm text-gray-500" x-text="food.calories + ' kcal'"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        {# Progress Tracking #}
+        <div x-show="activeTab === 'progress'" class="space-y-6">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-2 text-sm text-gray-500">体重変化</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">-4.2 kg</p>
+                    <p class="mt-1 text-sm text-green-500"><i class="mr-1 fas fa-arrow-down"></i>Ce mois</p>
+                    <div class="flex items-end h-20 gap-1 mt-4">
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 60%"></div>
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 55%"></div>
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 50%"></div>
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 45%"></div>
+                    </div>
+                </div>
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-2 text-sm text-gray-500">IMC</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">25.1</p>
+                    <p class="mt-1 text-sm text-green-500"><i class="mr-1 fas fa-arrow-down"></i>-2.3 points</p>
+                    <div class="flex items-end h-20 gap-1 mt-4">
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 100%"></div>
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 95%"></div>
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 90%"></div>
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 85%"></div>
+                    </div>
+                </div>
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-2 text-sm text-gray-500">Masse musculaire</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">+1.8 kg</p>
+                    <p class="mt-1 text-sm text-blue-500"><i class="mr-1 fas fa-arrow-up"></i>Ce mois</p>
+                    <div class="flex items-end h-20 gap-1 mt-4">
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 40%"></div>
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 45%"></div>
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 50%"></div>
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 55%"></div>
+                    </div>
+                </div>
+            </div>
+
+            {# Long-term Trends #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Tendances à long terme</h2>
+                <div class="flex items-center justify-center rounded-lg h-80 bg-gray-50 dark:bg-gray-700/50">
+                    <p class="text-gray-400">Graphique des tendances (Chart.js)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/nutrition.js') }}"></script>
+{% endblock %}

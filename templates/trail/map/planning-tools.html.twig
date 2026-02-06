@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Planning Tools - WellCare Connect</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f9f6; }
+        
+        .planning-header {
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            color: white;
+            padding: 25px 30px;
+        }
+        
+        .planning-header h1 { font-size: 1.6rem; margin-bottom: 8px; }
+        .planning-header p { font-size: 0.95rem; opacity: 0.9; }
+        
+        .planning-content { display: flex; padding: 20px; gap: 20px; }
+        
+        .tools-sidebar {
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tool-section { margin-bottom: 25px; }
+        .tool-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tool-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .tool-input:focus {
+            border-color: #00A790;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 167, 144, 0.1);
+        }
+        
+        .slider-container { margin: 15px 0; }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .slider-value { font-weight: 600; color: #00A790; }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            appearance: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00A790;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 167, 144, 0.3);
+        }
+        
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-item:hover { background: #f0f9f6; }
+        .checkbox-item input { width: 18px; height: 18px; accent-color: #00A790; }
+        
+        .gear-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .gear-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .gear-icon { font-size: 1.2rem; }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .calculate-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 167, 144, 0.4); }
+        
+        .map-section { flex: 1; position: relative; }
+        #planning-map { height: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .results-panel {
+            margin-top: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .results-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
+        .result-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .result-card:hover { border-color: #00A790; transform: translateY(-2px); }
+        .result-card.selected { border-color: #00A790; background: #f0f9f6; }
+        .result-icon { font-size: 2rem; margin-bottom: 10px; }
+        .result-value { font-size: 1.5rem; font-weight: 700; color: #00A790; }
+        .result-label { font-size: 0.85rem; color: #6b7280; margin-top: 5px; }
+        
+        .difficulty-meter {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #22c55e 0%, #f59e0b 50%, #ef4444 100%);
+            border-radius: 12px;
+            position: relative;
+        }
+        .difficulty-label {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .difficulty-bar {
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 6px;
+            position: relative;
+        }
+        .difficulty-indicator {
+            position: absolute;
+            top: -5px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .export-btn {
+            flex: 1;
+            padding: 12px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .export-btn:hover { border-color: #00A790; background: #f0f9f6; }
+        
+        .elevation-chart-container { height: 200px; margin-top: 20px; }
+        
+        .saved-plans { margin-top: 20px; }
+        .saved-plan-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9fafb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .saved-plan-item:hover { background: #f0f9f6; transform: translateX(5px); }
+        .saved-plan-icon { font-size: 1.5rem; margin-right: 15px; }
+        .saved-plan-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .saved-plan-info p { font-size: 0.8rem; color: #6b7280; }
+        
+        @media (max-width: 1024px) {
+            .planning-content { flex-direction: column; }
+            .tools-sidebar { width: 100%; }
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div x-data="trailPlanningTools()">
+        <!-- Header -->
+        <div class="planning-header">
+            <h1>🗺️ Trail Planning Tools</h1>
+            <p>Plan your perfect hiking adventure with our comprehensive planning tools</p>
+        </div>
+        
+        <div class="planning-content">
+            <!-- Tools Sidebar -->
+            <div class="tools-sidebar">
+                <!-- Trail Points -->
+                <div class="tool-section">
+                    <div class="tool-title">📍 Trail Points</div>
+                    <input type="text" class="tool-input" placeholder="Start location" x-model="startPoint">
+                    <input type="text" class="tool-input" placeholder="Destination (optional)" x-model="endPoint">
+                    <button class="calculate-btn" @click="calculateRoute()">
+                        🧮 Calculate Route
+                    </button>
+                </div>
+                
+                <!-- Distance Settings -->
+                <div class="tool-section">
+                    <div class="tool-title">📏 Distance</div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Target distance</span>
+                            <span class="slider-value"><span x-text="targetDistance"></span> km</span>
+                        </div>
+                        <input type="range" min="1" max="50" x-model="targetDistance" @input="updateCalculations()">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Max elevation gain</span>
+                            <span class="slider-value"><span x-text="maxElevation"></span> m</span>
+                        </div>
+                        <input type="range" min="0" max="2000" x-model="maxElevation" @input="updateCalculations()">
+                    </div>
+                </div>
+                
+                <!-- Fitness Level -->
+                <div class="tool-section">
+                    <div class="tool-title">💪 Fitness Level</div>
+                    <select class="tool-input" x-model="fitnessLevel" @change="updateCalculations()">
+                        <option value="beginner">Beginner - Casual hiker</option>
+                        <option value="intermediate">Intermediate - Regular hiker</option>
+                        <option value="advanced">Advanced - Experienced hiker</option>
+                        <option value="expert">Expert - Mountaineer</option>
+                    </select>
+                </div>
+                
+                <!-- Preferences -->
+                <div class="tool-section">
+                    <div class="tool-title">⚙️ Preferences</div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" x-model="preferScenic">
+                            <span>Prefer scenic routes</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" x-model="avoidHighways">
+                            <span>Avoid busy roads</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" x-model="requireWater">
+                            <span>Require water sources</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" x-model="petFriendly">
+                            <span>Pet-friendly trails</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Gear Recommendations -->
+                <div class="tool-section">
+                    <div class="tool-title">🎒 Recommended Gear</div>
+                    <div class="gear-list">
+                        <div class="gear-item">
+                            <span class="gear-icon">🥾</span>
+                            <span>Hiking boots</span>
+                        </div>
+                        <div class="gear-item">
+                            <span class="gear-icon">💧</span>
+                            <span>Water (2L)</span>
+                        </div>
+                        <div class="gear-item">
+                            <span class="gear-icon">🧥</span>
+                            <span>Rain jacket</span>
+                        </div>
+                        <div class="gear-item">
+                            <span class="gear-icon">🔦</span>
+                            <span>Flashlight</span>
+                        </div>
+                        <div class="gear-item">
+                            <span class="gear-icon">🩹</span>
+                            <span>First aid</span>
+                        </div>
+                        <div class="gear-item">
+                            <span class="gear-icon">🧴</span>
+                            <span>Sunscreen</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Saved Plans -->
+                <div class="tool-section">
+                    <div class="tool-title">💾 Saved Plans</div>
+                    <div class="saved-plans">
+                        <div class="saved-plan-item" @click="loadPlan('weekend')">
+                            <div class="saved-plan-icon">🏕️</div>
+                            <div class="saved-plan-info">
+                                <h4>Weekend Adventure</h4>
+                                <p>12.5 km • Moderate • 3h 30m</p>
+                            </div>
+                        </div>
+                        <div class="saved-plan-item" @click="loadPlan('quick')">
+                            <div class="saved-plan-icon">⚡</div>
+                            <div class="saved-plan-info">
+                                <h4>Quick Morning Hike</h4>
+                                <p>5.2 km • Easy • 1h 30m</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="flex: 1;">
+                <div class="map-section">
+                    <div id="planning-map"></div>
+                </div>
+                
+                <!-- Results Panel -->
+                <div class="results-panel">
+                    <div class="tool-title">📊 Trip Estimates</div>
+                    <div class="results-grid">
+                        <div class="result-card" :class="{ 'selected': selectedResult === 'distance' }" @click="selectResult('distance')">
+                            <div class="result-icon">📏</div>
+                            <div class="result-value"><span x-text="estimatedDistance"></span> km</div>
+                            <div class="result-label">Total Distance</div>
+                        </div>
+                        <div class="result-card" :class="{ 'selected': selectedResult === 'duration' }" @click="selectResult('duration')">
+                            <div class="result-icon">⏱️</div>
+                            <div class="result-value" x-text="estimatedDuration"></div>
+                            <div class="result-label">Estimated Time</div>
+                        </div>
+                        <div class="result-card" :class="{ 'selected': selectedResult === 'elevation' }" @click="selectResult('elevation')">
+                            <div class="result-icon">⛰️</div>
+                            <div class="result-value"><span x-text="estimatedElevation"></span> m</div>
+                            <div class="result-label">Elevation Gain</div>
+                        </div>
+                        <div class="result-card" :class="{ 'selected': selectedResult === 'calories' }" @click="selectResult('calories')">
+                            <div class="result-icon">🔥</div>
+                            <div class="result-value"><span x-text="estimatedCalories"></span></div>
+                            <div class="result-label">Calories Burned</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Difficulty Meter -->
+                    <div class="difficulty-meter">
+                        <div class="difficulty-label">🏋️ Trail Difficulty: <span x-text="difficultyLevel"></span></div>
+                        <div class="difficulty-bar">
+                            <div class="difficulty-indicator" :style="'left: calc(' + difficultyPercent + '% - 11px)'" x-text="difficultyScore"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Elevation Chart -->
+                    <div class="elevation-chart-container">
+                        <canvas id="elevationChart"></canvas>
+                    </div>
+                    
+                    <!-- Export Options -->
+                    <div class="export-options">
+                        <button class="export-btn" @click="exportToGPX()">
+                            📥 Export GPX
+                        </button>
+                        <button class="export-btn" @click="sharePlan()">
+                            📤 Share Plan
+                        </button>
+                        <button class="export-btn" @click="printPlan()">
+                            🖨️ Print Guide
+                        </button>
+                        <button class="export-btn" @click="addToCalendar()">
+                            📅 Add to Calendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function trailPlanningTools() {
+            return {
+                map: null,
+                startPoint: 'Pine Ridge Trailhead',
+                endPoint: '',
+                targetDistance: 10,
+                maxElevation: 500,
+                fitnessLevel: 'intermediate',
+                preferScenic: true,
+                avoidHighways: true,
+                requireWater: false,
+                petFriendly: false,
+                selectedResult: 'distance',
+                estimatedDistance: '10.2',
+                estimatedDuration: '2h 45m',
+                estimatedElevation: '420',
+                estimatedCalories: '850',
+                difficultyScore: '5.2',
+                difficultyPercent: 52,
+                difficultyLevel: 'Moderate',
+                
+                init() {
+                    this.$nextTick(() => {
+                        this.initMap();
+                        this.initChart();
+                    });
+                },
+                
+                initMap() {
+                    this.map = L.map('planning-map').setView([45.5234, -122.6762], 12);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(this.map);
+                    
+                    // Add sample route
+                    const routeCoords = [
+                        [45.5234, -122.6762],
+                        [45.5245, -122.6780],
+                        [45.5260, -122.6770],
+                        [45.5275, -122.6750],
+                        [45.5290, -122.6730],
+                        [45.5305, -122.6710]
+                    ];
+                    
+                    this.routeLine = L.polyline(routeCoords, {
+                        color: '#00A790',
+                        weight: 6,
+                        opacity: 0.8,
+                        dashArray: '15, 10'
+                    }).addTo(this.map);
+                    
+                    // Add markers
+                    const startIcon = L.divIcon({
+                        html: '<div style="background: #22c55e; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">🚩</div>',
+                        className: 'start-marker'
+                    });
+                    
+                    const endIcon = L.divIcon({
+                        html: '<div style="background: #ef4444; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">🏁</div>',
+                        className: 'end-marker'
+                    });
+                    
+                    L.marker([45.5234, -122.6762], { icon: startIcon }).addTo(this.map).bindPopup('Start: Pine Ridge Trailhead');
+                    L.marker([45.5305, -122.6710], { icon: endIcon }).addTo(this.map).bindPopup('End: Summit Point');
+                    
+                    this.map.fitBounds(this.routeLine.getBounds(), { padding: [30, 30] });
+                },
+                
+                initChart() {
+                    const ctx = document.getElementById('elevationChart');
+                    if (!ctx) return;
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['0', '2', '4', '6', '8', '10'],
+                            datasets: [{
+                                label: 'Elevation Profile',
+                                data: [150, 220, 280, 350, 400, 420],
+                                borderColor: '#00A790',
+                                backgroundColor: 'rgba(0, 167, 144, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: true, text: '📈 Elevation Profile' }
+                            },
+                            scales: {
+                                x: { title: { display: true, text: 'Distance (km)' } },
+                                y: { title: { display: true, text: 'Elevation (m)' } }
+                            }
+                        }
+                    });
+                },
+                
+                calculateRoute() {
+                    this.updateCalculations();
+                    alert('Route calculated! Adjust parameters as needed.');
+                },
+                
+                updateCalculations() {
+                    const baseDistance = this.targetDistance;
+                    const elevationFactor = this.maxElevation / 500;
+                    
+                    this.estimatedDistance = (baseDistance * (0.9 + Math.random() * 0.2)).toFixed(1);
+                    const baseTime = baseDistance * (this.fitnessLevel === 'beginner' ? 20 : this.fitnessLevel === 'intermediate' ? 15 : this.fitnessLevel === 'advanced' ? 12 : 10);
+                    const hours = Math.floor(baseTime / 60);
+                    const minutes = baseTime % 60;
+                    this.estimatedDuration = hours > 0 ? hours + 'h ' + minutes + 'm' : minutes + 'm';
+                    
+                    this.estimatedElevation = Math.floor(this.maxElevation * (0.8 + Math.random() * 0.4));
+                    this.estimatedCalories = Math.floor(baseDistance * 85 * (1 + elevationFactor * 0.3));
+                    
+                    // Calculate difficulty
+                    const difficulty = (baseDistance / 50) * 30 + (this.maxElevation / 2000) * 40 + (this.fitnessLevel === 'beginner' ? 30 : this.fitnessLevel === 'intermediate' ? 20 : this.fitnessLevel === 'advanced' ? 10 : 0);
+                    this.difficultyScore = (difficulty / 10).toFixed(1);
+                    this.difficultyPercent = Math.min(difficulty, 100);
+                    this.difficultyLevel = difficulty < 30 ? 'Easy' : difficulty < 50 ? 'Moderate' : difficulty < 70 ? 'Hard' : 'Extreme';
+                },
+                
+                selectResult(type) {
+                    this.selectedResult = type;
+                },
+                
+                loadPlan(planType) {
+                    if (planType === 'weekend') {
+                        this.targetDistance = 12;
+                        this.maxElevation = 800;
+                        this.fitnessLevel = 'intermediate';
+                    } else {
+                        this.targetDistance = 5;
+                        this.maxElevation = 200;
+                        this.fitnessLevel = 'beginner';
+                    }
+                    this.updateCalculations();
+                },
+                
+                exportToGPX() {
+                    alert('GPX file download started!');
+                },
+                
+                sharePlan() {
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Trail Plan',
+                            text: 'Check out this hiking trail!',
+                            url: window.location.href
+                        });
+                    } else {
+                        alert('Link copied to clipboard!');
+                    }
+                },
+                
+                printPlan() {
+                    window.print();
+                },
+                
+                addToCalendar() {
+                    alert('Calendar event created!');
+                }
+            };
+        }
+    </script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</body>
+</html>

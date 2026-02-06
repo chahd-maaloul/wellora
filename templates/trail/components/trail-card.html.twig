@@ -1,0 +1,73 @@
+<div class="overflow-hidden transition-all duration-300 bg-white border border-gray-100 shadow-sm cursor-pointer dark:bg-gray-800 rounded-xl dark:border-gray-700 group hover:shadow-md" @click="viewTrail(trail.id)">
+    <!-- Image -->
+    <div class="relative h-48">
+        <img :src="trail.image" :alt="trail.name" class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        
+        <!-- Badges -->
+        <div class="absolute flex gap-2 top-3 left-3">
+            <span class="px-2 py-1 text-xs font-medium rounded-full"
+                :class="getDifficultyClass(trail.difficulty)" x-text="trail.difficulty"></span>
+        </div>
+        
+        <!-- Actions -->
+        <div class="absolute flex gap-2 top-3 right-3">
+            <button @click.stop="toggleFavorite(trail.id)" class="flex items-center justify-center w-8 h-8 text-white transition rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30">
+                <i :class="trail.favorite ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart'"></i>
+            </button>
+        </div>
+        
+        <!-- Quick Info -->
+        <div class="absolute text-white bottom-3 left-3 right-3">
+            <h3 class="mb-1 text-lg font-semibold" x-text="trail.name"></h3>
+            <p class="text-sm text-white/80"><i class="mr-1 fa-solid fa-location-dot"></i><span x-text="trail.location"></span></p>
+        </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="p-4">
+        <!-- Stats -->
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                <span class="flex items-center"><i class="mr-1 fa-solid fa-ruler"></i><span x-text="trail.distance + ' km'"></span></span>
+                <span class="flex items-center"><i class="mr-1 fa-solid fa-clock"></i><span x-text="trail.duration"></span></span>
+            </div>
+            <div class="flex items-center">
+                <i class="mr-1 fa-solid fa-star text-amber-500"></i>
+                <span class="font-medium text-gray-900 dark:text-white" x-text="trail.rating"></span>
+            </div>
+        </div>
+        
+        <!-- Amenities Preview -->
+        <div class="flex items-center gap-2 mb-3">
+            <template x-for="amenity in trail.amenities.slice(0, 3)" :key="amenity">
+                <span class="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-300" x-text="amenity"></span>
+            </template>
+            <span x-show="trail.amenities.length > 3" class="text-xs text-gray-400">+<span x-text="trail.amenities.length - 3"></span></span>
+        </div>
+        
+        <!-- Completion Count -->
+        <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <i class="mr-1 fa-solid fa-users"></i>
+                <span x-text="trail.completions + ' completions'"></span>
+            </div>
+            <a href="#" class="text-sm font-medium text-wellcare-500 hover:text-wellcare-600">
+                View Details
+                <i class="ml-1 fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function getDifficultyClass(difficulty) {
+    const classes = {
+        'Easy': 'bg-green-500 text-white',
+        'Moderate': 'bg-amber-500 text-white',
+        'Difficult': 'bg-orange-500 text-white',
+        'Expert': 'bg-red-500 text-white'
+    };
+    return classes[difficulty] || 'bg-gray-500 text-white';
+}
+</script>

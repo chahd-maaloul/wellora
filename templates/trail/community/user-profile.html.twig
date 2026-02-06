@@ -1,0 +1,477 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Mon Profil - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('trail-community') }}
+{% endblock %}
+
+{% block body %}
+<div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen" x-data="{ activeTab: 'activity' }">
+    {# Profile Header #}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden mb-6">
+        {# Cover Image #}
+        <div class="h-48 bg-gradient-to-r from-wellcare-500 via-wellcare-400 to-wellcare-light-500 relative">
+            <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=400&fit=crop" class="w-full h-full object-cover opacity-50" alt="Cover">
+            <button class="absolute top-4 right-4 p-2 bg-black/30 rounded-lg hover:bg-black/50 text-white transition-colors">
+                <i class="fas fa-camera"></i>
+            </button>
+        </div>
+        
+        {# Profile Info #}
+        <div class="px-6 pb-6">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between -mt-12">
+                <div class="flex items-end">
+                    <div class="relative">
+                        <div class="w-28 h-28 rounded-2xl bg-white dark:bg-gray-800 p-1 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=200&h=200&fit=crop" class="w-full h-full rounded-xl object-cover" alt="Avatar">
+                        </div>
+                        <button class="absolute -bottom-1 -right-1 w-8 h-8 bg-wellcare-500 rounded-full text-white flex items-center justify-center shadow-lg hover:bg-wellcare-600 transition-colors">
+                            <i class="fas fa-camera text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="ml-4 mb-1">
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Marie C.</h1>
+                            <span class="px-2 py-0.5 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300 text-xs rounded-full">
+                                <i class="fas fa-check-circle mr-1"></i> Vérifié
+                            </span>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400">Randonneur(se) Passionné(e)</p>
+                    </div>
+                </div>
+                <div class="mt-4 md:mt-0 flex gap-3">
+                    <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-edit mr-1"></i> Modifier
+                    </button>
+                    <button class="px-4 py-2 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition-colors">
+                        <i class="fas fa-share-alt mr-1"></i> Partager
+                    </button>
+                </div>
+            </div>
+            
+            {# Stats Row #}
+            <div class="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="text-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white stat-counter">47</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Trails</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white stat-counter">312</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">km</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white stat-counter">15</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Dénivelé (km)</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white stat-counter">89</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Avis</p>
+                </div>
+                <div class="text-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white stat-counter">2.4k</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Abonnés</p>
+                </div>
+            </div>
+            
+            {# Level Progress #}
+            <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-white">
+                            <i class="fas fa-mountain"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900 dark:text-white">Niveau 12</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Randonneur Expert</p>
+                        </div>
+                    </div>
+                    <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400">72%</span>
+                </div>
+                <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full level-progress rounded-full" style="width: 72%"></div>
+                </div>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">2,880 XP pour atteindre le Niveau 13</p>
+            </div>
+            
+            {# Bio & Info #}
+            <div class="mt-6 grid md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">À propos</h3>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Passionnée de nature et de randonnée depuis plus de 10 ans. J'aime découvrir de nouveaux sentiers, partager mes expériences et rencontrer d'autres passionnés. Ambassadrice du Sentier des Cascades que j'ai contribué à découvrir !
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span><i class="fas fa-map-marker-alt mr-1"></i> Grenoble, France</span>
+                        <span><i class="fas fa-calendar mr-1"></i> Membre depuis 2022</span>
+                        <span><i class="fas fa-link mr-1"></i> <a href="#" class="text-wellcare-600 dark:text-wellcare-400 hover:underline">marie-rando.fr</a></span>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">.badges</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <div class="badge-item w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center text-white relative cursor-pointer" title="50+ Trails">
+                            <i class="fas fa-mountain"></i>
+                            <div class="badge-glow absolute inset-0 bg-amber-400/30 rounded-lg blur-lg"></div>
+                        </div>
+                        <div class="badge-item w-10 h-10 bg-gradient-to-br from-wellcare-400 to-wellcare-600 rounded-lg flex items-center justify-center text-white relative cursor-pointer" title="100+ km">
+                            <i class="fas fa-road"></i>
+                            <div class="badge-glow absolute inset-0 bg-wellcare-400/30 rounded-lg blur-lg"></div>
+                        </div>
+                        <div class="badge-item w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center text-white relative cursor-pointer" title="50+ Avis">
+                            <i class="fas fa-star"></i>
+                            <div class="badge-glow absolute inset-0 bg-purple-400/30 rounded-lg blur-lg"></div>
+                        </div>
+                        <div class="badge-item w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center text-white relative cursor-pointer" title="10+ Trails créés">
+                            <i class="fas fa-plus-circle"></i>
+                            <div class="badge-glow absolute inset-0 bg-green-400/30 rounded-lg blur-lg"></div>
+                        </div>
+                        <div class="badge-item w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white relative cursor-pointer" title="Guide certifié">
+                            <i class="fas fa-certificate"></i>
+                            <div class="badge-glow absolute inset-0 bg-blue-400/30 rounded-lg blur-lg"></div>
+                        </div>
+                        <div class="badge-item w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-lg flex items-center justify-center text-white relative cursor-pointer" title="5 ans membre">
+                            <i class="fas fa-award"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# Quick Actions #}
+            <div class="mt-6 flex flex-wrap gap-3">
+                <button class="px-4 py-2 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition-colors">
+                    <i class="fas fa-user-plus mr-1"></i> Suivre
+                </button>
+                <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-envelope mr-1"></i> Message
+                </button>
+                <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-user-friends mr-1"></i> Amis en commun
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Tabs #}
+    <div class="flex gap-2 mb-6 overflow-x-auto border-b border-gray-200 dark:border-gray-700 pb-2">
+        <button @click="activeTab = 'activity'" 
+                class="profile-tab px-4 py-2 font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'activity' ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+            <i class="fas fa-history mr-1"></i> Activité
+        </button>
+        <button @click="activeTab = 'trails'" 
+                class="profile-tab px-4 py-2 font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'trails' ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+            <i class="fas fa-map-marked-alt mr-1"></i> Trails
+        </button>
+        <button @click="activeTab = 'reviews'" 
+                class="profile-tab px-4 py-2 font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'reviews' ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+            <i class="fas fa-star mr-1"></i> Avis
+        </button>
+        <button @click="activeTab = 'photos'" 
+                class="profile-tab px-4 py-2 font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'photos' ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+            <i class="fas fa-camera mr-1"></i> Photos
+        </button>
+        <button @click="activeTab = 'achievements'" 
+                class="profile-tab px-4 py-2 font-medium whitespace-nowrap transition-colors"
+                :class="activeTab === 'achievements' ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+            <i class="fas fa-trophy mr-1"></i> Réalisations
+        </button>
+    </div>
+
+    {# Activity Tab #}
+    <div x-show="activeTab === 'activity'" class="space-y-4">
+        {# Activity Items #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-wellcare-400 to-wellcare-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium text-gray-900 dark:text-white">Marie C.</span>
+                        <span class="text-gray-500 dark:text-gray-400">a complété</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Sentier des Cascades</a>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">il y a 2 heures</p>
+                    <div class="mt-3 flex items-center gap-4 text-sm">
+                        <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                            <i class="fas fa-clock mr-1"></i> 2h 45min
+                        </span>
+                        <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">
+                            <i class="fas fa-route mr-1"></i> 8.5 km
+                        </span>
+                        <span class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">
+                            <i class="fas fa-mountain mr-1"></i> 420m
+                        </span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-comment"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium text-gray-900 dark:text-white">Marie C.</span>
+                        <span class="text-gray-500 dark:text-gray-400">a publié un avis sur</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Montagne Bleue</a>
+                    </div>
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-amber-400 text-sm flex">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">"Expérience absolument fantastique ! Le sentier est bien entretenu et les vues sont à couper le souffle..."</p>
+                    <p class="text-xs text-gray-400 mt-2">il y a 5 heures</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-comment"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-medium text-gray-900 dark:text-white">Marie C.</span>
+                        <span class="text-gray-500 dark:text-gray-400">a ajouté 3 photos à</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Lac de Haute Montagne</a>
+                    </div>
+                    <div class="flex gap-2">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=150&h=150&fit=crop" class="w-24 h-24 object-cover rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=150&h=150&fit=crop" class="w-24 h-24 object-cover rounded-lg">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop" class="w-24 h-24 object-cover rounded-lg">
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">il y a 1 jour</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="action-btn p-2 text-wellcare-600 dark:text-wellcare-400 liked">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-comment"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium text-gray-900 dark:text-white">Marie C.</span>
+                        <span class="text-gray-500 dark:text-gray-400">a débloqué le badge</span>
+                        <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm rounded-full">
+                            <i class="fas fa-mountain mr-1"></i> 50+ Trails
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Félicitations pour avoir complété plus de 50 trails !</p>
+                    <p class="text-xs text-gray-400 mt-2">il y a 3 jours</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium text-gray-900 dark:text-white">Marie C.</span>
+                        <span class="text-gray-500 dark:text-gray-400">a rejoint le groupe</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Amis de la Montagne</a>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Groupe de passionnés de randonnée en montagne</p>
+                    <p class="text-xs text-gray-400 mt-2">il y a 1 semaine</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="action-btn p-2 text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                        <i class="far fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        {# Load More #}
+        <div class="text-center mt-6">
+            <button class="px-6 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <i class="fas fa-plus mr-2"></i>Voir plus d'activité
+            </button>
+        </div>
+    </div>
+
+    {# Trails Tab #}
+    <div x-show="activeTab === 'trails'" style="display: none;">
+        <div class="grid md:grid-cols-2 gap-4">
+            {# Trail Item 1 #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=200&fit=crop" class="w-full h-32 object-cover">
+                <div class="p-4">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Sentier des Cascades</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">8.5 km • Modéré</p>
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="flex items-center gap-1 text-amber-400 text-sm">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <span class="text-gray-500 ml-1">(4.9)</span>
+                        </div>
+                        <button class="text-wellcare-600 dark:text-wellcare-400 text-sm hover:underline">Voir</button>
+                    </div>
+                </div>
+            </div>
+            
+            {# Trail Item 2 #}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=200&fit=crop" class="w-full h-32 object-cover">
+                <div class="p-4">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Montagne Bleue</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">12.3 km • Difficile</p>
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="flex items-center gap-1 text-amber-400 text-sm">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                            <span class="text-gray-500 ml-1">(4.5)</span>
+                        </div>
+                        <button class="text-wellcare-600 dark:text-wellcare-400 text-sm hover:underline">Voir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Reviews Tab #}
+    <div x-show="activeTab === 'reviews'" style="display: none;">
+        <div class="space-y-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&h=100&fit=crop" class="w-16 h-16 rounded-lg object-cover">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Montagne Bleue</h3>
+                        <div class="flex items-center gap-1 text-amber-400 text-sm">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">"Expérience inoubliable ! Le sommet offre une vue à couper le souffle..."</p>
+                <p class="text-xs text-gray-400 mt-2">il y a 5 heures</p>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop" class="w-16 h-16 rounded-lg object-cover">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Forêt de Pins</h3>
+                        <div class="flex items-center gap-1 text-amber-400 text-sm">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">"Trail parfait pour une sortie en famille. Ombragé et accessible..."</p>
+                <p class="text-xs text-gray-400 mt-2">il y a 1 semaine</p>
+            </div>
+        </div>
+    </div>
+
+    {# Photos Tab #}
+    <div x-show="activeTab === 'photos'" style="display: none;">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&h=300&fit=crop" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+            <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=300&h=300&fit=crop" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+            <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=300&h=300&fit=crop" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+            <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=300&h=300&fit=crop" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&h=300&fit=crop" class="w-full aspect-square object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+        </div>
+    </div>
+
+    {# Achievements Tab #}
+    <div x-show="activeTab === 'achievements'" style="display: none;">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white mx-auto mb-2">
+                    <i class="fas fa-mountain text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">50+ Trails</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Débloqué</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-wellcare-400 to-wellcare-600 rounded-full flex items-center justify-center text-white mx-auto mb-2">
+                    <i class="fas fa-road text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">100+ km</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Débloqué</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white mx-auto mb-2">
+                    <i class="fas fa-star text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">50+ Avis</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Débloqué</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full flex items-center justify-center text-white mx-auto mb-2">
+                    <i class="fas fa-award text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">Anniversary</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Débloqué</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

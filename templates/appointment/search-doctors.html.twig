@@ -1,0 +1,664 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Find a Doctor - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('appointment') }}
+{% endblock %}
+
+{% block scripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('appointment-booking') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="doctorSearch()" x-init="init()">
+    
+    {# Hero Search Section #}
+    <div class="bg-gradient-to-br from-wellcare-600 to-wellcare-700 dark:from-wellcare-800 dark:to-wellcare-900">
+        <div class="py-12 container-wellcare lg:py-16">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="mb-4 text-3xl font-bold text-white lg:text-4xl">
+                    Find the Right Healthcare Professional
+                </h1>
+                <p class="mb-8 text-lg text-wellcare-100">
+                    Book appointments with top-rated doctors, specialists, and healthcare providers
+                </p>
+                
+                {# Main Search Bar #}
+                <div class="p-4 bg-white shadow-xl dark:bg-gray-800 rounded-2xl lg:p-6">
+                    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                        {# Specialty Search #}
+                        <div class="relative lg:col-span-4">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="text-gray-400 fas fa-user-md"></i>
+                            </div>
+                            <input 
+                                type="text" 
+                                x-model="searchQuery"
+                                @input="debouncedSearch()"
+                                placeholder="Search by specialty, doctor name..."
+                                class="pl-10 input"
+                            >
+                        </div>
+                        
+                        {# Location #}
+                        <div class="relative lg:col-span-3">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="text-gray-400 fas fa-map-marker-alt"></i>
+                            </div>
+                            <select x-model="filters.location" @change="applyFilters()" class="pl-10 appearance-none cursor-pointer input">
+                                <option value="">All Locations</option>
+                                <option value="tunis">Tunis</option>
+                                <option value="sousse">Sousse</option>
+                                <option value="sfax">Sfax</option>
+                                <option value="monastir">Monastir</option>
+                                <option value="nabeul">Nabeul</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i class="text-xs text-gray-400 fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        
+                        {# Availability #}
+                        <div class="relative lg:col-span-3">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <i class="text-gray-400 fas fa-calendar-alt"></i>
+                            </div>
+                            <select x-model="filters.availability" @change="applyFilters()" class="pl-10 appearance-none cursor-pointer input">
+                                <option value="">Any Time</option>
+                                <option value="today">Today</option>
+                                <option value="tomorrow">Tomorrow</option>
+                                <option value="week">This Week</option>
+                                <option value="weekend">Weekend</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i class="text-xs text-gray-400 fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        
+                        {# Search Button #}
+                        <div class="lg:col-span-2">
+                            <button @click="searchDoctors()" class="btn-primary w-full h-full min-h-[48px]">
+                                <i class="mr-2 fas fa-search"></i>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {# Quick Specialty Tags #}
+                    <div class="flex flex-wrap gap-2 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Popular:</span>
+                        <template x-for="specialty in popularSpecialties" :key="specialty">
+                            <button 
+                                @click="selectSpecialty(specialty)"
+                                class="px-3 py-1 text-sm transition-colors rounded-full bg-wellcare-50 text-wellcare-700 hover:bg-wellcare-100 dark:bg-wellcare-900/30 dark:text-wellcare-300 dark:hover:bg-wellcare-900/50"
+                                x-text="specialty"
+                            ></button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {# Main Content Area #}
+    <div class="py-8 container-wellcare">
+        <div class="flex flex-col gap-8 lg:flex-row">
+            
+            {# Sidebar Filters #}
+            <aside class="flex-shrink-0 lg:w-80">
+                <div class="sticky card top-24">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-filter text-wellcare-500"></i>
+                                Filters
+                            </h2>
+                            <button @click="resetFilters()" class="text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
+                                Reset
+                            </button>
+                        </div>
+                        
+                        {# Specialty Filter #}
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Specialty</h3>
+                            <div class="space-y-2 overflow-y-auto max-h-48">
+                                <template x-for="specialty in allSpecialties" :key="specialty">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            :value="specialty"
+                                            x-model="filters.specialties"
+                                            @change="applyFilters()"
+                                            class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500"
+                                        >
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300" x-text="specialty"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        {# Consultation Type #}
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Consultation Type</h3>
+                            <div class="space-y-2">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" x-model="filters.consultationTypes" value="in-person" @change="applyFilters()" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                        <i class="mr-1 fas fa-hospital text-wellcare-500"></i> In-Person
+                                    </span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" x-model="filters.consultationTypes" value="video" @change="applyFilters()" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                        <i class="mr-1 fas fa-video text-wellcare-500"></i> Video Call
+                                    </span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" x-model="filters.consultationTypes" value="phone" @change="applyFilters()" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                        <i class="mr-1 fas fa-phone text-wellcare-500"></i> Phone Call
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        {# Price Range #}
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                                Max Price: <span x-text="filters.maxPrice + ' TND'"></span>
+                            </h3>
+                            <input 
+                                type="range" 
+                                x-model="filters.maxPrice"
+                                min="20" 
+                                max="500" 
+                                step="10"
+                                @change="applyFilters()"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-wellcare-600"
+                            >
+                            <div class="flex justify-between mt-1 text-xs text-gray-500">
+                                <span>20 TND</span>
+                                <span>500 TND</span>
+                            </div>
+                        </div>
+                        
+                        {# Languages #}
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Languages</h3>
+                            <div class="space-y-2">
+                                <template x-for="lang in languages" :key="lang.code">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            :value="lang.code"
+                                            x-model="filters.languages"
+                                            @change="applyFilters()"
+                                            class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500"
+                                        >
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300" x-text="lang.name"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        {# Gender Preference #}
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Doctor Gender</h3>
+                            <div class="flex gap-2">
+                                <button 
+                                    @click="filters.gender = ''; applyFilters()"
+                                    :class="filters.gender === '' ? 'bg-wellcare-100 text-wellcare-700 border-wellcare-300 dark:bg-wellcare-900 dark:text-wellcare-300' : 'bg-white text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300'"
+                                    class="flex-1 px-3 py-2 text-sm transition-colors border rounded-lg"
+                                >
+                                    Any
+                                </button>
+                                <button 
+                                    @click="filters.gender = 'male'; applyFilters()"
+                                    :class="filters.gender === 'male' ? 'bg-wellcare-100 text-wellcare-700 border-wellcare-300 dark:bg-wellcare-900 dark:text-wellcare-300' : 'bg-white text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300'"
+                                    class="flex-1 px-3 py-2 text-sm transition-colors border rounded-lg"
+                                >
+                                    <i class="mr-1 fas fa-mars"></i> Male
+                                </button>
+                                <button 
+                                    @click="filters.gender = 'female'; applyFilters()"
+                                    :class="filters.gender === 'female' ? 'bg-wellcare-100 text-wellcare-700 border-wellcare-300 dark:bg-wellcare-900 dark:text-wellcare-300' : 'bg-white text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300'"
+                                    class="flex-1 px-3 py-2 text-sm transition-colors border rounded-lg"
+                                >
+                                    <i class="mr-1 fas fa-venus"></i> Female
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {# Rating #}
+                        <div>
+                            <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Minimum Rating</h3>
+                            <div class="space-y-2">
+                                <template x-for="rating in [4, 3, 2, 1]" :key="rating">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input 
+                                            type="radio" 
+                                            :value="rating"
+                                            x-model="filters.minRating"
+                                            @change="applyFilters()"
+                                            class="w-4 h-4 border-gray-300 text-wellcare-600 focus:ring-wellcare-500"
+                                        >
+                                        <span class="flex items-center ml-2">
+                                            <template x-for="i in 5" :key="i">
+                                                <i :class="i <= rating ? 'fas fa-star text-yellow-400' : 'far fa-star text-gray-300'" class="text-sm"></i>
+                                            </template>
+                                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">& Up</span>
+                                        </span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+            {# Results Area #}
+            <main class="flex-1">
+                {# Results Header #}
+                <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            <span x-text="filteredDoctors.length"></span> Doctors Available
+                        </h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Showing results for your search criteria
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        {# View Toggle #}
+                        <div class="flex p-1 bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
+                            <button 
+                                @click="viewMode = 'list'"
+                                :class="viewMode === 'list' ? 'bg-wellcare-100 text-wellcare-700 dark:bg-wellcare-900 dark:text-wellcare-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+                                class="px-3 py-1.5 rounded-md text-sm transition-colors"
+                            >
+                                <i class="mr-1 fas fa-list"></i> List
+                            </button>
+                            <button 
+                                @click="viewMode = 'map'"
+                                :class="viewMode === 'map' ? 'bg-wellcare-100 text-wellcare-700 dark:bg-wellcare-900 dark:text-wellcare-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+                                class="px-3 py-1.5 rounded-md text-sm transition-colors"
+                            >
+                                <i class="mr-1 fas fa-map"></i> Map
+                            </button>
+                        </div>
+                        
+                        {# Sort Dropdown #}
+                        <select x-model="sortBy" @change="sortDoctors()" class="py-2 text-sm input">
+                            <option value="recommended">Recommended</option>
+                            <option value="rating">Highest Rated</option>
+                            <option value="experience">Most Experienced</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="availability">Next Available</option>
+                        </select>
+                    </div>
+                </div>
+                
+                {# Loading State #}
+                <div x-show="loading" class="flex items-center justify-center py-16">
+                    <div class="text-center">
+                        <div class="inline-block w-12 h-12 border-4 rounded-full animate-spin border-wellcare-200 border-t-wellcare-600"></div>
+                        <p class="mt-4 text-gray-600 dark:text-gray-400">Searching for doctors...</p>
+                    </div>
+                </div>
+                
+                {# No Results #}
+                <div x-show="!loading && filteredDoctors.length === 0" class="py-16 text-center">
+                    <div class="inline-flex items-center justify-center w-20 h-20 mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                        <i class="text-3xl text-gray-400 fas fa-search"></i>
+                    </div>
+                    <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">No doctors found</h3>
+                    <p class="mb-4 text-gray-500 dark:text-gray-400">Try adjusting your filters or search criteria</p>
+                    <button @click="resetFilters()" class="btn-primary">
+                        Clear All Filters
+                    </button>
+                </div>
+                
+                {# Doctor Cards List #}
+                <div x-show="!loading && viewMode === 'list'" class="space-y-4">
+                    <template x-for="doctor in paginatedDoctors" :key="doctor.id">
+                        <div class="transition-shadow duration-200 card hover:shadow-lg">
+                            <div class="p-6">
+                                <div class="flex flex-col gap-6 lg:flex-row">
+                                    {# Doctor Photo & Rating #}
+                                    <div class="flex-shrink-0">
+                                        <div class="relative">
+                                            <div class="flex items-center justify-center w-24 h-24 border-2 border-gray-100 lg:w-32 lg:h-32 rounded-xl bg-gradient-to-br from-wellcare-100 to-wellcare-200 dark:from-wellcare-900 dark:to-wellcare-800 dark:border-gray-700">
+                                                <i class="text-4xl fas fa-user-md lg:text-5xl text-wellcare-500"></i>
+                                            </div>
+                                            <div x-show="doctor.isVerified" class="absolute -bottom-2 -right-2 bg-wellcare-500 text-white rounded-full p-1.5" title="Verified Doctor">
+                                                <i class="text-sm fas fa-check-circle"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 text-center">
+                                            <div class="flex items-center justify-center gap-1">
+                                                <i class="text-yellow-400 fas fa-star"></i>
+                                                <span class="font-semibold text-gray-900 dark:text-white" x-text="doctor.rating"></span>
+                                                <span class="text-sm text-gray-500" x-text="'(' + doctor.reviewCount + ')'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {# Doctor Info #}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                            <div>
+                                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                                    <a :href="'/appointment/doctor/' + doctor.id" x-text="'Dr. ' + doctor.name" class="hover:text-wellcare-600 dark:hover:text-wellcare-400"></a>
+                                                </h3>
+                                                <p class="font-medium text-wellcare-600 dark:text-wellcare-400" x-text="doctor.specialty"></p>
+                                                
+                                                <div class="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    <span><i class="mr-1 fas fa-briefcase"></i> <span x-text="doctor.experience + ' years exp.'"></span></span>
+                                                    <span><i class="mr-1 fas fa-map-marker-alt"></i> <span x-text="doctor.location"></span></span>
+                                                    <span x-show="doctor.languages.length > 0">
+                                                        <i class="mr-1 fas fa-language"></i> 
+                                                        <span x-text="doctor.languages.join(', ')"></span>
+                                                    </span>
+                                                </div>
+                                                
+                                                {# Hospital Affiliations #}
+                                                <div class="flex flex-wrap gap-2 mt-2">
+                                                    <template x-for="hospital in doctor.hospitals" :key="hospital">
+                                                        <span class="px-2 py-1 text-xs text-gray-600 bg-gray-100 rounded dark:bg-gray-800 dark:text-gray-400" x-text="hospital"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            
+                                            {# Pricing & Availability #}
+                                            <div class="lg:text-right">
+                                                <div class="text-2xl font-bold text-wellcare-600 dark:text-wellcare-400">
+                                                    <span x-text="doctor.price"></span> TND
+                                                </div>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">per consultation</p>
+                                                
+                                                {# Next Available #}
+                                                <div class="inline-flex items-center gap-2 mt-2 text-sm" :class="doctor.nextAvailable === 'Today' ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'">
+                                                    <span class="w-2 h-2 rounded-full" :class="doctor.nextAvailable === 'Today' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'"></span>
+                                                    <span x-text="'Next: ' + doctor.nextAvailable"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {# Available Slots Preview #}
+                                        <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                                            <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Available Slots:</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <template x-for="slot in doctor.availableSlots.slice(0, 5)" :key="slot.time">
+                                                    <button 
+                                                        @click="bookSlot(doctor, slot)"
+                                                        class="px-3 py-1.5 text-sm border border-wellcare-200 text-wellcare-700 rounded-lg hover:bg-wellcare-50 dark:border-wellcare-800 dark:text-wellcare-300 dark:hover:bg-wellcare-900/30 transition-colors"
+                                                        x-text="slot.time"
+                                                    ></button>
+                                                </template>
+                                                <a :href="'/appointment/doctor/' + doctor.id" class="px-3 py-1.5 text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
+                                                    More slots <i class="ml-1 fas fa-arrow-right"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        
+                                        {# Action Buttons #}
+                                        <div class="flex flex-wrap gap-3 mt-4">
+                                            <a :href="'/appointment/doctor/' + doctor.id" class="text-sm btn-outline">
+                                                <i class="mr-2 fas fa-user"></i>View Profile
+                                            </a>
+                                            <a :href="'/appointment/book/' + doctor.id" class="text-sm btn-primary">
+                                                <i class="mr-2 fas fa-calendar-check"></i>Book Appointment
+                                            </a>
+                                            <button @click="toggleFavorite(doctor.id)" class="text-sm btn-ghost" :class="isFavorite(doctor.id) ? 'text-red-500' : ''">
+                                                <i :class="isFavorite(doctor.id) ? 'fas fa-heart' : 'far fa-heart'"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                {# Map View Placeholder #}
+                <div x-show="!loading && viewMode === 'map'" class="card h-[600px] flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="mb-4 text-6xl text-gray-300 fas fa-map-marked-alt dark:text-gray-600"></i>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">Map View</h3>
+                        <p class="text-gray-500 dark:text-gray-400">Interactive map with doctor locations will be displayed here</p>
+                    </div>
+                </div>
+                
+                {# Pagination #}
+                <div x-show="!loading && filteredDoctors.length > 0" class="flex items-center justify-center gap-2 mt-8">
+                    <button 
+                        @click="currentPage--" 
+                        :disabled="currentPage === 1"
+                        class="px-4 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                        <i class="mr-1 fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                        Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span>
+                    </span>
+                    <button 
+                        @click="currentPage++" 
+                        :disabled="currentPage === totalPages"
+                        class="px-4 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                        Next <i class="ml-1 fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+<script>
+function doctorSearch() {
+    return {
+        searchQuery: '',
+        loading: false,
+        viewMode: 'list',
+        sortBy: 'recommended',
+        currentPage: 1,
+        itemsPerPage: 10,
+        favorites: [],
+        
+        filters: {
+            location: '',
+            availability: '',
+            specialties: [],
+            consultationTypes: [],
+            maxPrice: 500,
+            languages: [],
+            gender: '',
+            minRating: ''
+        },
+        
+        popularSpecialties: [
+            'Cardiology', 'Dermatology', 'Pediatrics', 'General Medicine', 
+            'Orthopedics', 'Neurology', 'Gynecology', 'Psychiatry'
+        ],
+        
+        allSpecialties: [
+            'Cardiology', 'Dermatology', 'Pediatrics', 'General Medicine',
+            'Orthopedics', 'Neurology', 'Gynecology', 'Psychiatry',
+            'Ophthalmology', 'ENT', 'Urology', 'Gastroenterology',
+            'Endocrinology', 'Oncology', 'Radiology', 'Pathology'
+        ],
+        
+        languages: [
+            { code: 'ar', name: 'Arabic' },
+            { code: 'fr', name: 'French' },
+            { code: 'en', name: 'English' },
+            { code: 'it', name: 'Italian' }
+        ],
+        
+        doctors: [],
+        filteredDoctors: [],
+        
+        init() {
+            this.loadMockDoctors();
+            this.filteredDoctors = [...this.doctors];
+            
+            const saved = localStorage.getItem('favoriteDoctors');
+            if (saved) {
+                this.favorites = JSON.parse(saved);
+            }
+        },
+        
+        get paginatedDoctors() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredDoctors.slice(start, end);
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.filteredDoctors.length / this.itemsPerPage);
+        },
+        
+        loadMockDoctors() {
+            const specialties = ['Cardiology', 'Dermatology', 'Pediatrics', 'General Medicine', 'Orthopedics'];
+            const locations = ['Tunis', 'Sousse', 'Sfax', 'Monastir'];
+            const firstNames = ['Ahmed', 'Mohamed', 'Sami', 'Karim', 'Fatima', 'Amel', 'Sonia', 'Leila'];
+            const lastNames = ['Ben Ali', 'Trabelsi', 'Guesmi', 'Chaabane', 'Bouaziz', 'Mansouri'];
+            
+            this.doctors = Array.from({ length: 25 }, (_, i) => ({
+                id: i + 1,
+                name: firstNames[Math.floor(Math.random() * firstNames.length)] + ' ' + lastNames[Math.floor(Math.random() * lastNames.length)],
+                specialty: specialties[Math.floor(Math.random() * specialties.length)],
+                experience: Math.floor(Math.random() * 25) + 5,
+                location: locations[Math.floor(Math.random() * locations.length)],
+                rating: (Math.random() * 2 + 3).toFixed(1),
+                reviewCount: Math.floor(Math.random() * 200) + 10,
+                price: Math.floor(Math.random() * 150) + 50,
+                languages: ['Arabic', 'French'].concat(Math.random() > 0.5 ? ['English'] : []),
+                hospitals: ['Charles Nicolle Hospital', 'La Rabta Hospital'].slice(0, Math.floor(Math.random() * 2) + 1),
+                isVerified: Math.random() > 0.3,
+                nextAvailable: ['Today', 'Tomorrow', 'In 2 days'][Math.floor(Math.random() * 3)],
+                availableSlots: [
+                    { time: '09:00 AM', type: 'in-person' },
+                    { time: '10:30 AM', type: 'video' },
+                    { time: '02:00 PM', type: 'in-person' },
+                    { time: '04:30 PM', type: 'phone' },
+                    { time: '06:00 PM', type: 'video' }
+                ],
+                gender: Math.random() > 0.5 ? 'male' : 'female'
+            }));
+        },
+        
+        debouncedSearch() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => this.applyFilters(), 300);
+        },
+        
+        applyFilters() {
+            this.loading = true;
+            this.currentPage = 1;
+            
+            setTimeout(() => {
+                let results = [...this.doctors];
+                
+                if (this.searchQuery) {
+                    const query = this.searchQuery.toLowerCase();
+                    results = results.filter(d => 
+                        d.name.toLowerCase().includes(query) ||
+                        d.specialty.toLowerCase().includes(query)
+                    );
+                }
+                
+                if (this.filters.location) {
+                    results = results.filter(d => d.location.toLowerCase() === this.filters.location);
+                }
+                
+                if (this.filters.specialties.length > 0) {
+                    results = results.filter(d => this.filters.specialties.includes(d.specialty));
+                }
+                
+                if (this.filters.gender) {
+                    results = results.filter(d => d.gender === this.filters.gender);
+                }
+                
+                if (this.filters.minRating) {
+                    results = results.filter(d => parseFloat(d.rating) >= parseFloat(this.filters.minRating));
+                }
+                
+                results = results.filter(d => d.price <= this.filters.maxPrice);
+                
+                this.filteredDoctors = results;
+                this.sortDoctors();
+                this.loading = false;
+            }, 300);
+        },
+        
+        sortDoctors() {
+            switch(this.sortBy) {
+                case 'rating':
+                    this.filteredDoctors.sort((a, b) => b.rating - a.rating);
+                    break;
+                case 'experience':
+                    this.filteredDoctors.sort((a, b) => b.experience - a.experience);
+                    break;
+                case 'price-low':
+                    this.filteredDoctors.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-high':
+                    this.filteredDoctors.sort((a, b) => b.price - a.price);
+                    break;
+                default:
+                    // Keep default order for 'recommended'
+                    break;
+            }
+        },
+        
+        selectSpecialty(specialty) {
+            this.searchQuery = specialty;
+            this.applyFilters();
+        },
+        
+        resetFilters() {
+            this.searchQuery = '';
+            this.filters = {
+                location: '',
+                availability: '',
+                specialties: [],
+                consultationTypes: [],
+                maxPrice: 500,
+                languages: [],
+                gender: '',
+                minRating: ''
+            };
+            this.applyFilters();
+        },
+        
+        searchDoctors() {
+            this.applyFilters();
+        },
+        
+        bookSlot(doctor, slot) {
+            window.location.href = `/appointment/book/${doctor.id}?time=${encodeURIComponent(slot.time)}&type=${slot.type}`;
+        },
+        
+        toggleFavorite(doctorId) {
+            const index = this.favorites.indexOf(doctorId);
+            if (index > -1) {
+                this.favorites.splice(index, 1);
+            } else {
+                this.favorites.push(doctorId);
+            }
+            localStorage.setItem('favoriteDoctors', JSON.stringify(this.favorites));
+        },
+        
+        isFavorite(doctorId) {
+            return this.favorites.includes(doctorId);
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Navigation - WellCare Connect</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f9f6; }
+        
+        .nav-container { display: flex; height: 100vh; }
+        
+        .nav-sidebar {
+            width: 380px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .nav-header {
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .nav-header h1 { font-size: 1.4rem; margin-bottom: 5px; }
+        .nav-header p { font-size: 0.85rem; opacity: 0.9; }
+        
+        .current-status {
+            padding: 20px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+        .status-item { padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .status-icon { font-size: 1.8rem; margin-bottom: 8px; }
+        .status-value { font-size: 1.3rem; font-weight: 700; color: #00A790; }
+        .status-label { font-size: 0.75rem; color: #6b7280; margin-top: 4px; }
+        
+        .turn-by-turn { flex: 1; overflow-y: auto; padding: 20px; }
+        .turn-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+        
+        .instruction-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9fafb;
+            border-radius: 12px;
+            border-left: 4px solid #00A790;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .instruction-item.active { background: #f0f9f6; border-left-color: #002F5C; transform: translateX(5px); }
+        .instruction-item.completed { opacity: 0.6; border-left-color: #22c55e; }
+        
+        .instruction-number {
+            width: 32px;
+            height: 32px;
+            background: #00A790;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .instruction-item.completed .instruction-number { background: #22c55e; }
+        .instruction-item.active .instruction-number { background: #002F5C; }
+        
+        .instruction-content { flex: 1; }
+        .instruction-text { font-size: 0.95rem; font-weight: 500; margin-bottom: 4px; }
+        .instruction-distance { font-size: 0.8rem; color: #6b7280; }
+        
+        .instruction-icon { font-size: 1.5rem; margin-left: 10px; }
+        
+        .nav-controls {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+        
+        .nav-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+        
+        .btn-start { background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%); color: white; }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 167, 144, 0.4); }
+        .btn-pause { background: #f59e0b; color: white; }
+        .btn-stop { background: #ef4444; color: white; }
+        
+        .map-section { flex: 1; position: relative; }
+        #nav-map { height: 100%; width: 100%; }
+        
+        .nav-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .overlay-card {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .eta-card { flex: 1; }
+        .eta-value { font-size: 1.5rem; font-weight: 700; color: #00A790; }
+        .eta-label { font-size: 0.8rem; color: #6b7280; }
+        
+        .distance-card { text-align: right; }
+        .distance-value { font-size: 1.5rem; font-weight: 700; color: #002F5C; }
+        .distance-label { font-size: 0.8rem; color: #6b7280; }
+        
+        .off-route-alert {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+        }
+        
+        .gps-status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .gps-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
+        .next-turn-panel {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #002F5C 0%, #00A790 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: center;
+            min-width: 300px;
+        }
+        .next-turn-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 8px; }
+        .next-turn-icon { font-size: 2rem; margin-bottom: 8px; }
+        .next-turn-text { font-size: 1.2rem; font-weight: 600; }
+        .next-turn-distance { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; }
+        
+        .voice-nav-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 20px rgba(0, 167, 144, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        .voice-nav-btn:hover { transform: scale(1.1); }
+        
+        .compass {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .compass-needle {
+            font-size: 2.5rem;
+            transition: transform 0.3s;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-container { flex-direction: column-reverse; }
+            .nav-sidebar { width: 100%; height: 50vh; }
+            .map-section { height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+    <div x-data="trailNavigation()">
+        <div class="nav-container">
+            <!-- Navigation Sidebar -->
+            <div class="nav-sidebar">
+                <div class="nav-header">
+                    <h1>🏔️ Pine Ridge Trail</h1>
+                    <p>Turn-by-turn navigation</p>
+                </div>
+                
+                <div class="current-status">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="status-icon">📏</div>
+                            <div class="status-value" x-text="currentDistance"></div>
+                            <div class="status-label">Distance (km)</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-icon">⏱️</div>
+                            <div class="status-value" x-text="elapsedTime"></div>
+                            <div class="status-label">Time</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-icon">❤️</div>
+                            <div class="status-value" x-text="heartRate"></div>
+                            <div class="status-label">BPM</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="turn-by-turn">
+                    <div class="turn-title">🗺️ Route Instructions</div>
+                    <template x-for="(instruction, index) in instructions" :key="index">
+                        <div class="instruction-item" :class="{ 'active': index === currentInstruction, 'completed': index < currentInstruction }" @click="focusInstruction(index)">
+                            <div class="instruction-number" x-text="index + 1"></div>
+                            <div class="instruction-content">
+                                <div class="instruction-text" x-text="instruction.text"></div>
+                                <div class="instruction-distance" x-text="instruction.distance"></div>
+                            </div>
+                            <div class="instruction-icon" x-text="instruction.icon"></div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div class="nav-controls">
+                    <button class="nav-btn btn-start" x-show="!isNavigating" @click="startNavigation()">
+                        ▶️ Start Navigation
+                    </button>
+                    <button class="nav-btn btn-pause" x-show="isNavigating && !isPaused" @click="pauseNavigation()">
+                        ⏸️ Pause
+                    </button>
+                    <button class="nav-btn btn-start" x-show="isNavigating && isPaused" @click="resumeNavigation()">
+                        ▶️ Resume
+                    </button>
+                    <button class="nav-btn btn-stop" x-show="isNavigating" @click="stopNavigation()">
+                        ⏹️ End Trail
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Map Section -->
+            <div class="map-section">
+                <div id="nav-map"></div>
+                
+                <div class="nav-overlay">
+                    <div class="overlay-card eta-card">
+                        <div>
+                            <div class="eta-value" x-text="remainingTime"></div>
+                            <div class="eta-label">Estimated arrival</div>
+                        </div>
+                    </div>
+                    <div class="overlay-card distance-card">
+                        <div>
+                            <div class="distance-value" x-text="remainingDistance + ' km'"></div>
+                            <div class="distance-label">remaining</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="off-route-alert" x-show="offRouteAlert">
+                    <span style="font-size: 1.5rem;">⚠️</span>
+                    <div>
+                        <strong>Off Route Detected</strong>
+                        <p style="font-size: 0.85rem; color: #92400e;">Recalculating route...</p>
+                    </div>
+                </div>
+                
+                <div class="next-turn-panel" x-show="isNavigating">
+                    <div class="next-turn-label">Next turn</div>
+                    <div class="next-turn-icon" x-text="nextTurnIcon"></div>
+                    <div class="next-turn-text" x-text="nextTurnText"></div>
+                    <div class="next-turn-distance" x-text="'In ' + nextTurnDistance + ' meters'"></div>
+                </div>
+                
+                <div class="gps-status">
+                    <div class="gps-indicator"></div>
+                    <span>GPS: <strong x-text="gpsAccuracy"></strong> accuracy</span>
+                </div>
+                
+                <div class="compass">
+                    <div class="compass-needle" :style="'transform: rotate(' + heading + 'deg)'">🧭</div>
+                </div>
+                
+                <button class="voice-nav-btn" @click="toggleVoice()" :class="{ 'pulsing': voiceEnabled }">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function trailNavigation() {
+            return {
+                map: null,
+                isNavigating: false,
+                isPaused: false,
+                voiceEnabled: true,
+                offRouteAlert: false,
+                currentDistance: '1.2',
+                remainingDistance: 4.0,
+                elapsedTime: '00:18',
+                remainingTime: '1h 12m',
+                heartRate: '142',
+                gpsAccuracy: '10m',
+                heading: 45,
+                currentInstruction: 2,
+                nextTurnIcon: '↩️',
+                nextTurnText: 'Turn left onto Ridge Trail',
+                nextTurnDistance: '250',
+                
+                instructions: [
+                    { text: 'Head north on Pine Ridge Trail', distance: '0.3 km', icon: '⬆️' },
+                    { text: 'Continue straight at junction', distance: '0.5 km', icon: '➡️' },
+                    { text: 'Turn right onto Forest Path', distance: '0.8 km', icon: '↗️' },
+                    { text: 'Continue to Crystal Spring', distance: '1.2 km', icon: '💧' },
+                    { text: 'Turn left onto Summit Trail', distance: '0.5 km', icon: '⬅️' },
+                    { text: 'Climb uphill to viewpoint', distance: '0.6 km', icon: '⛰️' },
+                    { text: 'Arrive at Eagle Lookout', distance: '0.3 km', icon: '🏁' }
+                ],
+                
+                init() {
+                    this.$nextTick(() => {
+                        this.initMap();
+                    });
+                },
+                
+                initMap() {
+                    this.map = L.map('nav-map').setView([45.5240, -122.6770], 15);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(this.map);
+                    
+                    // Add route polyline
+                    const routeCoords = [
+                        [45.5234, -122.6762],
+                        [45.5240, -122.6770],
+                        [45.5245, -122.6780],
+                        [45.5250, -122.6790],
+                        [45.5255, -122.6780],
+                        [45.5260, -122.6770],
+                        [45.5265, -122.6760]
+                    ];
+                    
+                    this.routeLine = L.polyline(routeCoords, {
+                        color: '#00A790',
+                        weight: 8,
+                        opacity: 0.9
+                    }).addTo(this.map);
+                    
+                    // Add navigation marker
+                    this.navMarker = L.marker([45.5242, -122.6775], {
+                        icon: L.divIcon({
+                            html: '<div style="background: #002F5C; width: 50px; height: 50px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 20px;">🚶</div>',
+                            className: 'nav-marker'
+                        })
+                    }).addTo(this.map);
+                    
+                    // Add direction arrow
+                    this.directionArrow = L.polyline([[45.5242, -122.6775], [45.5245, -122.6778]], {
+                        color: '#002F5C',
+                        weight: 4,
+                        dashArray: '10, 10'
+                    }).addTo(this.map);
+                    
+                    this.map.fitBounds(this.routeLine.getBounds(), { padding: [50, 50] });
+                    
+                    // Simulate GPS updates
+                    setInterval(() => {
+                        if (this.isNavigating && !this.isPaused) {
+                            this.updateNavigation();
+                        }
+                    }, 2000);
+                },
+                
+                startNavigation() {
+                    this.isNavigating = true;
+                    this.isPaused = false;
+                    this.simulateProgress();
+                },
+                
+                pauseNavigation() {
+                    this.isPaused = true;
+                },
+                
+                resumeNavigation() {
+                    this.isPaused = false;
+                },
+                
+                stopNavigation() {
+                    this.isNavigating = false;
+                    this.isPaused = false;
+                    this.currentDistance = '0.0';
+                    this.elapsedTime = '00:00';
+                },
+                
+                toggleVoice() {
+                    this.voiceEnabled = !this.voiceEnabled;
+                    if (this.voiceEnabled) {
+                        alert('Voice navigation enabled');
+                    } else {
+                        alert('Voice navigation disabled');
+                    }
+                },
+                
+                focusInstruction(index) {
+                    this.currentInstruction = index;
+                    const coords = [
+                        [45.5234, -122.6762],
+                        [45.5240, -122.6770],
+                        [45.5245, -122.6780],
+                        [45.5250, -122.6790],
+                        [45.5255, -122.6780],
+                        [45.5260, -122.6770],
+                        [45.5265, -122.6760]
+                    ];
+                    if (coords[index]) {
+                        this.map.flyTo(coords[index], 17);
+                    }
+                },
+                
+                simulateProgress() {
+                    let distance = 1.2;
+                    let timeSeconds = 1080; // 18 minutes in seconds
+                    
+                    const interval = setInterval(() => {
+                        if (!this.isNavigating || this.isPaused) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        
+                        distance += 0.1;
+                        timeSeconds += 120;
+                        
+                        this.currentDistance = distance.toFixed(1);
+                        this.remainingDistance = (5.2 - distance).toFixed(1);
+                        
+                        const hours = Math.floor(timeSeconds / 3600);
+                        const minutes = Math.floor((timeSeconds % 3600) / 60);
+                        this.elapsedTime = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+                        
+                        const remainingMinutes = Math.ceil((5.2 - distance) * 12);
+                        this.remainingTime = remainingMinutes < 60 
+                            ? remainingMinutes + 'm' 
+                            : Math.floor(remainingMinutes / 60) + 'h ' + (remainingMinutes % 60) + 'm';
+                        
+                        if (distance >= 5.2) {
+                            clearInterval(interval);
+                            this.isNavigating = false;
+                            alert('Congratulations! You completed the trail!');
+                        }
+                    }, 2000);
+                },
+                
+                updateNavigation() {
+                    // Simulate GPS movement
+                    const newLat = 45.5240 + (Math.random() - 0.5) * 0.002;
+                    const newLng = -122.6770 + (Math.random() - 0.5) * 0.002;
+                    this.navMarker.setLatLng([newLat, newLng]);
+                    
+                    // Random heading changes
+                    this.heading = Math.floor(Math.random() * 360);
+                    
+                    // Simulate off-route occasionally
+                    if (Math.random() > 0.95) {
+                        this.offRouteAlert = true;
+                        setTimeout(() => {
+                            this.offRouteAlert = false;
+                        }, 3000);
+                    }
+                }
+            };
+        }
+    </script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</body>
+</html>

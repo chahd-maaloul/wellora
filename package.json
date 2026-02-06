@@ -1,0 +1,37 @@
+{
+    "name": "wellcare-connect",
+    "version": "1.0.0",
+    "description": "WellCare Connect - Healthcare Platform",
+    "scripts": {
+        "dev-server": "encore dev-server",
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production --progress"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.28.6",
+        "@babel/plugin-proposal-class-properties": "^7.18.6",
+        "@fortawesome/fontawesome-free": "^6.4.0",
+        "@fullcalendar/core": "^6.1.8",
+        "@fullcalendar/daygrid": "^6.1.8",
+        "@fullcalendar/interaction": "^6.1.8",
+        "@fullcalendar/list": "^6.1.8",
+        "@fullcalendar/timegrid": "^6.1.8",
+        "@symfony/webpack-encore": "^5.3.0",
+        "alpinejs": "^3.13.0",
+        "autoprefixer": "^10.4.16",
+        "chart.js": "^4.4.0",
+        "file-loader": "^6.2.0",
+        "flowbite": "^1.8.1",
+        "flowbite-datepicker": "^1.2.2",
+        "postcss": "^8.4.32",
+        "postcss-loader": "^8.1.0",
+        "sass": "^1.69.5",
+        "sass-loader": "^16.0.6",
+        "tailwindcss": "^3.3.6",
+        "webpack-notifier": "^1.15.0"
+    },
+    "dependencies": {
+        "core-js": "^3.48.0"
+    }
+}

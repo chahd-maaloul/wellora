@@ -1,0 +1,280 @@
+{# templates/health/partials/ai-insights.html.twig #}
+{# AI Health Insights and Recommendations #}
+
+<div class="space-y-6" x-data="aiInsights()" x-init="init()">
+    {# AI Header #}
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="relative flex items-center justify-center w-12 h-12 text-white shadow-lg rounded-xl bg-gradient-to-br from-wellcare-500 to-wellcare-light-500">
+                <i class="text-xl fa-solid fa-robot"></i>
+                <span class="absolute flex items-center justify-center w-4 h-4 text-xs text-white rounded-full -top-1 -right-1 bg-emerald-500">
+                    <i class="fa-solid fa-check text-[10px]"></i>
+                </span>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Assistant Santé IA'|trans }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Analyses personnalisées basées sur vos données'|trans }}</p>
+            </div>
+        </div>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-wellcare-50 px-3 py-1 text-xs font-medium text-wellcare-700 dark:bg-wellcare-900/30 dark:text-wellcare-300">
+            <span class="h-1.5 w-1.5 rounded-full bg-wellcare-500 animate-pulse"></span>
+            {{ 'En ligne'|trans }}
+        </span>
+    </div>
+
+    {# Main Insights Cards #}
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {# Pattern Detection Card #}
+        <div class="p-5 border rounded-2xl bg-gradient-to-br from-wellcare-50 to-wellcare-100/50 border-wellcare-200 dark:from-wellcare-900/20 dark:to-wellcare-800/10 dark:border-wellcare-800/50">
+            <div class="flex items-start gap-3">
+                <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white rounded-xl bg-wellcare-500">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">{{ 'Patterns détectés'|trans }}</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-2 p-3 rounded-xl bg-white/70 dark:bg-gray-900/50">
+                            <i class="fa-solid fa-person-walking text-wellcare-500 mt-0.5"></i>
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>{{ 'Activité et sommeil'|trans }}</strong>
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {{ 'Vous dormez 23% mieux les soirées où vous faites une promenade.'|trans }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2 p-3 rounded-xl bg-white/70 dark:bg-gray-900/50">
+                            <i class="fa-solid fa-mug-hot text-amber-500 mt-0.5"></i>
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>{{ 'Caféine et énergie'|trans }}</strong>
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {{ 'Votre énergie baisse après 14h quand vous consommez plus de 2 cafés.'|trans }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Preventive Care Card #}
+        <div class="p-5 border rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200 dark:from-emerald-900/20 dark:to-emerald-800/10 dark:border-emerald-800/50">
+            <div class="flex items-start gap-3">
+                <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white rounded-xl bg-emerald-500">
+                    <i class="fa-solid fa-shield-heart"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">{{ 'Prévention recommandée'|trans }}</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-2 p-3 rounded-xl bg-white/70 dark:bg-gray-900/50">
+                            <i class="fa-solid fa-syringe text-emerald-500 mt-0.5"></i>
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>{{ 'Vaccination grippe'|trans }}</strong>
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {{ 'Recommandée avant le 15 novembre. Prenez rendez-vous.'|trans }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-2 p-3 rounded-xl bg-white/70 dark:bg-gray-900/50">
+                            <i class="fa-solid fa-flask text-blue-500 mt-0.5"></i>
+                            <div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>{{ 'Bilan sanguin annuel'|trans }}</strong>
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {{ 'Dernier bilan il y a 14 mois. Prévoyez un contrôle.'|trans }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Personalized Recommendations #}
+    <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-900/30 dark:text-amber-400">
+                <i class="text-lg fa-solid fa-lightbulb"></i>
+            </div>
+            <h4 class="font-semibold text-gray-900 dark:text-white">{{ 'Recommandations personnalisées'|trans }}</h4>
+        </div>
+        
+        <div class="space-y-3">
+            <div class="flex items-start gap-4 p-4 transition-colors cursor-pointer rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 group">
+                <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-bold rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400">
+                    1
+                </div>
+                <div class="flex-1">
+                    <h5 class="font-medium text-gray-900 transition-colors dark:text-white group-hover:text-wellcare-600 dark:group-hover:text-wellcare-400">
+                        {{ 'Augmentez progressivement votre activité physique'|trans }}
+                    </h5>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Vos données montrent une corrélation positive entre l\'activité modérée et votre humeur. Essayez 20 minutes de marche quotidienne.'|trans }}
+                    </p>
+                </div>
+                <i class="text-gray-300 transition-colors fa-solid fa-chevron-right dark:text-gray-600 group-hover:text-wellcare-500"></i>
+            </div>
+
+            <div class="flex items-start gap-4 p-4 transition-colors cursor-pointer rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 group">
+                <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-bold rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400">
+                    2
+                </div>
+                <div class="flex-1">
+                    <h5 class="font-medium text-gray-900 transition-colors dark:text-white group-hover:text-wellcare-600 dark:group-hover:text-wellcare-400">
+                        {{ 'Améliorez votre hygiène de sommeil'|trans }}
+                    </h5>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Vos entrées indiquent des difficultés d\'endormissement. Évitez les écrans 1h avant le coucher et maintenez un horaire régulier.'|trans }}
+                    </p>
+                </div>
+                <i class="text-gray-300 transition-colors fa-solid fa-chevron-right dark:text-gray-600 group-hover:text-wellcare-500"></i>
+            </div>
+
+            <div class="flex items-start gap-4 p-4 transition-colors cursor-pointer rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 group">
+                <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 text-sm font-bold rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400">
+                    3
+                </div>
+                <div class="flex-1">
+                    <h5 class="font-medium text-gray-900 transition-colors dark:text-white group-hover:text-wellcare-600 dark:group-hover:text-wellcare-400">
+                        {{ 'Hydratation et alimentation'|trans }}
+                    </h5>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'La fatigue fréquente pourrait être liée à une hydratation insuffisante. Visez 1.5L d\'eau par jour et des repas équilibrés.'|trans }}
+                    </p>
+                </div>
+                <i class="text-gray-300 transition-colors fa-solid fa-chevron-right dark:text-gray-600 group-hover:text-wellcare-500"></i>
+            </div>
+        </div>
+    </div>
+
+    {# Health Alerts #}
+    <div x-show="alerts.length > 0" class="p-5 border rounded-2xl bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800/50">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="flex items-center justify-center w-10 h-10 text-white rounded-xl bg-rose-500">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h4 class="font-semibold text-rose-900 dark:text-rose-100">{{ 'Alertes de santé'|trans }}</h4>
+                <p class="text-sm text-rose-700 dark:text-rose-300">{{ 'Nécessitent votre attention'|trans }}</p>
+            </div>
+        </div>
+        
+        <div class="space-y-3">
+            <template x-for="alert in alerts" :key="alert.id">
+                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/70 dark:bg-gray-900/50">
+                    <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg"
+                         :class="getAlertSeverityClass(alert.severity)">
+                        <i :class="alert.icon" class="text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium" :class="getAlertTextClass(alert.severity)" x-text="alert.title"></p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-text="alert.message"></p>
+                    </div>
+                    <button 
+                        @click="dismissAlert(alert.id)"
+                        class="flex-shrink-0 p-1 text-gray-400 rounded-lg hover:text-gray-600 dark:hover:text-gray-300"
+                        :aria-label="'{{ 'Ignorer'|trans }}'"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    {# Connect with Doctor CTA #}
+    <div class="p-6 text-white shadow-lg rounded-2xl bg-gradient-to-r from-wellcare-500 to-wellcare-light-500">
+        <div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div class="flex items-start gap-4">
+                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-xl bg-white/20 backdrop-blur">
+                    <i class="text-xl fa-solid fa-user-doctor"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold">{{ 'Besoin de conseils médicaux ?'|trans }}</h4>
+                    <p class="mt-1 text-sm text-white/80">
+                        {{ 'Discutez avec votre médecin des tendances observées dans votre suivi de santé.'|trans }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <a href="/appointments/book" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-wellcare-600 font-medium hover:bg-white/90 transition-colors shadow-sm">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    {{ 'Prendre RDV'|trans }}
+                </a>
+                <a href="/chat/doctor" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/20 text-white font-medium hover:bg-white/30 transition-colors backdrop-blur">
+                    <i class="fa-solid fa-comments"></i>
+                    {{ 'Message'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Data Privacy Notice #}
+    <div class="flex items-start gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700">
+        <i class="fa-solid fa-lock text-gray-400 dark:text-gray-500 mt-0.5"></i>
+        <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                <strong>{{ 'Confidentialité des données'|trans }}</strong> - 
+                {{ 'Vos données de santé sont analysées localement et chiffrées. L\'IA n\'a pas accès à votre identité. Ces recommandations ne remplacent pas l\'avis médical professionnel.'|trans }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+function aiInsights() {
+    return {
+        alerts: [
+            {
+                id: 1,
+                severity: 'medium',
+                icon: 'fa-solid fa-heart-pulse',
+                title: 'Fréquence cardiaque élevée',
+                message: 'Votre FC moyenne a augmenté de 8% cette semaine. Surveillez votre stress.'
+            },
+            {
+                id: 2,
+                severity: 'low',
+                icon: 'fa-solid fa-moon',
+                title: 'Sommeil irrégulier',
+                message: 'Horaires de coucher variables détectés. Essayez de régulariser votre rythme.'
+            }
+        ],
+        init() {
+            // Simulate loading insights
+            setTimeout(() => {
+                this.loadInsights();
+            }, 500);
+        },
+        loadInsights() {
+            // In production, this would fetch from an API
+        },
+        getAlertSeverityClass(severity) {
+            const classes = {
+                'high': 'bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400',
+                'medium': 'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400',
+                'low': 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400'
+            };
+            return classes[severity] || classes['low'];
+        },
+        getAlertTextClass(severity) {
+            const classes = {
+                'high': 'text-rose-700 dark:text-rose-300',
+                'medium': 'text-amber-700 dark:text-amber-300',
+                'low': 'text-blue-700 dark:text-blue-300'
+            };
+            return classes[severity] || classes['low'];
+        },
+        dismissAlert(alertId) {
+            this.alerts = this.alerts.filter(a => a.id !== alertId);
+        }
+    }
+}
+</script>

@@ -1,0 +1,396 @@
+{# templates/health/dashboard.html.twig #}
+{# Main Patient Health Dashboard for WellCare Connect #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Tableau de Bord Santé'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Tableau de Bord Santé'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full" x-data="healthDashboard()" x-init="init()">
+    {# Dashboard Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name={{ app.user ? app.user.firstName|default('Patient') : 'Patient' }}&background=00A790&color=fff&size=64" 
+                         alt="{{ 'Photo de profil'|trans }}" 
+                         class="object-cover w-16 h-16 border-2 rounded-2xl border-wellcare-200 dark:border-wellcare-800">
+                    <span class="absolute flex items-center justify-center w-5 h-5 border-2 border-white rounded-full -bottom-1 -right-1 bg-emerald-500 dark:border-gray-900">
+                        <i class="fa-solid fa-check text-white text-[10px]"></i>
+                    </span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Bonjour'|trans }}, <span class="text-wellcare-600 dark:text-wellcare-400">{{ app.user ? app.user.firstName|default('Patient') : 'Patient' }}</span>
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        <i class="mr-1 fa-solid fa-shield-heart text-wellcare-500"></i>
+                        {{ 'Votre suivi santé du'|trans }} <span x-text="currentDate"></span>
+                    </p>
+                </div>
+            </div>
+            
+            {# Quick Actions Header #}
+            <div class="flex items-center gap-2">
+                <button @click="scrollToEntry" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors shadow-sm rounded-xl bg-wellcare-600 hover:bg-wellcare-700">
+                    <i class="fa-solid fa-plus"></i>
+                    {{ 'Nouvelle entrée'|trans }}
+                </button>
+                <button @click="refreshData" :disabled="isRefreshing" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-xl hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-rotate" :class="isRefreshing ? 'fa-spin' : ''"></i>
+                    <span class="hidden sm:inline">{{ 'Actualiser'|trans }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        {# Welcome Banner for New Users #}
+        <div x-show="showWelcomeBanner" x-transition class="relative p-6 mb-8 overflow-hidden text-white shadow-lg rounded-2xl bg-gradient-to-r from-wellcare-500 to-wellcare-light-500">
+            <div class="absolute top-0 right-0 w-32 h-32 -mt-4 -mr-4 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 -mb-4 -ml-4 rounded-full bg-white/10 blur-xl"></div>
+            
+            <div class="relative flex items-start justify-between">
+                <div class="flex-1">
+                    <h2 class="mb-2 text-xl font-bold">{{ 'Bienvenue sur votre tableau de bord santé !'|trans }}</h2>
+                    <p class="max-w-2xl text-sm text-white/90">
+                        {{ 'Commencez à suivre votre santé quotidiennement pour obtenir des insights personnalisés et partager vos données avec votre médecin. C\'est simple, rapide et sécurisé.'|trans }}
+                    </p>
+                    <div class="flex gap-3 mt-4">
+                        <button @click="dismissWelcome" class="text-sm underline text-white/80 hover:text-white">
+                            {{ 'J\'ai compris'|trans }}
+                        </button>
+                    </div>
+                </div>
+                <button @click="dismissWelcome" class="transition-colors text-white/60 hover:text-white">
+                    <i class="text-xl fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        {# Health Overview Widgets - Top Row #}
+        <section aria-labelledby="vitals-heading" class="mb-8">
+            <h2 id="vitals-heading" class="sr-only">{{ 'Signes vitaux'|trans }}</h2>
+            {% include 'health/partials/health-metrics.html.twig' %}
+        </section>
+
+        {# Main Dashboard Grid #}
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {# Left Column - Quick Entry & Recent Entries #}
+            <div class="space-y-8 lg:col-span-2">
+                {# Daily Health Journal Quick Entry #}
+                <section id="quick-entry-section" aria-labelledby="entry-heading">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-1 h-8 rounded-full bg-wellcare-500"></div>
+                        <h2 id="entry-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Journal de Santé Quotidien'|trans }}
+                        </h2>
+                    </div>
+                    {% include 'health/partials/quick-entry.html.twig' %}
+                </section>
+
+                {# Recent Journal Entries Timeline #}
+                <section aria-labelledby="entries-heading">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-1 h-8 rounded-full bg-wellcare-500"></div>
+                        <h2 id="entries-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Historique des Entrées'|trans }}
+                        </h2>
+                    </div>
+                    {% include 'health/partials/recent-entries.html.twig' %}
+                </section>
+
+                {# Health Metrics Charts #}
+                <section aria-labelledby="charts-heading">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-1 h-8 rounded-full bg-wellcare-500"></div>
+                        <h2 id="charts-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Analyses et Tendances'|trans }}
+                        </h2>
+                    </div>
+                    {% include 'health/partials/health-charts.html.twig' %}
+                </section>
+            </div>
+
+            {# Right Column - AI Insights, Activities, Quick Actions #}
+            <div class="space-y-8">
+                {# AI Health Insights #}
+                <section aria-labelledby="ai-heading">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-1 h-8 rounded-full bg-wellcare-500"></div>
+                        <h2 id="ai-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Intelligence Artificielle'|trans }}
+                        </h2>
+                    </div>
+                    {% include 'health/partials/ai-insights.html.twig' %}
+                </section>
+
+                {# Upcoming & Recent Activities #}
+                <section aria-labelledby="activities-heading">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-1 h-8 rounded-full bg-wellcare-500"></div>
+                        <h2 id="activities-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Activités à Venir'|trans }}
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6 space-y-4 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                        {# Next Appointment #}
+                        <div class="flex items-start gap-4 p-4 border rounded-xl bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-100 dark:border-wellcare-800/50">
+                            <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 text-white rounded-xl bg-wellcare-500">
+                                <i class="text-lg fa-solid fa-calendar-check"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-wellcare-800 dark:text-wellcare-200">{{ 'Prochain rendez-vous'|trans }}</p>
+                                <p class="text-base font-semibold text-gray-900 dark:text-white mt-0.5">Dr. Sophie Martin</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    <i class="mr-1 fa-solid fa-stethoscope"></i>
+                                    {{ 'Consultation générale'|trans }}
+                                </p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-wellcare-100 text-wellcare-700 text-xs font-medium dark:bg-wellcare-800/50 dark:text-wellcare-300">
+                                        <i class="fa-regular fa-clock"></i>
+                                        {{ '15 Fév, 14:30'|trans }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Medication Reminders #}
+                        <div>
+                            <h4 class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fa-solid fa-pills mr-1.5 text-amber-500"></i>
+                                {{ 'Médicaments du jour'|trans }}
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between p-3 border rounded-xl bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center justify-center w-8 h-8 text-xs text-white rounded-lg bg-amber-500">
+                                            <i class="fa-solid fa-sun"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">Doliprane 500mg</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ '1 comprimé'|trans }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-medium text-amber-600 dark:text-amber-400">{{ 'Matin'|trans }}</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50 dark:bg-gray-800/50 dark:border-gray-700/50 opacity-60">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center justify-center w-8 h-8 text-xs text-white bg-gray-400 rounded-lg">
+                                            <i class="fa-solid fa-moon"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white">Vitamine D</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ '1 gélule'|trans }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ 'Soir'|trans }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Recent Lab Results #}
+                        <div class="pt-4 border-t border-gray-100 dark:border-gray-800">
+                            <h4 class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="fa-solid fa-flask mr-1.5 text-emerald-500"></i>
+                                {{ 'Résultats récents'|trans }}
+                            </h4>
+                            <a href="/lab-results" class="flex items-center justify-between p-3 transition-colors border rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 group">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-file-medical text-emerald-500"></i>
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Bilan sanguin complet'|trans }}</span>
+                                </div>
+                                <i class="text-xs text-gray-400 transition-colors fa-solid fa-chevron-right group-hover:text-emerald-500"></i>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                {# Quick Actions Grid #}
+                <section aria-labelledby="actions-heading">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-1 h-8 rounded-full bg-wellcare-500"></div>
+                        <h2 id="actions-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Actions Rapides'|trans }}
+                        </h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="/health/entry/new" class="flex flex-col items-center gap-2 p-4 transition-all bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-wellcare-200 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-wellcare-700 group">
+                            <div class="flex items-center justify-center w-10 h-10 transition-colors rounded-xl bg-wellcare-50 text-wellcare-600 group-hover:bg-wellcare-500 group-hover:text-white dark:bg-wellcare-900/30">
+                                <i class="fa-solid fa-plus"></i>
+                            </div>
+                            <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ 'Ajouter une entrée'|trans }}</span>
+                        </a>
+                        
+                        <a href="/appointments/book" class="flex flex-col items-center gap-2 p-4 transition-all bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-wellcare-200 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-wellcare-700 group">
+                            <div class="flex items-center justify-center w-10 h-10 transition-colors rounded-xl bg-wellcare-50 text-wellcare-600 group-hover:bg-wellcare-500 group-hover:text-white dark:bg-wellcare-900/30">
+                                <i class="fa-solid fa-calendar-plus"></i>
+                            </div>
+                            <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ 'Prendre RDV'|trans }}</span>
+                        </a>
+                        
+                        <a href="/medical-records" class="flex flex-col items-center gap-2 p-4 transition-all bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-wellcare-200 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-wellcare-700 group">
+                            <div class="flex items-center justify-center w-10 h-10 transition-colors rounded-xl bg-wellcare-50 text-wellcare-600 group-hover:bg-wellcare-500 group-hover:text-white dark:bg-wellcare-900/30">
+                                <i class="fa-solid fa-folder-open"></i>
+                            </div>
+                            <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ 'Dossier médical'|trans }}</span>
+                        </a>
+                        
+                        <a href="/chat/doctor" class="flex flex-col items-center gap-2 p-4 transition-all bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-wellcare-200 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-wellcare-700 group">
+                            <div class="flex items-center justify-center w-10 h-10 transition-colors rounded-xl bg-wellcare-50 text-wellcare-600 group-hover:bg-wellcare-500 group-hover:text-white dark:bg-wellcare-900/30">
+                                <i class="fa-solid fa-comments"></i>
+                            </div>
+                            <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ 'Chat médecin'|trans }}</span>
+                        </a>
+                        
+                        <a href="/health/export" class="flex flex-col items-center gap-2 p-4 transition-all bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md hover:border-wellcare-200 dark:bg-gray-900 dark:border-gray-800 dark:hover:border-wellcare-700 group">
+                            <div class="flex items-center justify-center w-10 h-10 transition-colors rounded-xl bg-wellcare-50 text-wellcare-600 group-hover:bg-wellcare-500 group-hover:text-white dark:bg-wellcare-900/30">
+                                <i class="fa-solid fa-file-export"></i>
+                            </div>
+                            <span class="text-xs font-medium text-center text-gray-700 dark:text-gray-300">{{ 'Exporter données'|trans }}</span>
+                        </a>
+                        
+                        <a href="/emergency" class="flex flex-col items-center gap-2 p-4 transition-all border shadow-sm rounded-xl bg-rose-50 border-rose-100 hover:shadow-md hover:bg-rose-100 dark:bg-rose-900/20 dark:border-rose-800/50 dark:hover:bg-rose-900/30 group">
+                            <div class="flex items-center justify-center w-10 h-10 text-white transition-colors rounded-xl bg-rose-500 group-hover:bg-rose-600">
+                                <i class="fa-solid fa-phone-volume"></i>
+                            </div>
+                            <span class="text-xs font-medium text-center text-rose-700 dark:text-rose-300">{{ 'Urgence'|trans }}</span>
+                        </a>
+                    </div>
+                </section>
+
+                {# Emergency Contact Widget #}
+                <section aria-labelledby="emergency-heading" class="p-5 text-white shadow-lg rounded-2xl bg-rose-600">
+                    <h2 id="emergency-heading" class="sr-only">{{ 'Contact d\'urgence'|trans }}</h2>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 backdrop-blur">
+                            <i class="text-xl fa-solid fa-truck-medical"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">{{ 'Numéros d\'urgence'|trans }}</h3>
+                            <p class="text-xs text-rose-100">{{ 'Disponibles 24h/24'|trans }}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <a href="tel:15" class="flex items-center justify-between p-3 transition-colors rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-user-doctor"></i>
+                                <span class="font-medium">SAMU</span>
+                            </div>
+                            <span class="text-lg font-bold">15</span>
+                        </a>
+                        <a href="tel:18" class="flex items-center justify-between p-3 transition-colors rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-fire-extinguisher"></i>
+                                <span class="font-medium">Pompiers</span>
+                            </div>
+                            <span class="text-lg font-bold">18</span>
+                        </a>
+                        <a href="tel:112" class="flex items-center justify-between p-3 transition-colors rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-phone"></i>
+                                <span class="font-medium">Urgences européen</span>
+                            </div>
+                            <span class="text-lg font-bold">112</span>
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function healthDashboard() {
+    return {
+        currentDate: new Date().toLocaleDateString('fr-FR', { 
+            weekday: 'long', 
+            day: 'numeric', 
+            month: 'long' 
+        }),
+        isRefreshing: false,
+        showWelcomeBanner: !localStorage.getItem('healthDashboardWelcomeDismissed'),
+        init() {
+            // Update date periodically
+            setInterval(() => {
+                this.currentDate = new Date().toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long' 
+                });
+            }, 60000);
+        },
+        scrollToEntry() {
+            const element = document.getElementById('quick-entry-section');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Focus on the mood selector
+                setTimeout(() => {
+                    const firstMoodBtn = element.querySelector('button[type="button"]');
+                    if (firstMoodBtn) firstMoodBtn.focus();
+                }, 500);
+            }
+        },
+        async refreshData() {
+            this.isRefreshing = true;
+            // Simulate data refresh
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            this.isRefreshing = false;
+            
+            // Show success toast
+            this.showToast('{{ 'Données actualisées'|trans }}');
+        },
+        dismissWelcome() {
+            this.showWelcomeBanner = false;
+            localStorage.setItem('healthDashboardWelcomeDismissed', 'true');
+        },
+        showToast(message) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 px-6 py-3 rounded-xl bg-gray-900 text-white text-sm font-medium shadow-lg z-50 animate-slide-up';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    }
+}
+</script>
+
+<style>
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+</style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

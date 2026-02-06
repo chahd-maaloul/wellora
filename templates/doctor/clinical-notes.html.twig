@@ -1,0 +1,395 @@
+{# templates/doctor/clinical-notes.html.twig #}
+{# Clinical Notes Interface - SOAP Notes, Prescriptions, and Lab Orders #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Notes Cliniques'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="clinicalNotes()" x-init="init()">
+    {# Header #}
+    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="/doctor/patients" class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-notes-medical text-wellcare-500"></i>
+                            {{ 'Notes Cliniques'|trans }}
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'SOAP notes, prescriptions et ordonnances de laboratoire'|trans }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button 
+                        @click="openNewNoteModal()"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        {{ 'Nouvelle Note'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
+            {# Sidebar - Patient Info & Note List #}
+            <div class="space-y-6 lg:col-span-1">
+                {# Patient Quick Info #}
+                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-4">
+                        <img 
+                            :src="patient.avatar" 
+                            :alt="patient.name"
+                            class="object-cover w-16 h-16 border-2 rounded-full border-wellcare-100 dark:border-wellcare-900"
+                        >
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="patient.name"></h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="patient.fileNumber"></p>
+                            <span 
+                                :class="getStatusBadgeClass(patient.status)"
+                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1"
+                            >
+                                <span x-text="getStatusLabel(patient.status)"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Notes List #}
+                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Historique des notes'|trans }}</h3>
+                    </div>
+                    <div class="overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 max-h-96">
+                        <template x-for="note in notes" :key="note.id">
+                            <div 
+                                @click="selectNote(note)"
+                                class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                :class="selectedNote?.id === note.id ? 'bg-wellcare-50 dark:bg-wellcare-900/20 border-l-4 border-wellcare-500' : ''"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="note.date"></span>
+                                        <h4 class="mt-1 text-sm font-medium text-gray-900 dark:text-white" x-text="note.typeLabel"></h4>
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2" x-text="note.summary"></p>
+                                    </div>
+                                    <span 
+                                        class="w-2 h-2 rounded-full"
+                                        :class="note.isComplete ? 'bg-emerald-500' : 'bg-amber-500'"
+                                    ></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {# Quick Actions #}
+                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Actions rapides'|trans }}</h3>
+                    <div class="space-y-2">
+                        <button @click="openPrescriptionModal()" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-prescription text-wellcare-500"></i>
+                            {{ 'Nouvelle ordonnance'|trans }}
+                        </button>
+                        <button @click="openLabOrderModal()" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-flask text-wellcare-500"></i>
+                            {{ 'Ordonnance labo'|trans }}
+                        </button>
+                        <button @click="openReferralModal()" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-user-doctor text-wellcare-500"></i>
+                            {{ 'Lettre de recommandation'|trans }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Main Content - SOAP Note Editor #}
+            <div class="lg:col-span-3">
+                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    {# Note Header #}
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900 dark:text-white" x-text="selectedNote ? selectedNote.typeLabel : 'Nouvelle Note SOAP'"></h2>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    <span x-text="selectedNote ? selectedNote.date : new Date().toLocaleDateString('fr-FR')"></span>
+                                    <span x-show="selectedNote?.author" x-text="' • ' + selectedNote?.author"></span>
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click="saveNote()"
+                                    class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
+                                >
+                                    <i class="mr-2 fa-solid fa-save"></i>{{ 'Enregistrer'|trans }}
+                                </button>
+                                <button 
+                                    x-show="selectedNote"
+                                    @click="printNote()"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
+                                >
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# SOAP Form #}
+                    <div class="p-6 space-y-6">
+                        {# Chief Complaint #}
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {{ 'Motif de consultation'|trans }}
+                            </label>
+                            <input 
+                                type="text" 
+                                x-model="currentNote.chiefComplaint"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                placeholder="{{ 'Décrivez le motif principal de la consultation...'|trans }}"
+                            >
+                        </div>
+
+                        {# Subjective #}
+                        <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white bg-blue-500 rounded">S</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Subjectif'|trans }}</h3>
+                            </div>
+                            <textarea 
+                                x-model="currentNote.subjective"
+                                rows="4"
+                                class="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-blue-800 dark:text-white"
+                                placeholder="{{ 'Symptômes rapportés par le patient, antécédents, histoire de la maladie...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Objective #}
+                        <div class="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-emerald-500">O</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Objectif'|trans }}</h3>
+                            </div>
+                            
+                            {# Vital Signs in Objective #}
+                            <div class="grid grid-cols-2 gap-4 mb-4 md:grid-cols-4">
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Tension (mmHg)'|trans }}</label>
+                                    <div class="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            x-model="currentNote.vitals.bpSystolic"
+                                            class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                            placeholder="120"
+                                        >
+                                        <span class="text-gray-400">/</span>
+                                        <input 
+                                            type="text" 
+                                            x-model="currentNote.vitals.bpDiastolic"
+                                            class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                            placeholder="80"
+                                        >
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Pouls (bpm)'|trans }}</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="currentNote.vitals.pulse"
+                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                        placeholder="72"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Température (°C)'|trans }}</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="currentNote.vitals.temperature"
+                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                        placeholder="36.6"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'SpO2 (%)'|trans }}</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="currentNote.vitals.spo2"
+                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                        placeholder="98"
+                                    >
+                                </div>
+                            </div>
+
+                            <textarea 
+                                x-model="currentNote.objective"
+                                rows="4"
+                                class="w-full px-4 py-2 border rounded-lg border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                placeholder="{{ 'Examen physique, signes vitaux, résultats d\'examens observables...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Assessment #}
+                        <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-amber-500">A</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Évaluation'|trans }}</h3>
+                            </div>
+                            
+                            {# Diagnoses #}
+                            <div class="mb-4">
+                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Diagnostics (CIM-10)'|trans }}</label>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <template x-for="(dx, index) in currentNote.diagnoses" :key="index">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                            <span x-text="dx.code + ' - ' + dx.description"></span>
+                                            <button @click="removeDiagnosis(index)" class="ml-1 text-amber-600 hover:text-amber-800">
+                                                <i class="fa-solid fa-times"></i>
+                                            </button>
+                                        </span>
+                                    </template>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        x-model="newDiagnosis"
+                                        @keydown.enter.prevent="addDiagnosis()"
+                                        class="flex-1 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-800 dark:border-amber-800 dark:text-white"
+                                        placeholder="{{ 'Code CIM-10 ou description...'|trans }}"
+                                    >
+                                    <button @click="addDiagnosis()" class="px-3 py-1.5 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea 
+                                x-model="currentNote.assessment"
+                                rows="3"
+                                class="w-full px-4 py-2 border rounded-lg border-amber-200 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-800 dark:border-amber-800 dark:text-white"
+                                placeholder="{{ 'Interprétation des données, diagnostic différentiel, gravité...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Plan #}
+                        <div class="p-4 rounded-lg bg-rose-50 dark:bg-rose-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-rose-500">P</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Plan'|trans }}</h3>
+                            </div>
+                            
+                            {# Medications in Plan #}
+                            <div class="mb-4">
+                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Médicaments prescrits'|trans }}</label>
+                                <div class="mb-2 space-y-2">
+                                    <template x-for="(med, index) in currentNote.medications" :key="index">
+                                        <div class="flex items-center justify-between p-2 bg-white border rounded border-rose-200 dark:bg-gray-800 dark:border-rose-800">
+                                            <div class="text-sm">
+                                                <span class="font-medium text-gray-900 dark:text-white" x-text="med.name"></span>
+                                                <span class="text-gray-500 dark:text-gray-400" x-text="med.dosage + ' - ' + med.frequency"></span>
+                                                <span x-show="med.duration" class="text-xs text-gray-400" x-text="'(' + med.duration + ')'"></span>
+                                            </div>
+                                            <button @click="removeMedication(index)" class="text-rose-500 hover:text-rose-700">
+                                                <i class="fa-solid fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                                <button @click="openAddMedicationModal()" class="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">
+                                    <i class="mr-1 fa-solid fa-plus"></i>{{ 'Ajouter un médicament'|trans }}
+                                </button>
+                            </div>
+
+                            {# Lab Tests in Plan #}
+                            <div class="mb-4">
+                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Examens demandés'|trans }}</label>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <template x-for="(test, index) in currentNote.labTests" :key="index">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">
+                                            <span x-text="test"></span>
+                                            <button @click="removeLabTest(index)" class="ml-1 text-rose-600 hover:text-rose-800">
+                                                <i class="fa-solid fa-times"></i>
+                                            </button>
+                                        </span>
+                                    </template>
+                                </div>
+                                <div class="flex gap-2">
+                                    <select x-model="newLabTest" class="flex-1 px-3 py-1.5 text-sm border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:border-rose-800 dark:text-white">
+                                        <option value="">{{ 'Sélectionner un examen...'|trans }}</option>
+                                        <option value="NFS">{{ 'NFS'|trans }}</option>
+                                        <option value="Bilan lipidique">{{ 'Bilan lipidique'|trans }}</option>
+                                        <option value="Glycémie">{{ 'Glycémie'|trans }}</option>
+                                        <option value="HbA1c">{{ 'HbA1c'|trans }}</option>
+                                        <option value="Créatinine">{{ 'Créatinine'|trans }}</option>
+                                        <option value="TSH">{{ 'TSH'|trans }}</option>
+                                        <option value="Radiographie">{{ 'Radiographie'|trans }}</option>
+                                        <option value="Échographie">{{ 'Échographie'|trans }}</option>
+                                    </select>
+                                    <button @click="addLabTest()" class="px-3 py-1.5 text-sm text-white bg-rose-500 rounded-lg hover:bg-rose-600">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea 
+                                x-model="currentNote.plan"
+                                rows="4"
+                                class="w-full px-4 py-2 border rounded-lg border-rose-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                placeholder="{{ 'Traitement, recommandations, suivi, référencement...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Follow-up #}
+                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Prochain rendez-vous'|trans }}</h3>
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Date'|trans }}</label>
+                                    <input 
+                                        type="date" 
+                                        x-model="currentNote.followUp.date"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Type'|trans }}</label>
+                                    <select x-model="currentNote.followUp.type" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="consultation">{{ 'Consultation'|trans }}</option>
+                                        <option value="control">{{ 'Contrôle'|trans }}</option>
+                                        <option value="results">{{ 'Résultats'|trans }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Priorité'|trans }}</label>
+                                    <select x-model="currentNote.followUp.priority" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="routine">{{ 'Routine'|trans }}</option>
+                                        <option value="urgent">{{ 'Urgent'|trans }}</option>
+                                        <option value="asap">{{ 'Dès que possible'|trans }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/doctor-dashboard.js') }}"></script>
+{% endblock %}
+{% endblock %}

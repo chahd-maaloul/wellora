@@ -1,0 +1,593 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Exercise Library - WellCare Connect' }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('fitness') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('fitness') }}
+{% endblock %}
+
+{% block body %}
+<div x-data="exerciseLibrary()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('fitness_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-book-open text-wellcare-500"></i>
+                            {{ 'Exercise Library' }}
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Browse exercises with video demonstrations' }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            x-model="searchQuery"
+                            @input="filterExercises()"
+                            placeholder="{{ 'Search exercises...' }}"
+                            class="w-64 px-4 py-2 pl-10 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                        <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            <!-- Sidebar - Filters -->
+            <div class="space-y-6 lg:col-span-1">
+                <!-- Categories -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-th-large text-wellcare-500"></i>
+                        {{ 'Categories' }}
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        {% for category in [
+                            {name: 'Strength', icon: 'fa-dumbbell', count: 45},
+                            {name: 'Cardio', icon: 'fa-heart', count: 28},
+                            {name: 'Flexibility', icon: 'fa-expand', count: 22},
+                            {name: 'Balance', icon: 'fa-balance-scale', count: 15},
+                            {name: 'Core', icon: 'fa-fire', count: 32}
+                        ] %}
+                        <button
+                            @click="selectCategory('{{ category.name }}')"
+                            :class="{'bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400': selectedCategory === '{{ category.name }}', 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300': selectedCategory !== '{{ category.name }}'}"
+                            class="flex items-center justify-between w-full p-3 transition-colors rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <i class="fas {{ category.icon }}"></i>
+                                <span>{{ category.name }}</span>
+                            </div>
+                            <span class="px-2 py-1 text-xs bg-gray-100 rounded-full dark:bg-gray-700">{{ category.count }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Difficulty -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-signal text-wellcare-500"></i>
+                        {{ 'Difficulty' }}
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        <button
+                            @click="selectDifficulty('all')"
+                            :class="{'bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400': selectedDifficulty === 'all', 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300': selectedDifficulty !== 'all'}"
+                            class="flex items-center w-full gap-3 p-3 transition-colors rounded-lg">
+                            <span class="flex items-center justify-center w-8 h-8 text-sm bg-gray-100 rounded-full dark:bg-gray-700">All</span>
+                            <span>{{ 'All Levels' }}</span>
+                        </button>
+                        {% for level in ['Beginner', 'Intermediate', 'Advanced'] %}
+                        <button
+                            @click="selectDifficulty('{{ level|lower }}')"
+                            :class="{'bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400': selectedDifficulty === '{{ level|lower }}', 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300': selectedDifficulty !== '{{ level|lower }}'}"
+                            class="flex items-center w-full gap-3 p-3 transition-colors rounded-lg">
+                            <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm
+                                {{ level == 'Beginner' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 
+                                  level == 'Intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' : 
+                                  'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' }}">
+                                {% if level == 'Beginner' %}
+                                <i class="fas fa-star"></i>
+                                {% elseif level == 'Intermediate' %}
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                {% endif %}
+                            </span>
+                            <span>{{ level }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Equipment -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-cogs text-wellcare-500"></i>
+                        {{ 'Equipment' }}
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        {% for equipment in ['None (Bodyweight)', 'Dumbbells', 'Kettlebell', 'Resistance Bands', 'Yoga Mat', 'Pull-up Bar'] %}
+                        <label class="flex items-center gap-3 p-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                :value="'{{ equipment }}'"
+                                x-model="selectedEquipment"
+                                class="w-4 h-4 border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ equipment }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Medical Modifications -->
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-red-500 fas fa-heartbeat"></i>
+                        {{ 'Medical Modifications' }}
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-3 p-2 cursor-pointer">
+                            <input type="checkbox" x-model="showAccessibleOnly" class="w-4 h-4 border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Accessible Only' }}</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-2 cursor-pointer">
+                            <input type="checkbox" x-model="showJointFriendly" class="w-4 h-4 border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Joint Friendly' }}</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-2 cursor-pointer">
+                            <input type="checkbox" x-model="showLowImpact" class="w-4 h-4 border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Low Impact' }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content - Exercise Grid -->
+            <div class="space-y-6 lg:col-span-3">
+                <!-- Results Header -->
+                <div class="flex items-center justify-between">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        <span x-text="filteredExercises.length"></span> {{ 'exercises found' }}
+                    </p>
+                    <select x-model="sortBy" class="text-sm text-gray-700 bg-white border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:ring-wellcare-500 focus:border-wellcare-500">
+                        <option value="name">{{ 'Sort by Name' }}</option>
+                        <option value="difficulty">{{ 'Sort by Difficulty' }}</option>
+                        <option value="popularity">{{ 'Sort by Popularity' }}</option>
+                    </select>
+                </div>
+
+                <!-- Exercise Grid -->
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <template x-for="exercise in filteredExercises" :key="exercise.id">
+                        <div 
+                            @click="openExercise(exercise)"
+                            class="overflow-hidden transition-shadow bg-white border border-gray-100 shadow-sm cursor-pointer dark:bg-gray-800 rounded-xl dark:border-gray-700 hover:shadow-md">
+                            <!-- Thumbnail -->
+                            <div class="relative h-40 bg-gray-100 dark:bg-gray-700">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="flex items-center justify-center w-16 h-16 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                        <i class="text-3xl fas fa-play-circle text-wellcare-500"></i>
+                                    </div>
+                                </div>
+                                <div class="absolute top-3 left-3">
+                                    <span 
+                                        class="px-2 py-1 text-xs font-medium rounded"
+                                        :class="{
+                                            'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': exercise.difficulty === 'beginner',
+                                            'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': exercise.difficulty === 'intermediate',
+                                            'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': exercise.difficulty === 'advanced'
+                                        }"
+                                        x-text="exercise.difficultyLabel"></span>
+                                </div>
+                                <div class="absolute top-3 right-3">
+                                    <span class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white rounded bg-gray-900/70">
+                                        <i class="fas fa-clock"></i>
+                                        <span x-text="exercise.duration + ' min'"></span>
+                                    </span>
+                                </div>
+                                {% if false %}
+                                <img :src="exercise.thumbnail" :alt="exercise.name" class="object-cover w-full h-full">
+                                {% endif %}
+                            </div>
+                            
+                            <div class="p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span 
+                                        class="px-2 py-0.5 text-xs font-medium rounded"
+                                        :class="{
+                                            'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': exercise.category === 'strength',
+                                            'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': exercise.category === 'cardio',
+                                            'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400': exercise.category === 'flexibility'
+                                        }"
+                                        x-text="exercise.categoryLabel"></span>
+                                    <span x-show="exercise.accessible" class="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                                        <i class="mr-1 fas fa-universal-access"></i>{{ 'Accessible' }}
+                                    </span>
+                                </div>
+                                
+                                <h3 class="mb-1 font-semibold text-gray-900 dark:text-white" x-text="exercise.name"></h3>
+                                <p class="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2" x-text="exercise.description"></p>
+                                
+                                <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                                    <div class="flex items-center gap-3">
+                                        <span><i class="mr-1 fas fa-fire"></i><span x-text="exercise.calories + ' kcal'"></span></span>
+                                        <span><i class="mr-1 fas fa-list"></i><span x-text="exercise.sets + ' sets'"></span></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 text-wellcare-500">
+                                        <i class="text-xs fas fa-star"></i>
+                                        <i class="text-xs fas fa-star"></i>
+                                        <i class="text-xs fas fa-star"></i>
+                                        <i class="text-xs fas fa-star"></i>
+                                        <i class="text-xs fas fa-star-half-alt"></i>
+                                        <span class="ml-1 text-gray-500" x-text="exercise.rating"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Load More -->
+                <div class="text-center">
+                    <button @click="loadMore()" class="px-6 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        {{ 'Load More Exercises' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Exercise Detail Modal -->
+    <div x-show="showModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-start justify-center min-h-screen px-4 pt-6 pb-20">
+            <div @click="showModal = false" class="fixed inset-0 transition-opacity bg-black bg-opacity-75"></div>
+            
+            <div class="relative z-10 w-full max-w-3xl overflow-hidden bg-white shadow-xl dark:bg-gray-800 rounded-xl">
+                <!-- Video Player -->
+                <div class="relative bg-black aspect-video">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <button @click="playVideo()" class="flex items-center justify-center w-20 h-20 transition-colors rounded-full bg-white/20 hover:bg-white/30">
+                            <i class="ml-1 text-3xl text-white fas fa-play"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                        <div class="flex items-center gap-4">
+                            <button class="text-white transition-colors hover:text-wellcare-400">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="text-white transition-colors hover:text-wellcare-400">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <div class="flex-1 h-1 rounded-full bg-white/30">
+                                <div class="w-1/3 h-full rounded-full bg-wellcare-500"></div>
+                            </div>
+                            <span class="text-sm text-white">2:15 / 6:30</span>
+                            <button class="text-white transition-colors hover:text-wellcare-400">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white" x-text="selectedExercise.name"></h2>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span 
+                                    class="px-3 py-1 text-sm font-medium rounded"
+                                    :class="{
+                                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': selectedExercise.difficulty === 'beginner',
+                                        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': selectedExercise.difficulty === 'intermediate',
+                                        'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400': selectedExercise.difficulty === 'advanced'
+                                    }"
+                                    x-text="selectedExercise.difficultyLabel"></span>
+                                <span class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded dark:bg-gray-700 dark:text-gray-300" x-text="selectedExercise.categoryLabel"></span>
+                            </div>
+                        </div>
+                        <button @click="addToWorkout()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="fas fa-plus"></i>
+                            {{ 'Add to Workout' }}
+                        </button>
+                    </div>
+
+                    <p class="mb-6 text-gray-600 dark:text-gray-300" x-text="selectedExercise.description"></p>
+
+                    <!-- Exercise Details -->
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.duration"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Minutes' }}</p>
+                        </div>
+                        <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.calories"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Calories' }}</p>
+                        </div>
+                        <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.sets"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Sets' }}</p>
+                        </div>
+                        <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.reps || '10-15'"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Reps' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="mb-6">
+                        <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-list-ol text-wellcare-500"></i>
+                            {{ 'Instructions' }}
+                        </h3>
+                        <ol class="space-y-2">
+                            <template x-for="(step, index) in selectedExercise.instructions" :key="index">
+                                <li class="flex items-start gap-3">
+                                    <span class="flex items-center justify-center flex-shrink-0 w-6 h-6 text-sm font-medium rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400" x-text="index + 1"></span>
+                                    <span class="text-gray-700 dark:text-gray-300" x-text="step"></span>
+                                </li>
+                            </template>
+                        </ol>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="p-4 mb-6 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
+                        <h4 class="mb-2 font-medium text-yellow-800 dark:text-yellow-200">
+                            <i class="mr-2 fas fa-lightbulb"></i>{{ 'Coach Tips' }}
+                        </h4>
+                        <ul class="space-y-1 text-sm text-yellow-700 dark:text-yellow-300">
+                            <li>{{ '• Keep your core engaged throughout the movement' }}</li>
+                            <li>{{ '• Control the eccentric (lowering) phase' }}</li>
+                            <li>{{ '• Breathe out on the exertion phase' }}</li>
+                        </ul>
+                    </div>
+
+                    <!-- Medical Warnings -->
+                    <div class="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+                        <h4 class="mb-2 font-medium text-red-800 dark:text-red-200">
+                            <i class="mr-2 fas fa-exclamation-triangle"></i>{{ 'Medical Considerations' }}
+                        </h4>
+                        <ul class="space-y-1 text-sm text-red-700 dark:text-red-300">
+                            <li>{{ '• Avoid if you have lower back issues (modify with knee variations)' }}</li>
+                            <li>{{ '• Consult your doctor if you have joint problems' }}</li>
+                            <li>{{ '• Stop immediately if you feel pain' }}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Close Button -->
+                <button @click="showModal = false" class="absolute flex items-center justify-center w-10 h-10 text-white transition-colors rounded-full top-4 right-4 bg-black/50 hover:bg-black/70">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Stop Button -->
+    <div class="fixed bottom-6 right-6">
+        <button @click="emergencyStop()" class="flex items-center justify-center text-white transition-all duration-200 bg-red-500 rounded-full shadow-lg w-14 h-14 hover:bg-red-600 hover:scale-110">
+            <i class="text-xl fas fa-stop"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('exerciseLibrary', () => ({
+        darkMode: false,
+        searchQuery: '',
+        selectedCategory: 'all',
+        selectedDifficulty: 'all',
+        selectedEquipment: [],
+        showAccessibleOnly: false,
+        showJointFriendly: false,
+        showLowImpact: false,
+        sortBy: 'name',
+        showModal: false,
+        selectedExercise: {},
+
+        exercises: [
+            {
+                id: 1,
+                name: 'Push-ups',
+                description: 'A classic upper body exercise that targets chest, shoulders, and triceps.',
+                category: 'strength',
+                categoryLabel: 'Strength',
+                difficulty: 'beginner',
+                difficultyLabel: 'Beginner',
+                duration: 5,
+                calories: 50,
+                sets: 3,
+                reps: '12-15',
+                rating: 4.8,
+                accessible: true,
+                instructions: [
+                    'Start in a plank position with hands slightly wider than shoulder-width apart',
+                    'Lower your body until your chest nearly touches the floor',
+                    'Push back up to the starting position',
+                    'Repeat for the desired number of repetitions'
+                ]
+            },
+            {
+                id: 2,
+                name: 'Squats',
+                description: 'A fundamental lower body exercise that builds strength in your legs and glutes.',
+                category: 'strength',
+                categoryLabel: 'Strength',
+                difficulty: 'beginner',
+                difficultyLabel: 'Beginner',
+                duration: 8,
+                calories: 75,
+                sets: 4,
+                reps: '15-20',
+                rating: 4.9,
+                accessible: true,
+                instructions: [
+                    'Stand with feet shoulder-width apart',
+                    'Lower your body by bending your knees',
+                    'Keep your back straight and chest up',
+                    'Lower until your thighs are parallel to the floor',
+                    'Push through your heels to return to standing'
+                ]
+            },
+            {
+                id: 3,
+                name: 'Plank Hold',
+                description: 'An isometric core exercise that strengthens your entire midsection.',
+                category: 'core',
+                categoryLabel: 'Core',
+                difficulty: 'beginner',
+                difficultyLabel: 'Beginner',
+                duration: 3,
+                calories: 30,
+                sets: 3,
+                reps: '30-60 sec',
+                rating: 4.7,
+                accessible: true,
+                instructions: [
+                    'Start in a push-up position but on your forearms',
+                    'Keep your body in a straight line from head to heels',
+                    'Engage your core and hold the position',
+                    'Breathe steadily throughout the hold'
+                ]
+            },
+            {
+                id: 4,
+                name: 'Jumping Jacks',
+                description: 'A full-body cardio exercise that gets your heart rate up quickly.',
+                category: 'cardio',
+                categoryLabel: 'Cardio',
+                difficulty: 'beginner',
+                difficultyLabel: 'Beginner',
+                duration: 5,
+                calories: 80,
+                sets: 3,
+                reps: '30-50',
+                rating: 4.6,
+                accessible: false,
+                instructions: [
+                    'Stand with feet together and arms at your sides',
+                    'Jump while spreading your legs and raising your arms overhead',
+                    'Jump back to the starting position',
+                    'Repeat at a steady pace'
+                ]
+            },
+            {
+                id: 5,
+                name: 'Lunges',
+                description: 'A unilateral leg exercise that improves balance and coordination.',
+                category: 'strength',
+                categoryLabel: 'Strength',
+                difficulty: 'intermediate',
+                difficultyLabel: 'Intermediate',
+                duration: 10,
+                calories: 70,
+                sets: 3,
+                reps: '12 each leg',
+                rating: 4.7,
+                accessible: true,
+                instructions: [
+                    'Stand tall with feet hip-width apart',
+                    'Step forward with one leg and lower your hips',
+                    'Both knees should bend at approximately 90 degrees',
+                    'Push back to the starting position',
+                    'Alternate legs or complete all reps on one side'
+                ]
+            },
+            {
+                id: 6,
+                name: 'Mountain Climbers',
+                description: 'A dynamic exercise that combines core strength with cardio.',
+                category: 'cardio',
+                categoryLabel: 'Cardio',
+                difficulty: 'intermediate',
+                difficultyLabel: 'Intermediate',
+                duration: 5,
+                calories: 90,
+                sets: 3,
+                reps: '20 each leg',
+                rating: 4.5,
+                accessible: false,
+                instructions: [
+                    'Start in a high plank position',
+                    'Drive one knee toward your chest',
+                    'Quickly switch legs in a running motion',
+                    'Keep your core engaged throughout'
+                ]
+            }
+        ],
+
+        get filteredExercises() {
+            return this.exercises.filter(ex => {
+                const matchesSearch = ex.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                     ex.description.toLowerCase().includes(this.searchQuery.toLowerCase());
+                const matchesCategory = this.selectedCategory === 'all' || ex.category === this.selectedCategory;
+                const matchesDifficulty = this.selectedDifficulty === 'all' || ex.difficulty === this.selectedDifficulty;
+                return matchesSearch && matchesCategory && matchesDifficulty;
+            });
+        },
+
+        init() {
+            this.darkMode = localStorage.getItem('theme') === 'dark';
+            this.selectedExercise = this.exercises[0];
+        },
+
+        selectCategory(category) {
+            this.selectedCategory = category;
+        },
+
+        selectDifficulty(difficulty) {
+            this.selectedDifficulty = difficulty;
+        },
+
+        filterExercises() {
+            // Filtering handled by computed property
+        },
+
+        openExercise(exercise) {
+            this.selectedExercise = exercise;
+            this.showModal = true;
+        },
+
+        playVideo() {
+            alert('Playing exercise video...');
+        },
+
+        addToWorkout() {
+            alert('Exercise added to your workout!');
+            this.showModal = false;
+        },
+
+        loadMore() {
+            alert('Loading more exercises...');
+        },
+
+        emergencyStop() {
+            if (confirm('Are you experiencing any discomfort? This will pause your current workout.')) {
+                window.location.href = '/emergency';
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}

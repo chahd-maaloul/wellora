@@ -1,0 +1,419 @@
+{# templates/teleconsultation/prescription-writer.html.twig #}
+{# Prescription Writer for Teleconsultation #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Ordonnance'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/teleconsultation.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-950" x-data="prescriptionWriter()" x-init="init()">
+    
+    {# Header #}
+    <div class="max-w-5xl mx-auto mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-prescription text-wellcare-500"></i>
+                    {{ 'Ordonnance Électronique'|trans }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ 'Date:'|trans }} <span x-text="prescription.date"></span> • <span x-text="patient.name"></span> • <span x-text="patient.age + ' ans'"></span>
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button 
+                    @click="printPrescription()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                    <i class="mr-2 fa-solid fa-print"></i>
+                    {{ 'Imprimer'|trans }}
+                </button>
+                <button 
+                    @click="sendToPharmacy()"
+                    class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
+                    :disabled="prescription.medications.length === 0"
+                >
+                    <i class="mr-2 fa-solid fa-paper-plane"></i>
+                    {{ 'Envoyer à la pharmacie'|trans }}
+                </button>
+                <button 
+                    @click="savePrescription()"
+                    class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
+                    :disabled="isSaving"
+                >
+                    <i class="mr-2 fa-solid fa-save"></i>
+                    <span x-text="isSaving ? '{{ 'Sauvegarde...'|trans }}' : '{{ 'Enregistrer'|trans }}'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {# Main Content #}
+    <div class="grid max-w-5xl grid-cols-1 gap-6 mx-auto lg:grid-cols-3">
+        
+        {# Left Column - Medication Search #}
+        <div class="space-y-6 lg:col-span-2">
+            
+            {# Patient Summary #}
+            <div class="prescription-container">
+                <div class="prescription-header">
+                    <div class="prescription-patient">
+                        <img 
+                            src="https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff" 
+                            alt="Patient"
+                            class="prescription-patient-avatar"
+                        >
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white" x-text="patient.name"></h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ 'Allergies:'|trans }} 
+                                <span class="text-red-600 dark:text-red-400" x-text="patient.allergies.join(', ') || '{{ 'Aucune'|trans }}'"></span>
+                            </p>
+                        </div>
+                    </div>
+                    <select 
+                        x-model="prescription.type"
+                        class="px-3 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                    >
+                        <option value="new">{{ 'Nouvelle prescription'|trans }}</option>
+                        <option value="renewal">{{ 'Renouvellement'|trans }}</option>
+                        <option value="modification">{{ 'Modification'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+            
+            {# Medication Search #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-pills text-wellcare-500"></i>
+                        {{ 'Ajouter un Médicament'|trans }}
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="prescription-drug-search">
+                        <input 
+                            type="text" 
+                            x-model="searchQuery"
+                            @input="searchMedications(searchQuery)"
+                            @focus="searchQuery.length >= 2"
+                            class="soap-field-input"
+                            placeholder="{{ 'Rechercher un médicament...'|trans }}"
+                        >
+                        
+                        {# Search Results Dropdown #}
+                        <div 
+                            x-show="searchResults && searchResults.length > 0"
+                            class="prescription-search-results"
+                            style="display: none;"
+                        >
+                            <template x-for="result in searchResults" :key="result.id">
+                                <div 
+                                    class="prescription-drug-item"
+                                    @click="selectMedication(result)"
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900 dark:text-white" x-text="result.name"></p>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="result.dosage + ' - ' + result.form"></p>
+                                        </div>
+                                        <span class="text-xs text-gray-400" x-text="result.frequency"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    {# Common Medications Quick Add #}
+                    <div class="mt-4">
+                        <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ 'Médicaments fréquents:'|trans }}</p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="med in commonMedications" :key="med.id">
+                                <button 
+                                    @click="selectMedication(med)"
+                                    class="px-3 py-1 text-xs font-medium transition-colors rounded-full text-wellcare-600 dark:text-wellcare-400 bg-wellcare-50 dark:bg-wellcare-900/20 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30"
+                                    x-text="med.name"
+                                ></button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# Medication List #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-list text-wellcare-500"></i>
+                        {{ 'Médicaments prescrits'|trans }}
+                        <span class="ml-2 text-sm font-normal text-gray-500" x-text="'(' + prescription.medications.length + ')'"></span>
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="prescription-medication-list">
+                        <template x-for="med in prescription.medications" :key="med.id">
+                            <div class="border-b border-gray-100 prescription-medication-item dark:border-gray-800 last:border-0">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 dark:text-white" x-text="med.name"></h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400" x-text="med.dosage + ' - ' + med.form"></p>
+                                    </div>
+                                    <button 
+                                        @click="removeMedication(med.id)"
+                                        class="p-1 text-gray-400 transition-colors hover:text-red-500"
+                                    >
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3 mb-3 md:grid-cols-4">
+                                    <div>
+                                        <label class="text-xs text-gray-500 dark:text-gray-400">{{ 'Dosage'|trans }}</label>
+                                        <input 
+                                            type="text" 
+                                            x-model="med.dosage"
+                                            class="text-sm soap-field-input"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 dark:text-gray-400">{{ 'Fréquence'|trans }}</label>
+                                        <input 
+                                            type="text" 
+                                            x-model="med.frequency"
+                                            class="text-sm soap-field-input"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 dark:text-gray-400">{{ 'Quantité'|trans }}</label>
+                                        <input 
+                                            type="number" 
+                                            x-model="med.quantity"
+                                            class="text-sm soap-field-input"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 dark:text-gray-400">{{ 'Renouvellements'|trans }}</label>
+                                        <input 
+                                            type="number" 
+                                            x-model="med.refills"
+                                            class="text-sm soap-field-input"
+                                        >
+                                    </div>
+                                </div>
+                                
+                                <input 
+                                    type="text" 
+                                    x-model="med.instructions"
+                                    class="w-full text-sm soap-field-input"
+                                    placeholder="{{ 'Instructions pour le patient...'|trans }}"
+                                >
+                                
+                                <div x-show="med.isControlled" class="mt-2">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 rounded">
+                                        <i class="mr-1 fa-solid fa-exclamation-triangle"></i>
+                                        {{ 'Médicament contrôlé'|trans }}
+                                    </span>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <div x-show="prescription.medications.length === 0" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                            <i class="mb-2 text-3xl fa-solid fa-pills"></i>
+                            <p>{{ 'Aucun médicament ajouté'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# Notes #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-notes-medical text-wellcare-500"></i>
+                        {{ 'Notes et Diagnostics'|trans }}
+                    </h3>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ 'Diagnostic (ICD-10)'|trans }}</label>
+                        <input 
+                            type="text" 
+                            x-model="prescription.diagnosis"
+                            class="soap-field-input"
+                            placeholder="{{ 'Code ou description du diagnostic'|trans }}"
+                        >
+                    </div>
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ 'Notes pour le pharmacien'|trans }}</label>
+                        <textarea 
+                            x-model="prescription.notes"
+                            class="h-24 soap-field-textarea"
+                            placeholder="{{ 'Instructions spéciales pour la préparation...'|trans }}"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {# Right Column - Interactions & Pharmacy #}
+        <div class="space-y-6">
+            
+            {# Drug Interactions #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-exclamation-triangle" 
+                           :class="interactions.length > 0 ? 'text-amber-500' : 'text-emerald-500'"></i>
+                        {{ 'Interactions Médicamenteuses'|trans }}
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div x-show="interactions.length === 0" class="py-4 text-center">
+                        <i class="mb-2 text-3xl fa-solid fa-check-circle text-emerald-500"></i>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Aucune interaction détectée'|trans }}
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <template x-for="interaction in interactions" :key="interaction.severity + interaction.message">
+                            <div 
+                                class="prescription-interaction"
+                                :class="{
+                                    'critical': interaction.severity === 'critical',
+                                    'moderate': interaction.severity === 'moderate',
+                                    'minor': interaction.severity === 'minor'
+                                }"
+                            >
+                                <div class="flex items-start gap-2">
+                                    <i class="fa-solid fa-exclamation-circle mt-0.5"
+                                       :class="{
+                                           'text-red-500': interaction.severity === 'critical',
+                                           'text-amber-500': interaction.severity === 'moderate',
+                                           'text-blue-500': interaction.severity === 'minor'
+                                       }"></i>
+                                    <div>
+                                        <p class="text-sm font-medium" 
+                                           :class="{
+                                               'text-red-800 dark:text-red-300': interaction.severity === 'critical',
+                                               'text-amber-800 dark:text-amber-300': interaction.severity === 'moderate',
+                                               'text-blue-800 dark:text-blue-300': interaction.severity === 'minor'
+                                           }"
+                                           x-text="interaction.severity === 'critical' ? '{{ 'Alerte Critique'|trans }}' : interaction.severity === 'moderate' ? '{{ 'Interaction Modérée'|trans }}' : '{{ 'Note'|trans }}'">
+                                        </p>
+                                        <p class="mt-1 text-sm" 
+                                           :class="{
+                                               'text-red-700 dark:text-red-400': interaction.severity === 'critical',
+                                               'text-amber-700 dark:text-amber-400': interaction.severity === 'moderate',
+                                               'text-blue-700 dark:text-blue-400': interaction.severity === 'minor'
+                                           }"
+                                           x-text="interaction.message">
+                                        </p>
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            <span x-text="interaction.medications.join(' + ')"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            {# Patient Allergies Warning #}
+            <div x-show="patient.allergies.length > 0" class="p-4 border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 rounded-xl">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <i class="fa-solid fa-allergies"></i>
+                    <span class="font-medium">{{ 'Allergies connées'|trans }}</span>
+                </div>
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400" x-text="patient.allergies.join(', ')"></p>
+            </div>
+            
+            {# Pharmacy Selection #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-store text-wellcare-500"></i>
+                        {{ 'Pharmacie'|trans }}
+                    </h3>
+                </div>
+                <div class="p-4 space-y-3">
+                    <template x-for="pharmacy in pharmacies" :key="pharmacy.id">
+                        <div 
+                            class="prescription-pharmacy"
+                            :class="{ 'selected': selectedPharmacy?.id === pharmacy.id }"
+                            @click="selectPharmacy(pharmacy)"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400">
+                                    <i class="fa-solid fa-store"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-900 dark:text-white" x-text="pharmacy.name"></p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400" x-text="pharmacy.address"></p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400" x-text="pharmacy.phone"></p>
+                                </div>
+                                <i 
+                                    x-show="selectedPharmacy?.id === pharmacy.id"
+                                    class="fa-solid fa-check-circle text-wellcare-500"
+                                ></i>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            {# Current Medications #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-history text-wellcare-500"></i>
+                        {{ 'Traitements Actuels'|trans }}
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-2">
+                        <template x-for="med in patient.currentMedications" :key="med">
+                            <div class="flex items-center gap-2 text-sm">
+                                <i class="text-gray-400 fa-solid fa-pills"></i>
+                                <span class="text-gray-700 dark:text-gray-300" x-text="med"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            {# Conditions #}
+            <div class="prescription-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-heartbeat text-wellcare-500"></i>
+                        {{ 'Conditions'|trans }}
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="condition in patient.conditions" :key="condition">
+                            <span class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-gray-300">
+                                <i class="mr-1 fa-solid fa-check text-emerald-500"></i>
+                                <span x-text="condition"></span>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/teleconsultation.js') }}"></script>
+{% endblock %}

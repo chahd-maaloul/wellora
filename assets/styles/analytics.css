@@ -1,0 +1,407 @@
+/**
+ * Health Analytics Styles
+ * Custom CSS for medical analytics dashboards
+ */
+
+/* Print styles for reports */
+@media print {
+    .no-print,
+    header,
+    footer,
+    .btn,
+    button,
+    select,
+    input[type="text"],
+    .sidebar {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .print-only {
+        display: block !important;
+    }
+    
+    .report-preview {
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    canvas {
+        max-width: 100% !important;
+    }
+}
+
+/* Chart container styles */
+.chart-container {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Medical gauge styles */
+.medical-gauge {
+    position: relative;
+    display: inline-block;
+}
+
+.medical-gauge-circle {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+}
+
+.medical-gauge-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Heatmap cell styles */
+.heatmap-cell {
+    transition: all 0.2s ease;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Alert badge animations */
+@keyframes pulse-alert {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.alert-pulse {
+    animation: pulse-alert 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Trend indicator styles */
+.trend-up {
+    color: #22c55e;
+}
+
+.trend-down {
+    color: #ef4444;
+}
+
+.trend-stable {
+    color: #6b7280;
+}
+
+.dark .trend-up {
+    color: #4ade80;
+}
+
+.dark .trend-down {
+    color: #f87171;
+}
+
+.dark .trend-stable {
+    color: #9ca3af;
+}
+
+/* Report preview A4 styles */
+.report-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Status color classes */
+.status-normal {
+    color: #22c55e;
+}
+
+.status-warning {
+    color: #f59e0b;
+}
+
+.status-critical {
+    color: #ef4444;
+}
+
+.dark .status-normal {
+    color: #4ade80;
+}
+
+.dark .status-warning {
+    color: #fbbf24;
+}
+
+.dark .status-critical {
+    color: #f87171;
+}
+
+/* Medication adherence ring */
+.adherence-ring {
+    position: relative;
+    width: 60px;
+    height: 60px;
+}
+
+.adherence-ring svg {
+    transform: rotate(-90deg);
+}
+
+.adherence-ring-circle {
+    fill: none;
+    stroke-width: 4;
+}
+
+.adherence-ring-bg {
+    stroke: #e5e7eb;
+}
+
+.dark .adherence-ring-bg {
+    stroke: #374151;
+}
+
+.adherence-ring-progress {
+    stroke: #00A790;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+/* Symptom intensity indicator */
+.intensity-bar {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+}
+
+.intensity-segment {
+    flex: 1;
+    background: #e5e7eb;
+    border-radius: 1px;
+    transition: background-color 0.2s ease;
+}
+
+.dark .intensity-segment {
+    background: #374151;
+}
+
+.intensity-segment.active {
+    background: #f59e0b;
+}
+
+.intensity-segment.active.high {
+    background: #ef4444;
+}
+
+/* Date range picker custom styles */
+.flatpickr-calendar {
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .flatpickr-calendar {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+.dark .flatpickr-months .flatpickr-month {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.dark .flatpickr-weekdays {
+    background: #1f2937;
+}
+
+.dark .flatpickr-weekday {
+    color: #9ca3af;
+}
+
+.dark .flatpickr-day {
+    color: #f9fafb;
+}
+
+.dark .flatpickr-day:hover {
+    background: #374151;
+}
+
+.dark .flatpickr-day.selected {
+    background: #00A790;
+    border-color: #00A790;
+}
+
+/* Tooltip styles for charts */
+.chart-tooltip {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark .chart-tooltip {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+/* Loading skeleton animation */
+@keyframes skeleton {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200px 100%;
+    animation: skeleton 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    background-size: 200px 100%;
+}
+
+/* Comparison chart styles */
+.comparison-period {
+    position: relative;
+}
+
+.comparison-period::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: currentColor;
+    opacity: 0.3;
+}
+
+/* Export button styles */
+.export-btn {
+    transition: all 0.2s ease;
+}
+
+.export-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.export-btn:active {
+    transform: translateY(0);
+}
+
+/* Patient card hover effect */
+.patient-card {
+    transition: all 0.2s ease;
+}
+
+.patient-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Alert notification styles */
+.alert-notification {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive chart adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px !important;
+    }
+    
+    .report-page {
+        width: 100%;
+        padding: 10mm;
+    }
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 2px solid #00A790;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .chart-container canvas {
+        border: 1px solid currentColor;
+    }
+    
+    .status-normal {
+        color: #008000;
+    }
+    
+    .status-warning {
+        color: #ff8c00;
+    }
+    
+    .status-critical {
+        color: #dc143c;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .skeleton {
+        animation: none;
+        background: #e5e7eb;
+    }
+}

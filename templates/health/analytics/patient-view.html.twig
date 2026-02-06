@@ -1,0 +1,335 @@
+{# templates/health/analytics/patient-view.html.twig #}
+{# Patient Analytics Dashboard - Health Trends, Patterns & Insights #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Mon Analyse Santé'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="patientAnalytics()" x-init="init()">
+    {# Header Section #}
+    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-chart-line text-wellcare-500"></i>
+                        {{ 'Mon Analyse Santé'|trans }}
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Visualisez vos tendances, suivez vos progrès et comprenez vos données de santé'|trans }}
+                    </p>
+                </div>
+                
+                {# Date Range Selector #}
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="dateRange" 
+                            class="pr-10 input"
+                            placeholder="{{ 'Sélectionner une période'|trans }}"
+                            x-ref="dateRange"
+                            readonly
+                        >
+                        <i class="absolute text-gray-400 transform -translate-y-1/2 pointer-events-none fa-regular fa-calendar right-3 top-1/2"></i>
+                    </div>
+                    <select x-model="selectedPeriod" @change="updatePeriod" class="w-32 input">
+                        <option value="7d">{{ '7 jours'|trans }}</option>
+                        <option value="30d">{{ '30 jours'|trans }}</option>
+                        <option value="3m">{{ '3 mois'|trans }}</option>
+                        <option value="1y">{{ '1 an'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        {# Health Score Card #}
+        <div class="p-6 mb-8 text-white shadow-lg bg-gradient-to-r from-wellcare-500 to-wellcare-light-500 rounded-2xl">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+                <div class="flex items-center gap-4 md:col-span-1">
+                    <div class="relative">
+                        <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8"
+                                    stroke-dasharray="283" :stroke-dashoffset="283 - (283 * healthScore / 100)"
+                                    stroke-linecap="round" class="transition-all duration-1000"/>
+                        </svg>
+                        <div class="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
+                            <span class="text-3xl font-bold" x-text="healthScore"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium opacity-90">{{ 'Score Santé'|trans }}</p>
+                        <p class="text-xs opacity-75" x-text="healthScoreLabel"></p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 md:col-span-3">
+                    <div class="p-4 bg-white/10 rounded-xl">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+                            <span class="text-sm">{{ 'Tendance'|trans }}</span>
+                        </div>
+                        <p class="text-2xl font-bold" x-text="trendDirection"></p>
+                        <p class="text-xs opacity-75">{{ 'vs période précédente'|trans }}</p>
+                    </div>
+                    <div class="p-4 bg-white/10 rounded-xl">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-fire"></i>
+                            <span class="text-sm">{{ 'Énergie moy.'|trans }}</span>
+                        </div>
+                        <p class="text-2xl font-bold" x-text="avgEnergy + '/10'"></p>
+                        <p class="text-xs opacity-75" x-text="energyTrend"></p>
+                    </div>
+                    <div class="p-4 bg-white/10 rounded-xl">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fa-solid fa-moon"></i>
+                            <span class="text-sm">{{ 'Sommeil moy.'|trans }}</span>
+                        </div>
+                        <p class="text-2xl font-bold" x-text="avgSleep + 'h'"></p>
+                        <p class="text-xs opacity-75" x-text="sleepTrend"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Main Charts Grid #}
+        <div class="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
+            {# Health Trends Over Time #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm lg:col-span-2 rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                            <i class="text-lg fa-solid fa-chart-area"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Tendances de Santé'|trans }}</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Évolution de vos indicateurs clés'|trans }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="toggleMetric('energy')" 
+                                :class="activeMetrics.includes('energy') ? 'bg-wellcare-100 text-wellcare-700 dark:bg-wellcare-900/30 dark:text-wellcare-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                                class="px-3 py-1 text-xs font-medium transition-colors rounded-full">
+                            {{ 'Énergie'|trans }}
+                        </button>
+                        <button @click="toggleMetric('mood')" 
+                                :class="activeMetrics.includes('mood') ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                                class="px-3 py-1 text-xs font-medium transition-colors rounded-full">
+                            {{ 'Humeur'|trans }}
+                        </button>
+                        <button @click="toggleMetric('sleep')" 
+                                :class="activeMetrics.includes('sleep') ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                                class="px-3 py-1 text-xs font-medium transition-colors rounded-full">
+                            {{ 'Sommeil'|trans }}
+                        </button>
+                    </div>
+                </div>
+                <div class="relative h-80">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+            </div>
+
+            {# Symptom Analysis - Heatmap #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                            <i class="text-lg fa-solid fa-fire-flame-curved"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Analyse des Symptômes'|trans }}</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Fréquence par jour et heure'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative h-64">
+                    <canvas id="symptomHeatmapChart"></canvas>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Symptôme le plus fréquent'|trans }}</p>
+                        <p class="font-semibold text-gray-900 dark:text-white" x-text="mostFrequentSymptom"></p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Durée moyenne'|trans }}</p>
+                        <p class="font-semibold text-gray-900 dark:text-white" x-text="avgSymptomDuration"></p>
+                    </div>
+                </div>
+            </div>
+
+            {# Medication Effectiveness #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 text-blue-600 rounded-xl bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
+                            <i class="text-lg fa-solid fa-pills"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Efficacité des Médicaments'|trans }}</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Suivi des traitements'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative h-64">
+                    <canvas id="medicationChart"></canvas>
+                </div>
+                <div class="mt-4 space-y-3">
+                    <template x-for="med in medications" :key="med.id">
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full" :style="`background-color: ${med.color}`"></div>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="med.name"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500 dark:text-gray-400" x-text="med.effectiveness + '% efficace'"></span>
+                                <div class="w-16 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                    <div class="h-2 transition-all duration-500 rounded-full" 
+                                         :style="`width: ${med.effectiveness}%; background-color: ${med.color}`"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        {# Lifestyle Correlation Section #}
+        <div class="p-6 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <i class="text-lg fa-solid fa-link"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Corrélation Mode de Vie'|trans }}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Comment vos habitudes affectent votre santé'|trans }}</p>
+                    </div>
+                </div>
+                <select x-model="correlationType" @change="updateCorrelationChart" class="w-48 input">
+                    <option value="exercise">{{ 'Exercice vs Énergie'|trans }}</option>
+                    <option value="sleep">{{ 'Sommeil vs Humeur'|trans }}</option>
+                    <option value="food">{{ 'Alimentation vs Symptômes'|trans }}</option>
+                </select>
+            </div>
+            <div class="relative h-72">
+                <canvas id="correlationChart"></canvas>
+            </div>
+            <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
+                <div class="p-4 text-center bg-gray-50 rounded-xl dark:bg-gray-800">
+                    <i class="mb-2 text-2xl fa-solid fa-person-running text-emerald-500"></i>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Jours avec exercice'|trans }}</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="exerciseDays + '%'"></p>
+                </div>
+                <div class="p-4 text-center bg-gray-50 rounded-xl dark:bg-gray-800">
+                    <i class="mb-2 text-2xl fa-solid fa-bolt text-amber-500"></i>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Énergie moy. (exercice)'|trans }}</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="energyWithExercise"></p>
+                </div>
+                <div class="p-4 text-center bg-gray-50 rounded-xl dark:bg-gray-800">
+                    <i class="mb-2 text-2xl text-indigo-500 fa-solid fa-bed"></i>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Qualité sommeil'|trans }}</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="sleepQuality"></p>
+                </div>
+            </div>
+        </div>
+
+        {# Trigger Analysis #}
+        <div class="p-6 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                        <i class="text-lg fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Analyse des Déclencheurs'|trans }}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Facteurs qui influencent vos symptômes'|trans }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div class="relative h-64">
+                    <canvas id="triggerChart"></canvas>
+                </div>
+                <div class="space-y-4">
+                    <template x-for="trigger in triggers" :key="trigger.id">
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl dark:bg-gray-800">
+                            <div class="flex items-center justify-center w-12 h-12 text-xl rounded-lg"
+                                 :class="trigger.impact > 0 ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
+                                <i :class="trigger.icon"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900 dark:text-white" x-text="trigger.name"></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="trigger.description"></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-lg font-bold" 
+                                   :class="trigger.impact > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'"
+                                   x-text="(trigger.impact > 0 ? '+' : '') + trigger.impact + '%'"></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'impact'|trans }}</p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        {# Quick Stats & Export #}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm lg:col-span-3 rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Résumé de la période'|trans }}</h3>
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div class="p-4 text-center bg-wellcare-50 rounded-xl dark:bg-wellcare-900/20">
+                        <p class="text-2xl font-bold text-wellcare-600 dark:text-wellcare-400" x-text="totalEntries"></p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Entrées'|trans }}</p>
+                    </div>
+                    <div class="p-4 text-center bg-purple-50 rounded-xl dark:bg-purple-900/20">
+                        <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" x-text="goodDays + '%'"></p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Bons jours'|trans }}</p>
+                    </div>
+                    <div class="p-4 text-center bg-amber-50 rounded-xl dark:bg-amber-900/20">
+                        <p class="text-2xl font-bold text-amber-600 dark:text-amber-400" x-text="symptomFreeDays"></p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Jours sans symptômes'|trans }}</p>
+                    </div>
+                    <div class="p-4 text-center bg-emerald-50 rounded-xl dark:bg-emerald-900/20">
+                        <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400" x-text="medicationAdherence + '%'"></p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Adhérence traitement'|trans }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Exporter'|trans }}</h3>
+                <div class="space-y-3">
+                    <button @click="exportData('pdf')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-rose-600 hover:bg-rose-700">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        {{ 'Rapport PDF'|trans }}
+                    </button>
+                    <button @click="exportData('csv')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                        <i class="fa-solid fa-file-csv"></i>
+                        {{ 'Données CSV'|trans }}
+                    </button>
+                    <button @click="exportData('png')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                        <i class="fa-solid fa-image"></i>
+                        {{ 'Graphiques PNG'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+    <script src="{{ asset('build/health-analytics.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{# templates/health/partials/health-metrics.html.twig #}
+{# Vital Signs Cards - Health Overview Widgets #}
+
+<div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4" x-data="vitalSigns()" x-init="init()">
+    {# Heart Rate Card #}
+    <div class="relative p-5 overflow-hidden transition-all bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800 hover:shadow-md"
+         :class="getStatusClass(heartRate.status)">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'Fréquence Cardiaque'|trans }}</p>
+                <div class="flex items-baseline gap-1 mt-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white" x-text="heartRate.value"></span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">bpm</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1 text-xs">
+                    <span :class="heartRate.trend === 'up' ? 'text-emerald-500' : (heartRate.trend === 'down' ? 'text-rose-500' : 'text-gray-400')">
+                        <i class="fa-solid" :class="heartRate.trend === 'up' ? 'fa-arrow-trend-up' : (heartRate.trend === 'down' ? 'fa-arrow-trend-down' : 'fa-minus')"></i>
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400" x-text="heartRate.change + ' vs hier'"></span>
+                </div>
+            </div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-900/20 dark:text-rose-400">
+                <i class="text-xl fa-solid fa-heart-pulse animate-heartbeat"></i>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="getBadgeClass(heartRate.status)"
+                  x-text="getStatusLabel(heartRate.status)">
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">Normal: 60-100</span>
+        </div>
+    </div>
+
+    {# Blood Pressure Card #}
+    <div class="relative p-5 overflow-hidden transition-all bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800 hover:shadow-md"
+         :class="getStatusClass(bloodPressure.status)">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'Tension Artérielle'|trans }}</p>
+                <div class="flex items-baseline gap-1 mt-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white" x-text="bloodPressure.systolic + '/' + bloodPressure.diastolic"></span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">mmHg</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1 text-xs">
+                    <span :class="bloodPressure.trend === 'up' ? 'text-emerald-500' : (bloodPressure.trend === 'down' ? 'text-rose-500' : 'text-gray-400')">
+                        <i class="fa-solid" :class="bloodPressure.trend === 'up' ? 'fa-arrow-trend-up' : (bloodPressure.trend === 'down' ? 'fa-arrow-trend-down' : 'fa-minus')"></i>
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400" x-text="bloodPressure.change + ' vs hier'"></span>
+                </div>
+            </div>
+            <div class="flex items-center justify-center w-12 h-12 text-blue-500 rounded-xl bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400">
+                <i class="text-xl fa-solid fa-stethoscope"></i>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="getBadgeClass(bloodPressure.status)"
+                  x-text="getStatusLabel(bloodPressure.status)">
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">Optimal: 120/80</span>
+        </div>
+    </div>
+
+    {# Temperature Card #}
+    <div class="relative p-5 overflow-hidden transition-all bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800 hover:shadow-md"
+         :class="getStatusClass(temperature.status)">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'Température'|trans }}</p>
+                <div class="flex items-baseline gap-1 mt-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white" x-text="temperature.value"></span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">°C</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1 text-xs">
+                    <span :class="temperature.trend === 'up' ? 'text-rose-500' : (temperature.trend === 'down' ? 'text-blue-500' : 'text-gray-400')">
+                        <i class="fa-solid" :class="temperature.trend === 'up' ? 'fa-arrow-trend-up' : (temperature.trend === 'down' ? 'fa-arrow-trend-down' : 'fa-minus')"></i>
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400" x-text="temperature.change + ' vs hier'"></span>
+                </div>
+            </div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-900/20 dark:text-amber-400">
+                <i class="text-xl fa-solid fa-temperature-half"></i>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="getBadgeClass(temperature.status)"
+                  x-text="getStatusLabel(temperature.status)">
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">Normal: 36.5-37.5</span>
+        </div>
+    </div>
+
+    {# Oxygen Saturation Card #}
+    <div class="relative p-5 overflow-hidden transition-all bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800 hover:shadow-md"
+         :class="getStatusClass(oxygen.status)">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'Saturation O2'|trans }}</p>
+                <div class="flex items-baseline gap-1 mt-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white" x-text="oxygen.value"></span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">%</span>
+                </div>
+                <div class="flex items-center gap-1 mt-1 text-xs">
+                    <span :class="oxygen.trend === 'up' ? 'text-emerald-500' : (oxygen.trend === 'down' ? 'text-rose-500' : 'text-gray-400')">
+                        <i class="fa-solid" :class="oxygen.trend === 'up' ? 'fa-arrow-trend-up' : (oxygen.trend === 'down' ? 'fa-arrow-trend-down' : 'fa-minus')"></i>
+                    </span>
+                    <span class="text-gray-500 dark:text-gray-400" x-text="oxygen.change + ' vs hier'"></span>
+                </div>
+            </div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-cyan-50 text-cyan-500 dark:bg-cyan-900/20 dark:text-cyan-400">
+                <i class="text-xl fa-solid fa-lungs"></i>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="getBadgeClass(oxygen.status)"
+                  x-text="getStatusLabel(oxygen.status)">
+            </span>
+            <span class="text-xs text-gray-400 dark:text-gray-500">Normal: 95-100%</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function vitalSigns() {
+    return {
+        heartRate: {
+            value: 72,
+            status: 'normal',
+            trend: 'stable',
+            change: '0'
+        },
+        bloodPressure: {
+            systolic: 118,
+            diastolic: 76,
+            status: 'normal',
+            trend: 'down',
+            change: '-2'
+        },
+        temperature: {
+            value: 36.8,
+            status: 'normal',
+            trend: 'stable',
+            change: '0'
+        },
+        oxygen: {
+            value: 98,
+            status: 'normal',
+            trend: 'up',
+            change: '+1'
+        },
+        init() {
+            // Simulate real-time data updates
+            setInterval(() => {
+                this.simulateUpdates();
+            }, 30000);
+        },
+        simulateUpdates() {
+            // Simulate small variations in vitals
+            this.heartRate.value = Math.floor(68 + Math.random() * 8);
+            this.oxygen.value = Math.floor(96 + Math.random() * 4);
+        },
+        getStatusClass(status) {
+            const classes = {
+                'normal': 'border-l-4 border-l-emerald-400',
+                'caution': 'border-l-4 border-l-amber-400',
+                'alert': 'border-l-4 border-l-rose-500'
+            };
+            return classes[status] || classes['normal'];
+        },
+        getBadgeClass(status) {
+            const classes = {
+                'normal': 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+                'caution': 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+                'alert': 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+            };
+            return classes[status] || classes['normal'];
+        },
+        getStatusLabel(status) {
+            const labels = {
+                'normal': 'Normal',
+                'caution': 'Attention',
+                'alert': 'Alerte'
+            };
+            return labels[status] || 'Normal';
+        }
+    }
+}
+</script>

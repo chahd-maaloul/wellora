@@ -1,0 +1,426 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Bibliothèque de recettes - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8" x-data="recipeLibrary()" x-init="init()">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Bibliothèque de recettes</h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Découvrez des recettes saines et délicieuses</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button @click="viewMode = 'grid'" class="p-2 transition-colors rounded-lg" 
+                        :class="viewMode === 'grid' ? 'bg-wellcare-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button @click="viewMode = 'list'" class="p-2 transition-colors rounded-lg"
+                        :class="viewMode === 'list' ? 'bg-wellcare-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button @click="showCreateModal = true" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-plus"></i>Créer une recette
+                </button>
+            </div>
+        </div>
+
+        {# Search & Filters #}
+        <div class="p-4 mb-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <div class="flex flex-col gap-4 lg:flex-row">
+                <div class="relative flex-1">
+                    <input type="text" x-model="search" placeholder="Rechercher par nom, ingrédient ou nutrient..." 
+                           class="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500">
+                    <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <select x-model="category" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Toutes catégories</option>
+                        <option value="breakfast">Petit-déjeuner</option>
+                        <option value="lunch">Déjeuner</option>
+                        <option value="dinner">Dîner</option>
+                        <option value="snacks">Colations</option>
+                        <option value="desserts">Desserts</option>
+                        <option value="drinks">Boissons</option>
+                    </select>
+                    <select x-model="diet" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Tous régimes</option>
+                        <option value="vegetarian">Végétarien</option>
+                        <option value="vegan">Végan</option>
+                        <option value="gluten_free">Sans gluten</option>
+                        <option value="dairy_free">Sans lactose</option>
+                        <option value="low_carb">Low carb</option>
+                        <option value="keto">Céto</option>
+                    </select>
+                    <select x-model="difficulty" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Toutes difficultés</option>
+                        <option value="easy">Facile</option>
+                        <option value="medium">Moyen</option>
+                        <option value="hard">Difficile</option>
+                    </select>
+                    <select x-model="sortBy" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="popular">Plus populaires</option>
+                        <option value="rating">Mieux notés</option>
+                        <option value="calories_asc">Calories (croissant)</option>
+                        <option value="calories_desc">Calories (décroissant)</option>
+                        <option value="time">Temps de préparation</option>
+                    </select>
+                </div>
+            </div>
+            
+            {# Quick Filters #}
+            <div class="flex flex-wrap gap-2 mt-4">
+                <button @click="toggleQuickFilter('quick')" class="px-3 py-1 text-sm font-medium transition-colors rounded-full"
+                        :class="quickFilters.includes('quick') ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                    <i class="mr-1 fas fa-bolt"></i>Rapide (< 20 min)
+                </button>
+                <button @click="toggleQuickFilter('high_protein')" class="px-3 py-1 text-sm font-medium transition-colors rounded-full"
+                        :class="quickFilters.includes('high_protein') ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                    <i class="mr-1 fas fa-dumbbell"></i>Protéines élevées
+                </button>
+                <button @click="toggleQuickFilter('low_calorie')" class="px-3 py-1 text-sm font-medium transition-colors rounded-full"
+                        :class="quickFilters.includes('low_calorie') ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                    <i class="mr-1 fas fa-fire"></i>Low calorie
+                </button>
+                <button @click="toggleQuickFilter('family')" class="px-3 py-1 text-sm font-medium transition-colors rounded-full"
+                        :class="quickFilters.includes('family') ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'">
+                    <i class="mr-1 fas fa-users"></i>Familial
+                </button>
+            </div>
+        </div>
+
+        {# Results Count #}
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-gray-500 dark:text-gray-400">
+                <span x-text="filteredRecipes.length"></span> recettes trouvées
+            </p>
+        </div>
+
+        {# Grid View #}
+        <div x-show="viewMode === 'grid'" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <template x-for="recipe in filteredRecipes" :key="recipe.id">
+                <div class="overflow-hidden transition-shadow bg-white shadow-lg cursor-pointer dark:bg-gray-800 rounded-2xl hover:shadow-xl group"
+                     @click="openRecipe(recipe)">
+                    {# Recipe Image #}
+                    <div class="relative h-48 overflow-hidden bg-gradient-to-br from-wellcare-100 to-wellcare-200 dark:from-wellcare-900/30 dark:to-wellcare-800/30">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i :class="recipe.icon + ' text-wellcare-500 text-6xl opacity-50'"></i>
+                        </div>
+                        {# Badges #}
+                        <div class="absolute flex flex-wrap gap-1 top-3 left-3">
+                            <span class="px-2 py-1 text-xs font-medium text-gray-700 rounded-full bg-white/90 dark:bg-gray-900/90 dark:text-gray-300" x-text="recipe.diet"></span>
+                        </div>
+                        {# Rating #}
+                        <div class="absolute flex items-center gap-1 px-2 py-1 rounded-full top-3 right-3 bg-white/90 dark:bg-gray-900/90">
+                            <i class="text-xs text-yellow-400 fas fa-star"></i>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300" x-text="recipe.rating"></span>
+                        </div>
+                        {# Quick Actions #}
+                        <div class="absolute inset-0 flex items-center justify-center gap-3 transition-opacity opacity-0 bg-black/50 group-hover:opacity-100">
+                            <button @click.stop="addToMealPlan(recipe)" class="p-3 text-white transition-colors rounded-full bg-wellcare-500 hover:bg-wellcare-600" title="Ajouter au planner">
+                                <i class="fas fa-calendar-plus"></i>
+                            </button>
+                            <button @click.stop="toggleFavorite(recipe)" class="p-3 transition-colors rounded-full"
+                                    :class="recipe.isFavorite ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'">
+                                <i :class="recipe.isFavorite ? 'fas fa-heart' : 'far fa-heart'"></i>
+                            </button>
+                            <button @click.stop="shareRecipe(recipe)" class="p-3 text-gray-700 transition-colors bg-white rounded-full hover:bg-gray-100" title="Partager">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {# Recipe Info #}
+                    <div class="p-4">
+                        <h3 class="mb-1 font-bold text-gray-900 transition-colors dark:text-white group-hover:text-wellcare-500" x-text="recipe.name"></h3>
+                        <p class="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2" x-text="recipe.description"></p>
+                        
+                        {# Stats #}
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-fire"></i> <span x-text="recipe.calories"></span> kcal
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-clock"></i> <span x-text="recipe.time"></span> min
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div class="w-16 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                    <div class="h-full rounded-full bg-wellcare-500" :style="'width: ' + (recipe.protein / recipe.targetProtein * 100) + '%'"></div>
+                                </div>
+                                <span class="text-xs text-gray-500" x-text="recipe.protein + 'g prot'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {# List View #}
+        <div x-show="viewMode === 'list'" class="space-y-4">
+            <template x-for="recipe in filteredRecipes" :key="recipe.id">
+                <div class="p-4 transition-shadow bg-white shadow-lg cursor-pointer dark:bg-gray-800 rounded-2xl hover:shadow-xl"
+                     @click="openRecipe(recipe)">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center flex-shrink-0 w-24 h-24 rounded-xl bg-gradient-to-br from-wellcare-100 to-wellcare-200 dark:from-wellcare-900/30 dark:to-wellcare-800/30">
+                            <i :class="recipe.icon + ' text-wellcare-500 text-3xl'"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white" x-text="recipe.name"></h3>
+                                    <p class="text-gray-500 dark:text-gray-400" x-text="recipe.description"></p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button @click.stop="toggleFavorite(recipe)" class="p-2 transition-colors rounded-full"
+                                            :class="recipe.isFavorite ? 'bg-red-100 dark:bg-red-900/30 text-red-500' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'">
+                                        <i :class="recipe.isFavorite ? 'fas fa-heart' : 'far fa-heart'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-fire text-wellcare-500"></i> <span x-text="recipe.calories"></span> kcal
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-clock"></i> <span x-text="recipe.time"></span> min
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-utensils"></i> <span x-text="recipe.servings"></span> portions
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="text-yellow-400 fas fa-star"></i> <span x-text="recipe.rating"></span>
+                                </span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700" x-text="recipe.difficulty"></span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-600" x-text="recipe.diet"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {# Pagination #}
+        <div class="flex items-center justify-center gap-2 mt-8">
+            <button @click="currentPage--" :disabled="currentPage === 1" 
+                    class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <template x-for="page in totalPages" :key="page">
+                <button @click="currentPage = page" 
+                        class="w-10 h-10 font-medium transition-colors rounded-lg"
+                        :class="currentPage === page ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30'">
+                    <span x-text="page"></span>
+                </button>
+            </template>
+            <button @click="currentPage++" :disabled="currentPage === totalPages" 
+                    class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    {# Recipe Detail Modal #}
+    <div x-show="showRecipeDetail" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 py-8">
+            <div class="fixed inset-0 transition-opacity bg-black/50" @click="showRecipeDetail = false"></div>
+            <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto z-10">
+                {# Header Image #}
+                <div class="relative h-64 bg-gradient-to-br from-wellcare-100 to-wellcare-200 dark:from-wellcare-900/30 dark:to-wellcare-800/30">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i :class="selectedRecipe.icon + ' text-wellcare-500 text-8xl opacity-30'"></i>
+                    </div>
+                    <button @click="showRecipeDetail = false" class="absolute p-2 transition-colors rounded-full top-4 right-4 bg-white/90 dark:bg-gray-900/90 hover:bg-white">
+                        <i class="text-gray-700 fas fa-times dark:text-gray-300"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    {# Title & Actions #}
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-900 dark:text-white" x-text="selectedRecipe.name"></h2>
+                            <p class="mt-1 text-gray-500 dark:text-gray-400" x-text="selectedRecipe.description"></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="toggleFavorite(selectedRecipe)" class="p-3 transition-colors rounded-full"
+                                    :class="selectedRecipe.isFavorite ? 'bg-red-100 dark:bg-red-900/30 text-red-500' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'">
+                                <i :class="selectedRecipe.isFavorite ? 'fas fa-heart' : 'far fa-heart'"></i>
+                            </button>
+                            <button @click="shareRecipe(selectedRecipe)" class="p-3 text-gray-600 transition-colors bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {# Quick Info #}
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <div class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl dark:bg-gray-700">
+                            <i class="fas fa-fire text-wellcare-500"></i>
+                            <span class="font-semibold" x-text="selectedRecipe.calories + ' kcal'"></span>
+                        </div>
+                        <div class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl dark:bg-gray-700">
+                            <i class="text-blue-500 fas fa-clock"></i>
+                            <span><span x-text="selectedRecipe.time"></span> min</span>
+                        </div>
+                        <div class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl dark:bg-gray-700">
+                            <i class="text-purple-500 fas fa-utensils"></i>
+                            <span><span x-text="selectedRecipe.servings"></span> portions</span>
+                        </div>
+                        <div class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl dark:bg-gray-700">
+                            <i class="text-yellow-400 fas fa-star"></i>
+                            <span><span x-text="selectedRecipe.rating"></span>/5</span>
+                        </div>
+                    </div>
+
+                    {# Tabs #}
+                    <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
+                        <nav class="flex gap-6">
+                            <button @click="activeTab = 'ingredients'" 
+                                    class="pb-3 font-medium transition-colors"
+                                    :class="activeTab === 'ingredients' ? 'text-wellcare-500 border-b-2 border-wellcare-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'">
+                                Ingrédients
+                            </button>
+                            <button @click="activeTab = 'instructions'" 
+                                    class="pb-3 font-medium transition-colors"
+                                    :class="activeTab === 'instructions' ? 'text-wellcare-500 border-b-2 border-wellcare-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'">
+                                Instructions
+                            </button>
+                            <button @click="activeTab = 'nutrition'" 
+                                    class="pb-3 font-medium transition-colors"
+                                    :class="activeTab === 'nutrition' ? 'text-wellcare-500 border-b-2 border-wellcare-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'">
+                                Nutrition
+                            </button>
+                        </nav>
+                    </div>
+
+                    {# Ingredients Tab #}
+                    <div x-show="activeTab === 'ingredients'" class="space-y-4">
+                        <div class="flex items-center gap-4 mb-4">
+                            <label class="text-gray-700 dark:text-gray-300">Portions:</label>
+                            <div class="flex items-center gap-2">
+                                <button @click="adjustServings(-1)" class="p-1 bg-gray-100 rounded-lg dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">-</button>
+                                <span class="w-12 font-semibold text-center" x-text="selectedRecipe.servings"></span>
+                                <button @click="adjustServings(1)" class="p-1 bg-gray-100 rounded-lg dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">+</button>
+                            </div>
+                        </div>
+                        <ul class="space-y-3">
+                            <template x-for="(ingredient, index) in selectedRecipe.ingredients" :key="index">
+                                <li class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                    <input type="checkbox" :id="'ingredient-' + index" class="w-5 h-5 border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500">
+                                    <label :for="'ingredient-' + index" class="flex-1 cursor-pointer">
+                                        <span class="font-medium" x-text="formatQuantity(ingredient.quantity, selectedRecipe.servings) + ' ' + ingredient.unit"></span>
+                                        <span class="text-gray-600 dark:text-gray-400" x-text="ingredient.name"></span>
+                                    </label>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+
+                    {# Instructions Tab #}
+                    <div x-show="activeTab === 'instructions'" class="space-y-6">
+                        <template x-for="(step, index) in selectedRecipe.instructions" :key="index">
+                            <div class="flex gap-4">
+                                <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 font-bold rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-500">
+                                    <span x-text="index + 1"></span>
+                                </div>
+                                <div class="flex-1 pt-1">
+                                    <p class="text-gray-700 dark:text-gray-300" x-text="step"></p>
+                                    <p class="mt-1 text-sm text-gray-500">Astuce: Suivez les instructions étape par étape pour un meilleur résultat.</p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    {# Nutrition Tab #}
+                    <div x-show="activeTab === 'nutrition'">
+                        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                            <div class="p-4 text-center rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                                <div class="text-3xl font-bold text-wellcare-500" x-text="selectedRecipe.calories"></div>
+                                <p class="text-sm text-gray-500">Calories</p>
+                            </div>
+                            <div class="p-4 text-center rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                                <div class="text-3xl font-bold text-blue-500" x-text="selectedRecipe.protein + 'g'"></div>
+                                <p class="text-sm text-gray-500">Protéines</p>
+                            </div>
+                            <div class="p-4 text-center rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                                <div class="text-3xl font-bold text-amber-500" x-text="selectedRecipe.carbs + 'g'"></div>
+                                <p class="text-sm text-gray-500">Glucides</p>
+                            </div>
+                            <div class="p-4 text-center rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                                <div class="text-3xl font-bold text-red-500" x-text="selectedRecipe.fats + 'g'"></div>
+                                <p class="text-sm text-gray-500">Lipides</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Action Buttons #}
+                    <div class="flex gap-4 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                        <button @click="addToMealPlan(selectedRecipe)" class="flex-1 py-3 font-medium text-white transition-colors rounded-xl bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="mr-2 fas fa-calendar-plus"></i>Ajouter au planner
+                        </button>
+                        <button class="flex-1 py-3 font-medium text-gray-700 transition-colors border border-gray-300 rounded-xl dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="mr-2 fas fa-print"></i>Imprimer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Create Recipe Modal #}
+    <div x-show="showCreateModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 py-8">
+            <div class="fixed inset-0 transition-opacity bg-black/50" @click="showCreateModal = false"></div>
+            <div class="relative z-10 w-full max-w-2xl bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Créer une recette</h2>
+                        <button @click="showCreateModal = false" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-gray-500 fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <form @submit.prevent="createRecipe()" class="space-y-4">
+                        <div>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Nom de la recette</label>
+                            <input type="text" x-model="newRecipe.name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                            <textarea x-model="newRecipe.description" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Calories</label>
+                                <input type="number" x-model="newRecipe.calories" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Temps (min)</label>
+                                <input type="number" x-model="newRecipe.time" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-3 font-medium text-white transition-colors rounded-xl bg-wellcare-500 hover:bg-wellcare-600">
+                            Créer la recette
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/recipe-manager.js') }}"></script>
+{% endblock %}

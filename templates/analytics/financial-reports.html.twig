@@ -1,0 +1,334 @@
+{# templates/analytics/financial-reports.html.twig #}
+{# Financial Reports Analytics Dashboard #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Rapports Financiers'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-950" x-data="financialAnalytics()" x-init="init()">
+    
+    {# Header #}
+    <div class="mx-auto mb-6 max-w-7xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-chart-pie text-wellcare-500"></i>
+                    {{ "Rapports Financiers"|trans }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {{ "Analyse financière et revenus"|trans }}
+                </p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <select 
+                    x-model="period"
+                    @change="loadData()"
+                    class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                >
+                    <option value="month">{{ "Ce Mois"|trans }}</option>
+                    <option value="quarter">{{ "Ce Trimestre"|trans }}</option>
+                    <option value="year">{{ "Cette Année"|trans }}</option>
+                    <option value="custom">{{ "Personnalisé"|trans }}</option>
+                </select>
+                
+                <button 
+                    @click="exportFinancialReport()"
+                    class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
+                >
+                    <i class="mr-2 fa-solid fa-file-export"></i>
+                    {{ "Exporter PDF"|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {# Financial Summary Cards #}
+    <div class="grid grid-cols-1 gap-6 mx-auto mb-6 max-w-7xl md:grid-cols-2 lg:grid-cols-4">
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">{{ "Revenus Totaux"|trans }}</p>
+                    <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="'€' + summary.totalRevenue.toLocaleString()"></p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
+                    <i class="text-xl fa-solid fa-wallet text-emerald-600 dark:text-emerald-400"></i>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+                <span class="text-sm text-emerald-600">
+                    <i class="fa-solid fa-arrow-up"></i> 15.2%
+                </span>
+                <span class="text-sm text-gray-500">{{ "vs mois dernier"|trans }}</span>
+            </div>
+        </div>
+        
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">{{ "Revenus par Patient"|trans }}</p>
+                    <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="'€' + summary.revenuePerPatient"></p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <i class="text-xl text-blue-600 fa-solid fa-user-injured dark:text-blue-400"></i>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+                <span class="text-sm text-emerald-600">
+                    <i class="fa-solid fa-arrow-up"></i> 5.3%
+                </span>
+                <span class="text-sm text-gray-500">{{ "amélioration"|trans }}</span>
+            </div>
+        </div>
+        
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">{{ "Créances"|trans }}</p>
+                    <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="'€' + summary.outstanding.toLocaleString()"></p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
+                    <i class="text-xl fa-solid fa-file-invoice-dollar text-amber-600 dark:text-amber-400"></i>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+                <span class="text-sm text-gray-500">{{ "Dont"|trans }} <span class="font-medium text-gray-900" x-text="summary.overdue + '%'"></span> {{ "en retard"|trans }}</span>
+            </div>
+        </div>
+        
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">{{ "Remboursements"|trans }}</p>
+                    <p class="mt-1 text-3xl font-bold text-gray-900 dark:text-white" x-text="'€' + summary.refunds.toLocaleString()"></p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                    <i class="text-xl text-red-600 fa-solid fa-undo dark:text-red-400"></i>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+                <span class="text-sm text-gray-500">{{ "Taux:" |trans }} <span class="font-medium text-gray-900" x-text="summary.refundRate + '%'"></span></span>
+            </div>
+        </div>
+    </div>
+    
+    {# Charts Row #}
+    <div class="grid grid-cols-1 gap-6 mx-auto mb-6 max-w-7xl lg:grid-cols-2">
+        
+        {# Revenue Trend #}
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Tendance des Revenus"|trans }}</h2>
+                <div class="flex items-center gap-2">
+                    <button 
+                        @click="revenueView = 'daily'; loadRevenueChart()"
+                        class="px-3 py-1 text-xs font-medium transition-colors rounded-lg"
+                        :class="revenueView === 'daily' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                    >
+                        {{ "Journalier"|trans }}
+                    </button>
+                    <button 
+                        @click="revenueView = 'monthly'; loadRevenueChart()"
+                        class="px-3 py-1 text-xs font-medium transition-colors rounded-lg"
+                        :class="revenueView === 'monthly' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'"
+                    >
+                        {{ "Mensuel"|trans }}
+                    </button>
+                </div>
+            </div>
+            <canvas id="revenueChart" class="w-full h-64"></canvas>
+        </div>
+        
+        {# Revenue by Service #}
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Revenus par Service"|trans }}</h2>
+            </div>
+            <div class="flex items-center gap-6">
+                <canvas id="serviceRevenueChart" class="w-48 h-48"></canvas>
+                <div class="flex-1 space-y-3">
+                    <template x-for="service in serviceRevenue" :key="service.name">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: service.color }"></div>
+                                <span class="text-sm text-gray-600 dark:text-gray-300" x-text="service.name"></span>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-gray-900 dark:text-white" x-text="'€' + service.amount.toLocaleString()"></p>
+                                <p class="text-xs text-gray-500" x-text="service.percentage + '%'"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {# Detailed Financial Analysis #}
+    <div class="grid grid-cols-1 gap-6 mx-auto mb-6 max-w-7xl lg:grid-cols-3">
+        
+        {# Billing Summary #}
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <h2 class="mb-4 font-semibold text-gray-900 dark:text-white">{{ "Résumé de Facturation"|trans }}</h2>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ "Consultations"|trans }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" x-text="'€' + billing.consultations.toLocaleString()"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ "Procédures"|trans }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" x-text="'€' + billing.procedures.toLocaleString()"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ "Examens"|trans }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" x-text="'€' + billing.exams.toLocaleString()"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ "Médicaments"|trans }}</span>
+                    <span class="font-semibold text-gray-900 dark:text-white" x-text="'€' + billing.medications.toLocaleString()"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                    <span class="text-sm font-medium text-wellcare-700 dark:text-wellcare-300">{{ "Total"|trans }}</span>
+                    <span class="text-lg font-bold text-wellcare-700 dark:text-wellcare-300" x-text="'€' + billing.total.toLocaleString()"></span>
+                </div>
+            </div>
+        </div>
+        
+        {# Insurance Claims #}
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <h2 class="mb-4 font-semibold text-gray-900 dark:text-white">{{ "Sinistres Assurances"|trans }}</h2>
+            <div class="space-y-4">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-500">{{ "Taux de Remboursement"|trans }}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="insurance.claimSuccessRate + '%'"></p>
+                    </div>
+                    <canvas id="claimStatusChart" class="w-20 h-20"></canvas>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">{{ "Acceptés"|trans }}</span>
+                        <span class="font-medium text-emerald-600" x-text="insurance.accepted"></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">{{ "En attente"|trans }}</span>
+                        <span class="font-medium text-amber-600" x-text="insurance.pending"></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">{{ "Refusés"|trans }}</span>
+                        <span class="font-medium text-red-600" x-text="insurance.rejected"></span>
+                    </div>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-sm text-gray-500">{{ "Montant total réclamé"|trans }}</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white" x-text="'€' + insurance.totalClaimed.toLocaleString()"></p>
+                </div>
+            </div>
+        </div>
+        
+        {# Payment Status #}
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <h2 class="mb-4 font-semibold text-gray-900 dark:text-white">{{ "État des Paiements"|trans }}</h2>
+            <div class="space-y-4">
+                <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-emerald-700 dark:text-emerald-300">{{ "Payé"|trans }}</span>
+                        <span class="font-semibold text-emerald-700 dark:text-emerald-300" x-text="'€' + payments.paid.toLocaleString()"></span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-amber-700 dark:text-amber-300">{{ "En attente"|trans }}</span>
+                        <span class="font-semibold text-amber-700 dark:text-amber-300" x-text="'€' + payments.pending.toLocaleString()"></span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-red-700 dark:text-red-300">{{ "En retard"|trans }}</span>
+                        <span class="font-semibold text-red-700 dark:text-red-300" x-text="'€' + payments.overdue.toLocaleString()"></span>
+                    </div>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <canvas id="paymentMethodsChart" class="w-full h-32"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {# Profitability Analysis #}
+    <div class="mx-auto max-w-7xl">
+        <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Rentabilité par Service"|trans }}</h2>
+                <button 
+                    @click="exportProfitability()"
+                    class="px-3 py-1 text-sm font-medium border rounded-lg text-wellcare-600 dark:text-wellcare-400 border-wellcare-200 dark:border-wellcare-800 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20"
+                >
+                    <i class="mr-1 fa-solid fa-download"></i>
+                    {{ "Exporter"|trans }}
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <th class="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">{{ "Service"|trans }}</th>
+                            <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">{{ "Revenus"|trans }}</th>
+                            <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">{{ "Coûts"|trans }}</th>
+                            <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">{{ "Bénéfice"|trans }}</th>
+                            <th class="px-4 py-3 text-xs font-medium text-right text-gray-500 uppercase">{{ "Marge"|trans }}</th>
+                            <th class="px-4 py-3 text-xs font-medium text-center text-gray-500 uppercase">{{ "Tendance"|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="service in profitability" :key="service.name">
+                            <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2 h-2 rounded-full" :style="{ backgroundColor: service.color }"></div>
+                                        <span class="font-medium text-gray-900 dark:text-white" x-text="service.name"></span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-right text-gray-900 dark:text-white" x-text="'€' + service.revenue.toLocaleString()"></td>
+                                <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-300" x-text="'€' + service.costs.toLocaleString()"></td>
+                                <td class="px-4 py-3 font-semibold text-right text-emerald-600 dark:text-emerald-400" x-text="'€' + service.profit.toLocaleString()"></td>
+                                <td class="px-4 py-3 text-right">
+                                    <span 
+                                        class="px-2 py-1 text-xs font-medium rounded-full"
+                                        :class="service.margin >= 30 ? 'bg-emerald-100 text-emerald-700' : service.margin >= 15 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'"
+                                        x-text="service.margin + '%'"
+                                    ></span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <i 
+                                        class="fa-solid"
+                                        :class="service.trend > 0 ? 'fa-arrow-up text-emerald-500' : 'fa-arrow-down text-red-500'"
+                                    ></i>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('build/analytics.js') }}"></script>
+{% endblock %}

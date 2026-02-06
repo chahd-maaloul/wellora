@@ -1,0 +1,468 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Goal Setting Wizard - WellCare Connect' | trans }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('fitness-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-800" x-data="goalWizard()">
+    {# Header #}
+    <div class="bg-white shadow-sm dark:bg-gray-900">
+        <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ path('fitness_dashboard') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </a>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ 'Goal Setting Wizard' | trans }}</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Step' | trans }} <span x-text="currentStep"></span> {{ 'of' | trans }} <span x-text="totalSteps"></span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Progress Bar #}
+    <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-8">
+            <div class="bg-wellcare-500 h-2.5 rounded-full transition-all duration-300" :style="`width: ${(currentStep / totalSteps) * 100}%`"></div>
+        </div>
+
+        {# Step 1: Goal Category Selection #}
+        <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">{{ 'Choose Your Goal Category' | trans }}</h2>
+                
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {# Weight Management #}
+                    <div @click="selectCategory('weight_loss')" 
+                         class="p-6 transition-all duration-200 border-2 rounded-lg cursor-pointer hover:shadow-md"
+                         :class="formData.category === 'weight_loss' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Weight Management' | trans }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Lose, gain, or maintain weight' | trans }}</p>
+                    </div>
+
+                    {# Strength Improvement #}
+                    <div @click="selectCategory('strength')" 
+                         class="p-6 transition-all duration-200 border-2 rounded-lg cursor-pointer hover:shadow-md"
+                         :class="formData.category === 'strength' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                            <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h2m0 0v8m0-8h4m0 0V6m0 2v8m0-8h4m0 0v8m0-8h4m0 0V6m0 2h2m-2 0h4m0 0v8m0-8h4"/>
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Strength Building' | trans }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Increase muscle strength and power' | trans }}</p>
+                    </div>
+
+                    {# Endurance Enhancement #}
+                    <div @click="selectCategory('endurance')" 
+                         class="p-6 transition-all duration-200 border-2 rounded-lg cursor-pointer hover:shadow-md"
+                         :class="formData.category === 'endurance' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 bg-green-100 rounded-full dark:bg-green-900/30">
+                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Endurance' | trans }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Improve cardiovascular fitness' | trans }}</p>
+                    </div>
+
+                    {# Flexibility #}
+                    <div @click="selectCategory('flexibility')" 
+                         class="p-6 transition-all duration-200 border-2 rounded-lg cursor-pointer hover:shadow-md"
+                         :class="formData.category === 'flexibility' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 bg-yellow-100 rounded-full dark:bg-yellow-900/30">
+                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Flexibility & Mobility' | trans }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Enhance range of motion' | trans }}</p>
+                    </div>
+
+                    {# Sport Performance #}
+                    <div @click="selectCategory('sports')" 
+                         class="p-6 transition-all duration-200 border-2 rounded-lg cursor-pointer hover:shadow-md"
+                         :class="formData.category === 'sports' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
+                            <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Sport Performance' | trans }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Athletic performance goals' | trans }}</p>
+                    </div>
+
+                    {# Medical Rehabilitation #}
+                    <div @click="selectCategory('rehabilitation')" 
+                         class="p-6 transition-all duration-200 border-2 rounded-lg cursor-pointer hover:shadow-md"
+                         :class="formData.category === 'rehabilitation' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 bg-teal-100 rounded-full dark:bg-teal-900/30">
+                            <svg class="w-6 h-6 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Medical Rehab' | trans }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Injury recovery & limitations' | trans }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Step 2: SMART Goal Definition #}
+        <div x-show="currentStep === 2" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">{{ 'Define Your SMART Goal' | trans }}</h2>
+                
+                <div class="space-y-6">
+                    {# Specific #}
+                    <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                        <div class="flex items-center mb-3">
+                            <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-blue-500 rounded-full">S</span>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Specific' | trans }}</h3>
+                        </div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'What exactly do you want to achieve?' | trans }}</label>
+                        <textarea x-model="formData.specific" 
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                  rows="3"
+                                  placeholder="{{ 'e.g., I want to be able to do 10 consecutive pull-ups' | trans }}"></textarea>
+                    </div>
+
+                    {# Measurable #}
+                    <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                        <div class="flex items-center mb-3">
+                            <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-green-500 rounded-full">M</span>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Measurable' | trans }}</h3>
+                        </div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'How will you measure progress?' | trans }}</label>
+                        <input type="text" x-model="formData.measurable"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                               placeholder="{{ 'e.g., Number of pull-ups, time to complete, weight lifted' | trans }}">
+                    </div>
+
+                    {# Achievable #}
+                    <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                        <div class="flex items-center mb-3">
+                            <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-yellow-500 rounded-full">A</span>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Achievable' | trans }}</h3>
+                        </div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Is this goal realistic based on your starting point?' | trans }}</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="achievable" value="yes" x-model="formData.achievable" class="mr-2">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Yes, I believe I can achieve this' | trans }}</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="achievable" value="maybe" x-model="formData.achievable" class="mr-2">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Maybe, with some adjustments' | trans }}</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="achievable" value="no" x-model="formData.achievable" class="mr-2">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'No, this may be too ambitious' | trans }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {# Relevant #}
+                    <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                        <div class="flex items-center mb-3">
+                            <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-purple-500 rounded-full">R</span>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Relevant' | trans }}</h3>
+                        </div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Why is this goal important to you?' | trans }}</label>
+                        <textarea x-model="formData.relevant"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                  rows="2"
+                                  placeholder="{{ 'e.g., This will improve my overall health and confidence' | trans }}"></textarea>
+                    </div>
+
+                    {# Time-bound #}
+                    <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                        <div class="flex items-center mb-3">
+                            <span class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white bg-red-500 rounded-full">T</span>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ 'Time-bound' | trans }}</h3>
+                        </div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'When do you want to achieve this goal?' | trans }}</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-1 text-xs text-gray-500">{{ 'Start Date' | trans }}</label>
+                                <input type="date" x-model="formData.startDate"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block mb-1 text-xs text-gray-500">{{ 'Target Date' | trans }}</label>
+                                <input type="date" x-model="formData.targetDate"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Step 3: Medical Safety Assessment #}
+        <div x-show="currentStep === 3" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">{{ 'Medical Safety Assessment' | trans }}</h2>
+                
+                {# Doctor Approval Notice #}
+                <div class="p-4 mb-6 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-medium text-blue-800 dark:text-blue-200">{{ 'Important Medical Notice' | trans }}</h4>
+                            <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                                {{ 'For certain goals, especially those related to weight loss, intense training, or rehabilitation, we recommend consulting with your healthcare provider before beginning.' | trans }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Medical Conditions #}
+                <div class="mb-6">
+                    <h3 class="mb-4 text-lg font-medium text-gray-900 dark:text-white">{{ 'Do you have any medical conditions or limitations?' | trans }}</h3>
+                    <div class="space-y-2">
+                        {% for condition in ['Heart Conditions', 'Joint/Injury Issues', 'High Blood Pressure', 'Diabetes', 'Respiratory Conditions', 'Back Pain', 'Other'] %}
+                        <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <input type="checkbox" value="{{ condition }}" x-model="formData.medicalConditions" class="mr-3 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ condition | trans }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# Heart Rate Zones #}
+                <div class="mb-6">
+                    <h3 class="mb-4 text-lg font-medium text-gray-900 dark:text-white">{{ 'Heart Rate Zone Limitations' | trans }}</h3>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Maximum Heart Rate (optional)' | trans }}</label>
+                            <input type="number" x-model="formData.maxHeartRate"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                   placeholder="e.g., 180">
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Preferred Zone' | trans }}</label>
+                            <select x-model="formData.preferredHeartRateZone" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white">
+                                <option value="">{{ 'Select a zone' | trans }}</option>
+                                <option value="low">{{ 'Low (50-60% max)' | trans }}</option>
+                                <option value="moderate">{{ 'Moderate (60-70% max)' | trans }}</option>
+                                <option value="high">{{ 'High (70-80% max)' | trans }}</option>
+                                <option value="very_high">{{ 'Very High (80-90% max)' | trans }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {# Doctor Approval #}
+                <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                    <h3 class="mb-4 text-lg font-medium text-gray-900 dark:text-white">{{ 'Doctor Approval Status' | trans }}</h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center">
+                            <input type="radio" name="doctorApproval" value="approved" x-model="formData.doctorApproval" class="mr-2">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'My doctor has approved this fitness goal' | trans }}</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="doctorApproval" value="pending" x-model="formData.doctorApproval" class="mr-2">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'I plan to consult my doctor before starting' | trans }}</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="doctorApproval" value="not_needed" x-model="formData.doctorApproval" class="mr-2">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'No doctor approval needed for this goal' | trans }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Step 4: Goal Review & Confirmation #}
+        <div x-show="currentStep === 4" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">{{ 'Review Your Goal' | trans }}</h2>
+                
+                {# Goal Summary Card #}
+                <div class="p-6 mb-6 text-white bg-gradient-to-r from-wellcare-500 to-wellcare-600 rounded-xl">
+                    <h3 class="mb-2 text-xl font-bold">{{ 'My Fitness Goal' | trans }}</h3>
+                    <p class="text-lg opacity-90" x-text="getCategoryLabel(formData.category)"></p>
+                </div>
+
+                {# SMART Summary #}
+                <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ 'Specific' | trans }}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400" x-text="formData.specific || 'Not specified'"></p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ 'Measurable' | trans }}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400" x-text="formData.measurable || 'Not specified'"></p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ 'Relevant' | trans }}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400" x-text="formData.relevant || 'Not specified'"></p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <h4 class="mb-2 font-medium text-gray-900 dark:text-white">{{ 'Time-bound' | trans }}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            <span x-text="formData.startDate || 'Not set'"></span>
+                            <span x-if="formData.startDate && formData.targetDate"> → </span>
+                            <span x-text="formData.targetDate || 'Not set'"></span>
+                        </p>
+                    </div>
+                </div>
+
+                {# Medical Notes #}
+                <div class="p-4 mb-6 border rounded-lg bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-amber-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <div>
+                            <h4 class="font-medium text-amber-800 dark:text-amber-200">{{ 'Medical Considerations' | trans }}</h4>
+                            <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                                <span x-show="formData.doctorApproval === 'approved'">{{ '✓ Doctor approval confirmed' | trans }}</span>
+                                <span x-show="formData.doctorApproval === 'pending'">{{ '⚠ Please consult your doctor before starting' | trans }}</span>
+                                <span x-show="formData.doctorApproval === 'not_needed'">{{ '✓ No medical restrictions identified' | trans }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Action Buttons #}
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <button @click="currentStep = 3; updateProgress();" 
+                            class="px-6 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                        {{ 'Back' | trans }}
+                    </button>
+                    <div class="flex items-center space-x-4">
+                        <button @click="saveGoal()" 
+                                class="flex items-center px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            {{ 'Save Goal' | trans }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Navigation Buttons #}
+        <div class="flex justify-between mt-8" x-show="currentStep < 4">
+            <button @click="currentStep = Math.max(1, currentStep - 1); updateProgress();" 
+                    x-show="currentStep > 1"
+                    class="px-6 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                {{ 'Back' | trans }}
+            </button>
+            <div x-show="currentStep === 1" class="flex-1"></div>
+            <button @click="currentStep = Math.min(totalSteps, currentStep + 1); updateProgress();" 
+                    class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                {{ 'Next' | trans }} →
+            </button>
+        </div>
+    </div>
+
+    {# Celebration Modal #}
+    <div x-show="showCelebration" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/50" @click="showCelebration = false"></div>
+        <div class="relative max-w-md p-8 mx-4 text-center transform scale-100 bg-white dark:bg-gray-900 rounded-2xl" x-show="showCelebration"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+            <div class="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                <svg class="w-10 h-10 text-wellcare-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">{{ 'Goal Created!' | trans }}</h3>
+            <p class="mb-6 text-gray-600 dark:text-gray-400">{{ 'Your SMART goal has been saved successfully. Ready to start your fitness journey!' | trans }}</p>
+            <div class="flex justify-center space-x-4">
+                <a href="{{ path('fitness_dashboard') }}" class="px-6 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    {{ 'Go to Dashboard' | trans }}
+                </a>
+                <a href="{{ path('fitness_milestones') }}" class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    {{ 'Track Progress' | trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('fitness') }}
+    <script>
+        function goalWizard() {
+            return {
+                currentStep: 1,
+                totalSteps: 4,
+                showCelebration: false,
+                formData: {
+                    category: '',
+                    specific: '',
+                    measurable: '',
+                    achievable: '',
+                    relevant: '',
+                    startDate: '',
+                    targetDate: '',
+                    medicalConditions: [],
+                    maxHeartRate: '',
+                    preferredHeartRateZone: '',
+                    doctorApproval: ''
+                },
+                categories: {
+                    weight_loss: '{{ 'Weight Management' | trans }}',
+                    strength: '{{ 'Strength Building' | trans }}',
+                    endurance: '{{ 'Endurance Training' | trans }}',
+                    flexibility: '{{ 'Flexibility & Mobility' | trans }}',
+                    sports: '{{ 'Sport Performance' | trans }}',
+                    rehabilitation: '{{ 'Medical Rehabilitation' | trans }}'
+                },
+                selectCategory(category) {
+                    this.formData.category = category;
+                    this.currentStep = 2;
+                    this.updateProgress();
+                },
+                getCategoryLabel(category) {
+                    return this.categories[category] || '';
+                },
+                updateProgress() {
+                    // Store progress in localStorage for persistence
+                    localStorage.setItem('goalWizardProgress', JSON.stringify({
+                        step: this.currentStep,
+                        data: this.formData
+                    }));
+                },
+                saveGoal() {
+                    // Simulate saving goal
+                    this.showCelebration = true;
+                    localStorage.removeItem('goalWizardProgress');
+                },
+                init() {
+                    // Load saved progress
+                    const saved = localStorage.getItem('goalWizardProgress');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        this.currentStep = data.step || 1;
+                        this.formData = { ...this.formData, ...data.data };
+                    }
+                }
+            };
+        }
+    </script>
+{% endblock %}

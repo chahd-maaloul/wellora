@@ -1,0 +1,180 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Content Management - WellCare Connect Admin{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-analytics-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="py-4 mb-6 -mx-4 -mt-4 bg-gradient-to-r from-purple-600 to-indigo-600">
+    <div class="px-4 mx-auto">
+        <div class="flex flex-col items-start justify-between md:flex-row md:items-center">
+            <div>
+                <h1 class="mb-1 text-xl font-bold text-white font-display">
+                    <i class="mr-2 fa-solid fa-images"></i>Content Management
+                </h1>
+                <p class="text-sm text-white/80">Manage trail photos, publications, and user content</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <button class="px-4 py-2 text-sm font-medium text-white border rounded-lg bg-white/20 border-white/30 hover:bg-white/30 backdrop-blur-sm">
+                    <i class="mr-2 fa-solid fa-sync"></i>Sync Content
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="px-4 mx-auto">
+    <!-- Content Overview -->
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Photos</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">45,892</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-lg dark:bg-blue-900/30">
+                    <i class="text-xl text-blue-600 fa-solid fa-camera"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-green-600">
+                <i class="fa-solid fa-arrow-up"></i> +1,234 this week
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Publications</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">8,456</p>
+                </div>
+                <div class="p-3 bg-green-100 rounded-lg dark:bg-green-900/30">
+                    <i class="text-xl text-green-600 fa-solid fa-newspaper"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-green-600">
+                <i class="fa-solid fa-arrow-up"></i> +342 this week
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">127</p>
+                </div>
+                <div class="p-3 bg-yellow-100 rounded-lg dark:bg-yellow-900/30">
+                    <i class="text-xl text-yellow-600 fa-solid fa-clock"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-yellow-600">
+                <i class="fa-solid fa-exclamation"></i> Requires attention
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reported Content</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">23</p>
+                </div>
+                <div class="p-3 bg-red-100 rounded-lg dark:bg-red-900/30">
+                    <i class="text-xl text-red-600 fa-solid fa-flag"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-red-600">
+                <i class="fa-solid fa-exclamation-triangle"></i> Needs moderation
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Recent Photos -->
+        <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-images"></i>Recent Photos
+                </h2>
+                <a href="#" class="text-sm text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400">View All</a>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                {% for i in 1..6 %}
+                <div class="relative overflow-hidden bg-gray-200 rounded-lg aspect-square dark:bg-gray-700 group">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="text-2xl text-gray-400 fa-solid fa-image"></i>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center transition-opacity opacity-0 bg-black/50 group-hover:opacity-100">
+                        <button class="p-1 text-white hover:text-red-400">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Publications -->
+        <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-pen-to-square"></i>Recent Publications
+                </h2>
+                <a href="#" class="text-sm text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400">View All</a>
+            </div>
+            <div class="space-y-3">
+                {% for i in 1..4 %}
+                <div class="flex items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100">
+                        <i class="text-wellcare-600 fa-solid fa-user"></i>
+                    </div>
+                    <div class="flex-1 ml-3">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">User {{ i }} shared a publication</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Trail experience review</p>
+                        <div class="flex items-center mt-1">
+                            <div class="flex text-yellow-400">
+                                {% for star in 1..5 %}
+                                    <i class="text-xs fa-solid fa-star{% if star > i %}-empty{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="ml-2 text-xs text-gray-400">Dec {{ 15+i }}, 2024</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Reported Content -->
+    <div class="p-6 mt-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 fa-solid fa-flag"></i>Reported Content
+            </h2>
+            <span class="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 rounded-full dark:bg-red-900/30 dark:text-red-400">23 Reports</span>
+        </div>
+        <div class="space-y-3">
+            {% for i in 1..3 %}
+            <div class="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
+                <div class="flex items-center">
+                    <div class="p-2 bg-red-100 rounded-lg dark:bg-red-900/30">
+                        <i class="text-red-600 fa-solid fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium text-gray-900 dark:text-white">Inappropriate content in photo</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Reported by User {{ i }} - Dec {{ 20+i }}, 2024</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Remove</button>
+                    <button class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300">Dismiss</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

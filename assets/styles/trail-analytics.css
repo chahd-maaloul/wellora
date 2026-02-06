@@ -1,0 +1,376 @@
+/* assets/styles/trail-analytics.css */
+/* Trail Analytics Module Styles */
+
+/* ==========================================================================
+   Analytics Dashboard Styles
+   ========================================================================== */
+
+/* Metric Cards */
+.analytics-metric-card {
+    @apply p-6 transition-all duration-200 bg-white shadow-sm dark:bg-gray-800 rounded-xl;
+}
+
+.analytics-metric-card:hover {
+    @apply shadow-md transform -translate-y-0.5;
+}
+
+.analytics-metric-card .metric-value {
+    @apply mt-2 text-3xl font-bold text-gray-900 dark:text-white;
+}
+
+.analytics-metric-card .metric-change {
+    @apply flex items-center mt-2 text-sm;
+}
+
+.analytics-metric-card .metric-change.positive {
+    @apply text-emerald-600;
+}
+
+.analytics-metric-card .metric-change.negative {
+    @apply text-red-600;
+}
+
+.analytics-metric-card .metric-change.neutral {
+    @apply text-gray-500;
+}
+
+/* Chart Containers */
+.chart-container {
+    @apply p-6 bg-white shadow-sm dark:bg-gray-800 rounded-xl;
+}
+
+.chart-container canvas {
+    @apply w-full;
+}
+
+/* Data Tables */
+.analytics-table {
+    @apply w-full border-collapse;
+}
+
+.analytics-table th {
+    @apply pb-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase;
+}
+
+.analytics-table td {
+    @apply py-3 text-sm text-gray-600 dark:text-gray-400;
+}
+
+.analytics-table tbody tr {
+    @apply transition-colors border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50;
+}
+
+/* Status Badges */
+.status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge.success {
+    @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+}
+
+.status-badge.warning {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+}
+
+.status-badge.danger {
+    @apply text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.status-badge.info {
+    @apply text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+/* Trend Indicators */
+.trend-indicator {
+    @apply inline-flex items-center px-2 py-1 text-xs font-medium rounded-full;
+}
+
+.trend-indicator.up {
+    @apply bg-emerald-100 text-emerald-700;
+}
+
+.trend-indicator.down {
+    @apply text-red-700 bg-red-100;
+}
+
+.trend-indicator.neutral {
+    @apply text-gray-700 bg-gray-100;
+}
+
+/* ==========================================================================
+   Report Generator Styles
+   ========================================================================== */
+
+.report-type-card {
+    @apply p-4 transition-all duration-200 border-2 border-gray-200 cursor-pointer dark:border-gray-700 rounded-xl;
+}
+
+.report-type-card:hover {
+    @apply border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/10;
+}
+
+.report-type-card.selected {
+    @apply border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20;
+}
+
+.report-type-card .icon-wrapper {
+    @apply flex items-center justify-center w-12 h-12 mb-3 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30;
+}
+
+.report-type-card .icon-wrapper i {
+    @apply text-xl text-wellcare-500;
+}
+
+.report-preview {
+    @apply p-6 rounded-lg bg-gray-50 dark:bg-gray-700;
+}
+
+.report-preview .stats-grid {
+    @apply grid grid-cols-4 gap-4 mt-4;
+}
+
+.report-preview .stat-card {
+    @apply p-4 text-center bg-white rounded-lg dark:bg-gray-800;
+}
+
+.report-preview .stat-card .value {
+    @apply text-2xl font-bold text-wellcare-600;
+}
+
+.report-preview .stat-card .label {
+    @apply mt-1 text-xs text-gray-500;
+}
+
+/* Scheduled Reports */
+.schedule-item {
+    @apply flex items-center justify-between p-4 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600;
+}
+
+.schedule-item .schedule-info {
+    @apply flex-1;
+}
+
+.schedule-item .schedule-name {
+    @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.schedule-item .schedule-details {
+    @apply mt-1 text-xs text-gray-500;
+}
+
+/* ==========================================================================
+   Filter & Control Bar Styles
+   ========================================================================== */
+
+.filter-bar {
+    @apply flex items-center justify-between p-4 mb-6 bg-white shadow-sm dark:bg-gray-800 rounded-xl;
+}
+
+.filter-group {
+    @apply flex items-center space-x-4;
+}
+
+.filter-select {
+    @apply px-4 py-2 text-sm bg-gray-100 border-0 rounded-lg cursor-pointer dark:bg-gray-700 focus:ring-2 focus:ring-wellcare-500;
+}
+
+.filter-input {
+    @apply px-4 py-2 text-sm bg-gray-100 border-0 rounded-lg dark:bg-gray-700 focus:ring-2 focus:ring-wellcare-500;
+}
+
+.date-range-picker {
+    @apply flex items-center px-4 py-2 space-x-2 bg-gray-100 rounded-lg dark:bg-gray-700;
+}
+
+.date-range-picker i {
+    @apply text-gray-400;
+}
+
+/* ==========================================================================
+   Heatmap Styles
+   ========================================================================== */
+
+.heatmap-grid {
+    @apply grid gap-1;
+}
+
+.heatmap-cell {
+    @apply transition-all duration-200 rounded-sm cursor-pointer aspect-square;
+}
+
+.heatmap-cell:hover {
+    @apply transform scale-110;
+}
+
+.heatmap-legend {
+    @apply flex items-center justify-center mt-4 space-x-4 text-xs text-gray-500;
+}
+
+.heatmap-legend .legend-item {
+    @apply flex items-center space-x-2;
+}
+
+.heatmap-legend .legend-color {
+    @apply w-4 h-4 rounded-sm;
+}
+
+/* ==========================================================================
+   Real-time Indicator Styles
+   ========================================================================== */
+
+.realtime-indicator {
+    @apply flex items-center space-x-2;
+}
+
+.realtime-indicator .dot {
+    @apply w-2 h-2 rounded-full bg-emerald-500 animate-pulse;
+}
+
+.realtime-indicator .label {
+    @apply text-xs text-gray-500;
+}
+
+/* ==========================================================================
+   Loading & Skeleton States
+   ========================================================================== */
+
+.skeleton {
+    @apply bg-gray-200 rounded dark:bg-gray-700 animate-pulse;
+}
+
+.skeleton-text {
+    @apply h-4 skeleton;
+}
+
+.skeleton-title {
+    @apply h-6 skeleton;
+}
+
+.skeleton-card {
+    @apply p-6 bg-white dark:bg-gray-800 rounded-xl;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .analytics-metric-card {
+        @apply p-4;
+    }
+    
+    .analytics-metric-card .metric-value {
+        @apply text-2xl;
+    }
+    
+    .filter-bar {
+        @apply flex-col space-y-4;
+    }
+    
+    .filter-group {
+        @apply flex-col w-full;
+    }
+    
+    .report-type-card {
+        @apply p-3;
+    }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+    .filter-bar,
+    .no-print {
+        @apply hidden;
+    }
+    
+    .chart-container,
+    .analytics-metric-card {
+        @apply border border-gray-200 shadow-none;
+    }
+    
+    body {
+        @apply bg-white;
+    }
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-count-up {
+    animation: countUp 0.5s ease-out;
+}
+
+/* ==========================================================================
+   Tooltip Styles
+   ========================================================================== */
+
+.chart-tooltip {
+    @apply px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg dark:bg-gray-800;
+}
+
+/* ==========================================================================
+   Accessibility Styles
+   ========================================================================== */
+
+.sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden border-0 whitespace-nowrap;
+    clip: rect(0, 0, 0, 0);
+}
+
+.focus-visible:focus {
+    @apply outline-none ring-2 ring-wellcare-500 ring-offset-2;
+}
+
+/* ==========================================================================
+   Chart.js Custom Colors
+   ========================================================================== */
+
+:root {
+    --chart-primary: #00A790;
+    --chart-secondary: #00DBB6;
+    --chart-dark: #002F5C;
+    --chart-light: #99e1d7;
+    --chart-danger: #ef4444;
+    --chart-warning: #f59e0b;
+    --chart-info: #3b82f6;
+}
+
+/* Dark mode chart adjustments */
+@media (prefers-color-scheme: dark) {
+    .chart-container {
+        @apply bg-gray-800;
+    }
+    
+    canvas {
+        filter: brightness(0.9);
+    }
+}
