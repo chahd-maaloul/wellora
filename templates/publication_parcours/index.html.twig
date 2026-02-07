@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}PublicationParcours index{% endblock %}
+
+{% block body %}
+    <h1>PublicationParcours index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>ImagePublication</th>
+                <th>Ambiance</th>
+                <th>Securite</th>
+                <th>DatePublication</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for publication_parcour in publication_parcours %}
+            <tr>
+                <td>{{ publication_parcour.id }}</td>
+                <td>{{ publication_parcour.imagePublication }}</td>
+                <td>{{ publication_parcour.ambiance }}</td>
+                <td>{{ publication_parcour.securite }}</td>
+                <td>{{ publication_parcour.datePublication ? publication_parcour.datePublication|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_publication_parcours_show', {'id': publication_parcour.id}) }}">show</a>
+                    <a href="{{ path('app_publication_parcours_edit', {'id': publication_parcour.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_publication_parcours_new') }}">Create new</a>
+{% endblock %}

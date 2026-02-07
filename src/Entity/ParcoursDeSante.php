@@ -1,0 +1,132 @@
+<?php
+
+namespace App\Entity;
+
+use App\Repository\ParcoursDeSanteRepository;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
+#[ORM\Entity(repositoryClass: ParcoursDeSanteRepository::class)]
+class ParcoursDeSante
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'The parcours name is required')]
+    #[Assert\Length(
+        min: 5,
+        max: 255,
+        minMessage: 'The name must be at least 5 characters',
+        maxMessage: 'The name cannot exceed 255 characters'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-Z\s]+$/',
+        message: 'The name can only contain letters and spaces'
+    )]
+    private ?string $nomParcours = null;
+
+    #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'The location is required')]
+    #[Assert\Length(
+        min: 5,
+        max: 255,
+        minMessage: 'The location must be at least 5 characters',
+        maxMessage: 'The location cannot exceed 255 characters'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-Z\s]+$/',
+        message: 'The location can only contain letters and spaces'
+    )]
+    private ?string $localisationParcours = null;
+
+    #[ORM\Column]
+    #[Assert\NotBlank(message: 'The distance is required')]
+    #[Assert\Positive(message: 'The distance must be greater than 0')]
+    #[Assert\Range(
+        min: 0.1,
+        max: 500,
+        notInRangeMessage: 'The distance must be between 0.1 and 500 km'
+    )]
+    private ?float $distanceParcours = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\NotBlank(message: 'The creation date is required')]
+    #[Assert\Type('DateTime', message: 'The date must be a valid date')]
+    #[Assert\LessThanOrEqual(
+        value: 'today',
+        message: 'The creation date cannot be in the future'
+    )]
+    private ?\DateTime $dateCreation = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $imageParcours = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getNomParcours(): ?string
+    {
+        return $this->nomParcours;
+    }
+
+    public function setNomParcours(string $nomParcours): static
+    {
+        $this->nomParcours = $nomParcours;
+
+        return $this;
+    }
+
+    public function getLocalisationParcours(): ?string
+    {
+        return $this->localisationParcours;
+    }
+
+    public function setLocalisationParcours(string $localisationParcours): static
+    {
+        $this->localisationParcours = $localisationParcours;
+
+        return $this;
+    }
+
+    public function getDistanceParcours(): ?float
+    {
+        return $this->distanceParcours;
+    }
+
+    public function setDistanceParcours(float $distanceParcours): static
+    {
+        $this->distanceParcours = $distanceParcours;
+
+        return $this;
+    }
+
+    public function getDateCreation(): ?\DateTime
+    {
+        return $this->dateCreation;
+    }
+
+    public function setDateCreation(\DateTime $dateCreation): static
+    {
+        $this->dateCreation = $dateCreation;
+
+        return $this;
+    }
+
+    public function getImageParcours(): ?string
+    {
+        return $this->imageParcours;
+    }
+
+    public function setImageParcours(string $imageParcours): static
+    {
+        $this->imageParcours = $imageParcours;
+
+        return $this;
+    }
+}

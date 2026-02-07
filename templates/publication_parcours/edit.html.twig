@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit PublicationParcours{% endblock %}
+
+{% block body %}
+    <h1>Edit PublicationParcours</h1>
+
+    {{ include('publication_parcours/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('app_publication_parcours_index') }}">back to list</a>
+
+    {{ include('publication_parcours/_delete_form.html.twig') }}
+{% endblock %}

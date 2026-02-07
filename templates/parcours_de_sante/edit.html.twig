@@ -1,0 +1,38 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Edit Parcours de Santé - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="py-4 mb-4 -mx-4 -mt-4 bg-gradient-to-r from-wellcare-500 to-wellcare-light-500">
+    <div class="px-4 mx-auto">
+        <h1 class="mb-1 text-xl font-bold text-white font-display">
+            <i class="mr-2 fa-solid fa-pen-to-square"></i>Edit Parcours de Santé
+        </h1>
+        <p class="text-sm text-white/80">Update parcours details</p>
+    </div>
+</div>
+
+<div class="px-4 mx-auto">
+    <div class="max-w-3xl mx-auto p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+        {% if form.vars.errors|length > 0 %}
+            <div class="p-4 mb-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                <p class="text-sm font-medium text-red-800 dark:text-red-200">Please fix the following errors:</p>
+                {{ form_errors(form, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+            </div>
+        {% endif %}
+        {{ include('parcours_de_sante/_form.html.twig', {'button_label': 'Update'}) }}
+        <div class="mt-4">
+            {{ include('parcours_de_sante/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

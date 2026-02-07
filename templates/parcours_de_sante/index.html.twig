@@ -1,0 +1,171 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Discover Parcours de Santé - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="py-4 mb-4 -mx-4 -mt-4 bg-wellcare-dark-500">
+    <div class="px-4 mx-auto">
+        <h1 class="mb-1 text-xl font-bold text-white font-display">
+            <i class="mr-2 fa-solid fa-route"></i>Discover Parcours de Santé
+        </h1>
+        <p class="text-sm text-white/80">Find the perfect health-focused route for your wellness journey</p>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="px-4 mx-auto" x-data="parcoursDiscovery()">
+    <div class="flex flex-col gap-4 lg:flex-row">
+        <!-- Filters Sidebar -->
+        <div class="flex-shrink-0 lg:w-72">
+            <div class="sticky bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 top-4">
+                <div class="flex items-center justify-between p-3 border-b border-gray-100 dark:border-gray-700">
+                    <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-filter text-wellcare-500"></i>Filters
+                    </h2>
+                    <button @click="resetFilters()" class="text-xs text-wellcare-500 hover:text-wellcare-600">Reset All</button>
+                </div>
+
+                <!-- Search -->
+                <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+                    <label class="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <div class="relative">
+                        <input type="text" x-model="filters.search" placeholder="Parcours name, location..." 
+                            class="w-full py-2 pl-8 pr-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                        <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search left-2.5 top-1/2"></i>
+                    </div>
+                </div>
+
+                <!-- Distance -->
+                <div class="p-3">
+                    <label class="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Distance (km)</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                            <span x-text="filters.distance[0] + ' km'"></span>
+                            <span x-text="filters.distance[1] + ' km'"></span>
+                        </div>
+                        <input type="range" min="0" max="50" x-model="filters.distance[1]" 
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>0 km</span>
+                            <span>50 km</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- View Toggle & Results Count -->
+            <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ parcours_de_santes|length }}</span> parcours available
+                    </p>
+                    <a href="{{ path('app_parcours_de_sante_new') }}" class="ml-auto px-4 py-2 text-sm font-medium text-white bg-wellcare-500 rounded-lg hover:bg-wellcare-600">
+                        <i class="mr-1 fa-solid fa-plus"></i>Create New
+                    </a>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex p-1 bg-gray-100 rounded-lg dark:bg-gray-800">
+                        <button @click="viewMode = 'grid'" 
+                            class="p-1.5 rounded-md transition"
+                            :class="viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-wellcare-500' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-grid-2"></i>
+                        </button>
+                        <button @click="viewMode = 'list'" 
+                            class="p-1.5 rounded-md transition"
+                            :class="viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm text-wellcare-500' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-list"></i>
+                        </button>
+                    </div>
+                    <select x-model="sortBy" class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="recent">Recently Created</option>
+                        <option value="distance">Nearest</option>
+                        <option value="name">Name (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div x-show="viewMode === 'grid'" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {% for parcours in parcours_de_santes %}
+                <div class="overflow-hidden transition bg-white border border-gray-100 shadow-sm cursor-pointer dark:bg-gray-800 rounded-xl dark:border-gray-700 hover:shadow-md" onclick="window.location.href='{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}'">
+                    <div class="relative h-36 bg-gray-200 dark:bg-gray-700">
+                        <img src="{{ parcours.imageParcours|default('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop') }}" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                        <div class="absolute top-2 right-2">
+                            <a href="{{ path('app_parcours_de_sante_edit', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="p-1.5 bg-white/90 rounded-full hover:bg-white transition">
+                                <i class="text-blue-500 fa-solid fa-pen-to-square"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="mb-1 font-semibold text-gray-900 dark:text-white">{{ parcours.nomParcours }}</h3>
+                        <p class="mb-2 text-xs text-gray-500"><i class="mr-1 fa-solid fa-location-dot"></i>{{ parcours.localisationParcours }}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <span><i class="mr-1 fa-solid fa-ruler"></i>{{ parcours.distanceParcours }} km</span>
+                            </div>
+                            <div class="text-xs text-gray-500">{{ parcours.dateCreation|date('M d, Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="col-span-full text-center text-gray-500">No parcours found. <a href="{{ path('app_parcours_de_sante_new') }}" class="text-wellcare-500 hover:underline">Create one now</a>.</p>
+                {% endfor %}
+            </div>
+
+            <!-- List View -->
+            <div x-show="viewMode === 'list'" class="space-y-2">
+                {% for parcours in parcours_de_santes %}
+                <div class="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onclick="window.location.href='{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}'">
+                    <img src="{{ parcours.imageParcours|default('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=60&h=60&fit=crop') }}" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ parcours.nomParcours }}</h3>
+                        <p class="text-xs text-gray-500"><i class="mr-1 fa-solid fa-location-dot"></i>{{ parcours.localisationParcours }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ parcours.distanceParcours }} km</p>
+                        <p class="text-xs text-gray-500">{{ parcours.dateCreation|date('M d, Y') }}</p>
+                    </div>
+                    <a href="{{ path('app_parcours_de_sante_edit', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="text-gray-400 hover:text-wellcare-500">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                </div>
+                {% else %}
+                <p class="text-center text-gray-500">No parcours found. <a href="{{ path('app_parcours_de_sante_new') }}" class="text-wellcare-500 hover:underline">Create one now</a>.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function parcoursDiscovery() {
+    return {
+        viewMode: 'grid',
+        sortBy: 'recent',
+        filters: {
+            search: '',
+            distance: [0, 50]
+        },
+        resetFilters() {
+            this.filters = {
+                search: '',
+                distance: [0, 50]
+            };
+        }
+    }
+}
+</script>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

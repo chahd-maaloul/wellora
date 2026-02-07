@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}PublicationParcours{% endblock %}
+
+{% block body %}
+    <h1>PublicationParcours</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ publication_parcour.id }}</td>
+            </tr>
+            <tr>
+                <th>ImagePublication</th>
+                <td>{{ publication_parcour.imagePublication }}</td>
+            </tr>
+            <tr>
+                <th>Ambiance</th>
+                <td>{{ publication_parcour.ambiance }}</td>
+            </tr>
+            <tr>
+                <th>Securite</th>
+                <td>{{ publication_parcour.securite }}</td>
+            </tr>
+            <tr>
+                <th>DatePublication</th>
+                <td>{{ publication_parcour.datePublication ? publication_parcour.datePublication|date('Y-m-d') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_publication_parcours_index') }}">back to list</a>
+
+    <a href="{{ path('app_publication_parcours_edit', {'id': publication_parcour.id}) }}">edit</a>
+
+    {{ include('publication_parcours/_delete_form.html.twig') }}
+{% endblock %}
