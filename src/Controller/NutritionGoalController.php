@@ -2,18 +2,7 @@
 
 namespace App\Controller;
 
-use App\Entity\NutritionGoal;
-use App\Entity\NutritionGoalAdjustment;
-use App\Entity\NutritionGoalAchievement;
-use App\Entity\NutritionGoalMilestone;
-use App\Entity\NutritionGoalProgress;
-use App\Repository\NutritionGoalAchievementRepository;
-use App\Repository\NutritionGoalAdjustmentRepository;
-use App\Repository\NutritionGoalMilestoneRepository;
-use App\Repository\NutritionGoalProgressRepository;
-use App\Repository\NutritionGoalRepository;
 use DateTime;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
