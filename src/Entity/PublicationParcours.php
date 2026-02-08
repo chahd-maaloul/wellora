@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PublicationParcoursRepository::class)]
 class PublicationParcours
@@ -20,12 +21,29 @@ class PublicationParcours
     private ?string $imagePublication = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: 'The ambiance rating is required')]
+    #[Assert\Range(
+        min: 1,
+        max: 5,
+        notInRangeMessage: 'The ambiance rating must be between 1 and 5'
+    )]
     private ?int $ambiance = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: 'The security rating is required')]
+    #[Assert\Range(
+        min: 1,
+        max: 5,
+        notInRangeMessage: 'The security rating must be between 1 and 5'
+    )]
     private ?int $securite = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\NotBlank(message: 'The publication date is required')]
+    #[Assert\LessThanOrEqual(
+        value: 'today',
+        message: 'The publication date cannot be in the future'
+    )]
     private ?\DateTime $datePublication = null;
 
     #[ORM\ManyToOne(inversedBy: 'PublicationParcours')]
@@ -36,6 +54,16 @@ class PublicationParcours
      */
     #[ORM\OneToMany(targetEntity: CommentairePublication::class, mappedBy: 'PublicationParcours')]
     private Collection $commentairePublications;
+
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\NotBlank(message: 'The publication text is required')]
+    #[Assert\Length(
+        min: 10,
+        max: 5000,
+        minMessage: 'The text must be at least 10 characters',
+        maxMessage: 'The text cannot exceed 5000 characters'
+    )]
+    private ?string $textPublication = null;
 
     public function __construct()
     {
@@ -133,6 +161,18 @@ class PublicationParcours
                 $commentairePublication->setPublicationParcours(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTextPublication(): ?string
+    {
+        return $this->textPublication;
+    }
+
+    public function setTextPublication(string $textPublication): static
+    {
+        $this->textPublication = $textPublication;
 
         return $this;
     }

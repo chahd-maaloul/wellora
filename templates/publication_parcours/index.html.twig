@@ -9,6 +9,7 @@
         <thead>
             <tr>
                 <th>Id</th>
+                <th>TextPublication</th>
                 <th>ImagePublication</th>
                 <th>Ambiance</th>
                 <th>Securite</th>
@@ -20,6 +21,7 @@
         {% for publication_parcour in publication_parcours %}
             <tr>
                 <td>{{ publication_parcour.id }}</td>
+                <td>{{ publication_parcour.textPublication }}</td>
                 <td>{{ publication_parcour.imagePublication }}</td>
                 <td>{{ publication_parcour.ambiance }}</td>
                 <td>{{ publication_parcour.securite }}</td>
@@ -31,7 +33,7 @@
             </tr>
         {% else %}
             <tr>
-                <td colspan="6">no records found</td>
+                <td colspan="7">no records found</td>
             </tr>
         {% endfor %}
         </tbody>

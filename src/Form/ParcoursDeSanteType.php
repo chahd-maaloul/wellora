@@ -22,16 +22,12 @@ class ParcoursDeSanteType extends AbstractType
                 'label' => 'Parcours Name',
                 'attr' => [
                     'placeholder' => 'Enter parcours name (at least 5 letters only)',
-                    'maxlength' => 255,
-                    'pattern' => '[a-zA-Z\s]+',
                 ]
             ])
             ->add('localisationParcours', TextType::class, [
                 'label' => 'Location',
                 'attr' => [
                     'placeholder' => 'Enter location (at least 5 letters only)',
-                    'maxlength' => 255,
-                    'pattern' => '[a-zA-Z\s]+',
                 ]
             ])
             ->add('distanceParcours', NumberType::class, [
@@ -39,8 +35,6 @@ class ParcoursDeSanteType extends AbstractType
                 'attr' => [
                     'placeholder' => '0.5 to 20 km',
                     'step' => '0.1',
-                    'min' => '0.1',
-                    'max' => '20',
                 ]
             ])
             ->add('dateCreation', DateType::class, [
@@ -48,7 +42,6 @@ class ParcoursDeSanteType extends AbstractType
                 'widget' => 'single_text',
                 'attr' => [
                     'type' => 'date',
-                    'max' => (new \DateTime())->format('Y-m-d'),
                 ]
             ]);
 
