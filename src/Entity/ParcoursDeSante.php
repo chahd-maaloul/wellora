@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ParcoursDeSanteRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -48,8 +50,8 @@ class ParcoursDeSante
     #[Assert\Positive(message: 'The distance must be greater than 0')]
     #[Assert\Range(
         min: 0.1,
-        max: 500,
-        notInRangeMessage: 'The distance must be between 0.1 and 500 km'
+        max: 20,
+        notInRangeMessage: 'The distance must be between 0.1 and 20 km'
     )]
     private ?float $distanceParcours = null;
 
@@ -64,6 +66,17 @@ class ParcoursDeSante
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $imageParcours = null;
+
+    /**
+     * @var Collection<int, PublicationParcours>
+     */
+    #[ORM\OneToMany(targetEntity: PublicationParcours::class, mappedBy: 'ParcoursDeSante')]
+    private Collection $PublicationParcours;
+
+    public function __construct()
+    {
+        $this->PublicationParcours = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -126,6 +139,36 @@ class ParcoursDeSante
     public function setImageParcours(string $imageParcours): static
     {
         $this->imageParcours = $imageParcours;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PublicationParcours>
+     */
+    public function getPublicationParcours(): Collection
+    {
+        return $this->PublicationParcours;
+    }
+
+    public function addPublicationParcour(PublicationParcours $publicationParcour): static
+    {
+        if (!$this->PublicationParcours->contains($publicationParcour)) {
+            $this->PublicationParcours->add($publicationParcour);
+            $publicationParcour->setParcoursDeSante($this);
+        }
+
+        return $this;
+    }
+
+    public function removePublicationParcour(PublicationParcours $publicationParcour): static
+    {
+        if ($this->PublicationParcours->removeElement($publicationParcour)) {
+            // set the owning side to null (unless already changed)
+            if ($publicationParcour->getParcoursDeSante() === $this) {
+                $publicationParcour->setParcoursDeSante(null);
+            }
+        }
 
         return $this;
     }

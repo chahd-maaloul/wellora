@@ -20,6 +20,9 @@ class CommentairePublication
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTime $dateCommentaire = null;
 
+    #[ORM\ManyToOne(inversedBy: 'commentairePublications')]
+    private ?PublicationParcours $PublicationParcours = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -45,6 +48,18 @@ class CommentairePublication
     public function setDateCommentaire(\DateTime $dateCommentaire): static
     {
         $this->dateCommentaire = $dateCommentaire;
+
+        return $this;
+    }
+
+    public function getPublicationParcours(): ?PublicationParcours
+    {
+        return $this->PublicationParcours;
+    }
+
+    public function setPublicationParcours(?PublicationParcours $PublicationParcours): static
+    {
+        $this->PublicationParcours = $PublicationParcours;
 
         return $this;
     }
