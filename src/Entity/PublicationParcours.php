@@ -47,6 +47,8 @@ class PublicationParcours
     private ?\DateTime $datePublication = null;
 
     #[ORM\ManyToOne(inversedBy: 'PublicationParcours')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotNull(message: 'The parcours is required')]
     private ?ParcoursDeSante $ParcoursDeSante = null;
 
     /**

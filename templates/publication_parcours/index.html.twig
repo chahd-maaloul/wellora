@@ -1,43 +1,152 @@
-{% extends 'base.html.twig' %}
+{% extends 'layouts/app.html.twig' %}
 
-{% block title %}PublicationParcours index{% endblock %}
+{% block title %}Community Publications - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
 
 {% block body %}
-    <h1>PublicationParcours index</h1>
+<div class="py-4 mb-4 -mx-4 -mt-4 bg-gradient-to-r from-wellcare-dark-500 to-wellcare-500">
+    <div class="px-4 mx-auto">
+        <h1 class="text-xl font-bold text-white font-display">
+            <i class="mr-2 fa-solid fa-users"></i>Community Publications
+        </h1>
+        <p class="text-sm text-white/80">Discover trail experiences from the community</p>
+    </div>
+</div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>TextPublication</th>
-                <th>ImagePublication</th>
-                <th>Ambiance</th>
-                <th>Securite</th>
-                <th>DatePublication</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for publication_parcour in publication_parcours %}
-            <tr>
-                <td>{{ publication_parcour.id }}</td>
-                <td>{{ publication_parcour.textPublication }}</td>
-                <td>{{ publication_parcour.imagePublication }}</td>
-                <td>{{ publication_parcour.ambiance }}</td>
-                <td>{{ publication_parcour.securite }}</td>
-                <td>{{ publication_parcour.datePublication ? publication_parcour.datePublication|date('Y-m-d') : '' }}</td>
-                <td>
-                    <a href="{{ path('app_publication_parcours_show', {'id': publication_parcour.id}) }}">show</a>
-                    <a href="{{ path('app_publication_parcours_edit', {'id': publication_parcour.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="7">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<div class="px-4 mx-auto">
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <div class="space-y-4 lg:col-span-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div>
+                    {% if selected_parcours %}
+                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                            Showing publications for <span class="font-semibold text-gray-900 dark:text-white">{{ selected_parcours.nomParcours }}</span>
+                        </p>
+                        <a href="{{ path('app_publication_parcours_index') }}" class="text-xs text-wellcare-500 hover:text-wellcare-600">
+                            View publications of all the community
+                        </a>
+                    {% else %}
+                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                            All community publications
+                        </p>
+                    {% endif %}
+                </div>
+                <a href="{{ selected_parcours ? path('app_publication_parcours_new', {'parcoursId': selected_parcours.id}) : path('app_parcours_de_sante_index') }}" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="fa-solid fa-plus"></i> Create publication
+                </a>
+            </div>
 
-    <a href="{{ path('app_publication_parcours_new') }}">Create new</a>
+            {% for publication_parcour in publication_parcours %}
+                {% set image = publication_parcour.imagePublication %}
+                {% set image_src = image %}
+                {% if image %}
+                    {% if image starts with 'http://' or image starts with 'https://' %}
+                        {% set image_src = image %}
+                    {% else %}
+                        {% set image_src = asset(image starts with 'uploads/' ? image : 'uploads/parcours/' ~ image) %}
+                    {% endif %}
+                {% endif %}
+
+                <article class="overflow-hidden bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <div class="p-4">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 text-sm font-semibold text-white rounded-full bg-wellcare-500">
+                                {{ publication_parcour.parcoursDeSante ? publication_parcour.parcoursDeSante.nomParcours|slice(0, 1)|upper : 'P' }}
+                            </div>
+
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">
+                                            {{ publication_parcour.parcoursDeSante ? publication_parcour.parcoursDeSante.nomParcours : 'Unknown trail' }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ publication_parcour.datePublication ? publication_parcour.datePublication|date('M d, Y') : 'No date' }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ path('app_publication_parcours_edit', {'id': publication_parcour.id}) }}" class="flex items-center justify-center w-8 h-8 transition rounded-full bg-white/90 hover:bg-white" title="Edit publication" aria-label="Edit publication">
+                                            <i class="text-blue-500 fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                        <form method="post" action="{{ path('app_publication_parcours_delete', {'id': publication_parcour.id}) }}" onsubmit="return confirm('Are you sure you want to delete this publication?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication_parcour.id) }}">
+                                            <button type="submit" class="flex items-center justify-center w-8 h-8 transition rounded-full bg-white/90 hover:bg-white" title="Delete publication" aria-label="Delete publication">
+                                                <i class="text-red-500 fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4 my-2 text-xs">
+                                    <span class="flex items-center text-amber-500">
+                                        <i class="mr-1 fa-solid fa-star"></i>{{ publication_parcour.ambiance }}/5 ambiance
+                                    </span>
+                                    <span class="flex items-center text-green-600 dark:text-green-400">
+                                        <i class="mr-1 fa-solid fa-shield-halved"></i>{{ publication_parcour.securite }}/5 safety
+                                    </span>
+                                </div>
+
+                                <p class="mb-3 text-sm text-gray-700 dark:text-gray-300">
+                                    {{ publication_parcour.textPublication }}
+                                </p>
+
+                                {% if image_src %}
+                                    <div class="mb-3">
+                                        <img src="{{ image_src }}" alt="Publication image {{ publication_parcour.id }}" class="object-cover w-full border border-gray-100 rounded-lg max-h-80 dark:border-gray-700">
+                                    </div>
+                                {% endif %}
+
+                                <div class="flex items-center gap-4 pt-3 text-xs border-t border-gray-100 dark:border-gray-700">
+                                    <span class="flex items-center gap-1 text-gray-500">
+                                        <i class="fa-regular fa-comment"></i>{{ publication_parcour.commentairePublications|length }} comments
+                                    </span>
+                                    <a href="{{ path('app_publication_parcours_show', {'id': publication_parcour.id}) }}" class="text-gray-500 hover:text-wellcare-500">
+                                        View details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% else %}
+                <div class="p-6 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">No publications found.</p>
+                    <a href="{{ selected_parcours ? path('app_publication_parcours_new', {'parcoursId': selected_parcours.id}) : path('app_parcours_de_sante_index') }}" class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fa-solid fa-plus"></i>Create the first publication
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <aside class="space-y-4">
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-pen text-wellcare-500"></i>Share Your Experience
+                </h3>
+                <a href="{{ selected_parcours ? path('app_publication_parcours_new', {'parcoursId': selected_parcours.id}) : path('app_parcours_de_sante_index') }}" class="flex items-center justify-center gap-2 px-4 py-2 text-sm text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="fa-solid fa-camera"></i> Write a Publication
+                </a>
+            </div>
+
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 text-orange-500 fa-solid fa-fire"></i>Quick Links
+                </h3>
+                <div class="space-y-2">
+                    <a href="{{ path('app_publication_parcours_index') }}" class="block p-2 text-xs rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Trail publication feed
+                    </a>
+                    <a href="{{ path('app_parcours_de_sante_index') }}" class="block p-2 text-xs rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Back to trails
+                    </a>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
 {% endblock %}

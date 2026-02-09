@@ -4,9 +4,13 @@ namespace App\Controller;
 
 use App\Entity\PublicationParcours;
 use App\Form\PublicationParcoursType;
+use App\Repository\ParcoursDeSanteRepository;
 use App\Repository\PublicationParcoursRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -15,30 +19,88 @@ use Symfony\Component\Routing\Attribute\Route;
 final class PublicationParcoursController extends AbstractController
 {
     #[Route(name: 'app_publication_parcours_index', methods: ['GET'])]
-    public function index(PublicationParcoursRepository $publicationParcoursRepository): Response
+    public function index(
+        Request $request,
+        PublicationParcoursRepository $publicationParcoursRepository,
+        ParcoursDeSanteRepository $parcoursDeSanteRepository
+    ): Response
     {
+        $parcoursId = $request->query->getInt('parcoursId');
+        $selectedParcours = null;
+        $publications = [];
+
+        if ($parcoursId > 0) {
+            $selectedParcours = $parcoursDeSanteRepository->find($parcoursId);
+        }
+
+        if ($selectedParcours) {
+            $publications = $publicationParcoursRepository->findBy(
+                ['ParcoursDeSante' => $selectedParcours],
+                ['datePublication' => 'DESC']
+            );
+        } else {
+            $publications = $publicationParcoursRepository->findBy([], ['datePublication' => 'DESC']);
+        }
+
         return $this->render('publication_parcours/index.html.twig', [
-            'publication_parcours' => $publicationParcoursRepository->findAll(),
+            'publication_parcours' => $publications,
+            'selected_parcours' => $selectedParcours,
         ]);
     }
 
     #[Route('/new', name: 'app_publication_parcours_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ParcoursDeSanteRepository $parcoursDeSanteRepository
+    ): Response
     {
+        $parcoursId = $request->query->getInt('parcoursId');
+        $selectedParcours = $parcoursId > 0 ? $parcoursDeSanteRepository->find($parcoursId) : null;
+
+        if (!$selectedParcours) {
+            $this->addFlash('warning', 'Please choose a trail first, then create a publication from that trail.');
+
+            return $this->redirectToRoute('app_parcours_de_sante_index', [], Response::HTTP_SEE_OTHER);
+        }
+
         $publicationParcour = new PublicationParcours();
-        $form = $this->createForm(PublicationParcoursType::class, $publicationParcour);
+        $publicationParcour->setParcoursDeSante($selectedParcours);
+
+        $form = $this->createForm(PublicationParcoursType::class, $publicationParcour, [
+            'require_image' => true,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($publicationParcour);
-            $entityManager->flush();
+            $imageFile = $form->get('imageFile')->getData();
+            if ($imageFile instanceof UploadedFile) {
+                $newImagePath = $this->uploadPublicationImage($imageFile);
+                if ($newImagePath === null) {
+                    $form->get('imageFile')->addError(new FormError('Unable to upload image. Please try again.'));
+                } else {
+                    $publicationParcour->setImagePublication($newImagePath);
+                }
+            }
 
-            return $this->redirectToRoute('app_publication_parcours_index', [], Response::HTTP_SEE_OTHER);
+            if ($form->isValid()) {
+                $entityManager->persist($publicationParcour);
+                $entityManager->flush();
+
+                $selectedParcoursId = $publicationParcour->getParcoursDeSante()?->getId();
+
+                return $this->redirectToRoute(
+                    'app_publication_parcours_index',
+                    $selectedParcoursId ? ['parcoursId' => $selectedParcoursId] : [],
+                    Response::HTTP_SEE_OTHER
+                );
+            }
         }
 
         return $this->render('publication_parcours/new.html.twig', [
             'publication_parcour' => $publicationParcour,
             'form' => $form,
+            'cancel_parcours_id' => $publicationParcour->getParcoursDeSante()?->getId(),
         ]);
     }
 
@@ -53,29 +115,99 @@ final class PublicationParcoursController extends AbstractController
     #[Route('/{id}/edit', name: 'app_publication_parcours_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, PublicationParcours $publicationParcour, EntityManagerInterface $entityManager): Response
     {
-        $form = $this->createForm(PublicationParcoursType::class, $publicationParcour);
+        $form = $this->createForm(PublicationParcoursType::class, $publicationParcour, [
+            'require_image' => false,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
+            $imageFile = $form->get('imageFile')->getData();
+            if ($imageFile instanceof UploadedFile) {
+                $newImagePath = $this->uploadPublicationImage($imageFile);
+                if ($newImagePath === null) {
+                    $form->get('imageFile')->addError(new FormError('Unable to upload image. Please try again.'));
+                } else {
+                    $this->removeLocalImageIfManaged($publicationParcour->getImagePublication());
+                    $publicationParcour->setImagePublication($newImagePath);
+                }
+            }
 
-            return $this->redirectToRoute('app_publication_parcours_index', [], Response::HTTP_SEE_OTHER);
+            if ($form->isValid()) {
+                $entityManager->flush();
+
+                $selectedParcoursId = $publicationParcour->getParcoursDeSante()?->getId();
+
+                return $this->redirectToRoute(
+                    'app_publication_parcours_index',
+                    $selectedParcoursId ? ['parcoursId' => $selectedParcoursId] : [],
+                    Response::HTTP_SEE_OTHER
+                );
+            }
         }
 
         return $this->render('publication_parcours/edit.html.twig', [
             'publication_parcour' => $publicationParcour,
             'form' => $form,
+            'cancel_parcours_id' => $publicationParcour->getParcoursDeSante()?->getId(),
         ]);
     }
 
     #[Route('/{id}', name: 'app_publication_parcours_delete', methods: ['POST'])]
     public function delete(Request $request, PublicationParcours $publicationParcour, EntityManagerInterface $entityManager): Response
     {
+        $selectedParcoursId = $publicationParcour->getParcoursDeSante()?->getId();
+
         if ($this->isCsrfTokenValid('delete'.$publicationParcour->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($publicationParcour);
             $entityManager->flush();
         }
 
-        return $this->redirectToRoute('app_publication_parcours_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute(
+            'app_publication_parcours_index',
+            $selectedParcoursId ? ['parcoursId' => $selectedParcoursId] : [],
+            Response::HTTP_SEE_OTHER
+        );
+    }
+
+    private function uploadPublicationImage(UploadedFile $imageFile): ?string
+    {
+        $uploadsDir = $this->getParameter('kernel.project_dir') . '/public/uploads/parcours';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
+        }
+
+        $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeFilename = preg_replace('/[^a-zA-Z0-9-_]/', '_', $originalFilename);
+        if (!$safeFilename) {
+            $safeFilename = 'publication';
+        }
+
+        $extension = $imageFile->guessExtension() ?: $imageFile->getClientOriginalExtension() ?: 'jpg';
+        $newFilename = $safeFilename . '-' . uniqid() . '.' . $extension;
+
+        try {
+            $imageFile->move($uploadsDir, $newFilename);
+        } catch (FileException $e) {
+            return null;
+        }
+
+        return 'uploads/parcours/' . $newFilename;
+    }
+
+    private function removeLocalImageIfManaged(?string $imagePath): void
+    {
+        if (!$imagePath) {
+            return;
+        }
+
+        $normalizedPath = ltrim($imagePath, '/');
+        if (!str_starts_with($normalizedPath, 'uploads/parcours/')) {
+            return;
+        }
+
+        $absolutePath = $this->getParameter('kernel.project_dir') . '/public/' . $normalizedPath;
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+        }
     }
 }
