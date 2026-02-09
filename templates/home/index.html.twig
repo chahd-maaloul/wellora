@@ -35,23 +35,181 @@
           </p>
 
           <div class="flex flex-col gap-3 mt-8 sm:flex-row sm:items-center">
-            <a href="/register-patient" class="btn-solid group">
+            <a href="{{ path('app_register_patient') }}" class="btn-solid group">
               <svg class="w-4 h-4 mr-2 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
               Commencer (Patient)
             </a>
-            <a href="/register-professional" class="btn-outline group">
+            <button type="button" class="btn-outline group" onclick="document.getElementById('professionalModal').classList.remove('hidden')">
               <svg class="w-4 h-4 mr-2 text-gray-500 transition-transform dark:text-gray-400 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
               </svg>
               Je suis un professionnel
-            </a>
+            </button>
+          </div>
+
+          {# Professional Registration Modal #}
+          <div id="professionalModal" x-data="{ open: false }" @keydown.escape.window="open = false; document.getElementById('professionalModal').classList.add('hidden')" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <div class="fixed inset-0 transition-opacity bg-gray-900/75 dark:bg-gray-950/90" aria-hidden="true" onclick="document.getElementById('professionalModal').classList.add('hidden')"></div>
+              <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+              <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white shadow-2xl dark:bg-gray-900 rounded-2xl sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="px-4 pt-5 pb-4 bg-white dark:bg-gray-900 sm:p-6 sm:pb-4">
+                  <div class="absolute top-0 right-0 pt-4 pr-4">
+                    <button type="button" class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400" onclick="document.getElementById('professionalModal').classList.add('hidden')">
+                      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div class="sm:flex sm:items-start">
+                    <div class="w-full mt-3 text-center sm:mt-0 sm:text-left">
+                      <h3 class="text-2xl font-bold leading-6 text-gray-900 dark:text-gray-100" id="modal-title">
+                        Choisissez votre profession
+                      </h3>
+                      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Sélectionnez le type de compte professionnel que vous souhaitez créer
+                      </p>
+                      
+                      <div class="grid gap-6 mt-6 sm:grid-cols-3">
+                        {# Médecin Card #}
+                        <a href="{{ path('app_register_professional', {'type': 'medecin'}) }}" class="relative flex flex-col p-6 transition-all duration-300 border-2 border-gray-200 dark:border-gray-700 rounded-2xl hover:border-wellcare-500 dark:hover:border-wellcare-500 hover:shadow-lg group">
+                          <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 transition-colors rounded-2xl bg-red-50 dark:bg-red-900/20 group-hover:bg-red-100 dark:group-hover:bg-red-900/30">
+                            <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                          </div>
+                          <h4 class="text-lg font-semibold text-center text-gray-900 dark:text-gray-100">Médecin</h4>
+                          <p class="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
+                            Consultez vos patients, gérez les rendez-vous et proposez des téléconsultations
+                          </p>
+                          <ul class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Gestion de patients
+                            </li>
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Ordonnances numériques
+                            </li>
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Téléconsultation
+                            </li>
+                          </ul>
+                          <span class="flex items-center justify-center gap-1 mt-4 text-xs font-medium text-red-600 dark:text-red-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Vérification requise
+                          </span>
+                        </a>
+                        
+                        {# Coach Card #}
+                        <a href="{{ path('app_register_professional', {'type': 'coach'}) }}" class="relative flex flex-col p-6 transition-all duration-300 border-2 border-gray-200 dark:border-gray-700 rounded-2xl hover:border-wellcare-500 dark:hover:border-wellcare-500 hover:shadow-lg group">
+                          <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 transition-colors rounded-2xl bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30">
+                            <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                          </div>
+                          <h4 class="text-lg font-semibold text-center text-gray-900 dark:text-gray-100">Coach</h4>
+                          <p class="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
+                            Accompagnez vos clients dans leur parcours fitness et bien-être
+                          </p>
+                          <ul class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Programmes personnalisés
+                            </li>
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Suivi des progrès
+                            </li>
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Communication intégrée
+                            </li>
+                          </ul>
+                          <span class="flex items-center justify-center gap-1 mt-4 text-xs font-medium text-blue-600 dark:text-blue-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Vérification requise
+                          </span>
+                        </a>
+                        
+                        {# Nutritionist Card #}
+                        <a href="{{ path('app_register_professional', {'type': 'nutritionist'}) }}" class="relative flex flex-col p-6 transition-all duration-300 border-2 border-gray-200 dark:border-gray-700 rounded-2xl hover:border-wellcare-500 dark:hover:border-wellcare-500 hover:shadow-lg group">
+                          <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 transition-colors rounded-2xl bg-green-50 dark:bg-green-900/20 group-hover:bg-green-100 dark:group-hover:bg-green-900/30">
+                            <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                            </svg>
+                          </div>
+                          <h4 class="text-lg font-semibold text-center text-gray-900 dark:text-gray-100">Nutritionniste</h4>
+                          <p class="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
+                            Créez des plans nutritionnels et suivez les régimes alimentaires
+                          </p>
+                          <ul class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Plans alimentaires
+                            </li>
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Suivi des macronutriments
+                            </li>
+                            <li class="flex items-center gap-2">
+                              <svg class="w-4 h-4 text-wellcare-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              Consultations en ligne
+                            </li>
+                          </ul>
+                          <span class="flex items-center justify-center gap-1 mt-4 text-xs font-medium text-green-600 dark:text-green-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Vérification requise
+                          </span>
+                        </a>
+                      </div>
+                      
+                      <div class="p-4 mt-6 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <p class="text-sm text-center text-gray-600 dark:text-gray-300">
+                          <svg class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Tous les comptes professionnels nécessitent une vérification par l'administrateur sous 24-48 heures.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div class="flex items-center gap-2 mt-4 text-sm">
             <span class="text-gray-500 dark:text-gray-400">Déjà inscrit ?</span>
-            <a href="/login" class="inline-flex items-center gap-1 font-semibold text-wellcare-700 hover:text-wellcare-800 dark:text-wellcare-300 dark:hover:text-wellcare-200 group">
+            <a href="{{ path('app_login') }}" class="inline-flex items-center gap-1 font-semibold text-wellcare-700 hover:text-wellcare-800 dark:text-wellcare-300 dark:hover:text-wellcare-200 group">
               Se connecter
               <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
@@ -509,7 +667,7 @@
             <p class="mt-4 text-base text-white/90">Créez un compte gratuitement et explorez les parcours Patient et Professionnel. Rejoignez des milliers d'utilisateurs qui simplifient leur suivi médical.</p>
           </div>
           <div class="flex flex-col gap-3 sm:flex-row shrink-0">
-            <a href="/register-patient" class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-wellcare-700 shadow-lg hover:bg-white/90 hover:shadow-xl transition-all">
+            <a href="{{ path('app_register_patient') }}" class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-wellcare-700 shadow-lg hover:bg-white/90 hover:shadow-xl transition-all">
               <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
