@@ -1,13 +1,20 @@
 <?php
-
 namespace App\Controller;
 
+use App\Entity\Goal;
+use App\Form\GoalType;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class FitnessController extends AbstractController
 {
+    // Remove ANY constructor if you have one
+    // Or make sure it calls parent::__construct()
+    
+   
     /**
      * Main Fitness Dashboard
      */
@@ -236,6 +243,7 @@ class FitnessController extends AbstractController
     /**
      * SMART Goals Dashboard
      */
+    
     #[Route('/fitness/goals', name: 'fitness_goals')]
     public function goals(): Response
     {
@@ -437,6 +445,22 @@ class FitnessController extends AbstractController
                 ['icon' => '🍌', 'title' => 'Post-Workout Nutrition', 'description' => 'Consume protein within 30 minutes', 'completed' => true],
                 ['icon' => '🧊', 'title' => 'Cold Shower', 'description' => '10-minute cold shower for recovery', 'completed' => false],
             ],
+        ]);
+    }
+
+    /**
+     * Create a new fitness goal
+     */
+   
+
+    /**
+     * Display a single goal
+     */
+    #[Route('/fitness/goals/{id}', name: 'fitness_goal_show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function showGoal(Goal $goal): Response
+    {
+        return $this->render('goal/show.html.twig', [
+            'goal' => $goal,
         ]);
     }
 }

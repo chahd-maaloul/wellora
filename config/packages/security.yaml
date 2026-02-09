@@ -24,6 +24,11 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
+        
+# Autoriser l’accès public à cette route précise
+    - { path: ^/fitness/goals/new, roles: PUBLIC_ACCESS }
+    # (Symfony 6.3+ : PUBLIC_ACCESS remplace IS_AUTHENTICATED_ANONYMOUSLY)
+
 
 when@test:
     security:
