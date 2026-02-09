@@ -1,6 +1,14 @@
 {% extends 'layouts/auth.html.twig' %}
 {% set auth_container_class = 'max-w-5xl' %}
 
+{% set professionalTypes = {
+    'medecin': { label: 'Physician', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+    'coach': { label: 'Coach', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+    'nutritionist': { label: 'Nutritionist', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+    'professional': { label: 'Healthcare Professional', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' }
+} %}
+{% set currentType = professionalTypes[type] ?? professionalTypes.professional %}
+
 {% block title %}Professional Registration - WellCare Connect{% endblock %}
 
 {% block auth_heading %}{% endblock %}
@@ -9,7 +17,8 @@
 {% block auth_form %}
   <form 
     class="min-h-[650px]" 
-    action="/register-professional" 
+    id="registration-form"
+    action="{{ path('app_register_' ~ type) }}" 
     method="POST" 
     enctype="multipart/form-data"
     x-data="{
@@ -19,16 +28,41 @@
       pw: '',
       confirmPw: '',
       email: '',
+      emailAvailable: null,
+      emailCheckLoading: false,
       firstName: '',
       lastName: '',
       specialization: '',
       licenseNumber: '',
+      yearsOfExperience: '',
       diplomaFile: null,
       diplomaName: '',
       isSubmitting: false,
       fileError: '',
       isDragging: false,
       touched: {},
+      userType: '{{ type }}',
+      async checkEmailAvailability() {
+        if (!this.validateEmail(this.email)) {
+          this.emailAvailable = null;
+          return;
+        }
+        this.emailCheckLoading = true;
+        try {
+          const formData = new FormData();
+          formData.append('email', this.email);
+          const response = await fetch('{{ path('app_check_email') }}', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          this.emailAvailable = data.available;
+        } catch (e) {
+          console.error('Error checking email:', e);
+        } finally {
+          this.emailCheckLoading = false;
+        }
+      },
       get strength() {
         const p = this.pw || '';
         let s = 0;
@@ -52,8 +86,21 @@
       },
       get pct() { return Math.round(((this.step - 1) / 2) * 100); },
       get canProceed() {
-        if (this.step === 1) return this.firstName && this.lastName && this.email && this.validateEmail(this.email);
-        if (this.step === 2) return this.specialization && this.licenseNumber && this.diplomaFile && !this.fileError;
+        if (this.step === 1) {
+          const hasRequired = this.firstName && this.lastName && this.email && this.validateEmail(this.email);
+          const isEmailAvailable = this.emailAvailable === true || this.emailAvailable === null;
+          return hasRequired && isEmailAvailable;
+        }
+        if (this.step === 2) {
+          const hasSpecialization = this.specialization;
+          const hasDiploma = this.diplomaFile && !this.fileError;
+          // All professionals need license number
+          if (this.userType === 'medecin' || this.userType === 'coach' || this.userType === 'nutritionist') {
+            return hasSpecialization && this.licenseNumber && hasDiploma;
+          }
+          // Other professionals can optionally provide years of experience
+          return hasSpecialization && hasDiploma;
+        }
         if (this.step === 3) return this.pw && this.confirmPw && this.pw === this.confirmPw && this.strength >= 2;
         return false;
       },
@@ -121,9 +168,10 @@
         }
       }
     }"
-    @submit.prevent="if (canProceed) { isSubmitting = true; $el.submit(); }"
+    @submit.prevent="if (canProceed) { isSubmitting = true; document.getElementById('submit-type').value = 'submit'; document.getElementById('registration-form').submit(); } else { console.log('Cannot proceed - canProceed:', canProceed, 'isSubmitting:', isSubmitting); alert('Please fill in all required fields correctly.'); }"
   >
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token('register_professional') }}">
+    <input type="hidden" name="_submit" value="1"><input type="hidden" name="_csrf_token" value="{{ csrf_token('register_professional') }}">
+    <input type="hidden" id="submit-type" name="_submit_type" value="">
 
     <div class="grid grid-cols-1 gap-0 lg:grid-cols-12">
       {# Left Panel - Progress & Trust Elements #}
@@ -134,8 +182,8 @@
           <div class="absolute bottom-0 left-0 w-32 h-32 -mb-8 -ml-8 rounded-full bg-wellcare-400/10 blur-xl"></div>
           
           <div class="relative z-10">
-            <h3 class="text-xl font-bold text-white">Professional Registration</h3>
-            <p class="mt-2 text-sm text-wellcare-100">Join our network of healthcare professionals and connect with patients in a secure, verified environment.</p>
+            <h3 class="text-xl font-bold text-white">{{ currentType.label }} Registration</h3>
+            <p class="mt-2 text-sm text-wellcare-100">Join our network of {{ currentType.label|lower }}s and connect with patients in a secure, verified environment.</p>
           </div>
 
           {# Progress Steps with enhanced styling #}
@@ -174,7 +222,7 @@
                 <span x-show="step <= 2" class="text-sm font-semibold">2</span>
               </div>
               <div class="flex-1">
-                <p class="text-sm font-semibold text-white">Professional</p>
+                <p class="text-sm font-semibold text-white">{{ currentType.label }}</p>
                 <p class="text-xs text-wellcare-100">Credentials & diploma</p>
               </div>
             </div>
@@ -222,23 +270,23 @@
         <div class="p-6 lg:p-10">
           {# Mobile Header #}
           <div class="mb-6 text-center lg:hidden">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Join as a professional</h1>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Join as a {{ currentType.label }}</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Already have an account? 
-              <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">Sign in</a>
+              <a href="{{ path('app_login') }}" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">Sign in</a>
             </p>
           </div>
 
           {# Desktop Header #}
           <div class="hidden mb-8 lg:block">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Join as a healthcare professional</h1>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Register as a {{ currentType.label }}</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Already have an account?
-              <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>.
+              <a href="{{ path('app_login') }}" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>.
             </p>
           </div>
 
-          {# Mobile Progress Bar with enhanced styling #}
+          {# Mobile Progress Bar #}
           <div class="mb-8 space-y-3 lg:hidden">
             <div class="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
               <span>Step <span x-text="step"></span> of 3</span>
@@ -267,10 +315,10 @@
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="space-y-1.5">
-                <label for="first-name" class="label">First name <span class="text-red-500">*</span></label>
+                <label for="first_name" class="label">First name <span class="text-red-500">*</span></label>
                 <input 
-                  id="first-name" 
-                  name="first_name" 
+                  id="first_name" 
+                  name="firstName" 
                   type="text" 
                   x-model="firstName"
                   required 
@@ -279,10 +327,10 @@
                 >
               </div>
               <div class="space-y-1.5">
-                <label for="last-name" class="label">Last name <span class="text-red-500">*</span></label>
+                <label for="last_name" class="label">Last name <span class="text-red-500">*</span></label>
                 <input 
-                  id="last-name" 
-                  name="last_name" 
+                  id="last_name" 
+                  name="lastName" 
                   type="text" 
                   x-model="lastName"
                   required 
@@ -302,12 +350,25 @@
                   x-model="email"
                   required 
                   class="input"
-                  :class="email && !validateEmail(email) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
+                  :class="email && !validateEmail(email) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) && emailAvailable === false ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) && emailAvailable === true ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : ''))"
                   placeholder="john.doe@clinic.com"
+                  @blur="checkEmailAvailability()"
+                  @input="checkEmailAvailability()"
                 >
-                <div x-show="email && validateEmail(email)" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                <div x-show="email && validateEmail(email) && emailCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3" style="display: none;">
+                  <svg class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <div x-show="email && validateEmail(email) && emailAvailable === true && !emailCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
                   <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div x-show="email && validateEmail(email) && emailAvailable === false && !emailCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                  <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
                 </div>
               </div>
@@ -317,11 +378,17 @@
                 </svg>
                 Please enter a valid email address
               </p>
+              <p x-show="email && validateEmail(email) && emailAvailable === false" class="flex items-center gap-1 text-xs text-red-500" style="display: none;">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                This email is already registered
+              </p>
               <p class="helper-text">Use your professional email associated with your practice.</p>
             </div>
           </div>
 
-          {# Step 2: Professional Details with enhanced file upload #}
+          {# Step 2: Professional Details #}
           <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5" style="display: none;">
             <div class="flex items-center gap-2 mb-4">
               <div class="p-2 rounded-lg bg-wellcare-dark-100 dark:bg-wellcare-dark-900/30">
@@ -329,35 +396,93 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
                 </svg>
               </div>
-              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Professional Credentials</h3>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                {% if type == 'medecin' %}Professional Credentials{% elseif type == 'coach' %}Coach Profile{% else %}Nutritionist Profile{% endif %}
+              </h3>
             </div>
             
             <div class="space-y-1.5">
-              <label for="specialization" class="label">Specialization <span class="text-red-500">*</span></label>
-              <input 
+              <label for="specialization" class="label">
+                {% if type == 'medecin' %}Medical Specialty{% elseif type == 'coach' %}Coaching Specialty{% else %}Nutrition Specialty{% endif %} <span class="text-red-500">*</span>
+              </label>
+              <select 
                 id="specialization" 
                 name="specialization" 
-                type="text" 
                 x-model="specialization"
                 required 
                 class="input"
-                placeholder="e.g., Cardiology, Pediatrics, Neurology"
               >
-              <p class="helper-text">This helps patients find the right specialist for their needs.</p>
+                <option value="">Select {% if type == 'medecin' %}a specialty{% elseif type == 'coach' %}a coaching area{% else %}an area of expertise{% endif %}</option>
+                
+                {# Medecin Specialties #}
+                {% if type == 'medecin' %}
+                <option value="CARDIOLOGY">Cardiologie</option>
+                <option value="DERMATOLOGY">Dermatologie</option>
+                <option value="ENDOCRINOLOGY">Endocrinologie</option>
+                <option value="NEUROLOGY">Neurologie</option>
+                <option value="PSYCHIATRY">Psychiatrie</option>
+                <option value="PHYSIOTHERAPY">Physiothérapie</option>
+                <option value="PEDIATRICS">Pédiatrie</option>
+                <option value="GYNECOLOGY">Gynécologie</option>
+                <option value="OPHTHALMOLOGY">Ophtalmologie</option>
+                <option value="OTHER">Autre</option>
+                {% elseif type == 'coach' %}
+                <option value="FITNESS_COACHING">Fitness Coaching</option>
+                <option value="PERSONAL_TRAINING">Personal Training</option>
+                <option value="SPORTS_COACHING">Sports Coaching</option>
+                <option value="WELLNESS_COACHING">Wellness Coaching</option>
+                <option value="REHAB_COACHING">Rehabilitation Coaching</option>
+                <option value="NUTRITION_COACHING">Nutrition Coaching</option>
+                <option value="WEIGHT_LOSS">Weight Loss Specialist</option>
+                <option value="STRENGTH_TRAINING">Strength Training</option>
+                <option value="CARDIO_TRAINING">Cardio Training</option>
+                <option value="OTHER">Autre</option>
+                {% else %}
+                <option value="CLINICAL_NUTRITION">Clinical Nutrition</option>
+                <option value="SPORTS_NUTRITION">Sports Nutrition</option>
+                <option value="PEDIATRIC_NUTRITION">Pediatric Nutrition</option>
+                <option value="GERIATRIC_NUTRITION">Geriatric Nutrition</option>
+                <option value="WEIGHT_MANAGEMENT">Weight Management</option>
+                <option value="DIABETES_NUTRITION">Diabetes Nutrition</option>
+                <option value="DIGESTIVE_HEALTH">Digestive Health</option>
+                <option value="FOOD_ALLERGIES">Food Allergies & Intolerances</option>
+                <option value="PLANT_BASED">Plant-Based Nutrition</option>
+                <option value="OTHER">Autre</option>
+                {% endif %}
+              </select>
+              <p class="helper-text">
+                {% if type == 'medecin' %}This helps patients find the right specialist for their needs.{% elseif type == 'coach' %}What area do you specialize in as a coach?{% else %}What nutrition expertise do you offer?{% endif %}
+              </p>
             </div>
-
+            
+            {# License Number - Required for all professionals #}
             <div class="space-y-1.5">
-              <label for="license-number" class="label">License Number <span class="text-red-500">*</span></label>
+              <label for="license_number" class="label">License Number <span class="text-red-500">*</span></label>
               <input 
-                id="license-number" 
+                id="license_number" 
                 name="license_number" 
                 type="text" 
                 x-model="licenseNumber"
                 required 
                 class="input"
-                placeholder="Your medical license number"
+                placeholder="{% if type == 'medecin' %}Your medical license number{% elseif type == 'coach' %}Your coaching certification number{% else %}Your nutrition certification number{% endif %}"
               >
-              <p class="helper-text">Your professional license number for verification purposes.</p>
+              <p class="helper-text">{% if type == 'medecin' %}Your professional license number for verification purposes.{% elseif type == 'coach' %}Your coaching certification number for verification.{% else %}Your nutrition certification number for verification.{% endif %}</p>
+            </div>
+            
+            {# Years of Experience - For all professionals #}
+            <div class="space-y-1.5">
+              <label for="years_of_experience" class="label">Years of Experience</label>
+              <input 
+                id="years_of_experience" 
+                name="years_of_experience" 
+                type="number" 
+                min="0"
+                x-model="yearsOfExperience"
+                class="input"
+                placeholder="e.g., {{ type == 'medecin' ? '10' : '5' }}"
+              >
+              <p class="helper-text">How many years of experience do you have in your field?</p>
             </div>
             
             <div class="space-y-1.5">
@@ -379,7 +504,7 @@
                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   @change="handleFileSelect($event)"
                 >
-                
+                 
                 {# Empty State #}
                 <div x-show="!diplomaFile && !fileError" class="text-center">
                   <div class="flex items-center justify-center mx-auto mb-3 transition-transform duration-200 rounded-full h-14 w-14 bg-wellcare-100 dark:bg-wellcare-900/30" :class="isDragging ? 'scale-110' : ''">
@@ -393,7 +518,7 @@
                   </p>
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PDF, JPG, or PNG (max 5MB)</p>
                 </div>
-                
+                 
                 {# File Selected State #}
                 <div x-show="diplomaFile && !fileError" class="flex items-center gap-3" style="display: none;">
                   <div class="flex items-center justify-center w-12 h-12 bg-green-100 shrink-0 rounded-xl dark:bg-green-900/30">
@@ -415,7 +540,7 @@
                     </svg>
                   </button>
                 </div>
-                
+                 
                 {# Error State #}
                 <div x-show="fileError" class="flex items-center gap-3" style="display: none;">
                   <div class="flex items-center justify-center w-12 h-12 bg-red-100 shrink-0 rounded-xl dark:bg-red-900/30">
@@ -438,8 +563,8 @@
                   </button>
                 </div>
               </div>
-              
-              <p class="helper-text">Your diploma will be securely stored and used for verification purposes only. All documents are encrypted and handled according to HIPAA standards.</p>
+               
+              <p class="helper-text">Your diploma will be securely stored and used for verification purposes only.</p>
             </div>
 
             <div class="p-4 border rounded-xl bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20 border-wellcare-dark-200 dark:border-wellcare-dark-800">
@@ -455,7 +580,7 @@
             </div>
           </div>
 
-          {# Step 3: Account Security with enhanced password strength #}
+          {# Step 3: Account Security #}
           <div x-show="step === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5" style="display: none;">
             <div class="flex items-center gap-2 mb-4">
               <div class="p-2 rounded-lg bg-wellcare-dark-100 dark:bg-wellcare-dark-900/30">
@@ -472,7 +597,7 @@
                 <div class="relative">
                   <input 
                     id="password" 
-                    name="password" 
+                    name="plainPassword[first]" 
                     :type="showPw ? 'text' : 'password'" 
                     x-model="pw"
                     required 
@@ -489,16 +614,15 @@
                 </div>
               </div>
               <div class="space-y-1.5">
-                <label for="confirm-password" class="label">Confirm password <span class="text-red-500">*</span></label>
+                <label for="confirm_password" class="label">Confirm password <span class="text-red-500">*</span></label>
                 <div class="relative">
                   <input 
-                    id="confirm-password" 
-                    name="confirm_password" 
+                    id="confirm_password" 
+                    name="plainPassword[second]" 
                     :type="showPw2 ? 'text' : 'password'" 
                     x-model="confirmPw"
                     required 
                     class="pr-20 input"
-                    :class="confirmPw && !passwordsMatch ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (confirmPw && passwordsMatch ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
                     placeholder="••••••••"
                   >
                   <button 
@@ -575,14 +699,14 @@
 
             {# Terms agreement #}
             <div class="flex items-start gap-3 p-4 border rounded-xl bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20 border-wellcare-dark-200 dark:border-wellcare-dark-800">
-              <input id="terms" name="terms" type="checkbox" required class="w-4 h-4 mt-0.5 text-wellcare-dark-600 border-gray-300 rounded focus:ring-wellcare-dark-500">
+              <input id="terms" name="agreeTerms" type="checkbox" required class="w-4 h-4 mt-0.5 text-wellcare-dark-600 border-gray-300 rounded focus:ring-wellcare-dark-500">
               <label for="terms" class="text-xs text-gray-600 dark:text-gray-400">
-                I confirm that I am a licensed healthcare professional and agree to the <a href="/terms" class="text-wellcare-dark-600 hover:text-wellcare-dark-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-dark-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-dark-600 hover:text-wellcare-dark-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-dark-300 hover:underline">Privacy Policy</a>. I understand that my credentials will be verified before account activation.
+                I confirm that I am a licensed healthcare professional and agree to the <a href="/terms" class="text-wellcare-dark-600 hover:text-wellcare-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-dark-600 hover:text-wellcare-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-300 hover:underline">Privacy Policy</a>. I understand that my credentials will be verified before account activation.
               </label>
             </div>
           </div>
 
-          {# Navigation Buttons with enhanced styling #}
+          {# Navigation Buttons #}
           <div class="flex items-center justify-between pt-6 mt-8 border-t border-gray-100 dark:border-gray-800">
             <button 
               type="button" 
@@ -614,6 +738,7 @@
 
             <button 
               type="submit" 
+              name="_submit"
               x-show="step === 3"
               class="flex items-center gap-2 ml-auto btn-solid"
               :disabled="isSubmitting || !canProceed"
@@ -643,7 +768,7 @@
 {% block auth_footer %}
   <div class="flex flex-col items-center justify-center gap-2 text-sm">
     <span class="text-gray-600 dark:text-gray-400">Looking for patient registration?</span>
-    <a href="/register-patient" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">
+    <a href="{{ path('app_register_patient') }}" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">
       Register as patient
     </a>
   </div>
