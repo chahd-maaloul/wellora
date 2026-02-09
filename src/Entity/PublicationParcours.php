@@ -118,7 +118,7 @@ class PublicationParcours
         return $this->datePublication;
     }
 
-    public function setDatePublication(\DateTime $datePublication): static
+    public function setDatePublication(?\DateTime $datePublication): static
     {
         $this->datePublication = $datePublication;
 

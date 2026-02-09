@@ -16,6 +16,63 @@ class ParcoursDeSanteRepository extends ServiceEntityRepository
         parent::__construct($registry, ParcoursDeSante::class);
     }
 
+    /**
+     * @return ParcoursDeSante[]
+     */
+    public function searchByNameAndLocation(
+        ?string $nomParcours,
+        ?string $localisationParcours,
+        ?float $minDistance = null,
+        ?float $maxDistance = null,
+        string $sortBy = 'date',
+        string $sortOrder = 'DESC'
+    ): array
+    {
+        $qb = $this->createQueryBuilder('p');
+
+        if ($nomParcours !== null && trim($nomParcours) !== '') {
+            $qb
+                ->andWhere('LOWER(p.nomParcours) LIKE :nomParcours')
+                ->setParameter('nomParcours', '%' . strtolower(trim($nomParcours)) . '%');
+        }
+
+        if ($localisationParcours !== null && trim($localisationParcours) !== '') {
+            $qb
+                ->andWhere('LOWER(p.localisationParcours) LIKE :localisationParcours')
+                ->setParameter('localisationParcours', '%' . strtolower(trim($localisationParcours)) . '%');
+        }
+
+        if ($minDistance !== null) {
+            $qb
+                ->andWhere('p.distanceParcours >= :minDistance')
+                ->setParameter('minDistance', $minDistance);
+        }
+
+        if ($maxDistance !== null) {
+            $qb
+                ->andWhere('p.distanceParcours <= :maxDistance')
+                ->setParameter('maxDistance', $maxDistance);
+        }
+
+        $allowedSortFields = [
+            'date' => 'p.dateCreation',
+            'name' => 'p.nomParcours',
+            'distance' => 'p.distanceParcours',
+        ];
+
+        $sortField = $allowedSortFields[$sortBy] ?? $allowedSortFields['date'];
+        $direction = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
+        $qb->orderBy($sortField, $direction);
+
+        // Stable secondary sort for deterministic order.
+        if ($sortField !== 'p.nomParcours') {
+            $qb->addOrderBy('p.nomParcours', 'ASC');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     //    /**
     //     * @return ParcoursDeSante[] Returns an array of ParcoursDeSante objects
     //     */

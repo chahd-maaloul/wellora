@@ -5,8 +5,8 @@
             {{ form_label(form.nomParcours, 'Parcours Name', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
             {{ form_widget(form.nomParcours, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.nomParcours.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
             {% if form.nomParcours.vars.errors|length > 0 %}
-                <div class="mt-1">
-                    {{ form_errors(form.nomParcours, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.nomParcours) }}
                 </div>
             {% endif %}
         </div>
@@ -16,8 +16,8 @@
             {{ form_label(form.localisationParcours, 'Location', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
             {{ form_widget(form.localisationParcours, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.localisationParcours.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
             {% if form.localisationParcours.vars.errors|length > 0 %}
-                <div class="mt-1">
-                    {{ form_errors(form.localisationParcours, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.localisationParcours) }}
                 </div>
             {% endif %}
         </div>
@@ -25,10 +25,10 @@
         <!-- Distance Parcours -->
         <div>
             {{ form_label(form.distanceParcours, 'Distance (km)', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
-            {{ form_widget(form.distanceParcours, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.distanceParcours.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'step': '0.1', 'min': '0.1', 'max': '500'}}) }}
+            {{ form_widget(form.distanceParcours, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.distanceParcours.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'step': '0.1', 'min': '0', 'max': '20'}}) }}
             {% if form.distanceParcours.vars.errors|length > 0 %}
-                <div class="mt-1">
-                    {{ form_errors(form.distanceParcours, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.distanceParcours) }}
                 </div>
             {% endif %}
         </div>
@@ -38,8 +38,8 @@
             {{ form_label(form.dateCreation, 'Creation Date', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
             {{ form_widget(form.dateCreation, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.dateCreation.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
             {% if form.dateCreation.vars.errors|length > 0 %}
-                <div class="mt-1">
-                    {{ form_errors(form.dateCreation, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.dateCreation) }}
                 </div>
             {% endif %}
         </div>
@@ -53,7 +53,7 @@
             {{ form_widget(form.imageFile, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.imageFile.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'accept': 'image/jpeg,image/png'}}) }}
             {% if form.imageFile.vars.errors|length > 0 %}
                 <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
-                    {{ form_errors(form.imageFile, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+                    {{ form_errors(form.imageFile) }}
                 </div>
             {% endif %}
         </div>

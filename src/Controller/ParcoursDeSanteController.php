@@ -16,10 +16,59 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ParcoursDeSanteController extends AbstractController
 {
     #[Route(name: 'app_parcours_de_sante_index', methods: ['GET'])]
-    public function index(ParcoursDeSanteRepository $parcoursDeSanteRepository): Response
+    public function index(Request $request, ParcoursDeSanteRepository $parcoursDeSanteRepository): Response
     {
+        $nomParcours = trim((string) $request->query->get('nomParcours', ''));
+        $localisation = trim((string) $request->query->get('localisation', ''));
+        $minDistanceRaw = trim((string) $request->query->get('minDistance', ''));
+        $maxDistanceRaw = trim((string) $request->query->get('maxDistance', ''));
+        $sortByRaw = strtolower(trim((string) $request->query->get('sortBy', 'date')));
+        $sortOrderRaw = strtoupper(trim((string) $request->query->get('sortOrder', 'DESC')));
+
+        $minDistance = $minDistanceRaw !== '' && is_numeric($minDistanceRaw) ? (float) $minDistanceRaw : null;
+        $maxDistance = $maxDistanceRaw !== '' && is_numeric($maxDistanceRaw) ? (float) $maxDistanceRaw : null;
+
+        if ($minDistance !== null && $minDistance < 0) {
+            $minDistance = 0.0;
+        }
+
+        if ($maxDistance !== null && $maxDistance < 0) {
+            $maxDistance = 0.0;
+        }
+
+        if ($minDistance !== null && $minDistance > 20) {
+            $minDistance = 20.0;
+        }
+
+        if ($maxDistance !== null && $maxDistance > 20) {
+            $maxDistance = 20.0;
+        }
+
+        if ($minDistance !== null && $maxDistance !== null && $minDistance > $maxDistance) {
+            $tempDistance = $minDistance;
+            $minDistance = $maxDistance;
+            $maxDistance = $tempDistance;
+        }
+
+        $allowedSortBy = ['date', 'name', 'distance'];
+        $sortBy = in_array($sortByRaw, $allowedSortBy, true) ? $sortByRaw : 'date';
+        $sortOrder = $sortOrderRaw === 'ASC' ? 'ASC' : 'DESC';
+
         return $this->render('parcours_de_sante/index.html.twig', [
-            'parcours_de_santes' => $parcoursDeSanteRepository->findAll(),
+            'parcours_de_santes' => $parcoursDeSanteRepository->searchByNameAndLocation(
+                $nomParcours !== '' ? $nomParcours : null,
+                $localisation !== '' ? $localisation : null,
+                $minDistance,
+                $maxDistance,
+                $sortBy,
+                $sortOrder
+            ),
+            'nomParcours' => $nomParcours,
+            'localisation' => $localisation,
+            'minDistance' => $minDistance,
+            'maxDistance' => $maxDistance,
+            'sortBy' => $sortBy,
+            'sortOrder' => $sortOrder,
         ]);
     }
 

@@ -22,7 +22,9 @@
         {% if form.vars.errors|length > 0 %}
             <div class="p-4 mb-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
                 <p class="text-sm font-medium text-red-800 dark:text-red-200">Please fix the following errors:</p>
-                {{ form_errors(form, {'attr': {'class': 'text-sm text-red-600 dark:text-red-400'}}) }}
+                <div class="text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form) }}
+                </div>
             </div>
         {% endif %}
         {{ include('parcours_de_sante/_form.html.twig', {'button_label': 'Update'}) }}

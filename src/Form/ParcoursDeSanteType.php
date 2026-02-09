@@ -20,12 +20,14 @@ class ParcoursDeSanteType extends AbstractType
         $builder
             ->add('nomParcours', TextType::class, [
                 'label' => 'Parcours Name',
+                'required' => false,
                 'attr' => [
                     'placeholder' => 'Enter parcours name (at least 5 letters only)',
                 ]
             ])
             ->add('localisationParcours', TextType::class, [
                 'label' => 'Location',
+                'required' => false,
                 'attr' => [
                     'placeholder' => 'Enter location (at least 5 letters only)',
                 ]
@@ -33,8 +35,10 @@ class ParcoursDeSanteType extends AbstractType
             ->add('distanceParcours', NumberType::class, [
                 'label' => 'Distance (km)',
                 'attr' => [
-                    'placeholder' => '0.5 to 20 km',
+                    'placeholder' => '0 to 20 km',
                     'step' => '0.1',
+                    'min' => '0',
+                    'max' => '20',
                 ]
             ])
             ->add('dateCreation', DateType::class, [

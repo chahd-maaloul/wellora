@@ -5,6 +5,42 @@
 {% block stylesheets %}
     {{ parent() }}
     {{ encore_entry_link_tags('trail-css') }}
+    <style>
+        .distance-range input[type="range"] {
+            position: absolute;
+            width: 100%;
+            height: 2rem;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+            background: transparent;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .distance-range input[type="range"]::-webkit-slider-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #2563eb;
+            border-radius: 9999px;
+            background: #2563eb;
+            box-shadow: 0 0 0 3px #ffffff;
+            pointer-events: auto;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .distance-range input[type="range"]::-moz-range-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #2563eb;
+            border-radius: 9999px;
+            background: #2563eb;
+            box-shadow: 0 0 0 3px #ffffff;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -28,35 +64,89 @@
                     <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
                         <i class="mr-2 fa-solid fa-filter text-wellcare-500"></i>Filters
                     </h2>
-                    <button @click="resetFilters()" class="text-xs text-wellcare-500 hover:text-wellcare-600">Reset All</button>
+                    <a href="{{ path('app_parcours_de_sante_index') }}" class="text-xs text-wellcare-500 hover:text-wellcare-600">Reset All</a>
                 </div>
 
                 <!-- Search -->
                 <div class="p-3 border-b border-gray-100 dark:border-gray-700">
-                    <label class="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Search</label>
-                    <div class="relative">
-                        <input type="text" x-model="filters.search" placeholder="Parcours name, location..." 
-                            class="w-full py-2 pl-8 pr-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
-                        <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search left-2.5 top-1/2"></i>
-                    </div>
+                    <form method="get" action="{{ path('app_parcours_de_sante_index') }}" class="space-y-2">
+                        <label for="nomParcours" class="block text-xs font-medium text-gray-700 dark:text-gray-300">Parcours Name</label>
+                        <input
+                            id="nomParcours"
+                            type="text"
+                            name="nomParcours"
+                            value="{{ nomParcours|default('') }}"
+                            placeholder="Search by name..."
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                        >
+
+                        <label for="localisation" class="block text-xs font-medium text-gray-700 dark:text-gray-300">Location</label>
+                        <input
+                            id="localisation"
+                            type="text"
+                            name="localisation"
+                            value="{{ localisation|default('') }}"
+                            placeholder="Search by location..."
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                        >
+
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Distance (km)</label>
+                        <div
+                            x-data="distanceRangeFilter({{ minDistance is not null ? minDistance : 0 }}, {{ maxDistance is not null ? maxDistance : 20 }})"
+                            class="space-y-2"
+                        >
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="displayKm(minValue)"></span>
+                                <span x-text="displayKm(maxValue)"></span>
+                            </div>
+
+                            <div class="distance-range relative h-8">
+                                <div class="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full border border-[#00A790] bg-transparent"></div>
+                                <div
+                                    class="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#00A790]"
+                                    :style="`left: ${minPercent}%; right: ${100 - maxPercent}%;`"
+                                ></div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    x-model.number="minValue"
+                                    @input="onMinInput"
+                                    aria-label="Minimum distance"
+                                >
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    x-model.number="maxValue"
+                                    @input="onMaxInput"
+                                    aria-label="Maximum distance"
+                                >
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <span>0 km</span>
+                                <span>20 km</span>
+                            </div>
+
+                            <input type="hidden" id="minDistance" name="minDistance" :value="minValue">
+                            <input type="hidden" id="maxDistance" name="maxDistance" :value="maxValue">
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
+                            <button type="submit" class="flex-1 px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                Search
+                            </button>
+                            <a href="{{ path('app_parcours_de_sante_index') }}" class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50" title="Refresh filters" aria-label="Refresh filters">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </a>
+                        </div>
+                    </form>
                 </div>
 
-                <!-- Distance -->
-                <div class="p-3">
-                    <label class="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Distance (km)</label>
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between text-xs text-gray-500">
-                            <span x-text="filters.distance[0] + ' km'"></span>
-                            <span x-text="filters.distance[1] + ' km'"></span>
-                        </div>
-                        <input type="range" min="0" max="50" x-model="filters.distance[1]" 
-                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
-                        <div class="flex justify-between text-xs text-gray-400">
-                            <span>0 km</span>
-                            <span>50 km</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -85,11 +175,31 @@
                             <i class="fa-solid fa-list"></i>
                         </button>
                     </div>
-                    <select x-model="sortBy" class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        <option value="recent">Recently Created</option>
-                        <option value="distance">Nearest</option>
-                        <option value="name">Name (A-Z)</option>
-                    </select>
+                    <form method="get" action="{{ path('app_parcours_de_sante_index') }}" class="flex items-center gap-2">
+                        <input type="hidden" name="nomParcours" value="{{ nomParcours|default('') }}">
+                        <input type="hidden" name="localisation" value="{{ localisation|default('') }}">
+                        <input type="hidden" name="minDistance" value="{{ minDistance is not null ? minDistance : '' }}">
+                        <input type="hidden" name="maxDistance" value="{{ maxDistance is not null ? maxDistance : '' }}">
+
+                        <select
+                            name="sortBy"
+                            onchange="this.form.submit()"
+                            class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="date" {{ sortBy == 'date' ? 'selected' : '' }}>Recently Created</option>
+                            <option value="name" {{ sortBy == 'name' ? 'selected' : '' }}>Name</option>
+                            <option value="distance" {{ sortBy == 'distance' ? 'selected' : '' }}>Distance</option>
+                        </select>
+
+                        <select
+                            name="sortOrder"
+                            onchange="this.form.submit()"
+                            class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="ASC" {{ sortOrder == 'ASC' ? 'selected' : '' }}>ASC</option>
+                            <option value="DESC" {{ sortOrder == 'DESC' ? 'selected' : '' }}>DESC</option>
+                        </select>
+                    </form>
                 </div>
             </div>
 
@@ -160,22 +270,55 @@
 </div>
 
 <script>
+function distanceRangeFilter(initialMin, initialMax) {
+    const minBound = 0;
+    const maxBound = 20;
+
+    const normalizedMin = Number.isFinite(initialMin) ? Math.max(minBound, Math.min(initialMin, maxBound)) : minBound;
+    const normalizedMax = Number.isFinite(initialMax) ? Math.max(minBound, Math.min(initialMax, maxBound)) : maxBound;
+
+    return {
+        minValue: Math.min(normalizedMin, normalizedMax),
+        maxValue: Math.max(normalizedMin, normalizedMax),
+        get minPercent() {
+            return ((this.minValue - minBound) / (maxBound - minBound)) * 100;
+        },
+        get maxPercent() {
+            return ((this.maxValue - minBound) / (maxBound - minBound)) * 100;
+        },
+        onMinInput() {
+            if (this.minValue > this.maxValue) {
+                this.minValue = this.maxValue;
+            }
+        },
+        onMaxInput() {
+            if (this.maxValue < this.minValue) {
+                this.maxValue = this.minValue;
+            }
+        },
+        displayKm(value) {
+            return `${Math.round(value)} km`;
+        }
+    };
+}
+
 function parcoursDiscovery() {
     return {
         viewMode: 'grid',
         sortBy: 'recent',
         filters: {
             search: '',
-            distance: [0, 50]
+            distance: [0, 20]
         },
         resetFilters() {
             this.filters = {
                 search: '',
-                distance: [0, 50]
+                distance: [0, 20]
             };
         }
     }
 }
+
 </script>
 {% endblock %}
 

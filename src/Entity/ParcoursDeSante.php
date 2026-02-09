@@ -47,11 +47,10 @@ class ParcoursDeSante
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'The distance is required')]
-    #[Assert\Positive(message: 'The distance must be greater than 0')]
     #[Assert\Range(
-        min: 0.1,
+        min: 0,
         max: 20,
-        notInRangeMessage: 'The distance must be between 0.1 and 20 km'
+        notInRangeMessage: 'The distance must be between 0 and 20 km'
     )]
     private ?float $distanceParcours = null;
 
@@ -88,7 +87,7 @@ class ParcoursDeSante
         return $this->nomParcours;
     }
 
-    public function setNomParcours(string $nomParcours): static
+    public function setNomParcours(?string $nomParcours): static
     {
         $this->nomParcours = $nomParcours;
 
@@ -100,7 +99,7 @@ class ParcoursDeSante
         return $this->localisationParcours;
     }
 
-    public function setLocalisationParcours(string $localisationParcours): static
+    public function setLocalisationParcours(?string $localisationParcours): static
     {
         $this->localisationParcours = $localisationParcours;
 
@@ -112,7 +111,7 @@ class ParcoursDeSante
         return $this->distanceParcours;
     }
 
-    public function setDistanceParcours(float $distanceParcours): static
+    public function setDistanceParcours(?float $distanceParcours): static
     {
         $this->distanceParcours = $distanceParcours;
 
@@ -124,7 +123,7 @@ class ParcoursDeSante
         return $this->dateCreation;
     }
 
-    public function setDateCreation(\DateTime $dateCreation): static
+    public function setDateCreation(?\DateTime $dateCreation): static
     {
         $this->dateCreation = $dateCreation;
 
@@ -136,7 +135,7 @@ class ParcoursDeSante
         return $this->imageParcours;
     }
 
-    public function setImageParcours(string $imageParcours): static
+    public function setImageParcours(?string $imageParcours): static
     {
         $this->imageParcours = $imageParcours;
 
