@@ -36,7 +36,7 @@ final class HealthentryController extends AbstractController
             return $this->redirectToRoute('app_healthentry_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('healthentry/new.html.twig', [
+        return $this->render('health/accessible/journal-entry.html.twig', [
             'healthentry' => $healthentry,
             'form' => $form,
         ]);

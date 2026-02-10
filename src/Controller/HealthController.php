@@ -7,6 +7,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use App\Entity\Healthentry;
+use App\Form\HealthentryType;
+use Doctrine\ORM\EntityManagerInterface;
 
 #[Route('/health')]
 class HealthController extends AbstractController
@@ -159,10 +162,24 @@ class HealthController extends AbstractController
     /**
      * Accessible Journal Entry - Affiche le formulaire d'entrée journalière accessible
      */
-    #[Route('/accessible/journal-entry', name: 'health_journal_entry_accessible', methods: ['GET'])]
-    public function journalEntryAccessible(): Response
+    #[Route('/accessible/journal-entry', name: 'health_journal_entry_accessible', methods: ['GET', 'POST'])]
+    public function journalEntryAccessible(Request $request, EntityManagerInterface $entityManager): Response
     {
-        return $this->render('health/accessible/journal-entry.html.twig');
+        $healthentry = new Healthentry();
+        $form = $this->createForm(HealthentryType::class, $healthentry);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($healthentry);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('app_healthentry_index', [], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('health/accessible/journal-entry.html.twig', [
+            'healthentry' => $healthentry,
+            'form' => $form,
+        ]);
     }
 
     /**
