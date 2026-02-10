@@ -48,9 +48,12 @@ final class HealthjournalController extends AbstractController
     #[Route('/{id}', name: 'app_healthjournal_show', methods: ['GET'])]
     public function show(Healthjournal $healthjournal): Response
     {
-        // Collect all symptoms from all entries
+        // Get entries filtered by the journal's date range
+        $filteredEntries = $healthjournal->getEntriesByDateRange();
+        
+        // Collect all symptoms from filtered entries
         $symptoms = [];
-        foreach ($healthjournal->getEntries() as $entry) {
+        foreach ($filteredEntries as $entry) {
             foreach ($entry->getSymptoms() as $symptom) {
                 $symptoms[] = $symptom;
             }
@@ -58,23 +61,30 @@ final class HealthjournalController extends AbstractController
 
         return $this->render('healthjournal/show.html.twig', [
             'healthjournal' => $healthjournal,
-            'healthEntries' => $healthjournal->getEntries(),
+            'healthEntries' => $filteredEntries,
             'symptoms' => $symptoms,
         ]);
     }
     #[Route('/{id}/dashboard', name: 'app_healthjournal_dashboard', methods: ['GET'])]
-public function dashboard(Healthjournal $healthjournal, HealthentryRepository $entryRepo, SymptomRepository $symptomRepo): Response
-{
-    // Get all entries and symptoms for this journal
-    $entries = $entryRepo->findBy(['healthjournal' => $healthjournal], ['date' => 'ASC']);
-    $symptoms = $symptomRepo->findBy(['healthjournal' => $healthjournal]);
+    public function dashboard(Healthjournal $healthjournal, HealthentryRepository $entryRepo, SymptomRepository $symptomRepo): Response
+    {
+        // Get entries filtered by the journal's date range
+        $entries = $healthjournal->getEntriesByDateRange();
+        
+        // Get symptoms from filtered entries
+        $symptoms = [];
+        foreach ($entries as $entry) {
+            foreach ($entry->getSymptoms() as $symptom) {
+                $symptoms[] = $symptom;
+            }
+        }
 
-    return $this->render('health/analytics/dashboard.html.twig', [
-        'healthjournal' => $healthjournal,
-        'healthEntries' => $entries,
-        'symptoms' => $symptoms,
-    ]);
-}
+        return $this->render('health/analytics/dashboard.html.twig', [
+            'healthjournal' => $healthjournal,
+            'healthEntries' => $entries,
+            'symptoms' => $symptoms,
+        ]);
+    }
 
     #[Route('/{id}/edit', name: 'app_healthjournal_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Healthjournal $healthjournal, EntityManagerInterface $entityManager): Response

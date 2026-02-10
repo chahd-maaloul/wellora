@@ -195,6 +195,12 @@
                             </button>
                             <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
                                 <li role="none">
+                                    <a href="/healthjournal" role="menuitem" class="sidebar-sublink" :class="isActive('/healthjournal') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/healthjournal/new" role="menuitem" class="sidebar-sublink" :class="isActive('/healthjournal/new') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Nouvelle Entrée</a>
+                                </li>
+                                <li role="none">
                                     <a href="/health/records" role="menuitem" class="sidebar-sublink" :class="isActive('/health/records') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Historique Médical</a>
                                 </li>
                                 <li role="none">
@@ -903,6 +909,18 @@
 
             {# Page Content #}
             <main id="main-content" class="flex-1 p-4 overflow-y-auto sm:p-6 lg:p-8 page-content" tabindex="-1">
+                {# Flash Messages #}
+                {% for type, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg flash-message flash-{{ type }}" style="background-color: {% if type == 'success' %}#dcfce7{% elseif type == 'error' %}#fee2e2{% elseif type == 'warning' %}#fef3c7{% else %}#dbeafe{% endif %}; border: 1px solid {% if type == 'success' %}#22c55e{% elseif type == 'error' %}#ef4444{% elseif type == 'warning' %}#f59e0b{% else %}#3b82f6{% endif %};" role="alert">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid {% if type == 'success' %}fa-check-circle text-green-600{% elseif type == 'error' %}fa-exclamation-circle text-red-600{% elseif type == 'warning' %}fa-exclamation-triangle text-yellow-600{% else %}fa-info-circle text-blue-600{% endif %}"></i>
+                                <p class="text-sm font-medium" style="color: {% if type == 'success' %}#166534{% elseif type == 'error' %}#991b1b{% elseif type == 'warning' %}#92400e{% else %}#1e40af{% endif %};">{{ message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+                
                 {% block body %}
                 {% endblock %}
             </main>

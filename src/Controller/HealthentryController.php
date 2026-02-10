@@ -9,12 +9,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/healthentry')]
 final class HealthentryController extends AbstractController
 {
-    #[Route(name: 'app_healthentry_index', methods: ['GET'])]
+    #[Route('/', name: 'app_healthentry_index', methods: ['GET'])]
     public function index(HealthentryRepository $healthentryRepository): Response
     {
         return $this->render('healthentry/index.html.twig', [
@@ -33,10 +33,10 @@ final class HealthentryController extends AbstractController
             $entityManager->persist($healthentry);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_healthentry_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_healthentry_show', ['id' => $healthentry->getId()], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('health/accessible/journal-entry.html.twig', [
+        return $this->render('healthentry/new.html.twig', [
             'healthentry' => $healthentry,
             'form' => $form,
         ]);
@@ -59,7 +59,7 @@ final class HealthentryController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_healthentry_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_healthentry_show', ['id' => $healthentry->getId()], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('healthentry/edit.html.twig', [
@@ -71,7 +71,7 @@ final class HealthentryController extends AbstractController
     #[Route('/{id}', name: 'app_healthentry_delete', methods: ['POST'])]
     public function delete(Request $request, Healthentry $healthentry, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$healthentry->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$healthentry->getId(), $request->request->get('_token'))) {
             $entityManager->remove($healthentry);
             $entityManager->flush();
         }

@@ -66,4 +66,24 @@ class Healthjournal
     {
         return $this->entries;
     }
+
+    /**
+     * Get entries filtered by the journal's date range
+     * @return Collection<int, Healthentry>
+     */
+    public function getEntriesByDateRange(): Collection
+    {
+        $filteredEntries = new ArrayCollection();
+        
+        foreach ($this->entries as $entry) {
+            $entryDate = $entry->getDate();
+            if ($entryDate && $this->datedebut && $this->datefin) {
+                if ($entryDate >= $this->datedebut && $entryDate <= $this->datefin) {
+                    $filteredEntries->add($entry);
+                }
+            }
+        }
+        
+        return $filteredEntries;
+    }
 }

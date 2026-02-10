@@ -11,6 +11,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: HealthentryRepository::class)]
+#[ORM\UniqueConstraint(columns: ['date', 'journal_id'])]
 class Healthentry
 {
     #[ORM\Id]
@@ -27,8 +28,8 @@ class Healthentry
     #[ORM\Column]
     private ?float $glycemie = null;
 
-    #[ORM\Column]
-    private ?float $tension = null;
+    #[ORM\Column(type: Types::STRING, length: 20)]
+    private ?string $tension = null;
 
     #[ORM\Column]
     private ?int $sommeil = null;
@@ -104,12 +105,12 @@ class Healthentry
         return $this;
     }
 
-    public function getTension(): ?float
+    public function getTension(): ?string
     {
         return $this->tension;
     }
 
-    public function setTension(float $tension): static
+    public function setTension(string $tension): static
     {
         $this->tension = $tension;
 

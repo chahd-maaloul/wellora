@@ -1,42 +1,214 @@
-{% extends 'base.html.twig' %}
+{#
+    Health Entry Show Page - Displays a single health entry with edit option
+#}
 
-{% block title %}Healthentry{% endblock %}
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Entrée du'|trans }} {{ healthentry.date|date('d/m/Y') }} - WellCare Connect{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/healthentry" class="breadcrumb-link">{{ 'Mes Entrées'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ healthentry.date|date('d/m/Y') }}</span>
+    </li>
+{% endblock %}
 
 {% block body %}
-    <h1>Healthentry</h1>
+<div class="min-h-full">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fa-solid fa-clipboard-list text-wellcare-600 dark:text-wellcare-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Entrée du'|trans }} {{ healthentry.date|date('d/m/Y') }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Vos données de santé pour cette journée'|trans }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <a href="/healthentry/{{ healthentry.id }}/edit" class="btn-primary">
+                    <i class="fa-solid fa-pen mr-2"></i>
+                    {{ 'Modifier'|trans }}
+                </a>
+                <a href="/health/accessible/journal-entry" class="btn-secondary">
+                    <i class="fa-solid fa-plus mr-2"></i>
+                    {{ 'Nouvelle Entrée'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ healthentry.id }}</td>
-            </tr>
-            <tr>
-                <th>Date</th>
-                <td>{{ healthentry.date ? healthentry.date|date('Y-m-d') : '' }}</td>
-            </tr>
-            <tr>
-                <th>Poids</th>
-                <td>{{ healthentry.poids }}</td>
-            </tr>
-            <tr>
-                <th>Glycemie</th>
-                <td>{{ healthentry.glycemie }}</td>
-            </tr>
-            <tr>
-                <th>Tension</th>
-                <td>{{ healthentry.tension }}</td>
-            </tr>
-            <tr>
-                <th>Sommeil</th>
-                <td>{{ healthentry.sommeil }}</td>
-            </tr>
-        </tbody>
-    </table>
+    {# Health Metrics Grid #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {# Weight #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-weight-scale text-wellcare-500"></i>
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Poids'|trans }}</span>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    {{ 'Normal'|trans }}
+                </span>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                {{ healthentry.poids|default('-') }} <span class="text-lg font-normal text-gray-500">kg</span>
+            </div>
+        </div>
 
-    <a href="{{ path('app_healthentry_index') }}">back to list</a>
+        {# Blood Sugar #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-droplet text-wellcare-500"></i>
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Glycémie'|trans }}</span>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    {{ 'Normal'|trans }}
+                </span>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                {{ healthentry.glycemie|default('-') }} <span class="text-lg font-normal text-gray-500">g/l</span>
+            </div>
+        </div>
 
-    <a href="{{ path('app_healthentry_edit', {'id': healthentry.id}) }}">edit</a>
+        {# Blood Pressure #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-heart-pulse text-wellcare-500"></i>
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Tension'|trans }}</span>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    {{ 'Normal'|trans }}
+                </span>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                {{ healthentry.tension|default('-') }} <span class="text-lg font-normal text-gray-500">mmHg</span>
+            </div>
+        </div>
 
-    {{ include('healthentry/_delete_form.html.twig') }}
+        {# Sleep #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bed text-wellcare-500"></i>
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ 'Sommeil'|trans }}</span>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    {{ 'Bon'|trans }}
+                </span>
+            </div>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                {{ healthentry.sommeil|default('-') }} <span class="text-lg font-normal text-gray-500">h</span>
+            </div>
+        </div>
+    </div>
+
+    {# Symptoms Section #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 mb-6">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            <i class="fa-solid fa-notes-medical text-wellcare-500 mr-2"></i>
+            {{ 'Symptômes'|trans }}
+        </h2>
+        
+        {% if healthentry.symptoms|length > 0 %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for symptom in healthentry.symptoms %}
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-900 dark:text-white">
+                                {{ symptom.type|title }}
+                            </span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ 'Intensité'|trans }}: {{ symptom.intensite }}/10
+                            </span>
+                        </div>
+                        {% if symptom.zone %}
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                <i class="fa-solid fa-location-dot mr-1"></i>
+                                {{ symptom.zone|title }}
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500 dark:text-gray-400 text-center py-4">
+                {{ 'Aucun symptôme enregistré pour cette journée'|trans }}
+            </p>
+        {% endif %}
+    </div>
+
+    {# Journal Reference #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            <i class="fa-solid fa-book text-wellcare-500 mr-2"></i>
+            {{ 'Informations du Journal'|trans }}
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Période du journal'|trans }}</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {% if healthentry.journal %}
+                        {{ healthentry.journal.datedebut|date('d/m/Y') }} - {{ healthentry.journal.datefin|date('d/m/Y') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Créé le'|trans }}</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {{ healthentry.date|date('d/m/Y') }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {# Link to Health Entries List #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 mt-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fa-solid fa-clipboard-list text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-900 dark:text-white">
+                        {{ 'Voir toutes mes entrées'|trans }}
+                    </h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Accéder à la liste complète de vos entrées de santé'|trans }}
+                    </p>
+                </div>
+            </div>
+            <a href="/healthentry" class="btn-secondary">
+                <i class="fa-solid fa-arrow-right mr-2"></i>
+                {{ 'Voir la liste'|trans }}
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}

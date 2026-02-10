@@ -21,12 +21,15 @@ class Symptom
     #[ORM\Column]
     private ?int $intensite = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTime $date_observation = null;
 
     #[ORM\ManyToOne(targetEntity: Healthentry::class, inversedBy: "symptoms")]
     #[ORM\JoinColumn(nullable: false)]
     private ?Healthentry $entry = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $zone = null;
 
     public function getId(): ?int
     {
@@ -87,6 +90,18 @@ class Symptom
     public function setEntry(?Healthentry $entry): static
     {
         $this->entry = $entry;
+
+        return $this;
+    }
+
+    public function getZone(): ?string
+    {
+        return $this->zone;
+    }
+
+    public function setZone(?string $zone): static
+    {
+        $this->zone = $zone;
 
         return $this;
     }
