@@ -18,6 +18,17 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/publication/parcours')]
 final class PublicationParcoursController extends AbstractController
 {
+    private const EXPERIENCE_FILTERS = [
+        'bad' => 'Bad',
+        'good' => 'good',
+        'excellent' => 'excellent',
+    ];
+
+    private const TYPE_PUBLICATION_FILTERS = [
+        'opinion' => 'opinion',
+        'event' => 'event',
+    ];
+
     #[Route(name: 'app_publication_parcours_index', methods: ['GET'])]
     public function index(
         Request $request,
@@ -26,25 +37,38 @@ final class PublicationParcoursController extends AbstractController
     ): Response
     {
         $parcoursId = $request->query->getInt('parcoursId');
+        $experienceQuery = trim((string) $request->query->get('experience', ''));
+        $experienceKey = strtolower($experienceQuery);
+        $selectedExperience = self::EXPERIENCE_FILTERS[$experienceKey] ?? null;
+        $typePublicationQuery = trim((string) $request->query->get('typePublication', ''));
+        $typePublicationKey = strtolower($typePublicationQuery);
+        $selectedTypePublication = self::TYPE_PUBLICATION_FILTERS[$typePublicationKey] ?? null;
         $selectedParcours = null;
-        $publications = [];
 
         if ($parcoursId > 0) {
             $selectedParcours = $parcoursDeSanteRepository->find($parcoursId);
         }
 
-        if ($selectedParcours) {
-            $publications = $publicationParcoursRepository->findBy(
-                ['ParcoursDeSante' => $selectedParcours],
-                ['datePublication' => 'DESC']
-            );
-        } else {
-            $publications = $publicationParcoursRepository->findBy([], ['datePublication' => 'DESC']);
-        }
+        $publications = $publicationParcoursRepository->findByFilters(
+            $selectedParcours,
+            $selectedExperience,
+            $selectedTypePublication
+        );
 
         return $this->render('publication_parcours/index.html.twig', [
             'publication_parcours' => $publications,
             'selected_parcours' => $selectedParcours,
+            'selected_experience' => $selectedExperience,
+            'selected_type_publication' => $selectedTypePublication,
+            'experience_filters' => [
+                'Bad' => 'Bad',
+                'Good' => 'good',
+                'Excellent' => 'excellent',
+            ],
+            'type_publication_filters' => [
+                'Opinion' => 'opinion',
+                'Event' => 'event',
+            ],
         ]);
     }
 

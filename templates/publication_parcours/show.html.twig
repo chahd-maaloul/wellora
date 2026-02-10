@@ -4,6 +4,10 @@
 
 {% block body %}
     <h1>PublicationParcours</h1>
+    {% set experience_value = publication_parcour.experience|default('N/A') %}
+    {% set experience_key = experience_value|lower %}
+    {% set experience_icon = experience_key == 'bad' ? 'fa-face-frown' : (experience_key == 'excellent' ? 'fa-face-laugh-beam' : (experience_key == 'good' ? 'fa-face-smile' : 'fa-face-meh')) %}
+    {% set experience_color = experience_key == 'bad' ? 'text-danger' : (experience_key == 'excellent' ? 'text-success' : (experience_key == 'good' ? 'text-primary' : 'text-muted')) %}
 
     <table class="table">
         <tbody>
@@ -26,6 +30,16 @@
             <tr>
                 <th>DatePublication</th>
                 <td>{{ publication_parcour.datePublication ? publication_parcour.datePublication|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Experience</th>
+                <td class="{{ experience_color }}">
+                    <i class="mr-1 fa-solid {{ experience_icon }}"></i>{{ experience_value }}
+                </td>
+            </tr>
+            <tr>
+                <th>TypePublication</th>
+                <td>{{ publication_parcour.typePublication }}</td>
             </tr>
             <tr>
                 <th>TextPublication</th>

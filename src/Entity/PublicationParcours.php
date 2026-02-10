@@ -67,6 +67,22 @@ class PublicationParcours
     )]
     private ?string $textPublication = null;
 
+    #[ORM\Column(length: 20)]
+    #[Assert\NotBlank(message: 'The experience is required')]
+    #[Assert\Choice(
+        choices: ['Bad', 'good', 'excellent'],
+        message: 'The experience must be one of: Bad, good, excellent'
+    )]
+    private ?string $experience = null;
+
+    #[ORM\Column(length: 20)]
+    #[Assert\NotBlank(message: 'The publication type is required')]
+    #[Assert\Choice(
+        choices: ['opinion', 'event'],
+        message: 'The publication type must be one of: opinion, event'
+    )]
+    private ?string $typePublication = null;
+
     public function __construct()
     {
         $this->commentairePublications = new ArrayCollection();
@@ -82,7 +98,7 @@ class PublicationParcours
         return $this->imagePublication;
     }
 
-    public function setImagePublication(string $imagePublication): static
+    public function setImagePublication(?string $imagePublication): static
     {
         $this->imagePublication = $imagePublication;
 
@@ -94,7 +110,7 @@ class PublicationParcours
         return $this->ambiance;
     }
 
-    public function setAmbiance(int $ambiance): static
+    public function setAmbiance(?int $ambiance): static
     {
         $this->ambiance = $ambiance;
 
@@ -106,7 +122,7 @@ class PublicationParcours
         return $this->securite;
     }
 
-    public function setSecurite(int $securite): static
+    public function setSecurite(?int $securite): static
     {
         $this->securite = $securite;
 
@@ -172,9 +188,33 @@ class PublicationParcours
         return $this->textPublication;
     }
 
-    public function setTextPublication(string $textPublication): static
+    public function setTextPublication(?string $textPublication): static
     {
         $this->textPublication = $textPublication;
+
+        return $this;
+    }
+
+    public function getExperience(): ?string
+    {
+        return $this->experience;
+    }
+
+    public function setExperience(?string $experience): static
+    {
+        $this->experience = $experience;
+
+        return $this;
+    }
+
+    public function getTypePublication(): ?string
+    {
+        return $this->typePublication;
+    }
+
+    public function setTypePublication(?string $typePublication): static
+    {
+        $this->typePublication = $typePublication;
 
         return $this;
     }

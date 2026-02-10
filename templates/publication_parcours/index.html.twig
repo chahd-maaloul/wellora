@@ -24,10 +24,17 @@
             <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
                 <div>
                     {% if selected_parcours %}
+                        {% set all_publications_params = {} %}
+                        {% if selected_experience %}
+                            {% set all_publications_params = all_publications_params|merge({'experience': selected_experience}) %}
+                        {% endif %}
+                        {% if selected_type_publication %}
+                            {% set all_publications_params = all_publications_params|merge({'typePublication': selected_type_publication}) %}
+                        {% endif %}
                         <p class="text-sm text-gray-600 dark:text-gray-300">
                             Showing publications for <span class="font-semibold text-gray-900 dark:text-white">{{ selected_parcours.nomParcours }}</span>
                         </p>
-                        <a href="{{ path('app_publication_parcours_index') }}" class="text-xs text-wellcare-500 hover:text-wellcare-600">
+                        <a href="{{ path('app_publication_parcours_index', all_publications_params) }}" class="text-xs text-wellcare-500 hover:text-wellcare-600">
                             View publications of all the community
                         </a>
                     {% else %}
@@ -36,14 +43,47 @@
                         </p>
                     {% endif %}
                 </div>
-                <a href="{{ selected_parcours ? path('app_publication_parcours_new', {'parcoursId': selected_parcours.id}) : path('app_parcours_de_sante_index') }}" class="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                    <i class="fa-solid fa-plus"></i> Create publication
-                </a>
+                <div class="flex flex-wrap items-center gap-2">
+                    <form method="get" action="{{ path('app_publication_parcours_index') }}" class="flex items-center gap-2">
+                        {% if selected_parcours %}
+                            <input type="hidden" name="parcoursId" value="{{ selected_parcours.id }}">
+                        {% endif %}
+                        <select name="experience" class="px-3 py-2 text-xs border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <option value="">All experiences</option>
+                            {% for label, value in experience_filters %}
+                                <option value="{{ value }}" {{ selected_experience == value ? 'selected' : '' }}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="typePublication" class="px-3 py-2 text-xs border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <option value="">All types</option>
+                            {% for label, value in type_publication_filters %}
+                                <option value="{{ value }}" {{ selected_type_publication == value ? 'selected' : '' }}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" title="Filter" aria-label="Filter">
+                            <i class="fa-solid fa-filter"></i>
+                        </button>
+                        {% if selected_experience or selected_type_publication %}
+                            <a href="{{ path('app_publication_parcours_index', selected_parcours ? {'parcoursId': selected_parcours.id} : {}) }}" class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700" title="Reset" aria-label="Reset">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </a>
+                        {% endif %}
+                    </form>
+                    <a href="{{ selected_parcours ? path('app_publication_parcours_new', {'parcoursId': selected_parcours.id}) : path('app_parcours_de_sante_index') }}" class="inline-flex items-center justify-center w-9 h-9 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" title="Add publication" aria-label="Add publication">
+                        <i class="fa-solid fa-plus"></i>
+                    </a>
+                </div>
             </div>
 
             {% for publication_parcour in publication_parcours %}
                 {% set image = publication_parcour.imagePublication %}
                 {% set image_src = image %}
+                {% set experience_value = publication_parcour.experience|default('N/A') %}
+                {% set experience_key = experience_value|lower %}
+                {% set experience_icon = experience_key == 'bad' ? 'fa-face-frown' : (experience_key == 'excellent' ? 'fa-face-laugh-beam' : (experience_key == 'good' ? 'fa-face-smile' : 'fa-face-meh')) %}
+                {% set experience_color = experience_key == 'bad' ? 'text-red-600 dark:text-red-400' : (experience_key == 'excellent' ? 'text-emerald-600 dark:text-emerald-400' : (experience_key == 'good' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400')) %}
+                {% set type_value = publication_parcour.typePublication|default('opinion') %}
+                {% set type_label = type_value == 'event' ? 'Event' : 'Opinion' %}
                 {% if image %}
                     {% if image starts with 'http://' or image starts with 'https://' %}
                         {% set image_src = image %}
@@ -86,8 +126,14 @@
                                     <span class="flex items-center text-amber-500">
                                         <i class="mr-1 fa-solid fa-star"></i>{{ publication_parcour.ambiance }}/5 ambiance
                                     </span>
-                                    <span class="flex items-center text-green-600 dark:text-green-400">
+                                    <span class="flex items-center text-blue-900 dark:text-blue-300">
                                         <i class="mr-1 fa-solid fa-shield-halved"></i>{{ publication_parcour.securite }}/5 safety
+                                    </span>
+                                    <span class="flex items-center {{ experience_color }}">
+                                        <i class="mr-1 fa-solid {{ experience_icon }}"></i>{{ experience_value }}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                        {{ type_label }}
                                     </span>
                                 </div>
 
@@ -150,3 +196,5 @@
     </div>
 </div>
 {% endblock %}
+
+

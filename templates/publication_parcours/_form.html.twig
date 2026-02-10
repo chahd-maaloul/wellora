@@ -18,7 +18,7 @@
             {% endif %}
         </div>
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
                 {{ form_label(form.ambiance, 'Ambiance (1-5)', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
                 {{ form_widget(form.ambiance, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.ambiance.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'min': '1', 'max': '5'}}) }}
@@ -34,7 +34,27 @@
                 {{ form_widget(form.securite, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.securite.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'min': '1', 'max': '5'}}) }}
                 {% if form.securite.vars.errors|length > 0 %}
                     <div class="mt-1 text-sm text-red-600 dark:text-red-400">
-                        {{ form_errors(form.securite) }}
+                    {{ form_errors(form.securite) }}
+                </div>
+            {% endif %}
+            </div>
+
+            <div>
+                {{ form_label(form.experience, 'Experience', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                {{ form_widget(form.experience, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.experience.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
+                {% if form.experience.vars.errors|length > 0 %}
+                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form_errors(form.experience) }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                {{ form_label(form.typePublication, 'Publication Type', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                {{ form_widget(form.typePublication, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.typePublication.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
+                {% if form.typePublication.vars.errors|length > 0 %}
+                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form_errors(form.typePublication) }}
                     </div>
                 {% endif %}
             </div>

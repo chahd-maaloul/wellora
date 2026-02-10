@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\ParcoursDeSante;
 use App\Entity\PublicationParcours;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,6 +15,39 @@ class PublicationParcoursRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, PublicationParcours::class);
+    }
+
+    /**
+     * @return PublicationParcours[]
+     */
+    public function findByFilters(
+        ?ParcoursDeSante $parcoursDeSante = null,
+        ?string $experience = null,
+        ?string $typePublication = null
+    ): array
+    {
+        $qb = $this->createQueryBuilder('pp')
+            ->orderBy('pp.datePublication', 'DESC');
+
+        if ($parcoursDeSante !== null) {
+            $qb
+                ->andWhere('pp.ParcoursDeSante = :parcours')
+                ->setParameter('parcours', $parcoursDeSante);
+        }
+
+        if ($experience !== null && $experience !== '') {
+            $qb
+                ->andWhere('pp.experience = :experience')
+                ->setParameter('experience', $experience);
+        }
+
+        if ($typePublication !== null && $typePublication !== '') {
+            $qb
+                ->andWhere('pp.typePublication = :typePublication')
+                ->setParameter('typePublication', $typePublication);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     //    /**

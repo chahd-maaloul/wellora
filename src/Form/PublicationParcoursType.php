@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\PublicationParcours;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -62,6 +63,23 @@ class PublicationParcoursType extends AbstractType
                     'min' => 1,
                     'max' => 5,
                 ],
+            ])
+            ->add('experience', ChoiceType::class, [
+                'label' => 'Experience',
+                'choices' => [
+                    'Bad' => 'Bad',
+                    'Good' => 'good',
+                    'Excellent' => 'excellent',
+                ],
+                'placeholder' => 'Select an experience',
+            ])
+            ->add('typePublication', ChoiceType::class, [
+                'label' => 'Publication Type',
+                'choices' => [
+                    'Opinion' => 'opinion',
+                    'Event' => 'event',
+                ],
+                'placeholder' => 'Select a type',
             ])
             ->add('datePublication', DateType::class, [
                 'label' => 'Publication Date',
