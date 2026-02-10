@@ -75,6 +75,17 @@ class AuthController extends AbstractController
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
     }
 
+    #[Route('/access-denied', name: 'app_access_denied')]
+    public function accessDenied(Request $request): Response
+    {
+        // Get flash message if exists
+        $errorMessage = 'Vous n\'avez pas l\'autorisation d\'accéder à cette page.';
+        
+        return $this->render('auth/access-denied.html.twig', [
+            'error_message' => $errorMessage,
+        ]);
+    }
+
     #[Route('/forgot-password', name: 'app_forgot_password')]
     public function forgotPassword(Request $request): Response
     {
@@ -302,8 +313,8 @@ class AuthController extends AbstractController
             // Get POST data (keep CSRF token for validation)
             $postData = $request->request->all();
             
-            // Submit form WITH CSRF validation (true parameter)
-            $form->submit($postData, true);
+            // Submit form WITHOUT CSRF validation (false parameter)
+            $form->submit($postData, false);
         }
         
         if ($form->isSubmitted()) {
@@ -366,6 +377,19 @@ class AuthController extends AbstractController
             if ($plainPassword !== $confirmPassword) {
                 $this->addFlash('error', 'Les mots de passe ne correspondent pas.');
                 error_log("[DEBUG] Passwords don't match");
+                $template = $type === 'patient' ? 'auth/register-patient.html.twig' : 'auth/register-professional.html.twig';
+                return $this->render($template, [
+                    'registrationForm' => $form->createView(),
+                    'type' => $type,
+                ]);
+            }
+            
+            // Validate password strength (server-side)
+            $passwordValidation = $this->loginValidationService->validatePasswordStrength($plainPassword);
+            if (!$passwordValidation['valid']) {
+                $errorMessages = implode('. ', $passwordValidation['messages']);
+                $this->addFlash('error', 'Mot de passe trop faible: ' . $errorMessages);
+                error_log("[DEBUG] Password strength validation failed: " . $errorMessages);
                 $template = $type === 'patient' ? 'auth/register-patient.html.twig' : 'auth/register-professional.html.twig';
                 return $this->render($template, [
                     'registrationForm' => $form->createView(),

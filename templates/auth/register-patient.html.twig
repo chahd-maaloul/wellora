@@ -167,7 +167,33 @@
     }"
     @submit="if (!canProceed) { console.log('Cannot proceed - canProceed:', canProceed, 'isSubmitting:', isSubmitting, 'step:', step); console.log('Form data:', {firstName, lastName, email, birthdate, phone, pw}); event.preventDefault(); alert('Please fill in all required fields correctly.'); } else { console.log('Form is valid, submitting...'); isSubmitting = true; event.target.submit(); }"
   >
-    <input type="hidden" name="_submit" value="1"><input type="hidden" name="_csrf_token" value="{{ csrf_token('registration') }}">
+    <input type="hidden" name="_submit" value="1">
+
+    {# Server-side Validation Errors Display #}
+    {% if registrationForm is defined and registrationForm.vars.errors|length > 0 %}
+      <div class="p-4 mb-4 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700 flash-alert">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <span class="font-semibold">Erreurs de validation:</span>
+            <ul class="mt-2 ml-4 list-disc list-inside">
+              {% for error in registrationForm.vars.errors %}
+                <li>{{ error.message }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <button @click="$event.target.closest('.flash-alert').style.opacity='0'; $event.target.closest('.flash-alert').style.transform='translateX(100%)'; setTimeout(() => $event.target.closest('.flash-alert').remove(), 500)" class="flex-shrink-0 ml-2 text-current transition-opacity opacity-60 hover:opacity-100">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    {% endif %}
 
     <div class="grid grid-cols-1 gap-0 lg:grid-cols-12">
       {# Left Panel - Progress & Trust Elements #}

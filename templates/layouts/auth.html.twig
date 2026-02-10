@@ -30,14 +30,68 @@
     
     <div id="app" class="flex flex-col min-h-full">
         
-        {# Flash Messages #}
+        {# Flash Messages - Auto-dismiss after 7 seconds with dark/light mode support #}
+        <div x-data="{
+            init() {
+                this.$nextTick(() => {
+                    const alerts = this.$el.querySelectorAll('.flash-alert');
+                    alerts.forEach((alert, index) => {
+                        setTimeout(() => {
+                            alert.style.opacity = '0';
+                            alert.style.transform = 'translateX(100%)';
+                            setTimeout(() => alert.remove(), 500);
+                        }, 7000 + (index * 500));
+                    });
+                });
+            }
+        }">
         {% for type, messages in app.flashes %}
             {% for message in messages %}
-                <div class="p-4 mb-4 mx-4 mt-4 text-sm rounded-lg {% if type == 'error' %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300{% else %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300{% endif %}" role="alert">
-                    <span class="font-medium">{{ type == 'error' ? 'Erreur:' : 'Succès:' }}</span> {{ message }}
+                <div class="flash-alert p-4 mb-4 mx-4 mt-4 text-sm rounded-lg transition-all duration-500 ease-in-out {% if type == 'error' %}bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border border-red-200 dark:border-red-700{% elseif type == 'warning' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700{% elseif type == 'success' %}bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border border-green-200 dark:border-green-700{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-700{% endif %}" role="alert">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 mt-0.5">
+                            {% if type == 'error' %}
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            {% elseif type == 'warning' %}
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            {% elseif type == 'success' %}
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            {% else %}
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <span class="font-semibold">
+                                {% if type == 'error' %}
+                                    Erreur:
+                                {% elseif type == 'warning' %}
+                                    Attention:
+                                {% elseif type == 'success' %}
+                                    Succès:
+                                {% else %}
+                                    Info:
+                                {% endif %}
+                            </span>
+                            <p class="mt-1">{{ message }}</p>
+                        </div>
+                        <button @click="$event.target.closest('.flash-alert').style.opacity='0'; $event.target.closest('.flash-alert').style.transform='translateX(100%)'; setTimeout(() => $event.target.closest('.flash-alert').remove(), 500)" class="flex-shrink-0 ml-2 text-current transition-opacity opacity-60 hover:opacity-100">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             {% endfor %}
         {% endfor %}
+        </div>
 
         {# Clean Header - Logo + Full Navigation #}
         <header class="sticky top-0 z-40 border-b border-gray-200 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md dark:border-gray-800" x-data="{ mobileOpen: false }">

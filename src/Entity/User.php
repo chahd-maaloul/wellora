@@ -100,6 +100,9 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $emailVerificationExpiresAt = null;
 
+    #[ORM\Column(length: 128, nullable: true)]
+    private ?string $lastSessionId = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -360,6 +363,17 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmailVerificationExpiresAt(?\DateTimeInterface $emailVerificationExpiresAt): self
     {
         $this->emailVerificationExpiresAt = $emailVerificationExpiresAt;
+        return $this;
+    }
+
+    public function getLastSessionId(): ?string
+    {
+        return $this->lastSessionId;
+    }
+
+    public function setLastSessionId(?string $lastSessionId): self
+    {
+        $this->lastSessionId = $lastSessionId;
         return $this;
     }
 

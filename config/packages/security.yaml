@@ -14,7 +14,7 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        
+            
         main:
             lazy: true
             provider: app_user_provider
@@ -30,21 +30,43 @@ security:
             login_throttling:
                 max_attempts: 5
                 interval: '15 minutes'
-
-    # Easy way to control access for large sections of your site
+            
+            # Custom error handler for access denied
+            access_denied_handler: App\Security\AccessDeniedHandler
+            access_denied_url: /access-denied
+            
+    # Access Control - Role-Based Authorization
     # Note: Only the *first* access control that matches will be used
     access_control:
-        - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/dashboard, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
-        - { path: ^/profile, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
-        - { path: ^/medecin, roles: ROLE_MEDECIN }
-        - { path: ^/coach, roles: ROLE_COACH }
-        - { path: ^/nutritionist, roles: ROLE_NUTRITIONIST }
+        # Public routes (no authentication required)
         - { path: ^/auth/, roles: PUBLIC_ACCESS }
         - { path: ^/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
-        - { path: ^/, roles: PUBLIC_ACCESS }
+        - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
+        - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/access-denied, roles: PUBLIC_ACCESS }
+        - { path: ^/api/, roles: PUBLIC_ACCESS }
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/health/accessible, roles: PUBLIC_ACCESS }
+        
+        # Admin only routes
+        - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/admin/, roles: ROLE_ADMIN }
+        
+        # Professional-specific routes
+        - { path: ^/doctor, roles: ROLE_MEDECIN }
+        - { path: ^/coach, roles: ROLE_COACH }
+        - { path: ^/nutritionist, roles: ROLE_NUTRITIONIST }
+        
+        # Protected routes (any authenticated user)
+        - { path: ^/dashboard, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        - { path: ^/profile, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST, ROLE_ADMIN] }
+        - { path: ^/appointments, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        - { path: ^/health, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        - { path: ^/nutrition, roles: [ROLE_PATIENT, ROLE_NUTRITIONIST] }
+        - { path: ^/teleconsultation, roles: [ROLE_PATIENT, ROLE_MEDECIN] }
+        - { path: ^/fitness, roles: [ROLE_PATIENT, ROLE_COACH] }
 
 when@test:
     security:

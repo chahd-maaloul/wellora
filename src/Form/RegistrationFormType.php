@@ -23,7 +23,7 @@ class RegistrationFormType extends AbstractType
             ->add('email', EmailType::class, [
                 'label' => 'Email',
                 'required' => true,
-                'attr' => ['class' => 'form-input', 'autocomplete' => 'email']
+                'attr' => ['class' => 'form-input', 'autocomplete' => 'email'],
             ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
@@ -79,9 +79,7 @@ class RegistrationFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => User::class,
-            'csrf_protection' => true,
-            'csrf_field_name' => '_csrf_token',
-            'csrf_token_id' => 'registration',
+            'csrf_protection' => false, // Disabled for registration
             'type' => 'patient', // Registration type: patient, medecin, coach, nutritionist
         ]);
     }
