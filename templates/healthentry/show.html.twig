@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Healthentry{% endblock %}
+
+{% block body %}
+    <h1>Healthentry</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ healthentry.id }}</td>
+            </tr>
+            <tr>
+                <th>Date</th>
+                <td>{{ healthentry.date ? healthentry.date|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Poids</th>
+                <td>{{ healthentry.poids }}</td>
+            </tr>
+            <tr>
+                <th>Glycemie</th>
+                <td>{{ healthentry.glycemie }}</td>
+            </tr>
+            <tr>
+                <th>Tension</th>
+                <td>{{ healthentry.tension }}</td>
+            </tr>
+            <tr>
+                <th>Sommeil</th>
+                <td>{{ healthentry.sommeil }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_healthentry_index') }}">back to list</a>
+
+    <a href="{{ path('app_healthentry_edit', {'id': healthentry.id}) }}">edit</a>
+
+    {{ include('healthentry/_delete_form.html.twig') }}
+{% endblock %}

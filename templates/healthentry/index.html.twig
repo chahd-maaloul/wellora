@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Healthentry index{% endblock %}
+
+{% block body %}
+    <h1>Healthentry index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Date</th>
+                <th>Poids</th>
+                <th>Glycemie</th>
+                <th>Tension</th>
+                <th>Sommeil</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for healthentry in healthentries %}
+            <tr>
+                <td>{{ healthentry.id }}</td>
+                <td>{{ healthentry.date ? healthentry.date|date('Y-m-d') : '' }}</td>
+                <td>{{ healthentry.poids }}</td>
+                <td>{{ healthentry.glycemie }}</td>
+                <td>{{ healthentry.tension }}</td>
+                <td>{{ healthentry.sommeil }}</td>
+                <td>
+                    <a href="{{ path('app_healthentry_show', {'id': healthentry.id}) }}">show</a>
+                    <a href="{{ path('app_healthentry_edit', {'id': healthentry.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_healthentry_new') }}">Create new</a>
+{% endblock %}
