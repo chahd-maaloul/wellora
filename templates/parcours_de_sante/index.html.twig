@@ -136,6 +136,52 @@
                             <input type="hidden" id="maxDistance" name="maxDistance" :value="maxValue">
                         </div>
 
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Number of Publications</label>
+                        <div
+                            x-data="publicationRangeFilter({{ minPublicationCount is not null ? minPublicationCount : 0 }}, {{ maxPublicationCount is not null ? maxPublicationCount : 200 }})"
+                            class="space-y-2"
+                        >
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="displayCount(minValue)"></span>
+                                <span x-text="displayCount(maxValue)"></span>
+                            </div>
+
+                            <div class="distance-range relative h-8">
+                                <div class="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full border border-[#00A790] bg-transparent"></div>
+                                <div
+                                    class="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#00A790]"
+                                    :style="`left: ${minPercent}%; right: ${100 - maxPercent}%;`"
+                                ></div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    step="1"
+                                    x-model.number="minValue"
+                                    @input="onMinInput"
+                                    aria-label="Minimum number of publications"
+                                >
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    step="1"
+                                    x-model.number="maxValue"
+                                    @input="onMaxInput"
+                                    aria-label="Maximum number of publications"
+                                >
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <span>0</span>
+                                <span>200</span>
+                            </div>
+
+                            <input type="hidden" id="minPublicationCount" name="minPublicationCount" :value="minValue">
+                            <input type="hidden" id="maxPublicationCount" name="maxPublicationCount" :value="maxValue">
+                        </div>
+
                         <div class="flex gap-2 pt-1">
                             <button type="submit" class="flex-1 px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                                 Search
@@ -154,13 +200,10 @@
         <div class="flex-1">
             <!-- View Toggle & Results Count -->
             <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                         <span class="font-semibold text-gray-900 dark:text-white">{{ parcours_de_santes|length }}</span> parcours available
                     </p>
-                    <a href="{{ path('app_parcours_de_sante_new') }}" class="ml-auto px-4 py-2 text-sm font-medium text-white bg-wellcare-500 rounded-lg hover:bg-wellcare-600">
-                        <i class="mr-1 fa-solid fa-plus"></i>Create New
-                    </a>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="flex p-1 bg-gray-100 rounded-lg dark:bg-gray-800">
@@ -180,6 +223,8 @@
                         <input type="hidden" name="localisation" value="{{ localisation|default('') }}">
                         <input type="hidden" name="minDistance" value="{{ minDistance is not null ? minDistance : '' }}">
                         <input type="hidden" name="maxDistance" value="{{ maxDistance is not null ? maxDistance : '' }}">
+                        <input type="hidden" name="minPublicationCount" value="{{ minPublicationCount is not null ? minPublicationCount : '' }}">
+                        <input type="hidden" name="maxPublicationCount" value="{{ maxPublicationCount is not null ? maxPublicationCount : '' }}">
 
                         <select
                             name="sortBy"
@@ -199,6 +244,9 @@
                             <option value="ASC" {{ sortOrder == 'ASC' ? 'selected' : '' }}>ASC</option>
                             <option value="DESC" {{ sortOrder == 'DESC' ? 'selected' : '' }}>DESC</option>
                         </select>
+                        <a href="{{ path('app_parcours_de_sante_new') }}" class="inline-flex items-center justify-center w-10 h-10 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" title="Add parcours" aria-label="Add parcours">
+                            <i class="fa-solid fa-plus"></i>
+                        </a>
                     </form>
                 </div>
             </div>
@@ -227,6 +275,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 text-xs text-gray-500">
                                 <span><i class="mr-1 fa-solid fa-ruler"></i>{{ parcours.distanceParcours }} km</span>
+                                <span title="Publications"><i class="mr-1 fa-solid fa-newspaper"></i>{{ parcours.publicationParcours|length }}</span>
                             </div>
                             <div class="text-xs text-gray-500">{{ parcours.dateCreation|date('M d, Y') }}</div>
                         </div>
@@ -252,6 +301,7 @@
                     </div>
                     <div class="text-right">
                         <p class="text-sm font-medium text-gray-900 dark:text-white">{{ parcours.distanceParcours }} km</p>
+                        <p class="text-xs text-gray-500"><i class="mr-1 fa-solid fa-newspaper"></i>{{ parcours.publicationParcours|length }}</p>
                         <p class="text-xs text-gray-500">{{ parcours.dateCreation|date('M d, Y') }}</p>
                     </div>
                     <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600">
@@ -298,6 +348,38 @@ function distanceRangeFilter(initialMin, initialMax) {
         },
         displayKm(value) {
             return `${Math.round(value)} km`;
+        }
+    };
+}
+
+function publicationRangeFilter(initialMin, initialMax) {
+    const minBound = 0;
+    const maxBound = 200;
+
+    const normalizedMin = Number.isFinite(initialMin) ? Math.max(minBound, Math.min(initialMin, maxBound)) : minBound;
+    const normalizedMax = Number.isFinite(initialMax) ? Math.max(minBound, Math.min(initialMax, maxBound)) : maxBound;
+
+    return {
+        minValue: Math.min(normalizedMin, normalizedMax),
+        maxValue: Math.max(normalizedMin, normalizedMax),
+        get minPercent() {
+            return ((this.minValue - minBound) / (maxBound - minBound)) * 100;
+        },
+        get maxPercent() {
+            return ((this.maxValue - minBound) / (maxBound - minBound)) * 100;
+        },
+        onMinInput() {
+            if (this.minValue > this.maxValue) {
+                this.minValue = this.maxValue;
+            }
+        },
+        onMaxInput() {
+            if (this.maxValue < this.minValue) {
+                this.maxValue = this.minValue;
+            }
+        },
+        displayCount(value) {
+            return `${Math.round(value)}`;
         }
     };
 }

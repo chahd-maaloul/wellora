@@ -24,6 +24,8 @@ class ParcoursDeSanteRepository extends ServiceEntityRepository
         ?string $localisationParcours,
         ?float $minDistance = null,
         ?float $maxDistance = null,
+        ?int $minPublicationCount = null,
+        ?int $maxPublicationCount = null,
         string $sortBy = 'date',
         string $sortOrder = 'DESC'
     ): array
@@ -52,6 +54,20 @@ class ParcoursDeSanteRepository extends ServiceEntityRepository
             $qb
                 ->andWhere('p.distanceParcours <= :maxDistance')
                 ->setParameter('maxDistance', $maxDistance);
+        }
+
+        if ($minPublicationCount !== null) {
+            $minPublicationCountSubquery = '(SELECT COUNT(ppCountMin.id) FROM App\Entity\PublicationParcours ppCountMin WHERE ppCountMin.ParcoursDeSante = p)';
+            $qb
+                ->andWhere($minPublicationCountSubquery . ' >= :minPublicationCount')
+                ->setParameter('minPublicationCount', $minPublicationCount);
+        }
+
+        if ($maxPublicationCount !== null) {
+            $maxPublicationCountSubquery = '(SELECT COUNT(ppCountMax.id) FROM App\Entity\PublicationParcours ppCountMax WHERE ppCountMax.ParcoursDeSante = p)';
+            $qb
+                ->andWhere($maxPublicationCountSubquery . ' <= :maxPublicationCount')
+                ->setParameter('maxPublicationCount', $maxPublicationCount);
         }
 
         $allowedSortFields = [

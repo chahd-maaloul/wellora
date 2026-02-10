@@ -22,11 +22,15 @@ final class ParcoursDeSanteController extends AbstractController
         $localisation = trim((string) $request->query->get('localisation', ''));
         $minDistanceRaw = trim((string) $request->query->get('minDistance', ''));
         $maxDistanceRaw = trim((string) $request->query->get('maxDistance', ''));
+        $minPublicationCountRaw = trim((string) $request->query->get('minPublicationCount', ''));
+        $maxPublicationCountRaw = trim((string) $request->query->get('maxPublicationCount', ''));
         $sortByRaw = strtolower(trim((string) $request->query->get('sortBy', 'date')));
         $sortOrderRaw = strtoupper(trim((string) $request->query->get('sortOrder', 'DESC')));
 
         $minDistance = $minDistanceRaw !== '' && is_numeric($minDistanceRaw) ? (float) $minDistanceRaw : null;
         $maxDistance = $maxDistanceRaw !== '' && is_numeric($maxDistanceRaw) ? (float) $maxDistanceRaw : null;
+        $minPublicationCount = $minPublicationCountRaw !== '' && is_numeric($minPublicationCountRaw) ? (int) $minPublicationCountRaw : null;
+        $maxPublicationCount = $maxPublicationCountRaw !== '' && is_numeric($maxPublicationCountRaw) ? (int) $maxPublicationCountRaw : null;
 
         if ($minDistance !== null && $minDistance < 0) {
             $minDistance = 0.0;
@@ -50,6 +54,32 @@ final class ParcoursDeSanteController extends AbstractController
             $maxDistance = $tempDistance;
         }
 
+        if ($minPublicationCount !== null && $minPublicationCount < 0) {
+            $minPublicationCount = 0;
+        }
+
+        if ($maxPublicationCount !== null && $maxPublicationCount < 0) {
+            $maxPublicationCount = 0;
+        }
+
+        if ($minPublicationCount !== null && $minPublicationCount > 200) {
+            $minPublicationCount = 200;
+        }
+
+        if ($maxPublicationCount !== null && $maxPublicationCount > 200) {
+            $maxPublicationCount = 200;
+        }
+
+        if (
+            $minPublicationCount !== null
+            && $maxPublicationCount !== null
+            && $minPublicationCount > $maxPublicationCount
+        ) {
+            $tempPublicationCount = $minPublicationCount;
+            $minPublicationCount = $maxPublicationCount;
+            $maxPublicationCount = $tempPublicationCount;
+        }
+
         $allowedSortBy = ['date', 'name', 'distance'];
         $sortBy = in_array($sortByRaw, $allowedSortBy, true) ? $sortByRaw : 'date';
         $sortOrder = $sortOrderRaw === 'ASC' ? 'ASC' : 'DESC';
@@ -60,6 +90,8 @@ final class ParcoursDeSanteController extends AbstractController
                 $localisation !== '' ? $localisation : null,
                 $minDistance,
                 $maxDistance,
+                $minPublicationCount,
+                $maxPublicationCount,
                 $sortBy,
                 $sortOrder
             ),
@@ -67,6 +99,8 @@ final class ParcoursDeSanteController extends AbstractController
             'localisation' => $localisation,
             'minDistance' => $minDistance,
             'maxDistance' => $maxDistance,
+            'minPublicationCount' => $minPublicationCount,
+            'maxPublicationCount' => $maxPublicationCount,
             'sortBy' => $sortBy,
             'sortOrder' => $sortOrder,
         ]);
