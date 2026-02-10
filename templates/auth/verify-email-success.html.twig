@@ -59,11 +59,52 @@
         {# Title #}
         <div class="mb-6 text-center">
           <h1 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Félicitations !</h1>
-          <p class="text-gray-600 dark:text-gray-400">Votre adresse email a été vérifiée avec succès.</p>
+          <p class="text-gray-600 dark:text-gray-400">
+            {% if userType == 'professional' %}
+              Votre adresse email a été vérifiée avec succès !<br>
+              <span class="text-wellcare-600 dark:text-wellcare-400">Un administrateur va vérifier vos documents sous 24-48 heures.</span>
+            {% else %}
+              Votre adresse email a été vérifiée avec succès.
+            {% endif %}
+          </p>
         </div>
+
+        {% if userType == 'professional' %}
+          {# Professional-specific message #}
+          <div class="p-4 mb-8 border bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-200 dark:border-wellcare-800 rounded-xl">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-wellcare-600 dark:text-wellcare-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div>
+                <h3 class="text-sm font-semibold text-wellcare-800 dark:text-wellcare-300">
+                  Étape suivante pour les professionnels de santé
+                </h3>
+                <p class="mt-1 text-sm text-wellcare-700 dark:text-wellcare-400">
+                  Un administrateur va vérifier vos documents sous <strong>24-48 heures</strong>.
+                  Vous recevrez un email de confirmation une fois votre compte validé.
+                </p>
+              </div>
+            </div>
+          </div>
+        {% endif %}
 
         {# Checkmarks #}
         <div class="mb-8 space-y-3">
+          <div class="flex items-center gap-3 text-green-600 dark:text-green-400">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-sm font-medium">Votre adresse email est vérifiée</span>
+          </div>
+          {% if userType == 'professional' %}
+          <div class="flex items-center gap-3 text-wellcare-600 dark:text-wellcare-400">
+            <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-sm font-medium">En attente de validation admin (24-48h)</span>
+          </div>
+          {% else %}
           <div class="flex items-center gap-3 text-green-600 dark:text-green-400">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -76,12 +117,7 @@
             </svg>
             <span class="text-sm font-medium">Vous pouvez accéder à tous nos services</span>
           </div>
-          <div class="flex items-center gap-3 text-green-600 dark:text-green-400">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-sm font-medium">Prenez rendez-vous avec des professionnels de santé</span>
-          </div>
+          {% endif %}
         </div>
 
         {# Login Button #}
@@ -94,7 +130,11 @@
 
         {# Features Preview #}
         <div class="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
-          <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Après connexion, vous pourrez :</p>
+          {% if userType == 'professional' %}
+            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Après validation de votre compte par l'administrateur, vous pourrez :</p>
+          {% else %}
+            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Après connexion, vous pourrez :</p>
+          {% endif %}
           <div class="grid grid-cols-4 gap-4 text-center">
             <div class="flex flex-col items-center gap-2">
               <div class="flex items-center justify-center w-12 h-12 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">

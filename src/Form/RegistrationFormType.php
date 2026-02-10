@@ -79,7 +79,9 @@ class RegistrationFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => User::class,
-            'csrf_protection' => false, // Disabled for registration to work with Alpine.js AJAX submission
+            'csrf_protection' => true,
+            'csrf_field_name' => '_csrf_token',
+            'csrf_token_id' => 'registration',
             'type' => 'patient', // Registration type: patient, medecin, coach, nutritionist
         ]);
     }

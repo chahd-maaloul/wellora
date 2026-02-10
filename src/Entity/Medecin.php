@@ -37,10 +37,6 @@ class Medecin extends User
     #[ORM\Column(type: Types::STRING, length: 50)]
     private ?string $specialite = null;
 
-    #[ORM\Column(length: 100, unique: true)]
-    #[Assert\NotBlank(message: 'Le numéro de licence est obligatoire')]
-    private ?string $licenseNumber = null;
-
     #[ORM\Column(name: 'years_of_experience')]
     #[Assert\PositiveOrZero(message: 'Les années d\'expérience doivent être positives')]
     private int $yearsOfExperience = 0;
@@ -63,17 +59,6 @@ class Medecin extends User
     public function setSpecialite(?string $specialite): self
     {
         $this->specialite = $specialite;
-        return $this;
-    }
-
-    public function getLicenseNumber(): ?string
-    {
-        return $this->licenseNumber;
-    }
-
-    public function setLicenseNumber(string $licenseNumber): self
-    {
-        $this->licenseNumber = $licenseNumber;
         return $this;
     }
 

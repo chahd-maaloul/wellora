@@ -48,6 +48,15 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getOneOrNullResult();
     }
 
+    public function findOneByLicenseNumber(string $licenseNumber): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.licenseNumber = :licenseNumber')
+            ->setParameter('licenseNumber', $licenseNumber)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function findActiveUsers(): array
     {
         return $this->createQueryBuilder('u')

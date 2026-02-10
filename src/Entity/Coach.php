@@ -11,10 +11,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: CoachRepository::class)]
 class Coach extends User
 {
-    #[ORM\Column(length: 100, unique: true)]
-    #[Assert\NotBlank(message: 'Le numéro de licence est obligatoire')]
-    private ?string $licenseNumber = null;
-
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $nom = null;
 
@@ -37,17 +33,6 @@ class Coach extends User
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $verificationDate = null;
-
-    public function getLicenseNumber(): ?string
-    {
-        return $this->licenseNumber;
-    }
-
-    public function setLicenseNumber(string $licenseNumber): self
-    {
-        $this->licenseNumber = $licenseNumber;
-        return $this;
-    }
 
     public function getNom(): ?string
     {

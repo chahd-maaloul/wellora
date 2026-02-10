@@ -30,23 +30,21 @@ class EmailVerificationService
         $verificationToken = bin2hex(random_bytes(32));
         $verificationExpiresAt = new \DateTime('+' . self::VERIFICATION_TOKEN_EXPIRY_HOURS . ' hours');
 
-        // Use Doctrine Query Builder for the update
-        $this->entityManager->createQueryBuilder()
-            ->update('App\Entity\User', 'u')
-            ->set('u.emailVerificationToken', ':token')
-            ->set('u.emailVerificationExpiresAt', ':expires')
-            ->where('u.email = :email')
-            ->setParameter('token', $verificationToken)
-            ->setParameter('expires', $verificationExpiresAt)
-            ->setParameter('email', $user->getEmail())
-            ->getQuery()
-            ->execute();
+        // Set token on user entity
+        $user->setEmailVerificationToken($verificationToken);
+        $user->setEmailVerificationExpiresAt($verificationExpiresAt);
         
-        $this->entityManager->clear(); // Clear entity manager to ensure fresh data
+        // Persist and flush
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+        
+        // Refresh to ensure data is saved
+        $this->entityManager->refresh($user);
 
-        // Send verification email
+        // Build verification URL
         $verificationUrl = $this->appBaseUrl . '/verify-email?token=' . $verificationToken;
         
+        // Send verification email
         $email = (new TemplatedEmail())
             ->from(new Address($this->noreplyAddress, 'WellCare Connect'))
             ->to($user->getEmail())

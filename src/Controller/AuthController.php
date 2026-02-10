@@ -299,19 +299,11 @@ class AuthController extends AbstractController
             $postKeys = array_keys($request->request->all());
             error_log("[DEBUG] POST data keys: " . implode(', ', $postKeys));
             
-            // Get POST data and remove CSRF token to avoid validation errors
+            // Get POST data (keep CSRF token for validation)
             $postData = $request->request->all();
             
-            // Remove all potential CSRF token fields
-            foreach (array_keys($postData) as $key) {
-                if (stripos($key, 'token') !== false || stripos($key, 'csrf') !== false) {
-                    error_log("[DEBUG] Removing CSRF field: " . $key);
-                    unset($postData[$key]);
-                }
-            }
-            
-            // Submit form without CSRF validation
-            $form->submit($postData, false);
+            // Submit form WITH CSRF validation (true parameter)
+            $form->submit($postData, true);
         }
         
         if ($form->isSubmitted()) {
@@ -320,6 +312,21 @@ class AuthController extends AbstractController
             error_log("[DEBUG] Form submitted - email: " . $user->getEmail());
             error_log("[DEBUG] Form submitted - firstName: " . $user->getFirstName());
             error_log("[DEBUG] Form submitted - lastName: " . $user->getLastName());
+            
+            // Handle birthdate from hidden field (format: YYYY-MM-DD)
+            $birthdateValue = $request->request->get('birthdate');
+            error_log("[DEBUG] Raw birthdate value from form: " . ($birthdateValue ?: 'NOT SET'));
+            if (!empty($birthdateValue)) {
+                try {
+                    $birthdate = \DateTime::createFromFormat('Y-m-d', $birthdateValue);
+                    if ($birthdate !== false) {
+                        $user->setBirthdate($birthdate);
+                        error_log("[DEBUG] Birthdate parsed successfully: " . $birthdate->format('Y-m-d'));
+                    }
+                } catch (\Exception $e) {
+                    error_log("[DEBUG] Exception parsing birthdate: " . $e->getMessage());
+                }
+            }
             
             // Validate agreeTerms checkbox
             $agreeTerms = $form->get('agreeTerms')->getData();
@@ -376,6 +383,36 @@ class AuthController extends AbstractController
                     'registrationForm' => $form->createView(),
                     'type' => $type,
                 ]);
+            }
+            
+            // Validate phone uniqueness (if phone is provided)
+            $phone = $user->getPhone();
+            if (!empty($phone)) {
+                $existingPhoneUser = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
+                if ($existingPhoneUser) {
+                    $this->addFlash('error', 'Ce numéro de téléphone est déjà utilisé par un autre compte.');
+                    error_log("[DEBUG] Phone already exists: " . $phone);
+                    $template = $type === 'patient' ? 'auth/register-patient.html.twig' : 'auth/register-professional.html.twig';
+                    return $this->render($template, [
+                        'registrationForm' => $form->createView(),
+                        'type' => $type,
+                    ]);
+                }
+            }
+            
+            // Validate license number uniqueness (for professionals)
+            $licenseNumber = $request->request->get('license_number');
+            if (!empty($licenseNumber) && in_array($type, ['medecin', 'coach', 'nutritionist'])) {
+                $existingLicenseUser = $this->entityManager->getRepository(User::class)->findOneBy(['licenseNumber' => $licenseNumber]);
+                if ($existingLicenseUser) {
+                    $this->addFlash('error', 'Ce numéro de licence est déjà utilisé par un autre professionnel.');
+                    error_log("[DEBUG] License number already exists: " . $licenseNumber);
+                    $template = $type === 'patient' ? 'auth/register-patient.html.twig' : 'auth/register-professional.html.twig';
+                    return $this->render($template, [
+                        'registrationForm' => $form->createView(),
+                        'type' => $type,
+                    ]);
+                }
             }
             
             // Hash password
@@ -513,9 +550,9 @@ class AuthController extends AbstractController
                 
                 $successMessage = match ($userClass) {
                     Patient::class => 'Votre compte a été créé avec succès ! Veuillez vérifier votre email pour activer votre compte.',
-                    Medecin::class => 'Votre compte médecin a été créé avec succès ! Un administrateur va vérifier vos documents sous 24-48 heures.',
-                    Coach::class => 'Votre compte coach a été créé avec succès ! Un administrateur va vérifier vos documents sous 24-48 heures.',
-                    Nutritionist::class => 'Votre compte nutritionniste a été créé avec succès ! Un administrateur va vérifier vos documents sous 24-48 heures.',
+                    Medecin::class => 'Votre compte médecin a été créé avec succès ! Veuillez vérifier votre email. Un administrateur vérifiera vos documents sous 24-48 heures.',
+                    Coach::class => 'Votre compte coach a été créé avec succès ! Veuillez vérifier votre email. Un administrateur vérifiera vos documents sous 24-48 heures.',
+                    Nutritionist::class => 'Votre compte nutritionniste a été créé avec succès ! Veuillez vérifier votre email. Un administrateur vérifiera vos documents sous 24-48 heures.',
                     default => 'Votre compte a été créé avec succès !',
                 };
                 
@@ -548,8 +585,12 @@ class AuthController extends AbstractController
             $user = $this->emailVerificationService->verifyEmail($token);
             
             if ($user) {
-                // Set success flash message
-                $this->addFlash('success', 'Votre adresse email a été vérifiée avec succès ! Bienvenue sur WellCare Connect.');
+                // Set success flash message with user type
+                if ($user instanceof Medecin || $user instanceof Coach || $user instanceof Nutritionist) {
+                    $this->addFlash('success', 'Votre adresse email a été vérifiée avec succès ! Un administrateur va vérifier vos documents sous 24-48 heures.');
+                } else {
+                    $this->addFlash('success', 'Votre adresse email a été vérifiée avec succès ! Bienvenue sur WellCare Connect.');
+                }
                 
                 // Redirect to verification success page (NOT auto-login)
                 return $this->redirectToRoute('app_verify_email_success');
@@ -571,9 +612,30 @@ class AuthController extends AbstractController
     #[Route('/verify-email/success', name: 'app_verify_email_success')]
     public function verifyEmailSuccess(Request $request): Response
     {
-        // This page is shown after successful email verification
-        // User must log in manually to access their dashboard
-        return $this->render('auth/verify-email-success.html.twig');
+        // Get user from session (if logged in) or from token verification
+        $user = $this->getUser();
+        
+        // Determine user type for appropriate message
+        $userType = 'patient';
+        $userRole = null;
+        
+        if ($user) {
+            if ($user instanceof Medecin) {
+                $userType = 'professional';
+                $userRole = 'médecin';
+            } elseif ($user instanceof Coach) {
+                $userType = 'professional';
+                $userRole = 'coach';
+            } elseif ($user instanceof Nutritionist) {
+                $userType = 'professional';
+                $userRole = 'nutritionniste';
+            }
+        }
+        
+        return $this->render('auth/verify-email-success.html.twig', [
+            'userType' => $userType,
+            'userRole' => $userRole,
+        ]);
     }
 
     #[Route('/api/resend-verification-email', name: 'app_resend_verification_email', methods: ['POST'])]
@@ -624,6 +686,43 @@ class AuthController extends AbstractController
             'level' => $result['level'],
             'errors' => $result['messages'],
             'requirements' => $result['requirements']
+        ]);
+    }
+    
+    #[Route('/api/check-license-number', name: 'app_check_license_number', methods: ['POST'])]
+    public function checkLicenseNumber(Request $request): JsonResponse
+    {
+        $licenseNumber = $request->request->get('license_number', '');
+        $excludeEmail = $request->request->get('exclude_email', '');
+        
+        if (empty($licenseNumber)) {
+            return $this->json([
+                'available' => true,
+                'message' => ''
+            ]);
+        }
+        
+        // Find user with this license number
+        $user = $this->entityManager->getRepository(User::class)->findOneByLicenseNumber($licenseNumber);
+        
+        if ($user) {
+            // Check if it's the same user (for editing)
+            if (!empty($excludeEmail) && $user->getEmail() === $excludeEmail) {
+                return $this->json([
+                    'available' => true,
+                    'message' => ''
+                ]);
+            }
+            
+            return $this->json([
+                'available' => false,
+                'message' => 'Ce numéro de licence est déjà utilisé par un autre professionnel.'
+            ]);
+        }
+        
+        return $this->json([
+            'available' => true,
+            'message' => ''
         ]);
     }
     

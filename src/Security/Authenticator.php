@@ -56,7 +56,14 @@ class Authenticator extends AbstractLoginFormAuthenticator
                     return $user;
                 }
                 
-                // For professionals, check verification status
+                // Check if email is verified (for ALL user types)
+                if (!$user->isEmailVerified()) {
+                    throw new CustomUserMessageAuthenticationException(
+                        'Veuillez vérifier votre adresse email avant de vous connecter.'
+                    );
+                }
+                
+                // For professionals, check admin verification status
                 if ($hasProfessionalRole && method_exists($user, 'isVerifiedByAdmin')) {
                     if (!$user->isVerifiedByAdmin()) {
                         throw new CustomUserMessageAuthenticationException(

@@ -24,6 +24,7 @@ use Symfony\Component\Uid\Uuid;
     'ROLE_ADMIN' => Administrator::class,
 ])]
 #[UniqueEntity(fields: ['email'], message: 'Cette adresse email est déjà utilisée')]
+#[UniqueEntity(fields: ['licenseNumber'], message: 'Ce numéro de licence est déjà utilisé', groups: ['Professional'])]
 abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -61,6 +62,10 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $address = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\NotBlank(message: 'Le numéro de licence est obligatoire', groups: ['Professional'])]
+    private ?string $licenseNumber = null;
 
     #[ORM\Column]
     private bool $isActive = true;
@@ -206,6 +211,17 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAddress(?string $address): self
     {
         $this->address = $address;
+        return $this;
+    }
+
+    public function getLicenseNumber(): ?string
+    {
+        return $this->licenseNumber;
+    }
+
+    public function setLicenseNumber(?string $licenseNumber): self
+    {
+        $this->licenseNumber = $licenseNumber;
         return $this;
     }
 
