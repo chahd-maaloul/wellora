@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Entity\Healthjournal;
 use App\Form\HealthjournalType;
 use App\Repository\HealthjournalRepository;
+use App\Repository\HealthentryRepository;
+use App\Repository\SymptomRepository;
+
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,10 +48,33 @@ final class HealthjournalController extends AbstractController
     #[Route('/{id}', name: 'app_healthjournal_show', methods: ['GET'])]
     public function show(Healthjournal $healthjournal): Response
     {
+        // Collect all symptoms from all entries
+        $symptoms = [];
+        foreach ($healthjournal->getEntries() as $entry) {
+            foreach ($entry->getSymptoms() as $symptom) {
+                $symptoms[] = $symptom;
+            }
+        }
+
         return $this->render('healthjournal/show.html.twig', [
             'healthjournal' => $healthjournal,
+            'healthEntries' => $healthjournal->getEntries(),
+            'symptoms' => $symptoms,
         ]);
     }
+    #[Route('/{id}/dashboard', name: 'app_healthjournal_dashboard', methods: ['GET'])]
+public function dashboard(Healthjournal $healthjournal, HealthentryRepository $entryRepo, SymptomRepository $symptomRepo): Response
+{
+    // Get all entries and symptoms for this journal
+    $entries = $entryRepo->findBy(['healthjournal' => $healthjournal], ['date' => 'ASC']);
+    $symptoms = $symptomRepo->findBy(['healthjournal' => $healthjournal]);
+
+    return $this->render('health/analytics/dashboard.html.twig', [
+        'healthjournal' => $healthjournal,
+        'healthEntries' => $entries,
+        'symptoms' => $symptoms,
+    ]);
+}
 
     #[Route('/{id}/edit', name: 'app_healthjournal_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Healthjournal $healthjournal, EntityManagerInterface $entityManager): Response
