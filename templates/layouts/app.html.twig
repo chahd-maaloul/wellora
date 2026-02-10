@@ -342,7 +342,7 @@
                         </li>
 
                         {# Health Trail Module #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/trail']) }" x-show="!collapsed || isGroupActive(['/trail'])">
+                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/trail', '/parcours/de/sante']) }" x-show="!collapsed || isGroupActive(['/trail', '/parcours/de/sante'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
                                 class="w-full sidebar-link sidebar-link-inactive"
@@ -366,16 +366,16 @@
                                     <a href="/trail/dashboard" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/dashboard') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Dashboard</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/trail/discover" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/discover') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Découvrir Trails</a>
+                                    <a href="{{ path('app_parcours_de_sante_index') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/parcours/de/sante') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Discover Trails</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/trail/my-trails" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/my-trails') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mes Trails</a>
+                                    <a href="/trail/my-trails" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/my-trails') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">My Trails</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/trail/create" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/create') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Créer Trail</a>
+                                    <a href="{{ path('app_parcours_de_sante_new') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/parcours/de/sante/new') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Create Trail</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/trail/publications/feed" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/publications/feed') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Publications</a>
+                                    <a href="{{ path('app_publication_parcours_index') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/publication/parcours') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Publications</a>
                                 </li>
                                 {# Map Sub-menu #}
                                 <li role="none" x-data="{ mapOpen: false }" class="mt-2">

@@ -24,19 +24,9 @@
             <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
                 <div>
                     {% if selected_parcours %}
-                        {% set all_publications_params = {} %}
-                        {% if selected_experience %}
-                            {% set all_publications_params = all_publications_params|merge({'experience': selected_experience}) %}
-                        {% endif %}
-                        {% if selected_type_publication %}
-                            {% set all_publications_params = all_publications_params|merge({'typePublication': selected_type_publication}) %}
-                        {% endif %}
                         <p class="text-sm text-gray-600 dark:text-gray-300">
                             Showing publications for <span class="font-semibold text-gray-900 dark:text-white">{{ selected_parcours.nomParcours }}</span>
                         </p>
-                        <a href="{{ path('app_publication_parcours_index', all_publications_params) }}" class="text-xs text-wellcare-500 hover:text-wellcare-600">
-                            View publications of all the community
-                        </a>
                     {% else %}
                         <p class="text-sm text-gray-600 dark:text-gray-300">
                             All community publications

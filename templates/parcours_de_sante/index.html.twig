@@ -230,7 +230,7 @@
                             onchange="this.form.submit()"
                             class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         >
-                            <option value="date" {{ sortBy == 'date' ? 'selected' : '' }}>Recently Created</option>
+                            <option value="date" {{ sortBy == 'date' ? 'selected' : '' }}>Creation Date</option>
                             <option value="name" {{ sortBy == 'name' ? 'selected' : '' }}>Name</option>
                             <option value="distance" {{ sortBy == 'distance' ? 'selected' : '' }}>Distance</option>
                         </select>
@@ -278,9 +278,13 @@
                             </div>
                             <div class="text-xs text-gray-500">{{ parcours.dateCreation|date('M d, Y') }}</div>
                         </div>
-                        <div class="flex items-center gap-2 mt-3">
-                            <a href="{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="px-2 py-1 text-xs font-medium text-white rounded bg-wellcare-500 hover:bg-wellcare-600">Details</a>
-                            <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600">View Publications</a>
+                        <div class="flex items-center justify-end gap-2 mt-3">
+                            <a href="{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="inline-flex items-center justify-center w-7 h-7 text-xs text-white rounded bg-wellcare-500 hover:bg-wellcare-600" title="Details" aria-label="Details">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </a>
+                            <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="inline-flex items-center justify-center w-7 h-7 text-xs text-white bg-blue-500 rounded hover:bg-blue-600" title="View publications" aria-label="View publications">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -303,8 +307,8 @@
                         <p class="text-xs text-gray-500"><i class="mr-1 fa-solid fa-newspaper"></i>{{ parcours.publicationParcours|length }}</p>
                         <p class="text-xs text-gray-500">{{ parcours.dateCreation|date('M d, Y') }}</p>
                     </div>
-                    <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="px-2 py-1 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600">
-                        View Publications
+                    <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="inline-flex items-center justify-center w-8 h-8 text-white bg-blue-500 rounded hover:bg-blue-600" title="View publications" aria-label="View publications">
+                        <i class="fa-solid fa-eye"></i>
                     </a>
                     <a href="{{ path('app_parcours_de_sante_edit', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="text-gray-400 hover:text-wellcare-500">
                         <i class="fa-solid fa-pen-to-square"></i>
