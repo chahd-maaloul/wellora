@@ -55,6 +55,7 @@ class PublicationParcours
      * @var Collection<int, CommentairePublication>
      */
     #[ORM\OneToMany(targetEntity: CommentairePublication::class, mappedBy: 'PublicationParcours')]
+    #[ORM\OrderBy(['dateCommentaire' => 'DESC', 'id' => 'DESC'])]
     private Collection $commentairePublications;
 
     #[ORM\Column(type: Types::TEXT)]

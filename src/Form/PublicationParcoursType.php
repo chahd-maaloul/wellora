@@ -45,6 +45,7 @@ class PublicationParcoursType extends AbstractType
         $builder
             ->add('textPublication', TextareaType::class, [
                 'label' => 'Publication Text',
+                'required' => false,
                 'attr' => [
                     'placeholder' => 'Enter your publication text (minimum 10 characters)',
                     'rows' => 5,
@@ -52,6 +53,8 @@ class PublicationParcoursType extends AbstractType
             ])
             ->add('ambiance', IntegerType::class, [
                 'label' => 'Ambiance (1-5)',
+                'required' => false,
+                'invalid_message' => 'The ambiance rating must be a valid number between 1 and 5',
                 'attr' => [
                     'min' => 1,
                     'max' => 5,
@@ -59,6 +62,8 @@ class PublicationParcoursType extends AbstractType
             ])
             ->add('securite', IntegerType::class, [
                 'label' => 'Safety (1-5)',
+                'required' => false,
+                'invalid_message' => 'The security rating must be a valid number between 1 and 5',
                 'attr' => [
                     'min' => 1,
                     'max' => 5,
@@ -66,6 +71,7 @@ class PublicationParcoursType extends AbstractType
             ])
             ->add('experience', ChoiceType::class, [
                 'label' => 'Experience',
+                'required' => false,
                 'choices' => [
                     'Bad' => 'Bad',
                     'Good' => 'good',
@@ -75,6 +81,7 @@ class PublicationParcoursType extends AbstractType
             ])
             ->add('typePublication', ChoiceType::class, [
                 'label' => 'Publication Type',
+                'required' => false,
                 'choices' => [
                     'Opinion' => 'opinion',
                     'Event' => 'event',
@@ -83,6 +90,8 @@ class PublicationParcoursType extends AbstractType
             ])
             ->add('datePublication', DateType::class, [
                 'label' => 'Publication Date',
+                'required' => false,
+                'invalid_message' => 'The publication date must be a valid date',
                 'widget' => 'single_text',
                 'attr' => [
                     'type' => 'date',

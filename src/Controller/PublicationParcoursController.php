@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\CommentairePublication;
 use App\Entity\PublicationParcours;
 use App\Form\PublicationParcoursType;
+use App\Repository\CommentairePublicationRepository;
 use App\Repository\ParcoursDeSanteRepository;
 use App\Repository\PublicationParcoursRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -43,6 +45,8 @@ final class PublicationParcoursController extends AbstractController
         $typePublicationQuery = trim((string) $request->query->get('typePublication', ''));
         $typePublicationKey = strtolower($typePublicationQuery);
         $selectedTypePublication = self::TYPE_PUBLICATION_FILTERS[$typePublicationKey] ?? null;
+        $sortDateRaw = strtoupper(trim((string) $request->query->get('sortDate', 'DESC')));
+        $selectedSortDate = $sortDateRaw === 'ASC' ? 'ASC' : 'DESC';
         $selectedParcours = null;
 
         if ($parcoursId > 0) {
@@ -52,7 +56,8 @@ final class PublicationParcoursController extends AbstractController
         $publications = $publicationParcoursRepository->findByFilters(
             $selectedParcours,
             $selectedExperience,
-            $selectedTypePublication
+            $selectedTypePublication,
+            $selectedSortDate
         );
 
         return $this->render('publication_parcours/index.html.twig', [
@@ -60,6 +65,7 @@ final class PublicationParcoursController extends AbstractController
             'selected_parcours' => $selectedParcours,
             'selected_experience' => $selectedExperience,
             'selected_type_publication' => $selectedTypePublication,
+            'selected_sort_date' => $selectedSortDate,
             'experience_filters' => [
                 'Bad' => 'Bad',
                 'Good' => 'good',
@@ -125,6 +131,110 @@ final class PublicationParcoursController extends AbstractController
             'publication_parcour' => $publicationParcour,
             'form' => $form,
             'cancel_parcours_id' => $publicationParcour->getParcoursDeSante()?->getId(),
+        ]);
+    }
+
+    #[Route('/{id}/comment', name: 'app_publication_parcours_comment_add', methods: ['POST'])]
+    public function addComment(
+        Request $request,
+        PublicationParcours $publicationParcour,
+        EntityManagerInterface $entityManager
+    ): Response
+    {
+        $redirectParams = $this->buildFeedRedirectParams($request);
+
+        $token = (string) $request->request->get('_token', '');
+        if (!$this->isCsrfTokenValid('add_comment' . $publicationParcour->getId(), $token)) {
+            $this->addFlash('error', 'Invalid comment form. Please try again.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
+        $commentText = trim((string) $request->request->get('commentaire', ''));
+        $comment = new CommentairePublication();
+        $comment->setCommentaire($commentText);
+        $comment->setDateCommentaire(new \DateTime());
+        $comment->setPublicationParcours($publicationParcour);
+
+        $entityManager->persist($comment);
+        $entityManager->flush();
+
+        return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+    }
+
+    #[Route('/{id}/comment/{commentId}/edit', name: 'app_publication_parcours_comment_edit', methods: ['POST'])]
+    public function editComment(
+        Request $request,
+        PublicationParcours $publicationParcour,
+        int $commentId,
+        CommentairePublicationRepository $commentairePublicationRepository,
+        EntityManagerInterface $entityManager
+    ): Response
+    {
+        $redirectParams = $this->buildFeedRedirectParams($request);
+        $comment = $commentairePublicationRepository->find($commentId);
+
+        if (!$comment || $comment->getPublicationParcours()?->getId() !== $publicationParcour->getId()) {
+            $this->addFlash('error', 'Comment not found.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
+        $token = (string) $request->request->get('_token', '');
+        if (!$this->isCsrfTokenValid('edit_comment' . $comment->getId(), $token)) {
+            $this->addFlash('error', 'Invalid edit form. Please try again.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
+        $commentText = trim((string) $request->request->get('commentaire', ''));
+        $comment->setCommentaire($commentText);
+
+        $entityManager->flush();
+
+        return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+    }
+
+    #[Route('/{id}/comment/{commentId}/delete', name: 'app_publication_parcours_comment_delete', methods: ['POST'])]
+    public function deleteComment(
+        Request $request,
+        PublicationParcours $publicationParcour,
+        int $commentId,
+        CommentairePublicationRepository $commentairePublicationRepository,
+        EntityManagerInterface $entityManager
+    ): Response
+    {
+        $redirectParams = $this->buildFeedRedirectParams($request);
+        $comment = $commentairePublicationRepository->find($commentId);
+
+        if (!$comment || $comment->getPublicationParcours()?->getId() !== $publicationParcour->getId()) {
+            $this->addFlash('error', 'Comment not found.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
+        $token = (string) $request->request->get('_token', '');
+        if (!$this->isCsrfTokenValid('delete_comment' . $comment->getId(), $token)) {
+            $this->addFlash('error', 'Invalid delete form. Please try again.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
+        $entityManager->remove($comment);
+        $entityManager->flush();
+
+        return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+    }
+
+    #[Route('/{id}/comments', name: 'app_publication_parcours_comments', methods: ['GET'])]
+    public function comments(Request $request, PublicationParcours $publicationParcour): Response
+    {
+        $backFeedParams = $this->buildFeedRedirectParams($request);
+
+        return $this->render('publication_parcours/show.html.twig', [
+            'publication_parcour' => $publicationParcour,
+            'comments_page' => true,
+            'back_feed_params' => $backFeedParams,
         ]);
     }
 
@@ -233,5 +343,59 @@ final class PublicationParcoursController extends AbstractController
         if (is_file($absolutePath)) {
             @unlink($absolutePath);
         }
+    }
+
+    private function buildFeedRedirectParams(Request $request): array
+    {
+        $parcoursId = $request->request->getInt('parcoursId');
+        if ($parcoursId <= 0) {
+            $parcoursId = $request->query->getInt('parcoursId');
+        }
+
+        $experience = trim((string) ($request->request->get('experience', $request->query->get('experience', ''))));
+        $typePublication = trim((string) ($request->request->get('typePublication', $request->query->get('typePublication', ''))));
+        $sortDateRaw = strtoupper(trim((string) ($request->request->get('sortDate', $request->query->get('sortDate', 'DESC')))));
+        $sortDate = $sortDateRaw === 'ASC' ? 'ASC' : 'DESC';
+
+        $redirectParams = [
+            'sortDate' => $sortDate,
+        ];
+
+        if ($parcoursId > 0) {
+            $redirectParams['parcoursId'] = $parcoursId;
+        }
+
+        if ($experience !== '') {
+            $redirectParams['experience'] = $experience;
+        }
+
+        if ($typePublication !== '') {
+            $redirectParams['typePublication'] = $typePublication;
+        }
+
+        return $redirectParams;
+    }
+
+    private function redirectAfterCommentAction(Request $request, PublicationParcours $publicationParcour, array $feedRedirectParams): Response
+    {
+        $redirectTo = strtolower(trim((string) $request->request->get('redirectTo', '')));
+
+        if ($redirectTo === 'comments') {
+            return $this->redirectToRoute(
+                'app_publication_parcours_comments',
+                ['id' => $publicationParcour->getId()],
+                Response::HTTP_SEE_OTHER
+            );
+        }
+
+        if ($redirectTo === 'show') {
+            return $this->redirectToRoute(
+                'app_publication_parcours_show',
+                ['id' => $publicationParcour->getId()],
+                Response::HTTP_SEE_OTHER
+            );
+        }
+
+        return $this->redirectToRoute('app_publication_parcours_index', $feedRedirectParams, Response::HTTP_SEE_OTHER);
     }
 }

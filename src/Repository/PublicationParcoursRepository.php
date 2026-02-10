@@ -23,11 +23,15 @@ class PublicationParcoursRepository extends ServiceEntityRepository
     public function findByFilters(
         ?ParcoursDeSante $parcoursDeSante = null,
         ?string $experience = null,
-        ?string $typePublication = null
+        ?string $typePublication = null,
+        string $dateSortOrder = 'DESC'
     ): array
     {
+        $direction = strtoupper($dateSortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
         $qb = $this->createQueryBuilder('pp')
-            ->orderBy('pp.datePublication', 'DESC');
+            ->orderBy('pp.datePublication', $direction)
+            ->addOrderBy('pp.id', $direction);
 
         if ($parcoursDeSante !== null) {
             $qb

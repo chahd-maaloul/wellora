@@ -235,14 +235,27 @@
                             <option value="distance" {{ sortBy == 'distance' ? 'selected' : '' }}>Distance</option>
                         </select>
 
-                        <select
-                            name="sortOrder"
-                            onchange="this.form.submit()"
-                            class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        >
-                            <option value="ASC" {{ sortOrder == 'ASC' ? 'selected' : '' }}>ASC</option>
-                            <option value="DESC" {{ sortOrder == 'DESC' ? 'selected' : '' }}>DESC</option>
-                        </select>
+                        <input type="hidden" name="sortOrder" id="sortOrderInput" value="{{ sortOrder }}">
+                        <div class="inline-flex overflow-hidden border border-gray-200 rounded-lg dark:border-gray-600">
+                            <button
+                                type="button"
+                                title="Sort ascending"
+                                aria-label="Sort ascending"
+                                onclick="document.getElementById('sortOrderInput').value='ASC'; this.form.submit();"
+                                class="px-3 py-1.5 text-sm transition {{ sortOrder == 'ASC' ? 'bg-wellcare-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600' }}"
+                            >
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
+                            <button
+                                type="button"
+                                title="Sort descending"
+                                aria-label="Sort descending"
+                                onclick="document.getElementById('sortOrderInput').value='DESC'; this.form.submit();"
+                                class="px-3 py-1.5 text-sm transition border-l border-gray-200 dark:border-gray-600 {{ sortOrder == 'DESC' ? 'bg-wellcare-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600' }}"
+                            >
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </button>
+                        </div>
                         <a href="{{ path('app_parcours_de_sante_new') }}" class="inline-flex items-center justify-center w-10 h-10 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" title="Add parcours" aria-label="Add parcours">
                             <i class="fa-solid fa-plus"></i>
                         </a>

@@ -19,7 +19,7 @@
 
 <div class="px-4 mx-auto">
     <div class="max-w-3xl p-6 mx-auto bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-        {% if form.vars.errors|length > 0 %}
+        {% if form.vars.submitted and not form.vars.valid %}
             <div class="p-4 mb-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
                 <p class="text-sm font-medium text-red-800 dark:text-red-200">Please fix the following errors:</p>
                 <div class="text-sm text-red-600 dark:text-red-400">
