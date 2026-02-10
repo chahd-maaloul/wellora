@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Healthjournal{% endblock %}
+
+{% block body %}
+    <h1>Healthjournal</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ healthjournal.id }}</td>
+            </tr>
+            <tr>
+                <th>Datedebut</th>
+                <td>{{ healthjournal.datedebut ? healthjournal.datedebut|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Datefin</th>
+                <td>{{ healthjournal.datefin ? healthjournal.datefin|date('Y-m-d') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_healthjournal_index') }}">back to list</a>
+
+    <a href="{{ path('app_healthjournal_edit', {'id': healthjournal.id}) }}">edit</a>
+
+    {{ include('healthjournal/_delete_form.html.twig') }}
+{% endblock %}

@@ -62,7 +62,7 @@ class Healthjournal
     /**
      * @return Collection<int, Healthentry>
      */
-    public function getEntities(): Collection
+    public function getEntries(): Collection
     {
         return $this->entries;
     }

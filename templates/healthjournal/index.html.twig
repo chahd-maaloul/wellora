@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Healthjournal index{% endblock %}
+
+{% block body %}
+    <h1>Healthjournal index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Datedebut</th>
+                <th>Datefin</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for healthjournal in healthjournals %}
+            <tr>
+                <td>{{ healthjournal.id }}</td>
+                <td>{{ healthjournal.datedebut ? healthjournal.datedebut|date('Y-m-d') : '' }}</td>
+                <td>{{ healthjournal.datefin ? healthjournal.datefin|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_healthjournal_show', {'id': healthjournal.id}) }}">show</a>
+                    <a href="{{ path('app_healthjournal_edit', {'id': healthjournal.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_healthjournal_new') }}">Create new</a>
+{% endblock %}
