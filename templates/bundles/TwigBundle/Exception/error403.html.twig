@@ -1,0 +1,89 @@
+{# templates/bundles/TwigBundle/Exception/error403.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Accès Refusé - WellCare Connect{% endblock %}
+
+{% block body %}
+<div class="flex items-center justify-center min-h-screen px-4 bg-gray-50 dark:bg-gray-900">
+    <div class="w-full max-w-lg text-center">
+        <!-- Icon -->
+        <div class="flex items-center justify-center w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full dark:bg-red-900/30">
+            <svg class="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+        </div>
+
+        <!-- Title -->
+        <h1 class="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
+            403
+        </h1>
+        <h2 class="mb-2 text-xl font-semibold text-gray-700 dark:text-gray-300">
+            Accès Refusé
+        </h2>
+        <p class="mb-8 text-gray-600 dark:text-gray-400">
+            Vous n'avez pas l'autorisation d'accéder à cette page. 
+            Cette action nécessite des privilèges supplémentaires.
+        </p>
+
+        <!-- User Role Info -->
+        {% if app.user %}
+            <div class="p-4 mb-6 text-left rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                <p class="text-sm text-blue-700 dark:text-blue-300">
+                    <span class="font-semibold">Connecté en tant que:</span> 
+                    {{ app.user.firstName }} {{ app.user.lastName }}
+                </p>
+                <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                    <span class="font-semibold">Rôle:</span> 
+                    {% if is_role('ROLE_ADMIN') %}
+                        Administrateur
+                    {% elseif is_role('ROLE_MEDECIN') %}
+                        Médecin
+                    {% elseif is_role('ROLE_COACH') %}
+                        Coach
+                    {% elseif is_role('ROLE_NUTRITIONIST') %}
+                        Nutritionniste
+                    {% elseif is_role('ROLE_PATIENT') %}
+                        Patient
+                    {% else %}
+                        Utilisateur
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="flex flex-col justify-center gap-3 sm:flex-row">
+            {% if app.user %}
+                <a href="{{ path('appointment_patient_dashboard') }}" 
+                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white transition-colors border border-transparent rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-2m-211l2 -2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    Retour au Dashboard
+                </a>
+                <a href="{{ path('app_logout') }}" 
+                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Se déconnecter
+                </a>
+            {% else %}
+                <a href="{{ path('app_login') }}" 
+                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white transition-colors border border-transparent rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                    </svg>
+                    Se connecter
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Help Text -->
+        <p class="mt-8 text-sm text-gray-500 dark:text-gray-500">
+            Si vous pensez que c'est une erreur, veuillez contacter l'administrateur système.
+        </p>
+    </div>
+</div>
+{% endblock %}

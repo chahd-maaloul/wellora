@@ -1,0 +1,135 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Modifier le Profil - WellCare Connect{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="{{ path('app_profile') }}" class="hover:text-wellcare-600 dark:hover:text-wellcare-400">Mon Profil</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">Modifier</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full">
+    <div class="overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Informations du Profil</h3>
+        </div>
+        
+        {{ form_start(form, {'attr': {'class': 'p-6 space-y-6', 'novalidate': 'novalidate'}}) }}
+        
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <!-- Prénom -->
+            <div class="form-group">
+                <label for="{{ form.firstName.vars.id }}" class="form-label">Prénom</label>
+                {{ form_widget(form.firstName, {'attr': {'class': 'form-input'}}) }}
+                {% if form.firstName.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {% for error in form.firstName.vars.errors %}
+                            <p>{{ error.message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Nom -->
+            <div class="form-group">
+                <label for="{{ form.lastName.vars.id }}" class="form-label">Nom</label>
+                {{ form_widget(form.lastName, {'attr': {'class': 'form-input'}}) }}
+                {% if form.lastName.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {% for error in form.lastName.vars.errors %}
+                            <p>{{ error.message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Email (lecture seule) -->
+        <div class="form-group">
+            <label class="form-label">Adresse Email</label>
+            <input type="email" class="cursor-not-allowed form-input bg-gray-50 dark:bg-gray-700" value="{{ user.email }}" readonly>
+            <p class="mt-1 text-xs text-gray-500">L'email ne peut pas être modifié. Contactez le support si nécessaire.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <!-- Téléphone -->
+            <div class="form-group">
+                <label for="{{ form.phone.vars.id }}" class="form-label">Numéro de Téléphone</label>
+                {{ form_widget(form.phone, {'attr': {'class': 'form-input', 'placeholder': 'Entrez le numéro de téléphone'}}) }}
+                {% if form.phone.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {% for error in form.phone.vars.errors %}
+                            <p>{{ error.message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Adresse -->
+            <div class="form-group">
+                <label for="{{ form.address.vars.id }}" class="form-label">Adresse</label>
+                {{ form_widget(form.address, {'attr': {'class': 'form-input', 'placeholder': 'Entrez l\'adresse'}}) }}
+                {% if form.address.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {% for error in form.address.vars.errors %}
+                            <p>{{ error.message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Date de naissance (uniquement pour les patients) -->
+        {% if form.birthDate is defined %}
+        <div class="form-group">
+            <label for="{{ form.birthDate.vars.id }}" class="form-label">Date de Naissance</label>
+            {{ form_widget(form.birthDate, {'attr': {'class': 'form-input'}}) }}
+            {% if form.birthDate.vars.errors|length > 0 %}
+                <div class="form-error">
+                    {% for error in form.birthDate.vars.errors %}
+                        <p>{{ error.message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- URL Avatar -->
+        <div class="form-group">
+            <label for="{{ form.avatarUrl.vars.id }}" class="form-label">URL de l'Avatar</label>
+            {{ form_widget(form.avatarUrl, {'attr': {'class': 'form-input', 'placeholder': 'https://example.com/avatar.jpg'}}) }}
+            {% if form.avatarUrl.vars.errors|length > 0 %}
+                <div class="form-error">
+                    {% for error in form.avatarUrl.vars.errors %}
+                        <p>{{ error.message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <p class="mt-1 text-xs text-gray-500">Entrez une URL vers votre image d'avatar.</p>
+        </div>
+
+        <!-- Actions du formulaire -->
+        <div class="flex items-center justify-end pt-4 space-x-4 border-t border-gray-200 dark:border-gray-700">
+            <a href="{{ path('app_profile') }}" class="btn btn-secondary">Annuler</a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Enregistrer les Modifications
+            </button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

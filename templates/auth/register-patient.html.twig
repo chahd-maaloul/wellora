@@ -9,8 +9,10 @@
 {% block auth_form %}
   <form 
     class="min-h-[600px]" 
-    action="/register-patient" 
+    id="registration-form"
+    action="{{ path('app_register_patient') }}" 
     method="POST" 
+    @submit="console.log('Form submitted via @submit')"
     x-data="{
       step: 1,
       showPw: false,
@@ -18,11 +20,83 @@
       pw: '',
       confirmPw: '',
       email: '',
+      emailAvailable: null,
+      emailCheckLoading: false,
+      phone: '',
+      phoneAvailable: null,
+      phoneCheckLoading: false,
+      passwordStrength: null,
+      passwordValid: false,
+      passwordErrors: [],
       firstName: '',
       lastName: '',
-      phone: '',
+      birthdate: '',
       isSubmitting: false,
       touched: {},
+      async checkEmailAvailability() {
+        if (!this.validateEmail(this.email)) {
+          this.emailAvailable = null;
+          return;
+        }
+        this.emailCheckLoading = true;
+        try {
+          const formData = new FormData();
+          formData.append('email', this.email);
+          const response = await fetch('{{ path('app_check_email') }}', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          this.emailAvailable = data.available;
+        } catch (e) {
+          console.error('Error checking email:', e);
+        } finally {
+          this.emailCheckLoading = false;
+        }
+      },
+      async checkPhoneAvailability() {
+        if (!this.phone || this.phone.length < 8) {
+          this.phoneAvailable = null;
+          return;
+        }
+        this.phoneCheckLoading = true;
+        try {
+          const formData = new FormData();
+          formData.append('phone', this.phone);
+          const response = await fetch('{{ path('app_check_phone') }}', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          this.phoneAvailable = data.available;
+        } catch (e) {
+          console.error('Error checking phone:', e);
+        } finally {
+          this.phoneCheckLoading = false;
+        }
+      },
+      async validatePasswordStrength() {
+        if (!this.pw) {
+          this.passwordStrength = null;
+          this.passwordValid = false;
+          this.passwordErrors = [];
+          return;
+        }
+        try {
+          const formData = new FormData();
+          formData.append('password', this.pw);
+          const response = await fetch('{{ path('app_validate_password') }}', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          this.passwordStrength = data.strength;
+          this.passwordValid = data.valid;
+          this.passwordErrors = data.errors || [];
+        } catch (e) {
+          console.error('Error validating password:', e);
+        }
+      },
       validateEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       },
@@ -30,6 +104,9 @@
         return phone.length >= 8;
       },
       strength() {
+        return this.passwordStrength !== null ? this.passwordStrength : this.clientStrength();
+      },
+      clientStrength() {
         const p = this.pw || '';
         let s = 0;
         if (p.length >= 8) s++;
@@ -52,9 +129,24 @@
       },
       pct() { return Math.round(((this.step - 1) / 2) * 100); },
       get canProceed() {
-        if (this.step === 1) return this.firstName && this.lastName && this.email && this.validateEmail(this.email);
-        if (this.step === 2) return this.phone && this.validatePhone(this.phone);
-        if (this.step === 3) return this.pw && this.confirmPw && this.pw === this.confirmPw && this.strength() >= 2;
+        if (this.step === 1) {
+          const hasRequired = this.firstName && this.lastName && this.email && this.birthdate && this.validateEmail(this.email);
+          const isEmailAvailable = this.emailAvailable === true || this.emailAvailable === null;
+          return hasRequired && isEmailAvailable;
+        }
+        if (this.step === 2) {
+          // Phone is optional, but if provided must be available
+          if (this.phone && this.phone.length >= 8) {
+            return this.phoneAvailable === true;
+          }
+          return true;
+        }
+        if (this.step === 3) {
+          const isPasswordValid = this.passwordValid !== false; // Allow if not validated yet
+          const passwordsMatch = this.pw && this.confirmPw && this.pw === this.confirmPw;
+          const hasStrength = this.strength() >= 2;
+          return this.pw && this.confirmPw && passwordsMatch && hasStrength && isPasswordValid;
+        }
         return false;
       },
       get passwordsMatch() {
@@ -73,9 +165,35 @@
         }
       }
     }"
-    @submit.prevent="if (canProceed) { isSubmitting = true; $el.submit(); }"
+    @submit="if (!canProceed) { console.log('Cannot proceed - canProceed:', canProceed, 'isSubmitting:', isSubmitting, 'step:', step); console.log('Form data:', {firstName, lastName, email, birthdate, phone, pw}); event.preventDefault(); alert('Please fill in all required fields correctly.'); } else { console.log('Form is valid, submitting...'); isSubmitting = true; event.target.submit(); }"
   >
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token('register_patient') }}">
+    <input type="hidden" name="_submit" value="1">
+
+    {# Server-side Validation Errors Display #}
+    {% if registrationForm is defined and registrationForm.vars.errors|length > 0 %}
+      <div class="p-4 mb-4 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700 flash-alert">
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <span class="font-semibold">Erreurs de validation:</span>
+            <ul class="mt-2 ml-4 list-disc list-inside">
+              {% for error in registrationForm.vars.errors %}
+                <li>{{ error.message }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <button @click="$event.target.closest('.flash-alert').style.opacity='0'; $event.target.closest('.flash-alert').style.transform='translateX(100%)'; setTimeout(() => $event.target.closest('.flash-alert').remove(), 500)" class="flex-shrink-0 ml-2 text-current transition-opacity opacity-60 hover:opacity-100">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    {% endif %}
 
     <div class="grid grid-cols-1 gap-0 lg:grid-cols-12">
       {# Left Panel - Progress & Trust Elements #}
@@ -111,7 +229,7 @@
 
             {# Connector #}
             <div class="ml-5 w-0.5 h-8 bg-white/30 rounded-full overflow-hidden">
-              <div class="w-full bg-white transition-all duration-500" :style="`height: ${step > 1 ? '100%' : '0%'}`"></div>
+              <div class="w-full transition-all duration-500 bg-white" :style="`height: ${step > 1 ? '100%' : '0%'}`"></div>
             </div>
 
             {# Step 2 #}
@@ -133,7 +251,7 @@
 
             {# Connector #}
             <div class="ml-5 w-0.5 h-8 bg-white/30 rounded-full overflow-hidden">
-              <div class="w-full bg-white transition-all duration-500" :style="`height: ${step > 2 ? '100%' : '0%'}`"></div>
+              <div class="w-full transition-all duration-500 bg-white" :style="`height: ${step > 2 ? '100%' : '0%'}`"></div>
             </div>
 
             {# Step 3 #}
@@ -152,7 +270,7 @@
           </div>
 
           {# Trust indicators #}
-          <div class="relative z-10 mt-auto pt-6 space-y-3">
+          <div class="relative z-10 pt-6 mt-auto space-y-3">
             <div class="flex items-center gap-2 text-xs text-wellcare-100">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -177,7 +295,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Already have an account? 
-              <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">Sign in</a>
+              <a href="{{ path('app_login') }}" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">Sign in</a>
             </p>
           </div>
 
@@ -186,7 +304,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Register as a patient</h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Already have an account?
-              <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>.
+              <a href="{{ path('app_login') }}" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>.
             </p>
           </div>
 
@@ -197,7 +315,7 @@
               <span class="text-wellcare-600 dark:text-wellcare-400" x-text="`${pct()}%`"></span>
             </div>
             <div class="h-2.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 shadow-inner">
-              <div class="h-full rounded-full bg-gradient-to-r from-wellcare-500 to-wellcare-600 transition-all duration-500 ease-out" :style="`width: ${pct()}%`"></div>
+              <div class="h-full transition-all duration-500 ease-out rounded-full bg-gradient-to-r from-wellcare-500 to-wellcare-600" :style="`width: ${pct()}%`"></div>
             </div>
             <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
               <span :class="step === 1 ? 'text-wellcare-600 dark:text-wellcare-400 font-semibold' : ''">Personal</span>
@@ -222,7 +340,7 @@
                 <label for="first-name" class="label">First name <span class="text-red-500">*</span></label>
                 <input 
                   id="first-name" 
-                  name="first_name" 
+                  name="firstName" 
                   type="text" 
                   x-model="firstName"
                   required 
@@ -235,7 +353,7 @@
                 <label for="last-name" class="label">Last name <span class="text-red-500">*</span></label>
                 <input 
                   id="last-name" 
-                  name="last_name" 
+                  name="lastName" 
                   type="text" 
                   x-model="lastName"
                   required 
@@ -256,13 +374,25 @@
                   x-model="email"
                   required 
                   class="input"
-                  :class="email && !validateEmail(email) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
+                  :class="email && !validateEmail(email) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) && emailAvailable === false ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) && emailAvailable === true ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : ''))"
                   placeholder="you@example.com"
-                  @blur="touched.email = true"
+                  @blur="touched.email = true; checkEmailAvailability()"
+                  @input="checkEmailAvailability()"
                 >
-                <div x-show="email && validateEmail(email)" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                <div x-show="email && validateEmail(email) && emailCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3" style="display: none;">
+                  <svg class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <div x-show="email && validateEmail(email) && emailAvailable === true && !emailCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
                   <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div x-show="email && validateEmail(email) && emailAvailable === false && !emailCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                  <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                   </svg>
                 </div>
               </div>
@@ -272,7 +402,29 @@
                 </svg>
                 Please enter a valid email address
               </p>
+              <p x-show="email && validateEmail(email) && emailAvailable === false" class="flex items-center gap-1 text-xs text-red-500" style="display: none;">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                This email is already registered
+              </p>
               <p class="helper-text">We'll use this for account access and important health notifications.</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="birthdate" class="label">Date of birth <span class="text-red-500">*</span></label>
+              <input 
+                id="birthdate" 
+                name="birthdate" 
+                type="text" 
+                required 
+                class="relative z-10 input"
+                placeholder="YYYY-MM-DD"
+                x-model="birthdate"
+                @blur="touched.birthdate = true"
+                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
+              >
+              <p class="helper-text">Format: 1990-05-15</p>
             </div>
           </div>
 
@@ -289,22 +441,33 @@
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="space-y-1.5">
-                <label for="phone" class="label">Phone number <span class="text-red-500">*</span></label>
+                <label for="phone" class="label">Phone number</label>
                 <div class="relative">
                   <input 
                     id="phone" 
                     name="phone" 
                     type="tel" 
                     x-model="phone"
-                    required 
                     class="input"
-                    :class="phone && !validatePhone(phone) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (phone && validatePhone(phone) ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
+                    :class="phone && !validatePhone(phone) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (phone && validatePhone(phone) && phoneAvailable === false ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (phone && validatePhone(phone) && phoneAvailable === true ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : ''))"
                     placeholder="+216 XX XXX XXX"
-                    @blur="touched.phone = true"
+                    @blur="touched.phone = true; checkPhoneAvailability()"
+                    @input="checkPhoneAvailability()"
                   >
-                  <div x-show="phone && validatePhone(phone)" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                  <div x-show="phone && validatePhone(phone) && phoneCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3" style="display: none;">
+                    <svg class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                  <div x-show="phone && validatePhone(phone) && phoneAvailable === true && !phoneCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
                     <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <div x-show="phone && validatePhone(phone) && phoneAvailable === false && !phoneCheckLoading" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                    <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                   </div>
                 </div>
@@ -313,6 +476,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                   Please enter a valid phone number
+                </p>
+                <p x-show="phone && validatePhone(phone) && phoneAvailable === false" class="flex items-center gap-1 text-xs text-red-500" style="display: none;">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  This phone number is already registered
                 </p>
               </div>
               <div class="space-y-1.5">
@@ -327,14 +496,14 @@
               </div>
             </div>
 
-            <div class="p-4 rounded-xl bg-wellcare-50 dark:bg-wellcare-900/20 border border-wellcare-200 dark:border-wellcare-800">
+            <div class="p-4 border rounded-xl bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-200 dark:border-wellcare-800">
               <div class="flex items-start gap-3">
                 <svg class="w-5 h-5 text-wellcare-600 dark:text-wellcare-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <div>
                   <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Why do we need this?</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Your contact information helps us reach you for appointment reminders and important health updates.</p>
+                  <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">Your contact information helps us reach you for appointment reminders and important health updates.</p>
                 </div>
               </div>
             </div>
@@ -357,38 +526,52 @@
                 <div class="relative">
                   <input 
                     id="password" 
-                    name="password" 
+                    name="plainPassword[first]" 
                     :type="showPw ? 'text' : 'password'" 
                     required 
-                    class="input pr-20"
+                    class="pr-20 input"
+                    :class="pw && passwordValid === false ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (pw && passwordValid === true ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
                     placeholder="••••••••"
                     x-model="pw"
+                    @input="validatePasswordStrength()"
                   >
                   <button 
                     type="button" 
-                    class="absolute inset-y-0 right-0 inline-flex items-center px-3 text-xs font-medium text-gray-500 hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-300 transition-colors"
+                    class="absolute inset-y-0 right-0 inline-flex items-center px-3 text-xs font-medium text-gray-500 transition-colors hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-300"
                     @click="showPw = !showPw"
                   >
                     <span x-text="showPw ? 'Hide' : 'Show'"></span>
                   </button>
                 </div>
+                <template x-if="pw && passwordErrors && passwordErrors.length > 0">
+                  <div class="mt-2 space-y-1">
+                    <template x-for="error in passwordErrors" :key="error">
+                      <p class="flex items-center gap-1 text-xs text-red-500">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span x-text="error"></span>
+                      </p>
+                    </template>
+                  </div>
+                </template>
               </div>
               <div class="space-y-1.5">
                 <label for="confirm-password" class="label">Confirm password <span class="text-red-500">*</span></label>
                 <div class="relative">
                   <input 
                     id="confirm-password" 
-                    name="confirm_password" 
+                    name="plainPassword[second]" 
                     :type="showPw2 ? 'text' : 'password'" 
                     required 
-                    class="input pr-20"
+                    class="pr-20 input"
                     :class="confirmPw && !passwordsMatch ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (confirmPw && passwordsMatch ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
                     placeholder="••••••••"
                     x-model="confirmPw"
                   >
                   <button 
                     type="button" 
-                    class="absolute inset-y-0 right-0 inline-flex items-center px-3 text-xs font-medium text-gray-500 hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-300 transition-colors"
+                    class="absolute inset-y-0 right-0 inline-flex items-center px-3 text-xs font-medium text-gray-500 transition-colors hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-300"
                     @click="showPw2 = !showPw2"
                   >
                     <span x-text="showPw2 ? 'Hide' : 'Show'"></span>
@@ -410,7 +593,7 @@
             </div>
 
             {# Enhanced Password Strength Meter #}
-            <div class="p-5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 space-y-3">
+            <div class="p-5 space-y-3 border border-gray-100 rounded-xl bg-gray-50 dark:bg-gray-900/50 dark:border-gray-800">
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Password strength</span>
                 <span 
@@ -421,7 +604,7 @@
               </div>
               <div class="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 shadow-inner">
                 <div
-                  class="h-full rounded-full transition-all duration-500 ease-out"
+                  class="h-full transition-all duration-500 ease-out rounded-full"
                   :class="strengthColor"
                   :style="`width: ${Math.min(100, (strength()/4)*100)}%`"
                 ></div>
@@ -459,8 +642,8 @@
             </div>
 
             {# Terms agreement #}
-            <div class="flex items-start gap-3 p-4 rounded-xl bg-wellcare-50 dark:bg-wellcare-900/20 border border-wellcare-200 dark:border-wellcare-800">
-              <input id="terms" name="terms" type="checkbox" required class="w-4 h-4 mt-0.5 text-wellcare-600 border-gray-300 rounded focus:ring-wellcare-500">
+            <div class="flex items-start gap-3 p-4 border rounded-xl bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-200 dark:border-wellcare-800">
+              <input id="terms" name="agreeTerms" type="checkbox" required class="w-4 h-4 mt-0.5 text-wellcare-600 border-gray-300 rounded focus:ring-wellcare-500">
               <label for="terms" class="text-xs text-gray-600 dark:text-gray-400">
                 I agree to the <a href="/terms" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Privacy Policy</a>. I understand that my health information will be handled in accordance with HIPAA regulations.
               </label>
@@ -473,10 +656,10 @@
               type="button" 
               @click="goBack()" 
               x-show="step > 1"
-              class="btn-outline flex items-center gap-2"
+              class="flex items-center gap-2 btn-outline"
               style="display: none;"
             >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
               Back
@@ -487,31 +670,32 @@
               type="button" 
               @click="goNext()" 
               x-show="step < 3"
-              class="btn-solid flex items-center gap-2 ml-auto"
+              class="flex items-center gap-2 ml-auto btn-solid"
               :disabled="!canProceed"
               :class="!canProceed ? 'opacity-50 cursor-not-allowed' : ''"
             >
               Next
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
             </button>
 
             <button 
               type="submit" 
+              name="_submit"
               x-show="step === 3"
-              class="btn-solid flex items-center gap-2 ml-auto"
+              class="flex items-center gap-2 ml-auto btn-solid"
               :disabled="isSubmitting || !canProceed"
               :class="(isSubmitting || !canProceed) ? 'opacity-50 cursor-not-allowed' : ''"
             >
               <span x-show="!isSubmitting" class="flex items-center gap-2">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Create account
               </span>
               <span x-show="isSubmitting" class="flex items-center gap-2" style="display: none;">
-                <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -537,8 +721,8 @@
 {% block auth_below %}
   <div class="text-xs text-center text-gray-500 dark:text-gray-400">
     By registering, you agree to our 
-    <a href="/terms" class="underline hover:text-wellcare-600 dark:hover:text-wellcare-400 transition-colors">Terms of Service</a> 
-    and <a href="/privacy" class="underline hover:text-wellcare-600 dark:hover:text-wellcare-400 transition-colors">Privacy Policy</a>.
+    <a href="/terms" class="underline transition-colors hover:text-wellcare-600 dark:hover:text-wellcare-400">Terms of Service</a> 
+    and <a href="/privacy" class="underline transition-colors hover:text-wellcare-600 dark:hover:text-wellcare-400">Privacy Policy</a>.
     Your data is protected under HIPAA regulations.
   </div>
 {% endblock %}

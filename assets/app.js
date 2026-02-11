@@ -109,3 +109,80 @@ Alpine.start();
 document.addEventListener('DOMContentLoaded', function() {
   console.log('WellCare Connect loaded');
 });
+
+/**
+ * Sidebar Application with role-based navigation
+ * This function is used in templates/layouts/app.html.twig
+ */
+function sidebarApp() {
+  return {
+    collapsed: localStorage.getItem('sidebarCollapsed') === 'true',
+    mobileOpen: false,
+    activeMenu: null,
+    
+    init() {
+      // Restore collapsed state
+      this.collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+      
+      // Close mobile sidebar on route change
+      this.$watch('mobileOpen', (value) => {
+        if (!value) {
+          document.body.style.overflow = '';
+        } else {
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    },
+    
+    toggleSidebar() {
+      this.collapsed = !this.collapsed;
+      localStorage.setItem('sidebarCollapsed', this.collapsed);
+    },
+    
+    toggleMobile() {
+      this.mobileOpen = !this.mobileOpen;
+    },
+    
+    setActive(path) {
+      this.activeMenu = path;
+    },
+    
+    isActive(path) {
+      return window.location.pathname.startsWith(path);
+    },
+    
+    isGroupActive(paths) {
+      return paths.some(path => this.isActive(path));
+    },
+    
+    // Role checking functions
+    isCoach() {
+      return document.body.classList.contains('role-coach');
+    },
+    
+    isMedecin() {
+      return document.body.classList.contains('role-medecin');
+    },
+    
+    isNutritionist() {
+      return document.body.classList.contains('role-nutritionist');
+    },
+    
+    isPatient() {
+      return document.body.classList.contains('role-patient');
+    },
+    
+    isAdmin() {
+      return document.body.classList.contains('role-admin');
+    },
+    
+    // Get dashboard route based on user role
+    getDashboardRoute() {
+      if (this.isAdmin()) return '/admin/dashboard';
+      if (this.isMedecin()) return '/doctor/dashboard';
+      if (this.isCoach()) return '/coach/dashboard';
+      if (this.isNutritionist()) return '/nutrition/nutritionniste/dashboard';
+      return '/appointment/patient-dashboard';
+    }
+  };
+}

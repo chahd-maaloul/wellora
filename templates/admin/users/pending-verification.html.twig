@@ -1,0 +1,290 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'admin.users.pending_verification.title'|trans }}{% endblock %}
+
+{% block body %}
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
+                    <span class="p-2 rounded-lg bg-gradient-to-br from-wellcare-500 to-wellcare-600">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </span>
+                    {{ 'admin.users.pending_verification.title'|trans }}
+                </h1>
+                <p class="max-w-2xl mt-2 text-gray-500 dark:text-gray-400">
+                    {{ 'admin.users.pending_verification.description'|trans }}
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ path('admin_users_index') }}" class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors bg-gray-300 rounded-lg dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-500">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    {{ 'admin.users.pending_verification.back'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if professionals is empty %}
+    <div class="flex items-start p-6 border border-green-200 rounded-xl bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+        <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-green-100 rounded-full dark:bg-green-900/50">
+            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div class="ml-4">
+            <h3 class="text-lg font-semibold text-green-800 dark:text-green-300">
+                {{ 'admin.users.pending_verification.empty'|trans }}
+            </h3>
+            <p class="mt-1 text-green-700 dark:text-green-400">
+                Tous les professionnels ont été vérifiés.
+            </p>
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Bulk Actions Toolbar -->
+    <div id="bulk-actions-toolbar" class="hidden p-4 mb-6 border border-blue-200 rounded-xl bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full dark:bg-blue-900/50">
+                        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </span>
+                    <span class="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        <span id="selected-count">0</span> professionnel(s) sélectionné(s)
+                    </span>
+                </div>
+            </div>
+            <button type="button" onclick="bulkVerify()" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-green-500/25">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                ✓ Vérifier les sélectionnés
+            </button>
+        </div>
+    </div>
+
+    <!-- Bulk Verify Form (hidden) -->
+    <form id="bulk-verify-form" method="POST" action="{{ path('admin_users_bulk_verify') }}" style="display: none;">
+        <input type="hidden" name="_token" value="{{ csrf_token('bulk-verify') }}">
+        <input type="hidden" name="uuids" id="selected-uuids-verify" value="">
+    </form>
+
+    <form id="pending-verification-form" method="POST">
+        <input type="hidden" name="_token" value="{{ csrf_token('bulk-verify') }}">
+        
+        <div class="grid grid-cols-1 gap-6">
+            {% for professional in professionals %}
+            <div class="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 border-amber-100 dark:border-amber-800">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <input type="checkbox" 
+                                   name="uuids[]" 
+                                   value="{{ professional.uuid }}" 
+                                   class="w-5 h-5 border-gray-300 rounded cursor-pointer text-wellcare-500 focus:ring-wellcare-500"
+                                   onchange="updateBulkToolbar()">
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full 
+                                    {% if professional.getDiscriminatorValue() == 'ROLE_MEDECIN' %}bg-green-100 text-green-700
+                                    {% elseif professional.getDiscriminatorValue() == 'ROLE_COACH' %}bg-purple-100 text-purple-700
+                                    {% else %}bg-orange-100 text-orange-700{% endif %}">
+                                    {{ ('admin.users.roles.' ~ professional.getDiscriminatorValue()|lower)|trans }}
+                                </span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                    <svg class="w-3 h-3 mr-1 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    </svg>
+                                    {{ 'admin.users.pending_verification.waiting'|trans }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            {{ professional.createdAt|date('d/m/Y') }}
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <!-- User Info -->
+                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <h3 class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'admin.users.pending_verification.user_info'|trans }}</h3>
+                            </div>
+                            <dl class="space-y-2">
+                                <div>
+                                    <dt class="text-xs text-gray-500 dark:text-gray-400">{{ 'admin.users.form.email'|trans }}</dt>
+                                    <dd class="text-sm font-medium text-gray-900 break-all dark:text-white">{{ professional.email }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs text-gray-500 dark:text-gray-400">{{ 'admin.users.form.name'|trans }}</dt>
+                                    <dd class="text-sm font-semibold text-gray-900 dark:text-white">{{ professional.firstName }} {{ professional.lastName }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <!-- Professional Info -->
+                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                <h3 class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'admin.users.pending_verification.professional_info'|trans }}</h3>
+                            </div>
+                            <dl class="space-y-2">
+                                <!-- License Number -->
+                                <div>
+                                    <dt class="text-xs text-gray-500 dark:text-gray-400">Numéro de licence</dt>
+                                    <dd class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ professional.licenseNumber|default('-') }}</dd>
+                                </div>
+                                {% if professional.specialite %}
+                                <div>
+                                    <dt class="text-xs text-gray-500 dark:text-gray-400">{{ 'admin.users.show.specialty'|trans }}</dt>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ professional.specialite|replace({'_': ' '}) }}</dd>
+                                </div>
+                                {% endif %}
+                                {% if professional.yearsOfExperience is defined and professional.yearsOfExperience > 0 %}
+                                <div>
+                                    <dt class="text-xs text-gray-500 dark:text-gray-400">Années d'expérience</dt>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ professional.yearsOfExperience }} ans</dd>
+                                </div>
+                                {% endif %}
+                            </dl>
+                        </div>
+
+                        <!-- Diploma -->
+                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <h3 class="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'admin.users.show.diploma'|trans }}</h3>
+                            </div>
+                            {% if professional.diplomaUrl %}
+                                <a href="{{ professional.diplomaUrl }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-lg text-wellcare-600 bg-wellcare-50 hover:bg-wellcare-100 dark:bg-wellcare-900/20 dark:text-wellcare-400 dark:hover:bg-wellcare-900/30">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
+                                    {{ 'admin.users.pending_verification.view_diploma'|trans }}
+                                </a>
+                                <p class="mt-2 text-xs text-gray-400 break-all">{{ professional.diplomaUrl }}</p>
+                            {% else %}
+                                <span class="text-sm text-gray-400 dark:text-gray-500">-</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-end gap-3 pt-4 mt-6 border-t border-gray-200 dark:border-gray-700">
+                        <a href="{{ path('admin_users_show', {'uuid': professional.uuid}) }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            {{ 'admin.users.pending_verification.view_details'|trans }}
+                        </a>
+                        <form method="post" action="{{ path('admin_users_verify', {'uuid': professional.uuid}) }}" class="inline">
+                            <input type="hidden" name="_token" value="{{ csrf_token('verify-' ~ professional.uuid) }}">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition-all duration-200 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-green-500/25">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                {{ 'admin.users.pending_verification.verify'|trans }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+function updateBulkToolbar() {
+    const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+    const toolbar = document.getElementById('bulk-actions-toolbar');
+    const countEl = document.getElementById('selected-count');
+    
+    countEl.textContent = selected.length;
+    
+    if (selected.length > 0) {
+        toolbar.classList.remove('hidden');
+    } else {
+        toolbar.classList.add('hidden');
+    }
+}
+
+function bulkVerify() {
+    const checkboxes = document.querySelectorAll('input[name="uuids[]"]:checked');
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        alert('Veuillez sélectionner au moins un professionnel');
+        return;
+    }
+
+    if (!confirm('Êtes-vous sûr de vouloir vérifier ' + selected.length + ' professionnel(s) ?')) {
+        return;
+    }
+
+    // Set the selected UUIDs in the hidden form
+    document.getElementById('selected-uuids-verify').value = JSON.stringify(selected);
+    
+    // Submit the form
+    document.getElementById('bulk-verify-form').submit();
+}
+
+// Select all checkbox functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add select all checkbox to header if needed
+    const headerRows = document.querySelectorAll('.bg-amber-50, .dark\\:bg-amber-900\\/20');
+    
+    headerRows.forEach(function(headerRow) {
+        const flexContainer = headerRow.querySelector('.flex');
+        if (flexContainer && !headerRow.querySelector('#select-all')) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = 'select-all-' + Math.random().toString(36).substr(2, 9);
+            checkbox.className = 'w-5 h-5 border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500 cursor-pointer';
+            checkbox.onchange = function() {
+                document.querySelectorAll('input[name="uuids[]"]').forEach(function(cb) {
+                    cb.checked = this.checked;
+                }, this);
+                updateBulkToolbar();
+            };
+            
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.className = 'text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none';
+            label.textContent = 'Tout sélectionner';
+            
+            // Insert at the beginning of the flex container
+            flexContainer.insertBefore(checkbox, flexContainer.firstChild);
+            flexContainer.insertBefore(label, checkbox.nextSibling);
+        }
+    });
+});
+</script>
+{% endblock %}
