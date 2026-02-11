@@ -21,17 +21,41 @@
                     <p class="mt-1 text-gray-600 dark:text-gray-400">Définissez et suivez vos objectifs alimentaires</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button @click="$dispatch('edit-goals')" 
+                    <button @click="$dispatch('edit-goals')"
                             class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <i class="mr-2 fas fa-edit"></i>
                         Modifier
                     </button>
-                    <button @click="saveGoals()" 
+                    <button @click="saveGoals()"
                             class="inline-flex items-center px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                         <i class="mr-2 fas fa-save"></i>
                         Enregistrer
                     </button>
                 </div>
+            </div>
+
+            {# Sub Navigation #}
+            <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <nav class="flex space-x-8">
+                    <a href="{{ path('nutrition_dashboard') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-home"></i>Tableau de bord
+                    </a>
+                    <a href="{{ path('nutrition_food_diary') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-book"></i>Journal alimentaire
+                    </a>
+                    <a href="{{ path('nutrition_meal_planner') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-calendar-alt"></i>Planificateur
+                    </a>
+                    <a href="{{ path('nutrition_recipes') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-utensils"></i>Recettes
+                    </a>
+                    <a href="{{ path('nutrition_goals') }}" class="text-wellcare-600 dark:text-wellcare-400 border-b-2 border-wellcare-600 dark:border-wellcare-400 px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-bullseye"></i>Objectifs
+                    </a>
+                    <a href="{{ path('nutrition_progress') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-chart-line"></i>Progrès
+                    </a>
+                </nav>
             </div>
         </div>
     </div>
@@ -342,41 +366,19 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('nutritionGoals', () => ({
-        calculator: {
-            gender: 'female',
-            age: 30,
-            weight: 70,
-            height: 170,
-            activityLevel: 'moderate'
-        },
+        calculator: {{ calculator|json_encode|raw }},
         bmrResult: null,
-        weightProgress: {
-            start: 80,
-            current: 75,
-            target: 70,
-            lost: 5,
-            nextGoal: 72,
-            percentage: 50
-        },
+        weightProgress: {{ weightProgress|json_encode|raw }},
         macroGoals: {
-            proteins: 120,
-            carbs: 200,
-            fats: 65,
-            get proteinPercentage() { return Math.round((this.proteins * 4 / 2000) * 100); },
-            get carbPercentage() { return Math.round((this.carbs * 4 / 2000) * 100); },
-            get fatPercentage() { return Math.round((this.fats * 9 / 2000) * 100); }
+            proteins: {{ macroGoals.proteins }},
+            carbs: {{ macroGoals.carbs }},
+            fats: {{ macroGoals.fats }},
+            get proteinPercentage() { return Math.round((this.proteins * 4 / {{ dailyTargets.calories }}) * 100); },
+            get carbPercentage() { return Math.round((this.carbs * 4 / {{ dailyTargets.calories }}) * 100); },
+            get fatPercentage() { return Math.round((this.fats * 9 / {{ dailyTargets.calories }}) * 100); }
         },
-        dailyTargets: {
-            calories: 2000,
-            fiber: 25,
-            sugar: 25,
-            sodium: 2000
-        },
-        streaks: {
-            logging: 7,
-            water: 5,
-            veggies: 3
-        },
+        dailyTargets: {{ dailyTargets|json_encode|raw }},
+        streaks: {{ streaks|json_encode|raw }},
         
         calculateBMR() {
             const { gender, age, weight, height } = this.calculator;
@@ -404,7 +406,30 @@ document.addEventListener('alpine:init', () => {
         },
         
         saveGoals() {
-            console.log('Saving goals');
+            const data = {
+                dailyCalories: this.dailyTargets.calories,
+                proteinPercent: this.macroGoals.proteins,
+                carbPercent: this.macroGoals.carbs,
+                fatPercent: this.macroGoals.fats
+            };
+
+            fetch('/nutrition/api/nutrition/goals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Objectifs sauvegardés avec succès!');
+                } else {
+                    alert('Erreur lors de la sauvegarde');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving goals:', error);
+                alert('Erreur lors de la sauvegarde');
+            });
         }
     }));
 });

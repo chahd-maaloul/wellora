@@ -1,0 +1,210 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Suivi des Progrès - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    {# Page Header #}
+    <div class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="text-3xl fas fa-chart-line text-wellcare-500"></i>
+                        Suivi des Progrès
+                    </h1>
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">Suivez votre évolution et vos accomplissements</p>
+                </div>
+            </div>
+
+            {# Sub Navigation #}
+            <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <nav class="flex space-x-8">
+                    <a href="{{ path('nutrition_dashboard') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-home"></i>Tableau de bord
+                    </a>
+                    <a href="{{ path('nutrition_food_diary') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-book"></i>Journal alimentaire
+                    </a>
+                    <a href="{{ path('nutrition_meal_planner') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-calendar-alt"></i>Planificateur
+                    </a>
+                    <a href="{{ path('nutrition_recipes') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-utensils"></i>Recettes
+                    </a>
+                    <a href="{{ path('nutrition_goals') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-bullseye"></i>Objectifs
+                    </a>
+                    <a href="{{ path('nutrition_analysis') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-chart-pie"></i>Analyse
+                    </a>
+                    <a href="{{ path('nutrition_progress') }}" class="text-wellcare-600 dark:text-wellcare-400 border-b-2 border-wellcare-600 dark:border-wellcare-400 px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-chart-line"></i>Progrès
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <main class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        {# Weight Progress #}
+        <div class="p-6 mb-8 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 text-blue-500 fas fa-weight-scale"></i>
+                Progression du poids
+            </h2>
+
+            <div class="flex items-center justify-center mb-6">
+                <div class="relative">
+                    <svg class="w-40 h-40 transform -rotate-90">
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" stroke-width="12" fill="none" class="text-gray-200 dark:text-gray-700"/>
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" stroke-width="12" fill="none"
+                                stroke-dasharray="{{ weightProgress.percentage }} 440"
+                                class="text-wellcare-500"/>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ weightProgress.current }} kg</span>
+                        <span class="text-sm text-gray-500">Objectif: {{ weightProgress.target }} kg</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 text-center">
+                <p class="text-sm text-gray-500">Perte totale: <span class="font-medium text-green-600">-{{ weightProgress.lost }} kg</span></p>
+                <p class="text-sm text-gray-500">Prochain objectif: <span class="font-medium text-wellcare-600">{{ weightProgress.nextGoal }} kg</span></p>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Début</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ weightProgress.start }} kg</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Actuel</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ weightProgress.current }} kg</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Objectif</span>
+                    <span class="font-medium text-wellcare-600">{{ weightProgress.target }} kg</span>
+                </div>
+            </div>
+        </div>
+
+        {# Streaks & Achievements #}
+        <div class="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
+            {# Streaks #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 text-orange-500 fas fa-fire"></i>
+                    Series et succès
+                </h2>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="p-4 text-center rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                        <p class="text-3xl font-bold text-orange-600">{{ streaks.logging }}</p>
+                        <p class="text-xs text-gray-500">Jours consécutifs</p>
+                        <i class="mt-2 text-orange-500 fas fa-check-circle"></i>
+                    </div>
+                    <div class="p-4 text-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                        <p class="text-3xl font-bold text-blue-600">{{ streaks.water }}</p>
+                        <p class="text-xs text-gray-500">Jours hydraté</p>
+                        <i class="mt-2 text-blue-500 fas fa-glass-water"></i>
+                    </div>
+                    <div class="p-4 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
+                        <p class="text-3xl font-bold text-green-600">{{ streaks.veggies }}</p>
+                        <p class="text-xs text-gray-500">Jours légumes</p>
+                        <i class="mt-2 text-green-500 fas fa-carrot"></i>
+                    </div>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Badges débloqués</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for badge in badges %}
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30" title="{{ badge.name }}">
+                            <i class="fas {{ badge.icon }} text-wellcare-500 text-lg"></i>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Goals History #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-chart-line text-wellcare-500"></i>
+                    Historique des objectifs
+                </h2>
+
+                <div class="h-64">
+                    <canvas id="goalsProgressChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {# Recent Achievements #}
+        <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 fas fa-trophy text-yellow-500"></i>
+                Accomplissements récents
+            </h2>
+
+            <div class="space-y-4">
+                {% for achievement in achievements %}
+                <div class="flex items-center gap-4 p-4 rounded-lg bg-{{ achievement.color|default('yellow') }}-50 dark:bg-{{ achievement.color|default('yellow') }}-900/20">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-{{ achievement.color|default('yellow') }}-100 dark:bg-{{ achievement.color|default('yellow') }}-900/30">
+                        <i class="fas {{ achievement.icon }} text-{{ achievement.color|default('yellow') }}-500"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ achievement.title }}</p>
+                        <p class="text-sm text-gray-500">{{ achievement.description }}</p>
+                    </div>
+                    <span class="text-sm text-gray-500">{{ achievement.dateText }}</span>
+                </div>
+                {% endfor %}
+
+                {% if achievements is empty %}
+                <div class="text-center py-8">
+                    <i class="fas fa-trophy text-gray-300 text-4xl mb-4"></i>
+                    <p class="text-gray-500">Aucun accomplissement récent</p>
+                    <p class="text-sm text-gray-400">Continuez à suivre vos objectifs pour débloquer des badges !</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    // Initialize progress chart with dynamic data
+    const ctx = document.getElementById('goalsProgressChart');
+    if (ctx) {
+        const chartData = {{ chartData|json_encode|raw }};
+        new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

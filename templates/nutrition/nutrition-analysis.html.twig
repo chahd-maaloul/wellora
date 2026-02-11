@@ -11,7 +11,7 @@
             margin: 0 auto;
             padding: 24px;
         }
-        
+
         .analysis-header {
             display: flex;
             justify-content: space-between;
@@ -20,18 +20,24 @@
             flex-wrap: wrap;
             gap: 16px;
         }
-        
+
         .analysis-title {
             font-size: 1.75rem;
             font-weight: 700;
             color: #1f2937;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .analysis-title {
+                color: #f9fafb;
+            }
+        }
+
         .period-selector {
             display: flex;
             gap: 8px;
         }
-        
+
         .period-btn {
             padding: 8px 16px;
             background: #f3f4f6;
@@ -41,54 +47,83 @@
             font-weight: 500;
             transition: all 0.2s;
         }
-        
+
         .period-btn:hover {
             background: #e5e7eb;
         }
-        
+
         .period-btn.active {
             background: #10b981;
             color: white;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .period-btn {
+                background: #374151;
+                color: #f9fafb;
+            }
+
+            .period-btn:hover {
+                background: #4b5563;
+            }
+
+            .period-btn.active {
+                background: #10b981;
+                color: white;
+            }
+        }
+
         .analysis-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 24px;
         }
-        
+
         @media (max-width: 1024px) {
             .analysis-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-        
+
         @media (max-width: 640px) {
             .analysis-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         .stat-card {
             background: white;
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .stat-card {
+                background: #1f2937;
+                box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+            }
+        }
+
         .stat-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
         }
-        
+
         .stat-label {
             font-weight: 600;
             color: #374151;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .stat-label {
+                color: #f9fafb;
+            }
+        }
+
         .stat-trend {
             display: flex;
             align-items: center;
@@ -97,46 +132,58 @@
             padding: 4px 8px;
             border-radius: 20px;
         }
-        
+
         .stat-trend.up {
             background: #fee2e2;
             color: #dc2626;
         }
-        
+
         .stat-trend.down {
             background: #d1fae5;
             color: #059669;
         }
-        
+
         .stat-trend.neutral {
             background: #fef3c7;
             color: #d97706;
         }
-        
+
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
             color: #1f2937;
             margin-bottom: 8px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .stat-value {
+                color: #f9fafb;
+            }
+        }
+
         .stat-progress {
             height: 8px;
             background: #e5e7eb;
             border-radius: 4px;
             overflow: hidden;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .stat-progress {
+                background: #4b5563;
+            }
+        }
+
         .stat-progress-bar {
             height: 100%;
             border-radius: 4px;
             transition: width 0.3s ease;
         }
-        
+
         .stat-progress-bar.success { background: #10b981; }
         .stat-progress-bar.warning { background: #f59e0b; }
         .stat-progress-bar.danger { background: #ef4444; }
-        
+
         .stat-detail {
             display: flex;
             justify-content: space-between;
@@ -144,39 +191,58 @@
             color: #6b7280;
             margin-top: 8px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .stat-detail {
+                color: #d1d5db;
+            }
+        }
+
         .charts-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 24px;
             margin-bottom: 24px;
         }
-        
+
         @media (max-width: 1024px) {
             .charts-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         .chart-card {
             background: white;
             border-radius: 20px;
             padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .chart-card {
+                background: #1f2937;
+                box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+            }
+        }
+
         .chart-title {
             font-size: 1.125rem;
             font-weight: 600;
             color: #1f2937;
             margin-bottom: 20px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .chart-title {
+                color: #f9fafb;
+            }
+        }
+
         .chart-container {
             height: 300px;
             position: relative;
         }
-        
+
         .bar-chart {
             display: flex;
             align-items: flex-end;
@@ -184,43 +250,49 @@
             height: 100%;
             padding-top: 40px;
         }
-        
+
         .bar-group {
             display: flex;
             flex-direction: column;
             align-items: center;
             flex: 1;
         }
-        
+
         .bar-wrapper {
             display: flex;
             align-items: flex-end;
             gap: 4px;
             height: 200px;
         }
-        
+
         .bar {
             width: 24px;
             border-radius: 4px 4px 0 0;
             transition: height 0.3s ease;
         }
-        
+
         .bar.calories { background: #10b981; }
         .bar.proteins { background: #f97316; }
-        
+
         .bar-label {
             margin-top: 8px;
             font-size: 0.75rem;
             color: #6b7280;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .bar-label {
+                color: #d1d5db;
+            }
+        }
+
         .pie-chart-container {
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100%;
         }
-        
+
         .pie-chart {
             width: 200px;
             height: 200px;
@@ -233,7 +305,7 @@
             );
             position: relative;
         }
-        
+
         .pie-chart::after {
             content: '';
             position: absolute;
@@ -245,29 +317,41 @@
             background: white;
             border-radius: 50%;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .pie-chart::after {
+                background: #1f2937;
+            }
+        }
+
         .pie-legend {
             margin-left: 24px;
         }
-        
+
         .legend-item {
             display: flex;
             align-items: center;
             gap: 8px;
             margin-bottom: 8px;
         }
-        
+
         .legend-color {
             width: 16px;
             height: 16px;
             border-radius: 4px;
         }
-        
+
         .legend-label {
             font-size: 0.875rem;
             color: #374151;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .legend-label {
+                color: #f9fafb;
+            }
+        }
+
         .insights-section {
             background: white;
             border-radius: 20px;
@@ -275,93 +359,149 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 24px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .insights-section {
+                background: #1f2937;
+                box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+            }
+        }
+
         .insights-title {
             font-size: 1.25rem;
             font-weight: 600;
             color: #1f2937;
             margin-bottom: 20px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .insights-title {
+                color: #f9fafb;
+            }
+        }
+
         .insights-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 16px;
         }
-        
+
         .insight-card {
             padding: 16px;
             border-radius: 12px;
             display: flex;
             gap: 12px;
         }
-        
+
         .insight-card.success {
             background: #f0fdf4;
             border-left: 4px solid #10b981;
         }
-        
+
         .insight-card.info {
             background: #eff6ff;
             border-left: 4px solid #3b82f6;
         }
-        
+
         .insight-card.warning {
             background: #fffbeb;
             border-left: 4px solid #f59e0b;
         }
-        
+
         .insight-card.danger {
             background: #fef2f2;
             border-left: 4px solid #ef4444;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .insight-card.success {
+                background: #064e3b;
+            }
+
+            .insight-card.info {
+                background: #1e3a8a;
+            }
+
+            .insight-card.warning {
+                background: #92400e;
+            }
+
+            .insight-card.danger {
+                background: #7f1d1d;
+            }
+        }
+
         .insight-icon {
             font-size: 1.5rem;
         }
-        
+
         .insight-content {
             flex: 1;
         }
-        
+
         .insight-message {
             font-weight: 500;
             color: #1f2937;
             margin-bottom: 4px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .insight-message {
+                color: #f9fafb;
+            }
+        }
+
         .insight-recommendation {
             font-size: 0.875rem;
             color: #6b7280;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .insight-recommendation {
+                color: #d1d5db;
+            }
+        }
+
         .patterns-section {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 24px;
             margin-bottom: 24px;
         }
-        
+
         @media (max-width: 1024px) {
             .patterns-section {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         .pattern-card {
             background: white;
             border-radius: 20px;
             padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .pattern-card {
+                background: #1f2937;
+                box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+            }
+        }
+
         .pattern-title {
             font-size: 1.125rem;
             font-weight: 600;
             color: #1f2937;
             margin-bottom: 20px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .pattern-title {
+                color: #f9fafb;
+            }
+        }
+
         .meal-pattern {
             display: flex;
             justify-content: space-between;
@@ -371,19 +511,37 @@
             border-radius: 10px;
             margin-bottom: 8px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .meal-pattern {
+                background: #374151;
+            }
+        }
+
         .meal-name {
             font-weight: 500;
             color: #374151;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .meal-name {
+                color: #f9fafb;
+            }
+        }
+
         .meal-stats {
             display: flex;
             gap: 16px;
             font-size: 0.875rem;
             color: #6b7280;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .meal-stats {
+                color: #d1d5db;
+            }
+        }
+
         .timing-bar {
             display: flex;
             height: 12px;
@@ -392,22 +550,34 @@
             overflow: hidden;
             margin-top: 12px;
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            .timing-bar {
+                background: #4b5563;
+            }
+        }
+
         .timing-segment {
             height: 100%;
             transition: width 0.3s ease;
         }
-        
+
         .timing-segment.morning { background: #fef3c7; }
         .timing-segment.afternoon { background: #dbeafe; }
         .timing-segment.evening { background: #e0e7ff; }
-        
+
         .timing-labels {
             display: flex;
             justify-content: space-between;
             margin-top: 8px;
             font-size: 0.75rem;
             color: #6b7280;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .timing-labels {
+                color: #d1d5db;
+            }
         }
     </style>
 {% endblock %}
@@ -425,25 +595,25 @@
         </div>
         
         <div class="analysis-grid">
-            {% for macro, data in goals %}
+            {% for goal in goals %}
                 <div class="stat-card">
                     <div class="stat-header">
                         <span class="stat-label">
-                            {% if macro == 'calories' %}🔥 Calories
-                            {% elseif macro == 'proteins' %}💪 Protein
-                            {% elseif macro == 'carbs' %}🍞 Carbohydrates
-                            {% elseif macro == 'fats' %}🥑 Fats{% endif %}
+                            {% if goal.name == 'Calories' %}🔥 Calories
+                            {% elseif goal.name == 'Proteins' %}💪 Protein
+                            {% elseif goal.name == 'Carbs' %}🍞 Carbohydrates
+                            {% elseif goal.name == 'Fats' %}🥑 Fats{% endif %}
                         </span>
                         <span class="stat-trend down">↓ 5%</span>
                     </div>
-                    <div class="stat-value">{{ data.current }}{% if macro != 'calories' %}g{% endif %}</div>
+                    <div class="stat-value">{{ goal.current }}{% if goal.name != 'Calories' %}g{% endif %}</div>
                     <div class="stat-progress">
-                        <div class="stat-progress-bar {% if data.progress >= 90 %}success{% elseif data.progress >= 70 %}warning{% else %}danger{% endif %}" 
-                             style="width: {{ data.progress }}%"></div>
+                        <div class="stat-progress-bar {% if goal.progress >= 90 %}success{% elseif goal.progress >= 70 %}warning{% else %}danger{% endif %}"
+                             style="width: {{ goal.progress }}%"></div>
                     </div>
                     <div class="stat-detail">
-                        <span>Target: {{ data.target }}{% if macro != 'calories' %}g{% endif %}</span>
-                        <span>{{ data.progress }}%</span>
+                        <span>Target: {{ goal.target }}{% if goal.name != 'Calories' %}g{% endif %}</span>
+                        <span>{{ goal.progress }}%</span>
                     </div>
                 </div>
             {% endfor %}

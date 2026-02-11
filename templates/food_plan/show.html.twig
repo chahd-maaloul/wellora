@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}FoodPlan{% endblock %}
+
+{% block body %}
+    <h1>FoodPlan</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ food_plan.id }}</td>
+            </tr>
+            <tr>
+                <th>NomPlan</th>
+                <td>{{ food_plan.nomPlan }}</td>
+            </tr>
+            <tr>
+                <th>Calories</th>
+                <td>{{ food_plan.calories }}</td>
+            </tr>
+            <tr>
+                <th>Protein</th>
+                <td>{{ food_plan.protein }}</td>
+            </tr>
+            <tr>
+                <th>Fat</th>
+                <td>{{ food_plan.fat }}</td>
+            </tr>
+            <tr>
+                <th>Carbs</th>
+                <td>{{ food_plan.carbs }}</td>
+            </tr>
+            <tr>
+                <th>PlanDate</th>
+                <td>{{ food_plan.planDate ? food_plan.planDate|date('Y-m-d') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_food_plan_index') }}">back to list</a>
+
+    <a href="{{ path('app_food_plan_edit', {'id': food_plan.id}) }}">edit</a>
+
+    {{ include('food_plan/_delete_form.html.twig') }}
+{% endblock %}

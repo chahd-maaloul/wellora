@@ -21,9 +21,38 @@
                     <p class="mt-1 text-gray-600 dark:text-gray-400">Suivez et analysez votre alimentation quotidienne</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <input type="date" x-model="selectedDate" 
+                    <input type="date" x-model="selectedDate"
                            class="px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                    <button @click="$dispatch('open-quick-log')"
+                            class="inline-flex items-center px-4 py-2 text-white transition-colors rounded-lg shadow-sm bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="mr-2 fas fa-plus"></i>
+                        Ajouter un aliment
+                    </button>
                 </div>
+            </div>
+
+            {# Sub Navigation #}
+            <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <nav class="flex space-x-8">
+                    <a href="{{ path('nutrition_dashboard') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-home"></i>Tableau de bord
+                    </a>
+                    <a href="{{ path('nutrition_food_diary') }}" class="text-wellcare-600 dark:text-wellcare-400 border-b-2 border-wellcare-600 dark:border-wellcare-400 px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-book"></i>Journal alimentaire
+                    </a>
+                    <a href="{{ path('nutrition_meal_planner') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-calendar-alt"></i>Planificateur
+                    </a>
+                    <a href="{{ path('nutrition_recipes') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-utensils"></i>Recettes
+                    </a>
+                    <a href="{{ path('nutrition_goals') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-bullseye"></i>Objectifs
+                    </a>
+                    <a href="{{ path('nutrition_progress') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-chart-line"></i>Progrès
+                    </a>
+                </nav>
             </div>
         </div>
     </div>
@@ -111,7 +140,7 @@
                                         <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.calories }} kcal</p>
                                         <p class="text-xs text-gray-500">P: {{ item.proteins|default(0) }}g | G: {{ item.carbs|default(0) }}g | L: {{ item.fats|default(0) }}g</p>
                                     </div>
-                                    <button @click="removeFood('{{ mealType }}', {{ loop.index0 }})" 
+                                    <button @click="deleteFoodItem({{ item.id }})"
                                             class="text-red-500 transition-colors hover:text-red-600">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -223,17 +252,47 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('foodDiary', () => ({
         selectedDate: new Date().toISOString().split('T')[0],
         showQuickLog: false,
-        
+
         init() {
             this.initCharts();
         },
 
         toggleWater(level) {
-            console.log('Toggle water:', level);
+            fetch('/nutrition/api/nutrition/water', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ intake: level })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to show updated data
+                    window.location.reload();
+                }
+            })
+            .catch(error => console.error('Error updating water intake:', error));
         },
 
-        removeFood(mealType, index) {
-            console.log('Remove food:', mealType, index);
+        deleteFoodItem(itemId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet aliment ?')) {
+                fetch(`/nutrition/api/nutrition/food/${itemId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to show updated data
+                        window.location.reload();
+                    } else {
+                        alert('Erreur lors de la suppression');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting food item:', error);
+                    alert('Erreur lors de la suppression');
+                });
+            }
         },
 
         initCharts() {
@@ -264,6 +323,20 @@ document.addEventListener('alpine:init', () => {
             }
         }
     }));
+});
+
+// Listen for date changes
+document.addEventListener('change', function(e) {
+    if (e.target.matches('input[type="date"]')) {
+        const selectedDate = e.target.value;
+        window.location.href = `/nutrition/diary?date=${selectedDate}`;
+    }
+});
+
+// Listen for quick log modal events
+document.addEventListener('open-quick-log', function() {
+    // Handle opening quick log modal
+    console.log('Opening quick log modal');
 });
 </script>
 {% endblock %}

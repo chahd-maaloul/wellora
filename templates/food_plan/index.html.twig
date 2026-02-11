@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}FoodPlan index{% endblock %}
+
+{% block body %}
+    <h1>FoodPlan index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>NomPlan</th>
+                <th>Calories</th>
+                <th>Protein</th>
+                <th>Fat</th>
+                <th>Carbs</th>
+                <th>PlanDate</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for food_plan in food_plans %}
+            <tr>
+                <td>{{ food_plan.id }}</td>
+                <td>{{ food_plan.nomPlan }}</td>
+                <td>{{ food_plan.calories }}</td>
+                <td>{{ food_plan.protein }}</td>
+                <td>{{ food_plan.fat }}</td>
+                <td>{{ food_plan.carbs }}</td>
+                <td>{{ food_plan.planDate ? food_plan.planDate|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_food_plan_show', {'id': food_plan.id}) }}">show</a>
+                    <a href="{{ path('app_food_plan_edit', {'id': food_plan.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="8">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_food_plan_new') }}">Create new</a>
+{% endblock %}

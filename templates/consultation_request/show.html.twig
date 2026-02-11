@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ConsultationRequest{% endblock %}
+
+{% block body %}
+    <h1>ConsultationRequest</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ consultation_request.id }}</td>
+            </tr>
+            <tr>
+                <th>PatientName</th>
+                <td>{{ consultation_request.patientName }}</td>
+            </tr>
+            <tr>
+                <th>PatientEmail</th>
+                <td>{{ consultation_request.patientEmail }}</td>
+            </tr>
+            <tr>
+                <th>RequestedAt</th>
+                <td>{{ consultation_request.requestedAt ? consultation_request.requestedAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+            <tr>
+                <th>DurationMinutes</th>
+                <td>{{ consultation_request.durationMinutes }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ consultation_request.status }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ consultation_request.createdAt ? consultation_request.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_consultation_request_index') }}">back to list</a>
+
+    <a href="{{ path('app_consultation_request_edit', {'id': consultation_request.id}) }}">edit</a>
+
+    {{ include('consultation_request/_delete_form.html.twig') }}
+{% endblock %}

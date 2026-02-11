@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}WaterLog{% endblock %}
+
+{% block body %}
+    <h1>WaterLog</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ water_log.id }}</td>
+            </tr>
+            <tr>
+                <th>LogDate</th>
+                <td>{{ water_log.logDate ? water_log.logDate|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>Glasses</th>
+                <td>{{ water_log.glasses }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_water_log_index') }}">back to list</a>
+
+    <a href="{{ path('app_water_log_edit', {'id': water_log.id}) }}">edit</a>
+
+    {{ include('water_log/_delete_form.html.twig') }}
+{% endblock %}

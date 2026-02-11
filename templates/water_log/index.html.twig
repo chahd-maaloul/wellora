@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}WaterLog index{% endblock %}
+
+{% block body %}
+    <h1>WaterLog index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>LogDate</th>
+                <th>Glasses</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for water_log in water_logs %}
+            <tr>
+                <td>{{ water_log.id }}</td>
+                <td>{{ water_log.logDate ? water_log.logDate|date('Y-m-d') : '' }}</td>
+                <td>{{ water_log.glasses }}</td>
+                <td>
+                    <a href="{{ path('app_water_log_show', {'id': water_log.id}) }}">show</a>
+                    <a href="{{ path('app_water_log_edit', {'id': water_log.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_water_log_new') }}">Create new</a>
+{% endblock %}

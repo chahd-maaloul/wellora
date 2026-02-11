@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit GroceryList{% endblock %}
+
+{% block body %}
+    <h1>Edit GroceryList</h1>
+
+    {{ include('grocery_list/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('app_grocery_list_index') }}">back to list</a>
+
+    {{ include('grocery_list/_delete_form.html.twig') }}
+{% endblock %}

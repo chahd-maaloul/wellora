@@ -26,17 +26,38 @@
                     <p class="mt-1 text-gray-600 dark:text-gray-400">Suivez votre alimentation et atteignez vos objectifs nutritionnels</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button @click="$dispatch('open-quick-log')" 
+                    <button @click="$dispatch('open-quick-log')"
                             class="inline-flex items-center px-4 py-2 text-white transition-colors rounded-lg shadow-sm bg-wellcare-500 hover:bg-wellcare-600">
                         <i class="mr-2 fas fa-plus"></i>
                         Ajouter un aliment
                     </button>
-                    <a href="{{ path('nutrition_goals') }}" 
+                    <a href="{{ path('nutrition_goals') }}"
                        class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <i class="mr-2 fas fa-bullseye"></i>
                         Mes objectifs
                     </a>
                 </div>
+            </div>
+
+            {# Sub Navigation #}
+            <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <nav class="flex space-x-8">
+                    <a href="{{ path('nutrition_dashboard') }}" class="text-wellcare-600 dark:text-wellcare-400 border-b-2 border-wellcare-600 dark:border-wellcare-400 px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-home"></i>Tableau de bord
+                    </a>
+                    <a href="{{ path('nutrition_food_diary') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-book"></i>Journal alimentaire
+                    </a>
+                    <a href="{{ path('nutrition_meal_planner') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-calendar-alt"></i>Planificateur
+                    </a>
+                    <a href="{{ path('nutrition_recipes') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-utensils"></i>Recettes
+                    </a>
+                    <a href="{{ path('nutrition_goals') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 border-b-2 border-transparent px-1 py-2 text-sm font-medium">
+                        <i class="mr-2 fas fa-bullseye"></i>Objectifs
+                    </a>
+                </nav>
             </div>
         </div>
     </div>
@@ -399,34 +420,162 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('nutritionDashboard', () => ({
+        // Modal states
+        showQuickLog: false,
+        showBarcode: false,
+        showVoice: false,
+
+        // Water tracking
         waterIntake: {{ water.intake|default(0) }},
         waterTarget: {{ water.target|default(8) }},
-        
+
+        // Food logging
+        foodSearch: '',
+        searchResults: [],
+        selectedMeal: 'breakfast',
+        manualFood: {
+            name: '',
+            calories: '',
+            proteins: '',
+            carbs: '',
+            fats: '',
+            quantity: 1
+        },
+
         init() {
             this.initCharts();
+            this.setupEventListeners();
+        },
+
+        setupEventListeners() {
+            // Listen for custom events dispatched from buttons
+            document.addEventListener('open-quick-log', () => {
+                this.showQuickLog = true;
+            });
+            document.addEventListener('open-barcode', () => {
+                this.showBarcode = true;
+            });
+            document.addEventListener('open-voice', () => {
+                this.showVoice = true;
+            });
+            document.addEventListener('add-meal', (event) => {
+                this.selectedMeal = event.detail.meal;
+                this.showQuickLog = true;
+            });
         },
 
         toggleWater(level) {
             if (level <= this.waterTarget) {
                 this.waterIntake = level;
                 // Save to backend
-                fetch('/api/nutrition/water', {
+                fetch('/nutrition/api/nutrition/water', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ intake: this.waterIntake })
-                });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI
+                        this.updateDashboard();
+                    }
+                })
+                .catch(error => console.error('Error updating water intake:', error));
             }
         },
 
-        addFood(name, calories) {
-            // Add food to current meal
-            console.log('Adding food:', name, calories);
+        addQuickFood(name, calories, unit) {
+            this.submitFood({
+                name: name,
+                calories: calories,
+                meal: this.selectedMeal,
+                quantity: 1
+            });
+        },
+
+        searchFoods() {
+            if (this.foodSearch.length < 2) {
+                this.searchResults = [];
+                return;
+            }
+
+            fetch(`/nutrition/api/nutrition/food/search?q=${encodeURIComponent(this.foodSearch)}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.searchResults = data;
+                })
+                .catch(error => console.error('Error searching foods:', error));
+        },
+
+        selectFood(food) {
+            this.manualFood.name = food.name;
+            this.manualFood.calories = food.calories;
+            // You could populate macros here if available
+        },
+
+        submitFood(quickData = null) {
+            const data = quickData || {
+                name: this.manualFood.name,
+                calories: parseInt(this.manualFood.calories) || 0,
+                proteins: parseFloat(this.manualFood.proteins) || 0,
+                carbs: parseFloat(this.manualFood.carbs) || 0,
+                fats: parseFloat(this.manualFood.fats) || 0,
+                meal: this.selectedMeal,
+                quantity: parseInt(this.manualFood.quantity) || 1
+            };
+
+            fetch('/nutrition/api/nutrition/food', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reset form
+                    this.manualFood = {
+                        name: '',
+                        calories: '',
+                        proteins: '',
+                        carbs: '',
+                        fats: '',
+                        quantity: 1
+                    };
+                    this.foodSearch = '';
+                    this.searchResults = [];
+                    this.showQuickLog = false;
+
+                    // Update dashboard
+                    this.updateDashboard();
+
+                    // Show success message
+                    this.showNotification('Aliment ajouté avec succès!', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding food:', error);
+                this.showNotification('Erreur lors de l\'ajout de l\'aliment', 'error');
+            });
+        },
+
+        updateDashboard() {
+            // Reload the page or update specific sections
+            // For now, we'll reload to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        },
+
+        showNotification(message, type = 'info') {
+            // Simple notification - you could enhance this
+            alert(message);
         },
 
         initCharts() {
             const ctx = document.getElementById('weeklyNutritionChart');
             if (!ctx) return;
 
+            // Sample data - in a real app, this would come from the backend
             new Chart(ctx, {
                 type: 'bar',
                 data: {

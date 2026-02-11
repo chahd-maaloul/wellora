@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}NutritionGoal{% endblock %}
+
+{% block body %}
+    <h1>NutritionGoal</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ nutrition_goal.id }}</td>
+            </tr>
+            <tr>
+                <th>GoalType</th>
+                <td>{{ nutrition_goal.goalType }}</td>
+            </tr>
+            <tr>
+                <th>DailyCalories</th>
+                <td>{{ nutrition_goal.dailyCalories }}</td>
+            </tr>
+            <tr>
+                <th>ProteinPercent</th>
+                <td>{{ nutrition_goal.proteinPercent }}</td>
+            </tr>
+            <tr>
+                <th>FatPercent</th>
+                <td>{{ nutrition_goal.fatPercent }}</td>
+            </tr>
+            <tr>
+                <th>CarbPercent</th>
+                <td>{{ nutrition_goal.carbPercent }}</td>
+            </tr>
+            <tr>
+                <th>StartDate</th>
+                <td>{{ nutrition_goal.startDate ? nutrition_goal.startDate|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>TargetDate</th>
+                <td>{{ nutrition_goal.targetDate ? nutrition_goal.targetDate|date('Y-m-d') : '' }}</td>
+            </tr>
+            <tr>
+                <th>IsActive</th>
+                <td>{{ nutrition_goal.isActive ? 'Yes' : 'No' }}</td>
+            </tr>
+            <tr>
+                <th>Notes</th>
+                <td>{{ nutrition_goal.notes }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_nutrition_goal_index') }}">back to list</a>
+
+    <a href="{{ path('app_nutrition_goal_edit', {'id': nutrition_goal.id}) }}">edit</a>
+
+    {{ include('nutrition_goal/_delete_form.html.twig') }}
+{% endblock %}

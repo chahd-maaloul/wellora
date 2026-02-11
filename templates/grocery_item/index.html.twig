@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}GroceryItem index{% endblock %}
+
+{% block body %}
+    <h1>GroceryItem index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Checked</th>
+                <th>EstimatedPrice</th>
+                <th>Position</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for grocery_item in grocery_items %}
+            <tr>
+                <td>{{ grocery_item.id }}</td>
+                <td>{{ grocery_item.name }}</td>
+                <td>{{ grocery_item.category }}</td>
+                <td>{{ grocery_item.quantity }}</td>
+                <td>{{ grocery_item.unit }}</td>
+                <td>{{ grocery_item.checked ? 'Yes' : 'No' }}</td>
+                <td>{{ grocery_item.estimatedPrice }}</td>
+                <td>{{ grocery_item.position }}</td>
+                <td>
+                    <a href="{{ path('app_grocery_item_show', {'id': grocery_item.id}) }}">show</a>
+                    <a href="{{ path('app_grocery_item_edit', {'id': grocery_item.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_grocery_item_new') }}">Create new</a>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nutritionist{% endblock %}
+
+{% block body %}
+    <h1>Nutritionist</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ nutritionist.id }}</td>
+            </tr>
+            <tr>
+                <th>NomNutritioniste</th>
+                <td>{{ nutritionist.nomNutritioniste }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_nutritionist_index') }}">back to list</a>
+
+    <a href="{{ path('app_nutritionist_edit', {'id': nutritionist.id}) }}">edit</a>
+
+    {{ include('nutritionist/_delete_form.html.twig') }}
+{% endblock %}
