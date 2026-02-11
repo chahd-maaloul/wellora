@@ -294,15 +294,19 @@
                                 <li role="none">
                                     <a href="/fitness/library" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/library') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Bibliothèque Exercices</a>
                                 </li>
+                                {#
                                 <li role="none">
                                     <a href="/fitness/log" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/log') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal d'Entraînement</a>
                                 </li>
+                                #}
+                                 {#
                                 <li role="none">
                                     <a href="/fitness/analytics" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/analytics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Analytiques</a>
                                 </li>
                                 <li role="none">
                                     <a href="/fitness/coach" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/coach') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mon Coach</a>
                                 </li>
+                                #}
                                 {# SMART Goals Sub-menu #}
                                 <li role="none" x-data="{ goalsOpen: false }" class="mt-2">
                                     <button 
@@ -319,28 +323,34 @@
                                     </button>
                                     <ul x-show="goalsOpen" x-collapse class="pl-6 mt-1 space-y-1">
                                         <li role="none">
-                                            <a href="/fitness/goals" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/goals') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mes Objectifs</a>
+                                            <a href="/goal/show" role="menuitem" class="sidebar-sublink" :class="isActive('/goal/show') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mes Objectifs</a>
                                         </li>
                                         <li role="none">
-                                            <a href="/fitness/goals/new" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/goals/new') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Nouvel Objectif</a>
+                                            <a href="/goal/new" role="menuitem" class="sidebar-sublink" :class="isActive('/goal/new') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Nouvel Objectif</a>
                                         </li>
+                                        {# 
                                         <li role="none">
-                                            <a href="/fitness/goals/wizard" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/goals/wizard') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Créer Objectif</a>
+                                            <a href="/goal/show" role="menuitem" class="sidebar-sublink" :class="isActive('/goal/show') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Créer Objectif</a>
                                         </li>
                                         <li role="none">
                                             <a href="/fitness/goals/editor" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/goals/editor') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Éditer Objectifs</a>
                                         </li>
+                                    
                                         <li role="none">
                                             <a href="/fitness/milestones" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/milestones') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Jalons & Récompenses</a>
                                         </li>
+
                                     </ul>
                                 </li>
                                 <li role="none">
                                     <a href="/fitness/progression" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/progression') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Progression</a>
                                 </li>
+                                #} 
+                                {#
                                 <li role="none">
                                     <a href="/fitness/adaptive" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/adaptive') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Entraînements Adaptatifs</a>
                                 </li>
+                                #}
                             </ul>
                         </li>
 
@@ -468,15 +478,18 @@
                                 </svg>
                             </button>
                             <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
+                               {# <li role="none">
                                     <a href="/coach/dashboard" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/dashboard') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Dashboard</a>
-                                </li>
+                                </li>#}
                                 <li role="none">
                                     <a href="/coach/clients" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/clients') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mes Clients</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/coach/programs" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/programs') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Programmes</a>
+                                    <a href="/coach/daily-plans" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/daily-plans') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Programmes</a>
                                 </li>
+                                 <li role="none">
+                                    <a href="/coach/exercises/show" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/exercises/show') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Bibliothèque Exercices</a>
+                                </li>{#
                                 <li role="none">
                                     <a href="/coach/progress" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/progress') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Suivi Progrès</a>
                                 </li>
@@ -486,6 +499,7 @@
                                 <li role="none">
                                     <a href="/coach/reports" role="menuitem" class="sidebar-sublink" :class="isActive('/coach/reports') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Rapports</a>
                                 </li>
+                                #}
                             </ul>
                         </li>
 
@@ -570,6 +584,7 @@
                                 <li role="none">
                                     <a href="/health/accessible/body-map" role="menuitem" class="sidebar-sublink" :class="isActive('/health/accessible/body-map') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Carte Corporelle</a>
                                 </li>
+                                
                                 <li role="none">
                                     <a href="/health/accessible/journal-entry" role="menuitem" class="sidebar-sublink" :class="isActive('/health/accessible/journal-entry') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal d'Entrée</a>
                                 </li>

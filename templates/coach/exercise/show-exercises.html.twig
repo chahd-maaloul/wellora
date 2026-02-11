@@ -27,6 +27,35 @@
             background-size: cover;
             background-position: center;
         }
+        
+        /* Pagination styles */
+        .pagination-btn {
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #f3f4f6;
+            transform: translateY(-1px);
+        }
+        
+        .pagination-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .dark .pagination-btn:hover:not(:disabled) {
+            background-color: #374151;
+        }
+        
+        .dark .pagination-btn.active {
+            background-color: #3b82f6;
+        }
     </style>
 {% endblock %}
 
@@ -36,7 +65,7 @@
 {% endblock %}
 
 {% block body %}
-<div x-data="exerciseLibrary({{ exercises|json_encode|e('html_attr') }})" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+<div x-data="exerciseLibrary({{ exercises|json_encode|e('html_attr') }})" x-init="init()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4">
@@ -56,10 +85,12 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
+                    <!-- Bouton "New Exercise" -->
                     <a href="{{ path('exercises_new') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                         <i class="fas fa-plus"></i>
                         {{ 'New Exercise' }}
                     </a>
+                    
                     <div class="relative">
                         <input 
                             type="text" 
@@ -201,8 +232,8 @@
                 <!-- Results Header -->
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                        <span x-text="filteredExercises.length"></span> {{ 'exercises found' }}
-                        <span x-show="filteredExercises.length === 0" class="ml-4">
+                        <span x-text="totalFilteredExercises"></span> {{ 'exercises found' }}
+                        <span x-show="paginatedExercises.length === 0" class="ml-4">
                             <a href="{{ path('exercises_new') }}" class="text-wellcare-500 hover:underline">
                                 Create your first exercise
                             </a>
@@ -221,7 +252,7 @@
 
                 <!-- Exercise Grid -->
                 <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    <template x-for="exercise in filteredExercises" :key="exercise.id">
+                    <template x-for="exercise in paginatedExercises" :key="exercise.id">
                         <div 
                             @click="openExerciseDetail(exercise)"
                             class="overflow-hidden transition-shadow bg-white border border-gray-100 shadow-sm cursor-pointer dark:bg-gray-800 rounded-xl dark:border-gray-700 hover:shadow-md">
@@ -353,7 +384,7 @@
                     </template>
                     
                     <!-- Empty State -->
-                    <div x-show="filteredExercises.length === 0" class="col-span-full py-12 text-center">
+                    <div x-show="paginatedExercises.length === 0" class="col-span-full py-12 text-center">
                         <div class="inline-block p-6 mb-4 rounded-full bg-gray-100 dark:bg-gray-800">
                             <i class="text-4xl text-gray-400 fas fa-dumbbell"></i>
                         </div>
@@ -372,12 +403,63 @@
                         </a>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <div x-show="totalPages > 1" class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        Showing <span x-text="startIndex + 1"></span> to <span x-text="endIndex"></span> of 
+                        <span x-text="totalFilteredExercises"></span> exercises
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <!-- Previous Button -->
+                        <button 
+                            @click="changePage(currentPage - 1)"
+                            :disabled="currentPage === 1"
+                            class="pagination-btn px-3 text-gray-600 dark:text-gray-400"
+                            :class="{'opacity-50 cursor-not-allowed': currentPage === 1, 'hover:bg-gray-100 dark:hover:bg-gray-800': currentPage !== 1}">
+                            <i class="fas fa-chevron-left"></i>
+                            <span class="ml-2">Previous</span>
+                        </button>
+                        
+                        <!-- Page Numbers -->
+                        <template x-for="page in visiblePages" :key="page">
+                            <button 
+                                @click="changePage(page)"
+                                class="pagination-btn"
+                                :class="{
+                                    'active bg-wellcare-500 text-white': page === currentPage,
+                                    'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': page !== currentPage
+                                }"
+                                x-text="page"></button>
+                        </template>
+                        
+                        <!-- Next Button -->
+                        <button 
+                            @click="changePage(currentPage + 1)"
+                            :disabled="currentPage === totalPages"
+                            class="pagination-btn px-3 text-gray-600 dark:text-gray-400"
+                            :class="{'opacity-50 cursor-not-allowed': currentPage === totalPages, 'hover:bg-gray-100 dark:hover:bg-gray-800': currentPage !== totalPages}">
+                            <span class="mr-2">Next</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- Exercise Detail Modal avec lecteur vidéo complet -->
-    <div x-show="showDetailModal" style="display: none;" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+    <!-- Exercise Detail Modal -->
+    <div x-show="showDetailModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         style="display: none;" 
+         x-cloak 
+         class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-start justify-center min-h-screen px-4 pt-6 pb-20">
             <div @click="showDetailModal = false" class="fixed inset-0 transition-opacity bg-black bg-opacity-75"></div>
             
@@ -478,7 +560,6 @@
                                 </span>
                             </div>
                         </div>
-                       
                     </div>
 
                     <!-- Description -->
@@ -487,25 +568,25 @@
                             <i class="mr-2 fas fa-align-left text-wellcare-500"></i>
                             {{ 'Description' }}
                         </h3>
-                        <p class="text-gray-700 dark:text-gray-300" x-text="selectedExercise.description"></p>
+                        <p class="text-gray-700 dark:text-gray-300" x-text="selectedExercise.description || 'No description available'"></p>
                     </div>
 
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-4 gap-4 mb-6">
                         <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50" x-show="selectedExercise.duration">
-                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.duration"></p>
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.duration || 0"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Minutes' }}</p>
                         </div>
                         <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50" x-show="selectedExercise.calories">
-                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.calories"></p>
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.calories || 0"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Calories/min' }}</p>
                         </div>
                         <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50" x-show="selectedExercise.sets">
-                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.sets"></p>
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.sets || 0"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Sets' }}</p>
                         </div>
                         <div class="p-3 text-center rounded-lg bg-gray-50 dark:bg-gray-700/50" x-show="selectedExercise.reps">
-                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.reps"></p>
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="selectedExercise.reps || 0"></p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Reps' }}</p>
                         </div>
                     </div>
@@ -521,7 +602,7 @@
                                 <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                                     <i class="text-gray-400 fas fa-ruler"></i>
                                     <span>Default Unit:</span>
-                                    <span class="font-medium" x-text="selectedExercise.defaultUnit"></span>
+                                    <span class="font-medium" x-text="selectedExercise.defaultUnit || 'N/A'"></span>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                                     <i class="text-gray-400 fas fa-calendar"></i>
@@ -542,25 +623,37 @@
                                 {{ 'Actions' }}
                             </h3>
                             <div class="flex flex-col gap-2">
-                                <a :href="`{{ path('exercises_edit', {'id': '__ID__'}) }}`.replace('__ID__', selectedExercise.id)" 
-                                   class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-blue-700 transition-colors bg-blue-100 rounded-lg hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
-                                    <i class="fas fa-edit"></i>
-                                    {{ 'Edit Exercise' }}
-                                </a>
-                                <a :href="`{{ path('delete_exercise', {'id': '__ID__'}) }}`.replace('__ID__', selectedExercise.id)"
-                                   onclick="return confirm('Are you sure you want to delete this exercise?')"
-                                   class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-red-700 transition-colors bg-red-100 rounded-lg hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
+                                <!-- Bouton Edit -->
+                                 <a :href="'{{ path('exercises_edit', {'id': '__ID__'}) }}'.replace('__ID__', selectedExercise.id)" 
+       class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-blue-700 transition-colors bg-blue-100 rounded-lg hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+        <i class="fas fa-edit"></i>
+        {{ 'Edit Exercise' }}
+    </a>
+                                
+                                <!-- Bouton Delete -->
+                                <button x-show="selectedExercise.id" 
+                                        @click="confirmDelete(selectedExercise.id)"
+                                        class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-red-700 transition-colors bg-red-100 rounded-lg hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
                                     <i class="fas fa-trash"></i>
                                     {{ 'Delete Exercise' }}
+                                </button>
+                                
+                                <!-- Bouton YouTube -->
+                                <a x-show="selectedExercise.videoUrl && !selectedExercise.videoFileName"
+                                   :href="selectedExercise.videoUrl" 
+                                   target="_blank"
+                                   class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-red-700 transition-colors bg-red-100 rounded-lg hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
+                                    <i class="fab fa-youtube"></i>
+                                    {{ 'Open on YouTube' }}
                                 </a>
-                                <template x-if="selectedExercise.videoUrl && !selectedExercise.videoFileName">
-                                    <a :href="selectedExercise.videoUrl" target="_blank" class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-red-700 transition-colors bg-red-100 rounded-lg hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">
-                                        <i class="fab fa-youtube"></i>
-                                        {{ 'Open on YouTube' }}
-                                    </a>
-                                </template>
+                                
+                                <!-- Bouton Show Exercises (retour à la liste) -->
+                                <button @click="showDetailModal = false"
+                                        class="flex items-center justify-center gap-2 px-4 py-2 font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+                                    <i class="fas fa-arrow-left"></i>
+                                    {{ 'Back to Exercises' }}
+                                </button>
                             </div>
-                            
                         </div>
                     </div>
                 </div>
@@ -573,7 +666,7 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('exerciseLibrary', (exercisesData) => ({
         // Data
-        exercises: exercisesData,
+        exercises: [],
         searchQuery: '',
         selectedCategory: 'all',
         selectedDifficulty: 'all',
@@ -581,24 +674,47 @@ document.addEventListener('alpine:init', () => {
         sortBy: 'name',
         showDetailModal: false,
         selectedExercise: {},
+        
+        // Pagination variables
+        currentPage: 1,
+        itemsPerPage: 9, // 9 exercices par page
 
         // Initialize
         init() {
+            console.log('Initializing exercise library with data:', exercisesData);
+            
             // Format dates in exercises
-            this.exercises = this.exercises.map(ex => ({
-                ...ex,
-                createdAt: ex.createdAt ? this.formatDateFromString(ex.createdAt) : 'N/A'
-            }));
+            this.exercises = Array.isArray(exercisesData) 
+                ? exercisesData.map(ex => ({
+                    ...ex,
+                    createdAt: ex.createdAt ? this.formatDateFromString(ex.createdAt) : 'N/A',
+                    // Ensure all properties have default values
+                    duration: ex.duration || 0,
+                    calories: ex.calories || 0,
+                    sets: ex.sets || 0,
+                    reps: ex.reps || 0,
+                    defaultUnit: ex.defaultUnit || 'N/A',
+                    description: ex.description || 'No description available',
+                    isActive: ex.isActive !== undefined ? ex.isActive : true,
+                    difficulty_level: ex.difficulty_level || 'Beginner',
+                    category: ex.category || 'Strength'
+                }))
+                : [];
+            
+            console.log('Formatted exercises:', this.exercises);
             
             // Initialize selected exercise if available
             if (this.exercises.length > 0) {
                 this.selectedExercise = this.exercises[0];
             }
+            
+            // Initialize pagination
+            this.updatePagination();
         },
 
         // Get video URL for uploaded videos
         getVideoUrl(exercise) {
-            if (exercise.videoFileName) {
+            if (exercise && exercise.videoFileName) {
                 return `/uploads/exercises/videos/${exercise.videoFileName}`;
             }
             return '';
@@ -606,7 +722,7 @@ document.addEventListener('alpine:init', () => {
 
         // Format date from string
         formatDateFromString(dateString) {
-            if (!dateString) return 'N/A';
+            if (!dateString || dateString === 'N/A') return 'N/A';
             try {
                 const date = new Date(dateString);
                 return date.toLocaleDateString('en-US', {
@@ -615,6 +731,7 @@ document.addEventListener('alpine:init', () => {
                     day: 'numeric'
                 });
             } catch (e) {
+                console.error('Error formatting date:', e);
                 return dateString;
             }
         },
@@ -668,6 +785,47 @@ document.addEventListener('alpine:init', () => {
 
             return filtered;
         },
+        
+        // Pagination computed properties
+        get totalFilteredExercises() {
+            return this.filteredExercises.length;
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.totalFilteredExercises / this.itemsPerPage);
+        },
+        
+        get paginatedExercises() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredExercises.slice(start, end);
+        },
+        
+        get startIndex() {
+            return (this.currentPage - 1) * this.itemsPerPage;
+        },
+        
+        get endIndex() {
+            const end = this.currentPage * this.itemsPerPage;
+            return end > this.totalFilteredExercises ? this.totalFilteredExercises : end;
+        },
+        
+        get visiblePages() {
+            const pages = [];
+            const maxVisible = 5;
+            let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+            let end = Math.min(this.totalPages, start + maxVisible - 1);
+            
+            if (end - start + 1 < maxVisible) {
+                start = Math.max(1, end - maxVisible + 1);
+            }
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            return pages;
+        },
 
         // Helper methods
         getCategoryCount(category) {
@@ -684,7 +842,7 @@ document.addEventListener('alpine:init', () => {
 
         // YouTube thumbnail URL
         getYouTubeThumbnail(url) {
-            if (!url || !url.includes('youtube.com') && !url.includes('youtu.be')) return '';
+            if (!url || (!url.includes('youtube.com') && !url.includes('youtu.be'))) return '';
             
             try {
                 let videoId = '';
@@ -705,7 +863,7 @@ document.addEventListener('alpine:init', () => {
 
         // YouTube embed URL
         getYouTubeEmbedUrl(url) {
-            if (!url || !url.includes('youtube.com') && !url.includes('youtu.be')) return '';
+            if (!url || (!url.includes('youtube.com') && !url.includes('youtu.be'))) return '';
             
             try {
                 let videoId = '';
@@ -740,22 +898,44 @@ document.addEventListener('alpine:init', () => {
         // Action methods
         selectCategory(category) {
             this.selectedCategory = category;
+            this.currentPage = 1; // Reset to first page when changing filters
         },
 
         selectDifficulty(difficulty) {
             this.selectedDifficulty = difficulty;
+            this.currentPage = 1; // Reset to first page when changing filters
         },
 
         toggleStatus(status) {
             this.selectedStatus = status;
+            this.currentPage = 1; // Reset to first page when changing filters
         },
 
         filterExercises() {
             // Filtering handled by computed property
+            // This method exists to trigger re-computation when called from @input
+            this.currentPage = 1; // Reset to first page when searching
+        },
+        
+        // Pagination methods
+        changePage(page) {
+            if (page >= 1 && page <= this.totalPages) {
+                this.currentPage = page;
+                // Scroll to top of grid
+                document.querySelector('#exercise-grid')?.scrollIntoView({ behavior: 'smooth' });
+            }
+        },
+        
+        updatePagination() {
+            // Update pagination based on current state
+            if (this.currentPage > this.totalPages && this.totalPages > 0) {
+                this.currentPage = this.totalPages;
+            }
         },
 
         openExerciseDetail(exercise) {
-            this.selectedExercise = exercise;
+            console.log('Opening exercise detail:', exercise);
+            this.selectedExercise = { ...exercise };
             this.showDetailModal = true;
             
             // Play video automatically when modal opens
@@ -790,16 +970,47 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // Confirm delete function
+        confirmDelete(exerciseId) {
+            if (confirm('Are you sure you want to delete this exercise?')) {
+                fetch(`/exercises/${exerciseId}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Remove exercise from list
+                        this.exercises = this.exercises.filter(ex => ex.id !== exerciseId);
+                        this.showDetailModal = false;
+                        // Update pagination
+                        this.updatePagination();
+                        // Show success message
+                        alert('Exercise deleted successfully!');
+                    } else {
+                        alert('Error deleting exercise');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting exercise');
+                });
+            }
+        },
+
         clearFilters() {
             this.searchQuery = '';
             this.selectedCategory = 'all';
             this.selectedDifficulty = 'all';
             this.selectedStatus = 'all';
             this.sortBy = 'name';
+            this.currentPage = 1;
         }
     }));
 });
 </script>
+
 <style>
 [x-cloak] { display: none !important; }
 </style>

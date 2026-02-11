@@ -1,4 +1,4 @@
-{% extends 'base.html.twig' %}
+{% extends 'layouts/app.html.twig' %}
 
 {% block title %}Create New Exercise{% endblock %}
 
@@ -6,16 +6,21 @@
 {{ parent() }}
 <style>
     :root {
-        --primary-color: #4361ee;
-        --primary-hover: #3a56d4;
-        --secondary-color: #7209b7;
-        --success-color: #2ecc71;
-        --light-bg: #f8f9fa;
-        --border-color: #e9ecef;
-        --text-primary: #2d3748;
-        --text-secondary: #718096;
-        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.1);
+        --primary-color: #00b894;      /* vert principal (comme le bouton) */
+--primary-hover: #00997a;      /* hover plus foncé */
+--secondary-color: #00d1a0;    /* accent clair */
+
+--success-color: #00c896;
+
+--light-bg: #f0fdfa;           /* fond très léger mint */
+--border-color: #ccfbf1;
+
+--text-primary: #0f172a;
+--text-secondary: #64748b;
+
+--shadow: 0 4px 6px rgba(0, 184, 148, 0.15);
+--shadow-hover: 0 10px 15px rgba(0, 184, 148, 0.25);
+
     }
     
     .exercise-form-container {

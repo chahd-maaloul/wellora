@@ -7,6 +7,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: DailyPlanRepository::class)]
 class DailyPlan
@@ -17,31 +19,42 @@ class DailyPlan
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\NotBlank(message: "Date is required")]
     private ?\DateTime $date = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Status is required")]
+    #[Assert\Choice(['Planned', 'Completed', 'Missed'])]
     private ?string $status = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\Length(max: 255, maxMessage: "Notes cannot be longer than {{ limit }} characters")]
     private ?string $notes = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Title is required")]
+    #[Assert\Length(max: 255, maxMessage: "Title cannot be longer than {{ limit }} characters")]
     private ?string $titre = null;
 
     #[ORM\Column]
-    private ?int $calorirs = null;
+    #[Assert\PositiveOrZero(message: "Calories must be zero or positive")]
+    private ?int $calories = null;
 
     #[ORM\Column]
+    #[Assert\PositiveOrZero(message: "Duration in minutes must be zero or positive")]
     private ?int $duree_min = null;
 
     #[ORM\ManyToOne(inversedBy: 'dailyplan')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Goal $goal = null;
 
     /**
      * @var Collection<int, Exercises>
      */
     #[ORM\ManyToMany(targetEntity: Exercises::class, inversedBy: 'dailyPlans')]
+    #[ORM\JoinTable(name: 'daily_plan_exercises')]
     private Collection $exercices;
+    
 
     public function __construct()
     {
@@ -101,14 +114,14 @@ class DailyPlan
         return $this;
     }
 
-    public function getCalorirs(): ?int
+    public function getCalories(): ?int
     {
-        return $this->calorirs;
+        return $this->calories;
     }
 
-    public function setCalorirs(int $calorirs): static
+    public function setCalories(int $calories): static
     {
-        $this->calorirs = $calorirs;
+        $this->calories = $calories;
 
         return $this;
     }

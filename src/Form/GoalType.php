@@ -47,10 +47,9 @@ class GoalType extends AbstractType
                 'label' => 'Statut',
                 'required' => true,
                 'choices' => [
-                    'Pending' => 'PENDING',
-                    'Active' => 'ACTIVE',
-                    'Paused' => 'PAUSED',
-                    'Completed' => 'COMPLETED',
+                     'Pending' => 'PENDING',
+                    'In Progress' => 'in progress',
+                    'Completed' => 'completed',
                 ],
                 'data' => 'PENDING',
             ])

@@ -7,6 +7,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: GoalRepository::class)]
 class Goal
@@ -18,21 +20,41 @@ class Goal
 
     // 1. Informations de base
     #[ORM\Column(length: 150)]
+    #[Assert\NotBlank(message: "Le titre de l'objectif est requis.")]
+    #[Assert\Length(
+        max: 150,
+        maxMessage: "Le titre de l'objectif ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $title = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: "La description de l'objectif ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $description = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $category = null;
+    #[Assert\NotBlank(message: "La catégorie de l'objectif est requise.")]
+    private ?string $category = null;   
 
     #[ORM\Column(length: 20)]
+        #[Assert\NotBlank(message: "Le statut de l'objectif est requis.")]
+        #[Assert\Choice(
+            choices: ['PENDING', 'in progress', 'completed'],
+            message: "Le statut doit être l'une des suivantes : PENDING, in progress, completed."
+        )]
     private ?string $status = 'PENDING';
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\NotBlank(message: "La date de début de l'objectif est requise.")]
     private ?\DateTimeInterface $startDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Assert\Expression(
+        "this.getEndDate() === null or this.getEndDate() >= this.getStartDate()",
+        message: "La date de fin doit être postérieure ou égale à la date de début."
+    )]
     private ?\DateTimeInterface $endDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
@@ -40,6 +62,10 @@ class Goal
 
     // 2. Raison / Pourquoi
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: "La raison de l'objectif ne peut pas dépasser {{ limit }} caractères."
+    )]
     private ?string $relevant = null;
 
     // 3. Engagement utilisateur
@@ -48,23 +74,34 @@ class Goal
 
     // 4. Niveau de difficulté
     #[ORM\Column(length: 20, nullable: true)]
+    #[Assert\Choice(
+        choices: ['Beginner', 'Intermediate', 'Advanced'],
+        message: "Le niveau de difficulté doit être l'un des suivants : Beginner, Intermediate, Advanced."
+    )]
     private ?string $difficultyLevel = null;
 
     // 5. Public cible
     #[ORM\Column(length: 20, nullable: true)]
+    #[Assert\Choice(
+        choices: ['General', 'Weight Loss', 'Muscle Gain', 'Endurance', 'Flexibility', 'Rehabilitation'],
+        message: "Le public cible doit être l'un des suivants : General, Weight Loss, Muscle Gain, Endurance, Flexibility, Rehabilitation."
+    )]
     private ?string $targetAudience = null;
 
     // 2. Objectif mesurable (tracking principal)
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\PositiveOrZero]
     private ?float $targetValue = null;
 
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\PositiveOrZero]
     private ?float $currentValue = null;
 
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $unit = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\Range(min: 0, max: 100, notInRangeMessage: "Progress must be between 0 and 100")]
     private ?int $progress = 0;
 
     #[ORM\Column(length: 50, nullable: true)]
@@ -72,18 +109,26 @@ class Goal
 
     // 3. Planning & organisation
     #[ORM\Column(length: 20, nullable: true)]
+    #[Assert\Choice(
+        choices: ['Daily', 'Weekly', 'Monthly', 'Custom'],
+        message: "La fréquence doit être l'une des suivantes : Daily, Weekly, Monthly, Custom."
+    )]
     private ?string $frequency = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\PositiveOrZero(message: "Sessions per week must be zero or positive")]
     private ?int $sessionsPerWeek = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\PositiveOrZero(message: "Session duration must be zero or positive")]
     private ?int $sessionDuration = null;
 
     #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
+    #[Assert\Time(message: "Preferred time must be a valid time")]
     private ?\DateTimeInterface $preferredTime = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\PositiveOrZero(message: "Duration in weeks must be zero or positive")]
     private ?int $durationWeeks = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
@@ -94,15 +139,19 @@ class Goal
 
     // 6. Santé & contraintes utilisateur
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\Positive]
     private ?float $weightStart = null;
 
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\Positive]
     private ?float $weightTarget = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\Positive]
     private ?int $height = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\PositiveOrZero(message: "Calories target must be zero or positive")]
     private ?int $caloriesTarget = null;
 
    
@@ -120,6 +169,15 @@ class Goal
         $this->status = 'PENDING';
     }
 
+    #[Assert\Callback]
+    public function validateDates(ExecutionContextInterface $context): void
+    {
+        if ($this->endDate && $this->endDate < $this->startDate) {
+            $context->buildViolation('End date must be after start date')
+                ->atPath('endDate')
+                ->addViolation();
+        }
+    }
     // Getters et Setters
 
     public function getId(): ?int
@@ -156,12 +214,11 @@ class Goal
         return $this->category;
     }
 
-    public function setCategory(string $category): static
-    {
-        $this->category = $category;
-
-        return $this;
-    }
+    public function setCategory(?string $category): static
+{
+    $this->category = $category;
+    return $this;
+}
 
     public function getStatus(): ?string
     {
@@ -204,12 +261,11 @@ class Goal
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): static
-    {
-        $this->date = $date;
-
-        return $this;
-    }
+    public function setDate(?\DateTimeInterface $date): static
+{
+    $this->date = $date;
+    return $this;
+}
 
     public function getRelevant(): ?string
     {

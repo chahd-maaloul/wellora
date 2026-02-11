@@ -31,7 +31,7 @@ final class GoalController extends AbstractController
             return $this->redirectToRoute('fitness/dashboard');
         }
         
-        return $this->render('fitness/goal-wizard.html.twig', [
+        return $this->render('fitness/goal/goal-wizard.html.twig', [
             'page_title' => 'Create SMART Goal',
             'form' => $form->createView(),        
         ]);  
@@ -47,7 +47,7 @@ final class GoalController extends AbstractController
             throw $this->createNotFoundException('Goal not found');
         }
         $goals = $goal->findAll();
-        return $this->render('fitness/show-goal.html.twig', [
+        return $this->render('fitness/goal/show-goal.html.twig', [
             'page_title' => 'Goal Details',
             'goals' => $goals,
         ]);  
@@ -87,7 +87,7 @@ final class GoalController extends AbstractController
             return $this->redirectToRoute('fitness_goal_show');
         }
 
-        return $this->render('fitness/update-goal.html.twig', [
+        return $this->render('fitness/goal/update-goal.html.twig', [
             'form' => $form->createView(),
             'goal' => $goal, // Ajout de la variable goal au template
         ]);
