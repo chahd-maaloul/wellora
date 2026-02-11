@@ -817,11 +817,11 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/admin/verifications" 
+                            <a href="{{ path('admin_users_pending_verification') }}" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/admin/verifications') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/admin/verifications')"
+                               :class="[isActive('/admin/pending-verification') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/pending-verification')"
                                :title="collapsed ? 'Vérifications' : ''"
                             >
                                 <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">

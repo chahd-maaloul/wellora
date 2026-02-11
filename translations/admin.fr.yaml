@@ -1,0 +1,140 @@
+# Admin User Management Translations
+
+admin:
+    verification:
+        awaiting: "En attente de vérification"
+        blocking_message: "Ce professionnel ne peut pas se connecter tant que sa licence n'est pas vérifiée."
+        can_login: "Ce professionnel peut se connecter à la plateforme."
+
+    stats:
+        total: "Total utilisateurs"
+        active: "Actifs"
+        pending_verification: "En attente de vérification"
+        view_pending: "Voir en attente →"
+
+    users:
+        index:
+            title: "Gestion des utilisateurs"
+            description: "Gérez tous les utilisateurs de la plateforme"
+            no_users: "Aucun utilisateur trouvé"
+
+        filters:
+            role: "Rôle"
+            all_roles: "Tous les rôles"
+            search: "Recherche"
+            search_placeholder: "Email, nom, prénom..."
+            status: "Statut"
+            all_status: "Tous les statuts"
+            active: "Actif"
+            inactive: "Inactif"
+            email_verified: "Email vérifié"
+            all: "Tous"
+            verified: "Vérifié"
+            unverified: "Non vérifié"
+            filter: "Filtrer"
+            reset: "Réinitialiser"
+
+        roles:
+            role_patient: "Patient"
+            role_medecin: "Médecin"
+            role_coach: "Coach"
+            role_nutritionist: "Nutritionniste"
+            role_admin: "Administrateur"
+
+        status:
+            active: "Actif"
+            inactive: "Inactif"
+            verified: "Vérifié"
+            unverified: "Non vérifié"
+            license_verified: "Licence vérifiée"
+            pending_verification: "En attente"
+            locked: "Verrouillé"
+
+        table:
+            email: "Email"
+            name: "Nom"
+            role: "Rôle"
+            status: "Statut"
+            verification: "Vérification"
+            created_at: "Créé le"
+            actions: "Actions"
+
+        actions:
+            view: "Voir"
+            edit: "Modifier"
+
+        form:
+            email: "Email"
+            first_name: "Prénom"
+            last_name: "Nom"
+            phone: "Téléphone"
+            address: "Adresse"
+            birthdate: "Date de naissance"
+            is_active: "Compte actif"
+            is_email_verified: "Email vérifié"
+            role: "Rôle"
+
+        show:
+            title: "Utilisateur: %email%"
+            description: "Détails de l'utilisateur"
+            info: "Informations personnelles"
+            back: "Retour à la liste"
+            edit: "Modifier"
+            last_login: "Dernière connexion"
+            status: "Statut du compte"
+            locked: "Verrouillé"
+            actions: "Actions"
+            activate: "Activer le compte"
+            deactivate: "Désactiver le compte"
+            cannot_deactivate_self: "Vous ne pouvez pas désactiver votre propre compte"
+            professional_verification: "Vérification professionnelle"
+            license_number: "Numéro de licence"
+            specialty: "Spécialité"
+            diploma: "Diplôme"
+            verified_by_admin: "Vérifié par l'administrateur"
+            verification_date: "Date de vérification"
+            view_diploma: "Voir le diplôme"
+            verify: "Vérifier"
+            unverify: "Annuler la vérification"
+            danger_zone: "Zone de danger"
+            delete: "Supprimer l'utilisateur"
+            years_experience: "années d'expérience"
+
+        edit:
+            title: "Modifier: %email%"
+            description: "Modifiez les informations de l'utilisateur"
+            info: "Informations"
+            cancel: "Annuler"
+            save: "Enregistrer"
+            email_hint: "L'email ne peut pas être modifié"
+            summary: "Résumé"
+            current_status: "Statut actuel"
+
+        delete:
+            confirm: "Êtes-vous sûr de vouloir supprimer l'utilisateur %email% ? Cette action est irréversible."
+            success: "L'utilisateur %email% a été supprimé avec succès."
+
+        toggle_active:
+            activated: "Le compte de %email% a été activé."
+            deactivated: "Le compte de %email% a été désactivé."
+
+        verify:
+            only_professionals: "Seuls les professionnels peuvent être vérifiés."
+            success: "%email% a été vérifié avec succès."
+
+        unverify:
+            success: "La vérification de %email% a été annulée."
+
+        pending_verification:
+            title: "Vérifications en attente"
+            description: "Professionnels en attente de vérification de licence"
+            back: "Retour à la gestion"
+            empty: "Aucune vérification en attente. Tous les professionnels sont vérifiés."
+            user_info: "Informations utilisateur"
+            professional_info: "Informations professionnelles"
+            view_diploma: "Télécharger le diplôme"
+            view_details: "Voir détails"
+            verify: "Vérifier"
+            waiting: "En attente de vérification"
+
+csrf_invalid: "Jeton de sécurité invalide. Veuillez réessayer."
