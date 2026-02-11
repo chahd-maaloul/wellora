@@ -380,6 +380,14 @@ final class PublicationParcoursController extends AbstractController
     {
         $redirectTo = strtolower(trim((string) $request->request->get('redirectTo', '')));
 
+        if ($redirectTo === 'admin_user_behavior') {
+            return $this->redirectToRoute(
+                'admin_trail_user_behavior',
+                [],
+                Response::HTTP_SEE_OTHER
+            );
+        }
+
         if ($redirectTo === 'comments') {
             return $this->redirectToRoute(
                 'app_publication_parcours_comments',
