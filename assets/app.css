@@ -1,0 +1,3238 @@
+/**
+ * Tailwind CSS Configuration
+ * WellCare Connect - Healthcare Platform
+ * 
+ * This file configures Tailwind CSS with custom:
+ * - Colors (WellCare brand palette)
+ * - Fonts (Open Sans, Montserrat)
+ * - Animations and transitions
+ * - Component utilities
+ * 
+ * @requires tailwindcss v3.3.6+
+ * @requires postcss, autoprefixer
+ */
+
+/* ============================================
+   TAILWIND DIRECTIVES
+   ============================================ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
+  /**
+   * Smooth scrolling behavior
+   */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /**
+   * Body base styles with antialiasing
+   */
+  body {
+    @apply antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+
+  /**
+   * Focus visible styles for accessibility
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-wellcare-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-950;
+  }
+
+  /**
+   * Selection styles
+   */
+  ::selection {
+    @apply bg-wellcare-500/30 text-wellcare-dark-600 dark:bg-wellcare-400/30 dark:text-wellcare-light-200;
+  }
+
+  /* ============================================
+     CUSTOM SCROLLBAR (Webkit Browsers)
+     ============================================ */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full dark:bg-gray-600;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+  }
+
+  .dark * {
+    scrollbar-color: #4b5563 #1f2937;
+  }
+}
+
+/* ============================================
+   COMPONENT UTILITIES
+   ============================================ */
+
+@layer components {
+  
+  /* ------------------------------------------
+     BUTTONS
+     ------------------------------------------ */
+  
+  /**
+   * Base button styles
+   */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2.5 font-medium transition-all duration-200 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-wellcare-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+  }
+  
+  /**
+   * Primary solid button - WellCare brand
+   */
+  .btn-primary {
+    @apply btn text-white shadow-lg bg-wellcare-600 hover:bg-wellcare-700 hover:shadow-wellcare-500/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-lg shadow-wellcare-500/25;
+  }
+  
+  /**
+   * Secondary button - Light variant
+   */
+  .btn-secondary {
+    @apply btn bg-wellcare-light-100 text-wellcare-700 hover:bg-wellcare-light-200 hover:-translate-y-0.5 active:translate-y-0 dark:bg-wellcare-dark-800 dark:text-wellcare-300 dark:hover:bg-wellcare-dark-700;
+  }
+  
+  /**
+   * Outline button
+   */
+  .btn-outline {
+    @apply btn border border-gray-300 bg-white text-gray-900 shadow-sm
+      hover:bg-gray-50 hover:border-gray-400 hover:-translate-y-0.5
+      active:translate-y-0 active:shadow-sm
+      dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:hover:bg-gray-900 dark:hover:border-gray-600;
+  }
+  
+  /**
+   * Ghost button - Minimal styling
+   */
+  .btn-ghost {
+    @apply text-gray-700 btn hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100;
+  }
+  
+  /**
+   * Danger button
+   */
+  .btn-danger {
+    @apply btn bg-red-600 text-white shadow-lg shadow-red-500/25 hover:bg-red-700 hover:shadow-red-500/40 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /**
+   * Solid button (legacy alias for btn-primary)
+   */
+  .btn-solid {
+    @apply btn text-white shadow-lg bg-wellcare-600 hover:bg-wellcare-700 hover:shadow-wellcare-500/40 hover:-translate-y-0.5 active:translate-y-0 shadow-wellcare-500/25;
+  }
+
+  /* ------------------------------------------
+     CARDS & SURFACES
+     ------------------------------------------ */
+  
+  /**
+   * Standard card component
+   */
+  .card {
+    @apply bg-white border border-gray-200 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800;
+  }
+
+  /**
+   * Glassmorphism surface
+   */
+  .surface {
+    @apply text-gray-900 border bg-white/80 dark:bg-gray-900/80 dark:text-gray-100 border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm;
+  }
+
+  /**
+   * Elevated surface with shadow
+   */
+  .surface-elevated {
+    @apply shadow-xl surface shadow-gray-200/50 dark:shadow-black/20;
+  }
+
+  /* ------------------------------------------
+     FORM ELEMENTS
+     ------------------------------------------ */
+  
+  /**
+   * Standard input field
+   */
+  .input {
+    @apply block w-full px-4 py-3 text-sm text-gray-900 transition-all duration-200 bg-white border border-gray-300 shadow-sm rounded-xl placeholder:text-gray-400 focus:border-wellcare-500 focus:ring-2 focus:ring-wellcare-500/20 focus:outline-none hover:border-gray-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  /**
+   * Input with error state
+   */
+  .input-error {
+    @apply text-red-900 border-red-500 input placeholder:text-red-300 focus:border-red-500 focus:ring-red-500/20 dark:text-red-300;
+  }
+
+  /**
+   * Form label
+   */
+  .form-label {
+    @apply block mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  /**
+   * Label (compact variant used in auth forms)
+   */
+  .label {
+    @apply block mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-300;
+  }
+
+  /**
+   * Helper text
+   */
+  .helper-text {
+    @apply mt-2 text-xs text-gray-600 dark:text-gray-400;
+  }
+
+  /**
+   * Form error message
+   */
+  .form-error {
+    @apply flex items-center gap-1 mt-2 text-sm text-red-600 dark:text-red-400;
+  }
+
+  /* ------------------------------------------
+     UTILITIES
+     ------------------------------------------ */
+  
+  /**
+   * Text divider with 'or' text
+   */
+  .divider {
+    @apply relative my-6;
+  }
+
+  .divider::before {
+    content: '';
+    @apply absolute inset-x-0 h-px -translate-y-1/2 top-1/2 bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-gray-700;
+  }
+
+  .divider > span {
+    @apply relative block px-4 mx-auto text-xs font-medium text-gray-500 bg-white w-fit dark:bg-gray-900 dark:text-gray-400;
+  }
+
+  /**
+   * Badge component
+   */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-950/80 dark:text-gray-200 backdrop-blur-sm;
+  }
+
+  /**
+   * Status badge variants
+   */
+  .badge-success {
+    @apply text-green-700 border-green-200 badge bg-green-50 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800;
+  }
+
+  .badge-warning {
+    @apply text-yellow-700 border-yellow-200 badge bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800;
+  }
+
+  .badge-danger {
+    @apply text-red-700 border-red-200 badge bg-red-50 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800;
+  }
+
+  .badge-info {
+    @apply badge bg-wellcare-50 text-wellcare-700 border-wellcare-200 dark:bg-wellcare-900/30 dark:text-wellcare-300 dark:border-wellcare-800;
+  }
+
+  /* ------------------------------------------
+     LAYOUT UTILITIES
+     ------------------------------------------ */
+  
+  /**
+   * Container with max-width
+   */
+  .container-wellcare {
+    @apply px-4 mx-auto max-w-7xl sm:px-6 lg:px-8;
+  }
+
+  /**
+   * Section spacing
+   */
+  .section {
+    @apply py-16 lg:py-24;
+  }
+
+  /**
+   * Card grid
+   */
+  .card-grid {
+    @apply grid gap-6 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  /* ------------------------------------------
+     ANIMATIONS
+     ------------------------------------------ */
+  
+  /**
+   * Fade in animation
+   */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  /**
+   * Slide up animation
+   */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /**
+   * Pulse subtle animation
+   */
+  .animate-pulse-subtle {
+    animation: pulseSubtle 2s ease-in-out infinite;
+  }
+
+  /**
+   * Heartbeat animation
+   */
+  .animate-heartbeat {
+    animation: heartbeat 1.5s ease-in-out infinite;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+@layer utilities {
+  
+  /**
+   * Text gradient utility
+   */
+  .text-gradient {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-wellcare-600 to-wellcare-light-500;
+  }
+
+  /**
+   * Gradient background
+   */
+  .bg-gradient-wellcare {
+    @apply bg-gradient-to-br from-wellcare-500 to-wellcare-light-500;
+  }
+
+  /**
+   * Glass effect
+   */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md dark:bg-gray-900/80;
+  }
+
+  /**
+   * Focus ring utility
+   */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-wellcare-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950;
+  }
+
+  /**
+   * Container query utilities
+   */
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .card, .surface {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY STYLES
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Skip to content link */
+.skip-link {
+  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-wellcare-600 focus:text-white focus:rounded-lg;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-primary {
+    @apply border-2 border-current;
+  }
+  
+  .input {
+    @apply border-2;
+  }
+}
+
+/* ============================================
+   LEGACY COMPATIBILITY
+   ============================================ */
+
+/* Helper text alias - defined in @layer components above */
+/* .helper {
+  @apply helper-text;
+} */
+
+/* Label alias - defined in @layer components above */
+/* .label {
+  @apply form-label;
+} */
+
+/* ============================================
+    NAVIGATION HOVER EFFECTS
+    ============================================ */
+
+/* Modern navigation link with underline animation */
+.nav-link {
+  @apply relative px-3 py-2 text-sm font-medium text-gray-600 transition-all duration-300 rounded-lg dark:text-gray-300;
+}
+
+.nav-link::before {
+  content: '';
+  @apply absolute bottom-0 left-1/2 w-0 h-0.5 bg-wellcare-500 rounded-full transition-all duration-300 -translate-x-1/2;
+}
+
+.nav-link:hover {
+  @apply text-wellcare-600 dark:text-wellcare-400;
+}
+
+.nav-link:hover::before {
+  @apply w-4/5;
+}
+
+/* Active navigation link */
+.nav-link-active {
+  @apply relative px-3 py-2 text-sm font-medium transition-all duration-300 rounded-lg text-wellcare-600 bg-wellcare-50 dark:text-wellcare-400 dark:bg-wellcare-900/20;
+}
+
+.nav-link-active::before {
+  content: '';
+  @apply absolute bottom-0 left-1/2 w-4/5 h-0.5 bg-wellcare-500 rounded-full -translate-x-1/2;
+}
+
+/* Navigation link with icon */
+.nav-link-icon {
+  @apply flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 transition-all duration-300 rounded-lg dark:text-gray-300;
+}
+
+.nav-link-icon:hover {
+  @apply text-wellcare-600 bg-wellcare-50 dark:text-wellcare-400 dark:bg-wellcare-900/20;
+}
+
+.nav-link-icon svg {
+  @apply w-4 h-4 transition-transform duration-300;
+}
+
+.nav-link-icon:hover svg {
+  @apply scale-110;
+}
+
+/* Magnetic hover effect container */
+.nav-item-magnetic {
+  @apply relative;
+}
+
+.nav-item-magnetic::after {
+  content: '';
+  @apply absolute inset-0 transition-transform duration-300 origin-center scale-0 rounded-lg bg-wellcare-500/10;
+}
+
+.nav-item-magnetic:hover::after {
+  @apply scale-100;
+}
+
+/* Glow effect on hover */
+.nav-glow {
+  @apply relative overflow-hidden;
+}
+
+.nav-glow::before {
+  content: '';
+  @apply absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-r from-wellcare-500/20 via-wellcare-400/20 to-wellcare-500/20;
+}
+
+.nav-glow:hover::before {
+  @apply opacity-100;
+}
+
+/* ============================================
+    MOBILE NAVIGATION STYLES
+    ============================================ */
+
+/* Mobile navigation link */
+.mobile-nav-link {
+  @apply flex items-center gap-3 px-3 py-3 text-gray-700 transition-all duration-300 rounded-xl dark:text-gray-200;
+}
+
+.mobile-nav-link:hover {
+  @apply bg-wellcare-50 dark:bg-wellcare-900/20;
+}
+
+.mobile-nav-link:hover .mobile-nav-icon {
+  @apply text-white scale-110 bg-wellcare-500;
+}
+
+.mobile-nav-link:hover .mobile-nav-text {
+  @apply text-wellcare-600 dark:text-wellcare-400;
+}
+
+.mobile-nav-link:hover .mobile-nav-arrow {
+  @apply translate-x-1 text-wellcare-500;
+}
+
+/* Mobile navigation icon container */
+.mobile-nav-icon {
+  @apply flex items-center justify-center w-10 h-10 text-gray-500 transition-all duration-300 bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-400;
+}
+
+/* Mobile navigation text */
+.mobile-nav-text {
+  @apply flex-1 font-medium transition-colors duration-300;
+}
+
+/* Mobile navigation arrow */
+.mobile-nav-arrow {
+  @apply w-4 h-4 text-gray-400 transition-all duration-300;
+}
+
+/* ============================================
+    PAGE TRANSITION EFFECTS
+    ============================================ */
+
+/* Page content fade in on load */
+.page-content {
+  animation: pageFadeIn 0.4s ease-out;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Link hover with slide effect */
+.link-slide {
+  @apply relative inline-block overflow-hidden;
+}
+
+.link-slide::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-full h-0.5 bg-wellcare-500 transform -translate-x-full transition-transform duration-300;
+}
+
+.link-slide:hover::after {
+  @apply translate-x-0;
+}
+
+/* Card hover lift effect */
+.card-hover {
+  @apply transition-all duration-300;
+}
+
+.card-hover:hover {
+  @apply -translate-y-1 shadow-lg;
+}
+
+/* Button ripple effect */
+.btn-ripple {
+  @apply relative overflow-hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  @apply absolute inset-0 transition-transform duration-500 origin-center scale-0 rounded-full bg-white/30;
+}
+
+.btn-ripple:active::after {
+  @apply scale-150 opacity-0;
+  transition: transform 0s, opacity 0.3s;
+}
+
+/* ============================================
+    COMPONENT CLASSES (outside @layer for compatibility)
+    ============================================ */
+
+/* Glass effect */
+.glass {
+  @apply border bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-white/20 dark:border-gray-800/50;
+}
+
+/* Animated gradient background */
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Pulse animation for loading states */
+.pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Slide up animation */
+.slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in animation */
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  /* Focus ring utilities */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-950;
+  }
+
+  /* ============================================
+     MODERN HOVER EFFECTS
+     ============================================ */
+
+  /**
+   * Hover lift effect - subtle translate up with shadow
+   */
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+  .hover-lift:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  /**
+   * Hover glow effect - brand color glow
+   */
+  .hover-glow {
+    @apply transition-all duration-300 ease-out;
+  }
+  .hover-glow:hover {
+    @apply shadow-lg shadow-wellcare-500/30;
+  }
+
+  /**
+   * Hover scale effect - subtle zoom
+   */
+  .hover-scale {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .hover-scale:hover {
+    @apply scale-105;
+  }
+
+  /**
+   * Hover underline animation - from left to right
+   */
+  .hover-underline {
+    @apply relative;
+  }
+  .hover-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-wellcare-500 transition-all duration-300 ease-out;
+  }
+  .hover-underline:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover underline center - from center outward
+   */
+  .hover-underline-center {
+    @apply relative;
+  }
+  .hover-underline-center::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 w-0 h-0.5 bg-wellcare-500 transition-all duration-300 ease-out -translate-x-1/2;
+  }
+  .hover-underline-center:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover brightness - subtle brightness increase
+   */
+  .hover-brightness {
+    @apply transition-all duration-300;
+  }
+  .hover-brightness:hover {
+    @apply brightness-110;
+  }
+
+  /**
+   * Hover rotate - subtle rotation for icons
+   */
+  .hover-rotate {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .hover-rotate:hover {
+    @apply rotate-12;
+  }
+
+  /**
+   * Hover pulse - subtle pulse animation on hover
+   */
+  .hover-pulse {
+    @apply transition-all duration-300;
+  }
+  .hover-pulse:hover {
+    animation: pulse-soft 1.5s ease-in-out infinite;
+  }
+
+  /**
+   * Hover border glow - border color transition
+   */
+  .hover-border-glow {
+    @apply transition-all duration-300;
+  }
+  .hover-border-glow:hover {
+    @apply shadow-md border-wellcare-500 shadow-wellcare-500/20;
+  }
+
+  /**
+   * Hover background shift - gradient shift on hover
+   */
+  .hover-bg-shift {
+    @apply relative overflow-hidden transition-colors duration-300;
+  }
+  .hover-bg-shift::before {
+    content: '';
+    @apply absolute inset-0 transition-all duration-500 bg-gradient-to-r from-wellcare-500/0 to-wellcare-500/0;
+  }
+  .hover-bg-shift:hover::before {
+    @apply from-wellcare-500/10 to-wellcare-light-500/10;
+  }
+
+  /**
+   * Hover icon slide - icon moves on hover
+   */
+  .hover-icon-slide {
+    @apply transition-all duration-300;
+  }
+  .hover-icon-slide .icon {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .hover-icon-slide:hover .icon {
+    @apply translate-x-1;
+  }
+
+  /**
+   * Hover card shine - shine effect on cards
+   */
+  .hover-shine {
+    @apply relative overflow-hidden;
+  }
+  .hover-shine::before {
+    content: '';
+    @apply absolute w-full h-full transition-all duration-700 rotate-45 -top-full -left-full bg-gradient-to-br from-white/40 to-transparent;
+  }
+  .hover-shine:hover::before {
+    @apply top-full left-full;
+  }
+
+  /**
+   * Hover shadow expand - shadow grows on hover
+   */
+  .hover-shadow-expand {
+    @apply transition-shadow duration-300 ease-out;
+  }
+  .hover-shadow-expand:hover {
+    @apply shadow-xl shadow-wellcare-500/20;
+  }
+
+  /**
+   * Hover text reveal - text color change with transition
+   */
+  .hover-text-reveal {
+    @apply transition-colors duration-300;
+  }
+  .hover-text-reveal:hover {
+    @apply text-wellcare-600 dark:text-wellcare-400;
+  }
+
+  /**
+   * Hover ring - ring appears on hover
+   */
+  .hover-ring {
+    @apply transition-all duration-300;
+  }
+  .hover-ring:hover {
+    @apply ring-2 ring-wellcare-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-950;
+  }
+
+  /**
+   * Hover zoom image - image zoom on container hover
+   */
+  .hover-zoom-img {
+    @apply overflow-hidden;
+  }
+  .hover-zoom-img img {
+    @apply transition-transform duration-500 ease-out;
+  }
+  .hover-zoom-img:hover img {
+    @apply scale-110;
+  }
+
+  /**
+   * Hover blur - background blur on hover
+   */
+  .hover-blur {
+    @apply transition-all duration-300;
+  }
+  .hover-blur:hover {
+    @apply backdrop-blur-sm;
+  }
+
+  /**
+   * Hover bounce - subtle bounce effect
+   */
+  .hover-bounce {
+    @apply transition-transform duration-300;
+  }
+  .hover-bounce:hover {
+    animation: bounce-subtle 0.6s ease;
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /**
+   * Hover wiggle - attention-grabbing wiggle
+   */
+  .hover-wiggle {
+    @apply transition-transform duration-300;
+  }
+  .hover-wiggle:hover {
+    animation: wiggle 0.5s ease-in-out;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+  }
+
+  /**
+   * Hover fade siblings - fade other elements when one is hovered
+   */
+  .hover-fade-siblings:hover ~ .hover-fade-siblings,
+  .hover-fade-siblings:has(~ .hover-fade-siblings:hover) {
+    @apply opacity-50;
+  }
+
+  /**
+   * Hover scale down - press effect
+   */
+  .hover-press {
+    @apply transition-transform duration-100;
+  }
+  .hover-press:active {
+    @apply scale-95;
+  }
+
+  /**
+   * Hover gradient text - gradient appears on hover
+   */
+  .hover-gradient-text {
+    @apply transition-all duration-300;
+  }
+  .hover-gradient-text:hover {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-wellcare-600 to-wellcare-light-500;
+  }
+
+  /**
+   * Hover arrow slide - arrow slides in from left
+   */
+  .hover-arrow-slide {
+    @apply relative overflow-hidden;
+  }
+  .hover-arrow-slide .arrow {
+    @apply absolute left-0 transition-all duration-300 -translate-x-full opacity-0;
+  }
+  .hover-arrow-slide:hover .arrow {
+    @apply translate-x-0 opacity-100;
+  }
+  .hover-arrow-slide .text {
+    @apply transition-transform duration-300;
+  }
+  .hover-arrow-slide:hover .text {
+    @apply translate-x-4;
+  }
+
+  /**
+   * Hover card flip - 3D flip effect (requires perspective on parent)
+   */
+  .hover-flip {
+    @apply transition-transform duration-500;
+    transform-style: preserve-3d;
+  }
+  .hover-flip:hover {
+    transform: rotateY(180deg);
+  }
+
+  /**
+   * Hover magnetic - subtle pull effect simulation
+   */
+  .hover-magnetic {
+    @apply transition-transform duration-200 ease-out;
+  }
+
+  /**
+   * Hover ripple - ripple effect container
+   */
+  .hover-ripple {
+    @apply relative overflow-hidden;
+  }
+  .hover-ripple::after {
+    content: '';
+    @apply absolute inset-0 transition-all duration-500 scale-0 rounded-full bg-wellcare-500/0;
+  }
+  .hover-ripple:active::after {
+    @apply scale-150 bg-wellcare-500/20;
+  }
+
+  /**
+   * Hover border draw - border draws on hover
+   */
+  .hover-border-draw {
+    @apply relative;
+  }
+  .hover-border-draw::before,
+  .hover-border-draw::after {
+    content: '';
+    @apply absolute transition-all duration-300;
+  }
+  .hover-border-draw::before {
+    @apply top-0 left-0 w-0 h-0.5 bg-wellcare-500;
+  }
+  .hover-border-draw::after {
+    @apply bottom-0 right-0 w-0 h-0.5 bg-wellcare-500;
+  }
+  .hover-border-draw:hover::before,
+  .hover-border-draw:hover::after {
+    @apply w-full;
+  }
+
+  /* ============================================
+     SIDEBAR NAVIGATION STYLES
+     ============================================ */
+
+  /* Sidebar link base */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-300;
+  }
+
+  /* Sidebar link - Active state with sliding indicator */
+  .sidebar-link-active {
+    @apply relative text-wellcare-700 bg-wellcare-50 dark:text-wellcare-300 dark:bg-wellcare-900/30;
+  }
+
+  .sidebar-link-active::before {
+    content: '';
+    @apply absolute left-0 w-1 h-6 -translate-y-1/2 rounded-r-full top-1/2 bg-wellcare-500;
+  }
+
+  .sidebar-link-active .sidebar-icon {
+    @apply text-wellcare-600 dark:text-wellcare-400;
+  }
+
+  /* Sidebar link - Inactive state */
+  .sidebar-link-inactive {
+    @apply text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .sidebar-link-inactive:hover .sidebar-icon {
+    @apply text-wellcare-500 dark:text-wellcare-400;
+  }
+
+  /* Sidebar link - Admin/Back Office variants */
+  .sidebar-link-inactive-admin {
+    @apply text-gray-600 hover:text-wellcare-dark-700 hover:bg-wellcare-dark-50 dark:text-gray-400 dark:hover:text-wellcare-dark-300 dark:hover:bg-wellcare-dark-900/20;
+  }
+
+  .sidebar-link-inactive-admin:hover .sidebar-icon {
+    @apply text-wellcare-dark-500 dark:text-wellcare-dark-400;
+  }
+
+  /* Sidebar icon */
+  .sidebar-icon {
+    @apply flex-shrink-0 w-5 h-5 transition-colors duration-300;
+  }
+
+  /* Sidebar text */
+  .sidebar-text {
+    @apply flex-1;
+  }
+
+  /* Sidebar chevron */
+  .sidebar-chevron {
+    @apply flex-shrink-0 w-4 h-4 text-gray-400 transition-transform duration-300;
+  }
+
+  /* Sidebar sublinks */
+  .sidebar-sublink {
+    @apply block px-3 py-2 text-sm transition-all duration-300 rounded-lg;
+  }
+
+  .sidebar-sublink-active {
+    @apply font-medium text-wellcare-700 bg-wellcare-50 dark:text-wellcare-300 dark:bg-wellcare-900/20;
+  }
+
+  .sidebar-sublink-inactive {
+    @apply text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800;
+  }
+
+  /* Admin sublinks */
+  .sidebar-sublink-admin {
+    @apply block px-3 py-2 text-sm transition-all duration-300 rounded-lg;
+  }
+
+  .sidebar-sublink-active-admin {
+    @apply font-medium text-wellcare-dark-700 bg-wellcare-dark-50 dark:text-wellcare-dark-300 dark:bg-wellcare-dark-900/20;
+  }
+
+  .sidebar-sublink-inactive-admin {
+    @apply text-gray-500 hover:text-wellcare-dark-700 hover:bg-wellcare-dark-50 dark:text-gray-500 dark:hover:text-wellcare-dark-300 dark:hover:bg-wellcare-dark-900/10;
+  }
+
+  /* Sidebar logout */
+  .sidebar-logout {
+    @apply flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-600 rounded-lg transition-all duration-300 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20;
+  }
+
+  .sidebar-logout:hover .sidebar-icon {
+    @apply text-red-700 dark:text-red-300;
+  }
+
+  /* ============================================
+     BREADCRUMB STYLES
+     ============================================ */
+
+  .breadcrumb-link {
+    @apply text-gray-500 transition-colors duration-300 hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-400;
+  }
+
+  .breadcrumb-current {
+    @apply ml-2 text-sm font-medium text-gray-900 dark:text-white;
+  }
+
+  /* ============================================
+     AUTH LAYOUT STYLES
+     ============================================ */
+
+  .auth-gradient-bg {
+    @apply bg-gradient-to-br from-wellcare-50 via-white to-wellcare-light-50 dark:from-gray-950 dark:via-gray-900 dark:to-wellcare-dark-900;
+  }
+  .hover-border-draw:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover skew - subtle skew on hover
+   */
+  .hover-skew {
+    @apply transition-transform duration-300;
+  }
+  .hover-skew:hover {
+    @apply skew-x-3;
+  }
+
+  /**
+   * Hover float - continuous subtle float animation on hover
+   */
+  .hover-float:hover {
+    animation: float 2s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /**
+   * Hover shadow color - colored shadow on hover
+   */
+  .hover-shadow-color {
+    @apply transition-shadow duration-300;
+  }
+  .hover-shadow-color:hover {
+    @apply shadow-lg shadow-wellcare-500/40;
+  }
+
+  /**
+   * Hover inset shadow - inset shadow on hover
+   */
+  .hover-inset-shadow {
+    @apply transition-shadow duration-300;
+  }
+  .hover-inset-shadow:hover {
+    @apply shadow-inner;
+  }
+
+  /**
+   * Hover line through - strikethrough animation
+   */
+  .hover-line-through {
+    @apply relative;
+  }
+  .hover-line-through::after {
+    content: '';
+    @apply absolute left-0 w-0 h-px transition-all duration-300 bg-current top-1/2;
+  }
+  .hover-line-through:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover dot - dot appears on hover
+   */
+  .hover-dot {
+    @apply relative;
+  }
+  .hover-dot::before {
+    content: '';
+    @apply absolute -left-3 top-1/2 w-1.5 h-1.5 rounded-full bg-wellcare-500 opacity-0 transition-all duration-300 -translate-y-1/2;
+  }
+  .hover-dot:hover::before {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover bracket - brackets appear on hover
+   */
+  .hover-bracket {
+    @apply relative;
+  }
+  .hover-bracket::before,
+  .hover-bracket::after {
+    content: '';
+    @apply absolute top-0 w-1 h-full transition-all duration-300 border-current opacity-0;
+  }
+  .hover-bracket::before {
+    @apply left-0 border-l-2;
+  }
+  .hover-bracket::after {
+    @apply right-0 border-r-2;
+  }
+  .hover-bracket:hover::before,
+  .hover-bracket:hover::after {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover fill - background fills from bottom
+   */
+  .hover-fill {
+    @apply relative z-0 overflow-hidden;
+  }
+  .hover-fill::before {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-0 transition-all duration-300 bg-wellcare-500 -z-10;
+  }
+  .hover-fill:hover::before {
+    @apply h-full;
+  }
+  .hover-fill:hover {
+    @apply text-white;
+  }
+
+  /**
+   * Hover swap - image/content swap on hover
+   */
+  .hover-swap .swap-default {
+    @apply transition-opacity duration-300;
+  }
+  .hover-swap .swap-hover {
+    @apply absolute inset-0 transition-opacity duration-300 opacity-0;
+  }
+  .hover-swap:hover .swap-default {
+    @apply opacity-0;
+  }
+  .hover-swap:hover .swap-hover {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover corner - corner accent on hover
+   */
+  .hover-corner {
+    @apply relative;
+  }
+  .hover-corner::before,
+  .hover-corner::after {
+    content: '';
+    @apply absolute w-2 h-2 transition-all duration-300 opacity-0 border-wellcare-500;
+  }
+  .hover-corner::before {
+    @apply top-0 left-0 border-t-2 border-l-2;
+  }
+  .hover-corner::after {
+    @apply bottom-0 right-0 border-b-2 border-r-2;
+  }
+  .hover-corner:hover::before,
+  .hover-corner:hover::after {
+    @apply w-4 h-4 opacity-100;
+  }
+
+  /**
+   * Hover tilt - 3D tilt effect
+   */
+  .hover-tilt {
+    @apply transition-transform duration-300;
+    transform-style: preserve-3d;
+  }
+  .hover-tilt:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+  }
+
+  /**
+   * Hover neon - neon glow effect
+   */
+  .hover-neon {
+    @apply transition-all duration-300;
+  }
+  .hover-neon:hover {
+    @apply shadow-lg;
+    box-shadow: 0 0 20px rgba(0, 167, 144, 0.5), 0 0 40px rgba(0, 167, 144, 0.3);
+  }
+
+  /**
+   * Hover dashed border - animated dashed border
+   */
+  .hover-dashed {
+    @apply transition-all duration-300 border-2 border-transparent border-dashed;
+  }
+  .hover-dashed:hover {
+    @apply border-wellcare-500;
+    animation: dash-move 1s linear infinite;
+  }
+
+  @keyframes dash-move {
+    to {
+      stroke-dashoffset: -20;
+    }
+  }
+
+  /**
+   * Hover pop - pop out effect
+   */
+  .hover-pop {
+    @apply transition-all duration-200;
+  }
+  .hover-pop:hover {
+    @apply scale-110 shadow-xl;
+  }
+  .hover-pop:active {
+    @apply scale-100;
+  }
+
+  /**
+   * Hover swing - pendulum swing effect
+   */
+  .hover-swing {
+    @apply transition-transform duration-300;
+  }
+  .hover-swing:hover {
+    animation: swing 1s ease-in-out;
+  }
+
+  @keyframes swing {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(5deg); }
+    40% { transform: rotate(-5deg); }
+    60% { transform: rotate(3deg); }
+    80% { transform: rotate(-3deg); }
+  }
+
+  /**
+   * Hover jelly - jelly bounce effect
+   */
+  .hover-jelly {
+    @apply transition-transform duration-300;
+  }
+  .hover-jelly:hover {
+    animation: jelly 0.5s ease;
+  }
+
+  @keyframes jelly {
+    0%, 100% { transform: scale(1, 1); }
+    25% { transform: scale(0.9, 1.1); }
+    50% { transform: scale(1.1, 0.9); }
+    75% { transform: scale(0.95, 1.05); }
+  }
+
+  /**
+   * Hover heartbeat - heartbeat animation on hover
+   */
+  .hover-heartbeat {
+    @apply transition-transform duration-300;
+  }
+  .hover-heartbeat:hover {
+    animation: heartbeat-hover 1.5s ease-in-out infinite;
+  }
+
+  @keyframes heartbeat-hover {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.1); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.1); }
+    70% { transform: scale(1); }
+  }
+
+  /**
+   * Hover glitch - glitch effect on hover
+   */
+  .hover-glitch {
+    @apply relative;
+  }
+  .hover-glitch:hover {
+    animation: glitch 0.3s ease infinite;
+  }
+
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+  }
+
+  /**
+   * Hover spotlight - spotlight follows cursor (requires JS)
+   */
+  .hover-spotlight {
+    @apply relative overflow-hidden;
+  }
+  .hover-spotlight::before {
+    content: '';
+    @apply absolute w-32 h-32 transition-opacity duration-300 rounded-full opacity-0 pointer-events-none bg-wellcare-500/20;
+    transform: translate(-50%, -50%);
+  }
+  .hover-spotlight:hover::before {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover pulse ring - expanding ring animation
+   */
+  .hover-pulse-ring {
+    @apply relative;
+  }
+  .hover-pulse-ring::after {
+    content: '';
+    @apply absolute inset-0 border-2 opacity-0 border-wellcare-500;
+    border-radius: inherit;
+  }
+  .hover-pulse-ring:hover::after {
+    animation: pulse-ring 1s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.3); opacity: 0; }
+  }
+
+  /**
+   * Hover reveal - reveal hidden content on hover
+   */
+  .hover-reveal .reveal-content {
+    @apply overflow-hidden transition-all duration-300 opacity-0 max-h-0;
+  }
+  .hover-reveal:hover .reveal-content {
+    @apply opacity-100 max-h-96;
+  }
+
+  /**
+   * Hover slide up reveal - slide up to reveal
+   */
+  .hover-slide-up-reveal {
+    @apply relative overflow-hidden;
+  }
+  .hover-slide-up-reveal .reveal-layer {
+    @apply absolute inset-0 transition-transform duration-300 translate-y-full bg-wellcare-500;
+  }
+  .hover-slide-up-reveal:hover .reveal-layer {
+    @apply translate-y-0;
+  }
+
+  /**
+   * Hover color cycle - cycle through brand colors
+   */
+  .hover-color-cycle:hover {
+    animation: color-cycle 2s ease infinite;
+  }
+
+  @keyframes color-cycle {
+    0%, 100% { color: #00A790; }
+    33% { color: #00DBB6; }
+    66% { color: #002F5C; }
+  }
+
+  /**
+   * Hover shake - shake animation on hover
+   */
+  .hover-shake:hover {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+    20%, 40%, 60%, 80% { transform: translateX(3px); }
+  }
+
+  /**
+   * Hover flip X - horizontal flip
+   */
+  .hover-flip-x {
+    @apply transition-transform duration-500;
+  }
+  .hover-flip-x:hover {
+    @apply rotate-180;
+  }
+
+  /**
+   * Hover flip Y - vertical flip
+   */
+  .hover-flip-y {
+    @apply transition-transform duration-500;
+  }
+  .hover-flip-y:hover {
+    transform: rotateX(180deg);
+  }
+
+  /**
+   * Hover grow - grow from center
+   */
+  .hover-grow {
+    @apply transition-transform duration-300 origin-center;
+  }
+  .hover-grow:hover {
+    @apply scale-125;
+  }
+
+  /**
+   * Hover shrink - shrink on hover
+   */
+  .hover-shrink {
+    @apply transition-transform duration-300;
+  }
+  .hover-shrink:hover {
+    @apply scale-90;
+  }
+
+  /**
+   * Hover rotate continuous - continuous rotation
+   */
+  .hover-rotate-continuous:hover {
+    animation: rotate-continuous 2s linear infinite;
+  }
+
+  @keyframes rotate-continuous {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /**
+   * Hover elastic - elastic bounce effect
+   */
+  .hover-elastic:hover {
+    animation: elastic 1s ease;
+  }
+
+  @keyframes elastic {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.25, 0.75); }
+    40% { transform: scale(0.75, 1.25); }
+    50% { transform: scale(1.15, 0.85); }
+    65% { transform: scale(0.95, 1.05); }
+    75% { transform: scale(1.05, 0.95); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover vignette - vignette effect on hover
+   */
+  .hover-vignette {
+    @apply relative;
+  }
+  .hover-vignette::after {
+    content: '';
+    @apply absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none;
+    border-radius: inherit;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+  }
+  .hover-vignette:hover::after {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover stripe - animated stripe background
+   */
+  .hover-stripe:hover {
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 167, 144, 0.1) 10px,
+      rgba(0, 167, 144, 0.1) 20px
+    );
+    animation: stripe-move 1s linear infinite;
+  }
+
+  @keyframes stripe-move {
+    from { background-position: 0 0; }
+    to { background-position: 28px 0; }
+  }
+
+  /**
+   * Hover glow text - glowing text effect
+   */
+  .hover-glow-text:hover {
+    @apply text-wellcare-400;
+    text-shadow: 0 0 10px rgba(0, 167, 144, 0.8), 0 0 20px rgba(0, 167, 144, 0.4);
+  }
+
+  /**
+   * Hover blur background - blur background on hover
+   */
+  .hover-blur-bg {
+    @apply relative;
+  }
+  .hover-blur-bg::before {
+    content: '';
+    @apply absolute inset-0 transition-all duration-300 opacity-0 -z-10 blur-xl;
+    background: radial-gradient(circle, rgba(0, 167, 144, 0.3) 0%, transparent 70%);
+  }
+  .hover-blur-bg:hover::before {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover morph - border radius morph
+   */
+  .hover-morph {
+    @apply transition-all duration-500;
+  }
+  .hover-morph:hover {
+    @apply rounded-3xl;
+  }
+
+  /**
+   * Hover curtain - curtain reveal effect
+   */
+  .hover-curtain {
+    @apply relative overflow-hidden;
+  }
+  .hover-curtain::before,
+  .hover-curtain::after {
+    content: '';
+    @apply absolute top-0 w-1/2 h-full transition-transform duration-500 bg-wellcare-500/20;
+  }
+  .hover-curtain::before {
+    @apply left-0 -translate-x-full;
+  }
+  .hover-curtain::after {
+    @apply right-0 translate-x-full;
+  }
+  .hover-curtain:hover::before {
+    @apply translate-x-0;
+  }
+  .hover-curtain:hover::after {
+    @apply translate-x-0;
+  }
+
+  /**
+   * Hover stack - cards stack effect
+   */
+  .hover-stack {
+    @apply transition-all duration-300;
+  }
+  .hover-stack:hover {
+    @apply shadow-2xl;
+    transform: translateY(-5px) rotate(2deg);
+  }
+
+  /**
+   * Hover focus - focus effect on hover
+   */
+  .hover-focus:hover {
+    @apply outline-none ring-2 ring-wellcare-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-950;
+  }
+
+  /**
+   * Hover smooth - extra smooth transitions
+   */
+  .hover-smooth {
+    @apply transition-all duration-500 ease-in-out;
+  }
+
+  /**
+   * Hover quick - quick snappy transitions
+   */
+  .hover-quick {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  /**
+   * Hover slow - slow dramatic transitions
+   */
+  .hover-slow {
+    @apply transition-all duration-700 ease-in-out;
+  }
+
+  /**
+   * Hover bounce in - bounce in effect
+   */
+  .hover-bounce-in:hover {
+    animation: bounce-in 0.6s ease;
+  }
+
+  @keyframes bounce-in {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /**
+   * Hover fade in up - fade in from below
+   */
+  .hover-fade-in-up:hover {
+    animation: fade-in-up 0.5s ease;
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /**
+   * Hover zoom in - zoom in effect
+   */
+  .hover-zoom-in:hover {
+    animation: zoom-in 0.3s ease forwards;
+  }
+
+  @keyframes zoom-in {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /**
+   * Hover slide in left - slide in from left
+   */
+  .hover-slide-in-left:hover {
+    animation: slide-in-left 0.5s ease;
+  }
+
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /**
+   * Hover slide in right - slide in from right
+   */
+  .hover-slide-in-right:hover {
+    animation: slide-in-right 0.5s ease;
+  }
+
+  @keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /**
+   * Hover roll in - roll in effect
+   */
+  .hover-roll-in:hover {
+    animation: roll-in 0.6s ease;
+  }
+
+  @keyframes roll-in {
+    from {
+      transform: translateX(-100%) rotate(-120deg);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0) rotate(0);
+      opacity: 1;
+    }
+  }
+
+  /**
+   * Hover light speed - light speed in effect
+   */
+  .hover-light-speed:hover {
+    animation: light-speed 0.5s ease-out;
+  }
+
+  @keyframes light-speed {
+    from {
+      transform: translateX(-100%) skewX(-30deg);
+      opacity: 0;
+    }
+    60% {
+      transform: translateX(20%) skewX(15deg);
+      opacity: 1;
+    }
+    80% {
+      transform: translateX(0) skewX(-5deg);
+    }
+    100% {
+      transform: translateX(0) skewX(0);
+    }
+  }
+
+  /**
+   * Hover rubber band - rubber band effect
+   */
+  .hover-rubber-band:hover {
+    animation: rubber-band 1s ease;
+  }
+
+  @keyframes rubber-band {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.25, 0.75); }
+    40% { transform: scale(0.75, 1.25); }
+    50% { transform: scale(1.15, 0.85); }
+    65% { transform: scale(0.95, 1.05); }
+    75% { transform: scale(1.05, 0.95); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover tada - tada effect
+   */
+  .hover-tada:hover {
+    animation: tada 1s ease;
+  }
+
+  @keyframes tada {
+    0% { transform: scale(1); }
+    10%, 20% { transform: scale(0.9) rotate(-3deg); }
+    30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+    40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  /**
+   * Hover flash - flash effect
+   */
+  .hover-flash:hover {
+    animation: flash 1s ease;
+  }
+
+  @keyframes flash {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0; }
+  }
+
+  /**
+   * Hover pulse grow - pulse and grow
+   */
+  .hover-pulse-grow:hover {
+    animation: pulse-grow 0.5s ease-in-out;
+  }
+
+  @keyframes pulse-grow {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover pulse shrink - pulse and shrink
+   */
+  .hover-pulse-shrink:hover {
+    animation: pulse-shrink 0.5s ease-in-out;
+  }
+
+  @keyframes pulse-shrink {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover push - push effect
+   */
+  .hover-push:hover {
+    animation: push 0.3s ease;
+  }
+
+  @keyframes push {
+    50% { transform: scale(0.8); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover pop out - pop out effect
+   */
+  .hover-pop-out:hover {
+    animation: pop-out 0.5s ease;
+  }
+
+  @keyframes pop-out {
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover spin - spin effect
+   */
+  .hover-spin:hover {
+    animation: spin 0.5s ease;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /**
+   * Hover buzz - buzz effect
+   */
+  .hover-buzz:hover {
+    animation: buzz 0.5s ease;
+  }
+
+  @keyframes buzz {
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px) rotate(-1deg); }
+    20%, 40%, 60%, 80%, 100% { transform: translateX(2px) rotate(1deg); }
+  }
+
+  /**
+   * Hover shadow radial - radial shadow on hover
+   */
+  .hover-shadow-radial:hover {
+    box-shadow: 0 0 0 0 rgba(0, 167, 144, 0.4);
+    animation: shadow-radial 1s ease-out;
+  }
+
+  @keyframes shadow-radial {
+    0% { box-shadow: 0 0 0 0 rgba(0, 167, 144, 0.4); }
+    100% { box-shadow: 0 0 0 20px rgba(0, 167, 144, 0); }
+  }
+
+  /**
+   * Hover shadow drop - drop shadow on hover
+   */
+  .hover-shadow-drop:hover {
+    animation: shadow-drop 0.5s ease forwards;
+  }
+
+  @keyframes shadow-drop {
+    0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+    100% { box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23); }
+  }
+
+  /**
+   * Hover trim - border trim effect
+   */
+  .hover-trim {
+    @apply relative;
+  }
+  .hover-trim::before {
+    content: '';
+    @apply absolute inset-0 transition-all duration-300 border-2 border-transparent;
+  }
+  .hover-trim:hover::before {
+    @apply border-wellcare-500;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  /**
+   * Hover ripple out - ripple out effect
+   */
+  .hover-ripple-out {
+    @apply relative;
+  }
+  .hover-ripple-out::before {
+    content: '';
+    @apply absolute inset-0 transition-all duration-300 border-2 opacity-0 border-wellcare-500;
+    border-radius: inherit;
+  }
+  .hover-ripple-out:hover::before {
+    animation: ripple-out 1s ease-out infinite;
+  }
+
+  @keyframes ripple-out {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /**
+   * Hover outline out - outline out effect
+   */
+  .hover-outline-out {
+    @apply relative;
+  }
+  .hover-outline-out::before {
+    content: '';
+    @apply absolute inset-0 transition-all duration-300 border-2 opacity-0 border-wellcare-500;
+    border-radius: inherit;
+  }
+  .hover-outline-out:hover::before {
+    @apply opacity-100;
+    top: -4px; right: -4px; bottom: -4px; left: -4px;
+  }
+
+  /**
+   * Hover overline - overline reveal
+   */
+  .hover-overline {
+    @apply relative;
+  }
+  .hover-overline::before {
+    content: '';
+    @apply absolute top-0 left-0 w-0 h-0.5 bg-wellcare-500 transition-all duration-300;
+  }
+  .hover-overline:hover::before {
+    @apply w-full;
+  }
+
+  /**
+   * Hover underline left - underline from left
+   */
+  .hover-underline-left {
+    @apply relative;
+  }
+  .hover-underline-left::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-wellcare-500 transition-all duration-300;
+  }
+  .hover-underline-left:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover underline right - underline from right
+   */
+  .hover-underline-right {
+    @apply relative;
+  }
+  .hover-underline-right::after {
+    content: '';
+    @apply absolute bottom-0 right-0 w-0 h-0.5 bg-wellcare-500 transition-all duration-300;
+  }
+  .hover-underline-right:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover underline reveal - reveal from center
+   */
+  .hover-underline-reveal {
+    @apply relative overflow-hidden;
+  }
+  .hover-underline-reveal::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 w-0 h-0.5 bg-wellcare-500 transition-all duration-300 -translate-x-1/2;
+  }
+  .hover-underline-reveal:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover sweep to right - sweep effect
+   */
+  .hover-sweep-right {
+    @apply relative overflow-hidden;
+  }
+  .hover-sweep-right::before {
+    content: '';
+    @apply absolute top-0 left-0 w-0 h-full transition-all duration-300 bg-wellcare-500/20 -z-10;
+  }
+  .hover-sweep-right:hover::before {
+    @apply w-full;
+  }
+
+  /**
+   * Hover sweep to left - sweep effect
+   */
+  .hover-sweep-left {
+    @apply relative overflow-hidden;
+  }
+  .hover-sweep-left::before {
+    content: '';
+    @apply absolute top-0 right-0 w-0 h-full transition-all duration-300 bg-wellcare-500/20 -z-10;
+  }
+  .hover-sweep-left:hover::before {
+    @apply w-full;
+  }
+
+  /**
+   * Hover sweep to bottom - sweep effect
+   */
+  .hover-sweep-bottom {
+    @apply relative overflow-hidden;
+  }
+  .hover-sweep-bottom::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-0 transition-all duration-300 bg-wellcare-500/20 -z-10;
+  }
+  .hover-sweep-bottom:hover::before {
+    @apply h-full;
+  }
+
+  /**
+   * Hover sweep to top - sweep effect
+   */
+  .hover-sweep-top {
+    @apply relative overflow-hidden;
+  }
+  .hover-sweep-top::before {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-0 transition-all duration-300 bg-wellcare-500/20 -z-10;
+  }
+  .hover-sweep-top:hover::before {
+    @apply h-full;
+  }
+
+  /**
+   * Hover bounce to right - bounce to right
+   */
+  .hover-bounce-right:hover {
+    animation: bounce-right 1s ease;
+  }
+
+  @keyframes bounce-right {
+    0%, 20%, 50%, 80%, 100% { transform: translateX(0); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(5px); }
+  }
+
+  /**
+   * Hover bounce to left - bounce to left
+   */
+  .hover-bounce-left:hover {
+    animation: bounce-left 1s ease;
+  }
+
+  @keyframes bounce-left {
+    0%, 20%, 50%, 80%, 100% { transform: translateX(0); }
+    40% { transform: translateX(-10px); }
+    60% { transform: translateX(-5px); }
+  }
+
+  /**
+   * Hover bounce to top - bounce to top
+   */
+  .hover-bounce-top:hover {
+    animation: bounce-top 1s ease;
+  }
+
+  @keyframes bounce-top {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+  }
+
+  /**
+   * Hover bounce to bottom - bounce to bottom
+   */
+  .hover-bounce-bottom:hover {
+    animation: bounce-bottom 1s ease;
+  }
+
+  @keyframes bounce-bottom {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(10px); }
+    60% { transform: translateY(5px); }
+  }
+
+  /**
+   * Hover radial out - radial out effect
+   */
+  .hover-radial-out {
+    @apply relative overflow-hidden;
+  }
+  .hover-radial-out::before {
+    content: '';
+    @apply absolute w-0 h-0 transition-all duration-500 rounded-full top-1/2 left-1/2 bg-wellcare-500/20 -z-10;
+    transform: translate(-50%, -50%);
+  }
+  .hover-radial-out:hover::before {
+    @apply w-[200%] h-[200%];
+  }
+
+  /**
+   * Hover radial in - radial in effect
+   */
+  .hover-radial-in {
+    @apply relative overflow-hidden;
+  }
+  .hover-radial-in::before {
+    content: '';
+    @apply absolute top-1/2 left-1/2 w-[200%] h-[200%] rounded-full bg-wellcare-500/20 transition-all duration-500 -z-10;
+    transform: translate(-50%, -50%);
+  }
+  .hover-radial-in:hover::before {
+    @apply w-0 h-0;
+  }
+
+  /**
+   * Hover rectangle in - rectangle in effect
+   */
+  .hover-rectangle-in {
+    @apply relative overflow-hidden;
+  }
+  .hover-rectangle-in::before {
+    content: '';
+    @apply absolute w-full h-0 transition-all duration-500 top-1/2 left-1/2 bg-wellcare-500/20 -z-10;
+    transform: translate(-50%, -50%);
+  }
+  .hover-rectangle-in:hover::before {
+    @apply h-full;
+  }
+
+  /**
+   * Hover rectangle out - rectangle out effect
+   */
+  .hover-rectangle-out {
+    @apply relative overflow-hidden;
+  }
+  .hover-rectangle-out::before {
+    content: '';
+    @apply absolute w-full h-full transition-all duration-500 top-1/2 left-1/2 bg-wellcare-500/20 -z-10;
+    transform: translate(-50%, -50%);
+  }
+  .hover-rectangle-out:hover::before {
+    @apply h-0;
+  }
+
+  /**
+   * Hover shutter - shutter effect
+   */
+  .hover-shutter {
+    @apply relative overflow-hidden;
+  }
+  .hover-shutter::before,
+  .hover-shutter::after {
+    content: '';
+    @apply absolute top-0 w-0 h-full transition-all duration-500 bg-wellcare-500/20 -z-10;
+  }
+  .hover-shutter::before {
+    @apply left-0;
+  }
+  .hover-shutter::after {
+    @apply right-0;
+  }
+  .hover-shutter:hover::before,
+  .hover-shutter:hover::after {
+    @apply w-1/2;
+  }
+
+  /**
+   * Hover shutter vertical - vertical shutter effect
+   */
+  .hover-shutter-vertical {
+    @apply relative overflow-hidden;
+  }
+  .hover-shutter-vertical::before,
+  .hover-shutter-vertical::after {
+    content: '';
+    @apply absolute left-0 w-full h-0 transition-all duration-500 bg-wellcare-500/20 -z-10;
+  }
+  .hover-shutter-vertical::before {
+    @apply top-0;
+  }
+  .hover-shutter-vertical::after {
+    @apply bottom-0;
+  }
+  .hover-shutter-vertical:hover::before,
+  .hover-shutter-vertical:hover::after {
+    @apply h-1/2;
+  }
+
+  /**
+   * Hover icon back - icon moves back on hover
+   */
+  .hover-icon-back .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-back:hover .icon {
+    @apply -translate-x-1;
+  }
+
+  /**
+   * Hover icon forward - icon moves forward on hover
+   */
+  .hover-icon-forward .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-forward:hover .icon {
+    @apply translate-x-1;
+  }
+
+  /**
+   * Hover icon down - icon moves down on hover
+   */
+  .hover-icon-down .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-down:hover .icon {
+    @apply translate-y-1;
+  }
+
+  /**
+   * Hover icon up - icon moves up on hover
+   */
+  .hover-icon-up .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-up:hover .icon {
+    @apply -translate-y-1;
+  }
+
+  /**
+   * Hover icon spin - icon spins on hover
+   */
+  .hover-icon-spin .icon {
+    @apply transition-transform duration-500;
+  }
+  .hover-icon-spin:hover .icon {
+    @apply rotate-180;
+  }
+
+  /**
+   * Hover icon drop - icon drops in
+   */
+  .hover-icon-drop .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-drop:hover .icon {
+    animation: icon-drop 0.5s ease;
+  }
+
+  @keyframes icon-drop {
+    0% { transform: translateY(-20px) rotate(0); opacity: 0; }
+    50% { transform: translateY(0) rotate(10deg); opacity: 1; }
+    70% { transform: translateY(0) rotate(-10deg); }
+    100% { transform: translateY(0) rotate(0); }
+  }
+
+  /**
+   * Hover icon float away - icon floats away
+   */
+  .hover-icon-float-away .icon {
+    @apply transition-all duration-500;
+  }
+  .hover-icon-float-away:hover .icon {
+    @apply translate-y-4 opacity-0;
+  }
+
+  /**
+   * Hover icon sink away - icon sinks away
+   */
+  .hover-icon-sink-away .icon {
+    @apply transition-all duration-500;
+  }
+  .hover-icon-sink-away:hover .icon {
+    @apply -translate-y-4 opacity-0;
+  }
+
+  /**
+   * Hover icon grow - icon grows
+   */
+  .hover-icon-grow .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-grow:hover .icon {
+    @apply scale-125;
+  }
+
+  /**
+   * Hover icon shrink - icon shrinks
+   */
+  .hover-icon-shrink .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-shrink:hover .icon {
+    @apply scale-75;
+  }
+
+  /**
+   * Hover icon pulse - icon pulses
+   */
+  .hover-icon-pulse .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-pulse:hover .icon {
+    animation: icon-pulse 1s ease infinite;
+  }
+
+  @keyframes icon-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  /**
+   * Hover icon buzz out - icon buzzes out
+   */
+  .hover-icon-buzz-out .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-buzz-out:hover .icon {
+    animation: icon-buzz-out 0.75s ease;
+  }
+
+  @keyframes icon-buzz-out {
+    10% { transform: translateX(3px) rotate(2deg); }
+    20% { transform: translateX(-3px) rotate(-2deg); }
+    30% { transform: translateX(3px) rotate(2deg); }
+    40% { transform: translateX(-3px) rotate(-2deg); }
+    50% { transform: translateX(2px) rotate(1deg); }
+    60% { transform: translateX(-2px) rotate(-1deg); }
+    70% { transform: translateX(2px) rotate(1deg); }
+    80% { transform: translateX(-2px) rotate(-1deg); }
+    90% { transform: translateX(1px) rotate(0); }
+    100% { transform: translateX(-1px) rotate(0); }
+  }
+
+  /**
+   * Hover icon fade - icon fades
+   */
+  .hover-icon-fade .icon {
+    @apply transition-opacity duration-300;
+  }
+  .hover-icon-fade:hover .icon {
+    @apply opacity-50;
+  }
+
+  /**
+   * Hover icon blur - icon blurs
+   */
+  .hover-icon-blur .icon {
+    @apply transition-all duration-300;
+  }
+  .hover-icon-blur:hover .icon {
+    @apply blur-sm;
+  }
+
+  /**
+   * Hover icon color - icon changes color
+   */
+  .hover-icon-color .icon {
+    @apply transition-colors duration-300;
+  }
+  .hover-icon-color:hover .icon {
+    @apply text-wellcare-500;
+  }
+
+  /**
+   * Hover icon rotate - icon rotates
+   */
+  .hover-icon-rotate .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-rotate:hover .icon {
+    @apply rotate-45;
+  }
+
+  /**
+   * Hover icon wobble horizontal - icon wobbles
+   */
+  .hover-icon-wobble-horizontal .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-wobble-horizontal:hover .icon {
+    animation: icon-wobble-horizontal 1s ease-in-out;
+  }
+
+  @keyframes icon-wobble-horizontal {
+    16.65% { transform: translateX(6px); }
+    33.3% { transform: translateX(-5px); }
+    49.95% { transform: translateX(4px); }
+    66.6% { transform: translateX(-2px); }
+    83.25% { transform: translateX(1px); }
+    100% { transform: translateX(0); }
+  }
+
+  /**
+   * Hover icon wobble vertical - icon wobbles vertically
+   */
+  .hover-icon-wobble-vertical .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-wobble-vertical:hover .icon {
+    animation: icon-wobble-vertical 1s ease-in-out;
+  }
+
+  @keyframes icon-wobble-vertical {
+    16.65% { transform: translateY(6px); }
+    33.3% { transform: translateY(-5px); }
+    49.95% { transform: translateY(4px); }
+    66.6% { transform: translateY(-2px); }
+    83.25% { transform: translateY(1px); }
+    100% { transform: translateY(0); }
+  }
+
+  /**
+   * Hover icon bob - icon bobs
+   */
+  .hover-icon-bob .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-bob:hover .icon {
+    animation: icon-bob 1s ease-in-out infinite;
+  }
+
+  @keyframes icon-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /**
+   * Hover icon hang - icon hangs
+   */
+  .hover-icon-hang .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-hang:hover .icon {
+    animation: icon-hang 1s ease-in-out infinite;
+  }
+
+  @keyframes icon-hang {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /**
+   * Hover icon skew - icon skews
+   */
+  .hover-icon-skew .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-skew:hover .icon {
+    @apply skew-x-12;
+  }
+
+  /**
+   * Hover icon bounce in - icon bounces in
+   */
+  .hover-icon-bounce-in .icon {
+    @apply transition-transform duration-300;
+  }
+  .hover-icon-bounce-in:hover .icon {
+    animation: icon-bounce-in 0.75s ease;
+  }
+
+  @keyframes icon-bounce-in {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /**
+   * Hover text shadow - text shadow on hover
+   */
+  .hover-text-shadow:hover {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /**
+   * Hover text spacing - letter spacing on hover
+   */
+  .hover-text-spacing {
+    @apply transition-all duration-300;
+  }
+  .hover-text-spacing:hover {
+    @apply tracking-wider;
+  }
+
+  /**
+   * Hover text scale - text scale on hover
+   */
+  .hover-text-scale {
+    @apply transition-transform duration-300;
+  }
+  .hover-text-scale:hover {
+    @apply scale-105;
+  }
+
+  /**
+   * Hover text slide - text slides on hover
+   */
+  .hover-text-slide {
+    @apply transition-transform duration-300;
+  }
+  .hover-text-slide:hover {
+    @apply translate-x-2;
+  }
+
+  /**
+   * Hover image grayscale - image grayscale on hover
+   */
+  .hover-image-grayscale img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-grayscale:hover img {
+    @apply grayscale;
+  }
+
+  /**
+   * Hover image sepia - image sepia on hover
+   */
+  .hover-image-sepia img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-sepia:hover img {
+    @apply sepia;
+  }
+
+  /**
+   * Hover image blur - image blur on hover
+   */
+  .hover-image-blur img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-blur:hover img {
+    @apply blur-sm;
+  }
+
+  /**
+   * Hover image brightness - image brightness on hover
+   */
+  .hover-image-brightness img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-brightness:hover img {
+    @apply brightness-125;
+  }
+
+  /**
+   * Hover image contrast - image contrast on hover
+   */
+  .hover-image-contrast img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-contrast:hover img {
+    @apply contrast-125;
+  }
+
+  /**
+   * Hover image saturate - image saturate on hover
+   */
+  .hover-image-saturate img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-saturate:hover img {
+    @apply saturate-150;
+  }
+
+  /**
+   * Hover image hue - image hue rotate on hover
+   */
+  .hover-image-hue img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-hue:hover img {
+    @apply hue-rotate-30;
+  }
+
+  /**
+   * Hover image invert - image invert on hover
+   */
+  .hover-image-invert img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-invert:hover img {
+    @apply invert;
+  }
+
+  /**
+   * Hover image opacity - image opacity on hover
+   */
+  .hover-image-opacity img {
+    @apply transition-all duration-300;
+  }
+  .hover-image-opacity:hover img {
+    @apply opacity-75;
+  }
+
+  /**
+   * Hover image rotate - image rotate on hover
+   */
+  .hover-image-rotate img {
+    @apply transition-transform duration-500;
+  }
+  .hover-image-rotate:hover img {
+    @apply rotate-6;
+  }
+
+  /**
+   * Hover image scale - image scale on hover
+   */
+  .hover-image-scale img {
+    @apply transition-transform duration-500;
+  }
+  .hover-image-scale:hover img {
+    @apply scale-110;
+  }
+
+  /**
+   * Hover image translate - image translate on hover
+   */
+  .hover-image-translate img {
+    @apply transition-transform duration-500;
+  }
+  .hover-image-translate:hover img {
+    @apply translate-x-2 -translate-y-2;
+  }
+
+  /**
+   * Hover button glow - button glow effect
+   */
+  .hover-button-glow {
+    @apply transition-all duration-300;
+  }
+  .hover-button-glow:hover {
+    box-shadow: 0 0 20px rgba(0, 167, 144, 0.6), 0 0 40px rgba(0, 167, 144, 0.3);
+  }
+
+  /**
+   * Hover button pulse - button pulse effect
+   */
+  .hover-button-pulse:hover {
+    animation: button-pulse 1s ease infinite;
+  }
+
+  @keyframes button-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  /**
+   * Hover button shake - button shake effect
+   */
+  .hover-button-shake:hover {
+    animation: button-shake 0.5s ease-in-out;
+  }
+
+  @keyframes button-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /**
+   * Hover button bounce - button bounce effect
+   */
+  .hover-button-bounce:hover {
+    animation: button-bounce 0.6s ease;
+  }
+
+  @keyframes button-bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+  }
+
+  /**
+   * Hover button wiggle - button wiggle effect
+   */
+  .hover-button-wiggle:hover {
+    animation: button-wiggle 0.5s ease-in-out;
+  }
+
+  @keyframes button-wiggle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+  }
+
+  /**
+   * Hover button jello - button jello effect
+   */
+  .hover-button-jello:hover {
+    animation: button-jello 0.9s both;
+  }
+
+  @keyframes button-jello {
+    0% { transform: scale3d(1, 1, 1); }
+    30% { transform: scale3d(1.25, 0.75, 1); }
+    40% { transform: scale3d(0.75, 1.25, 1); }
+    50% { transform: scale3d(1.15, 0.85, 1); }
+    65% { transform: scale3d(0.95, 1.05, 1); }
+    75% { transform: scale3d(1.05, 0.95, 1); }
+    100% { transform: scale3d(1, 1, 1); }
+  }
+
+  /**
+   * Hover button rubber band - button rubber band effect
+   */
+  .hover-button-rubber-band:hover {
+    animation: button-rubber-band 1s ease;
+  }
+
+  @keyframes button-rubber-band {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.25, 0.75); }
+    40% { transform: scale(0.75, 1.25); }
+    50% { transform: scale(1.15, 0.85); }
+    65% { transform: scale(0.95, 1.05); }
+    75% { transform: scale(1.05, 0.95); }
+    100% { transform: scale(1); }
+  }
+
+  /**
+   * Hover button flip - button flip effect
+   */
+  .hover-button-flip:hover {
+    animation: button-flip 0.5s ease;
+  }
+
+  @keyframes button-flip {
+    0% { transform: perspective(400px) rotateY(0); }
+    100% { transform: perspective(400px) rotateY(360deg); }
+  }
+
+  /**
+   * Hover button swing - button swing effect
+   */
+  .hover-button-swing:hover {
+    animation: button-swing 1s ease;
+  }
+
+  @keyframes button-swing {
+    20% { transform: rotate(15deg); }
+    40% { transform: rotate(-10deg); }
+    60% { transform: rotate(5deg); }
+    80% { transform: rotate(-5deg); }
+    100% { transform: rotate(0); }
+  }
+
+  /**
+   * Hover button tada - button tada effect
+   */
+  .hover-button-tada:hover {
+    animation: button-tada 1s ease;
+  }
+
+  @keyframes button-tada {
+    0% { transform: scale(1); }
+    10%, 20% { transform: scale(0.9) rotate(-3deg); }
+    30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+    40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  /**
+   * Hover card lift - card lift effect
+   */
+  .hover-card-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-card-lift:hover {
+    @apply -translate-y-2 shadow-xl;
+  }
+
+  /**
+   * Hover card glow - card glow effect
+   */
+  .hover-card-glow {
+    @apply transition-all duration-300;
+  }
+  .hover-card-glow:hover {
+    box-shadow: 0 0 30px rgba(0, 167, 144, 0.3);
+  }
+
+  /**
+   * Hover card border - card border effect
+   */
+  .hover-card-border {
+    @apply transition-all duration-300 border-2 border-transparent;
+  }
+  .hover-card-border:hover {
+    @apply border-wellcare-500;
+  }
+
+  /**
+   * Hover card scale - card scale effect
+   */
+  .hover-card-scale {
+    @apply transition-transform duration-300;
+  }
+  .hover-card-scale:hover {
+    @apply scale-105;
+  }
+
+  /**
+   * Hover card rotate - card rotate effect
+   */
+  .hover-card-rotate {
+    @apply transition-transform duration-300;
+  }
+  .hover-card-rotate:hover {
+    @apply rotate-2;
+  }
+
+  /**
+   * Hover card shine - card shine effect
+   */
+  .hover-card-shine {
+    @apply relative overflow-hidden;
+  }
+  .hover-card-shine::before {
+    content: '';
+    @apply absolute w-full h-full transition-all duration-700 rotate-45 -top-full -left-full bg-gradient-to-br from-white/30 to-transparent;
+  }
+  .hover-card-shine:hover::before {
+    @apply top-full left-full;
+  }
+
+  /**
+   * Hover card flip - card flip effect
+   */
+  .hover-card-flip {
+    @apply transition-transform duration-500;
+    transform-style: preserve-3d;
+  }
+  .hover-card-flip:hover {
+    transform: rotateY(180deg);
+  }
+
+  /**
+   * Hover card zoom - card zoom effect
+   */
+  .hover-card-zoom {
+    @apply transition-transform duration-500;
+  }
+  .hover-card-zoom:hover {
+    @apply scale-110;
+  }
+
+  /**
+   * Hover card shadow - card shadow effect
+   */
+  .hover-card-shadow {
+    @apply transition-shadow duration-300;
+  }
+  .hover-card-shadow:hover {
+    @apply shadow-2xl shadow-wellcare-500/20;
+  }
+
+  /**
+   * Hover card tilt - card tilt effect
+   */
+  .hover-card-tilt {
+    @apply transition-transform duration-300;
+  }
+  .hover-card-tilt:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+  }
+
+  /**
+   * Hover card blur - card blur effect
+   */
+  .hover-card-blur {
+    @apply transition-all duration-300;
+  }
+  .hover-card-blur:hover {
+    @apply blur-sm;
+  }
+
+  /**
+   * Hover card focus - card focus effect
+   */
+  .hover-card-focus {
+    @apply transition-all duration-300;
+  }
+  .hover-card-focus:hover {
+    @apply ring-2 ring-wellcare-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-950;
+  }
+
+  /**
+   * Hover card reveal - card reveal effect
+   */
+  .hover-card-reveal {
+    @apply relative overflow-hidden;
+  }
+  .hover-card-reveal .reveal-content {
+    @apply absolute inset-0 flex items-center justify-center transition-opacity duration-300 opacity-0 bg-wellcare-500/90;
+  }
+  .hover-card-reveal:hover .reveal-content {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover card overlay - card overlay effect
+   */
+  .hover-card-overlay {
+    @apply relative overflow-hidden;
+  }
+  .hover-card-overlay::before {
+    content: '';
+    @apply absolute inset-0 transition-all duration-300 bg-wellcare-500/0;
+  }
+  .hover-card-overlay:hover::before {
+    @apply bg-wellcare-500/20;
+  }
+
+  /**
+   * Hover link underline - link underline effect
+   */
+  .hover-link-underline {
+    @apply relative;
+  }
+  .hover-link-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-px transition-all duration-300 bg-current;
+  }
+  .hover-link-underline:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover link color - link color effect
+   */
+  .hover-link-color {
+    @apply transition-colors duration-300;
+  }
+  .hover-link-color:hover {
+    @apply text-wellcare-500;
+  }
+
+  /**
+   * Hover link slide - link slide effect
+   */
+  .hover-link-slide {
+    @apply transition-transform duration-300;
+  }
+  .hover-link-slide:hover {
+    @apply translate-x-2;
+  }
+
+  /**
+   * Hover link arrow - link arrow effect
+   */
+  .hover-link-arrow .arrow {
+    @apply transition-all duration-300 -translate-x-2 opacity-0;
+  }
+  .hover-link-arrow:hover .arrow {
+    @apply translate-x-0 opacity-100;
+  }
+
+  /**
+   * Hover link glow - link glow effect
+   */
+  .hover-link-glow:hover {
+    text-shadow: 0 0 10px rgba(0, 167, 144, 0.5);
+  }
+
+  /**
+   * Hover input glow - input glow effect
+   */
+  .hover-input-glow {
+    @apply transition-all duration-300;
+  }
+  .hover-input-glow:hover {
+    @apply shadow-md shadow-wellcare-500/20;
+  }
+  .hover-input-glow:focus {
+    @apply shadow-lg shadow-wellcare-500/30 ring-2 ring-wellcare-500;
+  }
+
+  /**
+   * Hover input expand - input expand effect
+   */
+  .hover-input-expand {
+    @apply transition-all duration-300;
+  }
+  .hover-input-expand:hover {
+    @apply scale-x-105;
+  }
+
+  /**
+   * Hover input border - input border effect
+   */
+  .hover-input-border {
+    @apply transition-all duration-300 border-2 border-gray-300;
+  }
+  .hover-input-border:hover {
+    @apply border-wellcare-500;
+  }
+
+  /**
+   * Hover input background - input background effect
+   */
+  .hover-input-background {
+    @apply transition-colors duration-300;
+  }
+  .hover-input-background:hover {
+    @apply bg-wellcare-50 dark:bg-wellcare-900/20;
+  }
+
+  /**
+   * Hover nav underline - nav underline effect
+   */
+  .hover-nav-underline {
+    @apply relative;
+  }
+  .hover-nav-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-wellcare-500 transition-all duration-300;
+  }
+  .hover-nav-underline:hover::after {
+    @apply w-full;
+  }
+
+  /**
+   * Hover nav background - nav background effect
+   */
+  .hover-nav-background {
+    @apply transition-colors duration-300;
+  }
+  .hover-nav-background:hover {
+    @apply bg-wellcare-50 dark:bg-wellcare-900/30;
+  }
+
+  /**
+   * Hover nav pill - nav pill effect
+   */
+  .hover-nav-pill {
+    @apply transition-all duration-300;
+  }
+  .hover-nav-pill:hover {
+    @apply px-4 text-white rounded-full bg-wellcare-500;
+  }
+
+  /**
+   * Hover nav slide - nav slide effect
+   */
+  .hover-nav-slide {
+    @apply transition-transform duration-300;
+  }
+  .hover-nav-slide:hover {
+    @apply translate-y-1;
+  }
+
+  /**
+   * Hover nav dot - nav dot effect
+   */
+  .hover-nav-dot {
+    @apply relative;
+  }
+  .hover-nav-dot::before {
+    content: '';
+    @apply absolute -left-3 top-1/2 w-1.5 h-1.5 rounded-full bg-wellcare-500 opacity-0 transition-all duration-300 -translate-y-1/2;
+  }
+  .hover-nav-dot:hover::before {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover nav arrow - nav arrow effect
+   */
+  .hover-nav-arrow .arrow {
+    @apply transition-all duration-300 -translate-x-2 opacity-0;
+  }
+  .hover-nav-arrow:hover .arrow {
+    @apply translate-x-0 opacity-100;
+  }
+
+  /**
+   * Hover tooltip - tooltip effect
+   */
+  .hover-tooltip {
+    @apply relative;
+  }
+  .hover-tooltip::after {
+    content: attr(data-tooltip);
+    @apply absolute px-2 py-1 text-xs text-white transition-opacity duration-300 -translate-x-1/2 bg-gray-900 rounded opacity-0 pointer-events-none bottom-full left-1/2 whitespace-nowrap;
+  }
+  .hover-tooltip:hover::after {
+    @apply opacity-100;
+  }
+
+  /**
+   * Hover badge pulse - badge pulse effect
+   */
+  .hover-badge-pulse:hover {
+    animation: badge-pulse 1s ease infinite;
+  }
+
+  @keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  /**
+   * Hover badge glow - badge glow effect
+   */
+  .hover-badge-glow:hover {
+    box-shadow: 0 0 15px rgba(0, 167, 144, 0.5);
+  }
+
+  /**
+   * Hover badge rotate - badge rotate effect
+   */
+  .hover-badge-rotate:hover {
+    animation: badge-rotate 0.5s ease;
+  }
+
+  @keyframes badge-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /**
+   * Hover list highlight - list highlight effect
+   */
+  .hover-list-highlight {
+    @apply transition-colors duration-300;
+  }
+  .hover-list-highlight:hover {
+    @apply bg-wellcare-50 dark:bg-wellcare-900/20;
+  }
+}
+

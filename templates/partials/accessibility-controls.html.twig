@@ -1,0 +1,589 @@
+{# templates/partials/accessibility-controls.html.twig #}
+{# Accessibility Controls Panel for Users with Disabilities #}
+
+<div 
+    id="accessibility-panel"
+    class="fixed right-0 z-50 transition-transform duration-300 transform translate-x-full top-32"
+    x-data="accessibilityPanel()"
+    x-init="init()"
+    :class="isOpen ? 'translate-x-0' : 'translate-x-full'"
+    role="region"
+    aria-label="{{ 'Panneau d\'accessibilité'|trans }}"
+>
+    {# Toggle Button #}
+    <button
+        type="button"
+        @click="togglePanel"
+        class="absolute left-0 flex items-center justify-center w-12 h-12 text-white -translate-x-full shadow-lg bg-wellcare-600 rounded-l-xl hover:bg-wellcare-700 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+        :aria-expanded="isOpen"
+        aria-controls="accessibility-panel"
+        aria-label="{{ 'Ouvrir les options d\'accessibilité'|trans }}"
+    >
+        <i class="text-xl fa-solid fa-universal-access" aria-hidden="true"></i>
+        <span class="sr-only">{{ 'Options d\'accessibilité'|trans }}</span>
+    </button>
+
+    {# Panel Content #}
+    <div class="w-80 max-h-[80vh] overflow-y-auto bg-white border-l-4 border-wellcare-600 shadow-2xl rounded-l-2xl dark:bg-gray-900 dark:border-wellcare-400">
+        <div class="p-5">
+            {# Header #}
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="text-lg fa-solid fa-universal-access" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <h2 id="accessibility-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Accessibilité'|trans }}
+                        </h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Personnalisez votre expérience'|trans }}</p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    @click="togglePanel"
+                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    aria-label="{{ 'Fermer le panneau d\'accessibilité'|trans }}"
+                >
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            {# Screen Reader Announcements Live Region #}
+            <div 
+                id="a11y-live-region" 
+                class="sr-only" 
+                aria-live="polite" 
+                aria-atomic="true"
+            ></div>
+
+            {# Visual Impairments Section #}
+            <section class="mb-6" aria-labelledby="visual-heading">
+                <h3 id="visual-heading" class="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <i class="fa-solid fa-eye text-wellcare-500" aria-hidden="true"></i>
+                    {{ 'Accessibilité visuelle'|trans }}
+                </h3>
+
+                {# High Contrast Mode #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="high-contrast" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Contraste élevé'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="high-contrast"
+                            role="switch"
+                            :aria-checked="highContrast"
+                            @click="toggleHighContrast"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="highContrast ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="highContrast ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">
+                        {{ 'Améliore la lisibilité avec des couleurs à fort contraste'|trans }}
+                    </p>
+                </div>
+
+                {# Large Text Mode #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="large-text" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Texte agrandi'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="large-text"
+                            role="switch"
+                            :aria-checked="largeText"
+                            @click="toggleLargeText"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="largeText ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="largeText ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">
+                        {{ 'Augmente la taille du texte jusqu\'à 200%'|trans }}
+                    </p>
+                </div>
+
+                {# Color Blind Mode #}
+                <div class="mb-4">
+                    <label for="color-blind-mode" class="block mb-2 text-sm text-gray-600 dark:text-gray-400">
+                        {{ 'Mode daltonien'|trans }}
+                    </label>
+                    <select
+                        id="color-blind-mode"
+                        x-model="colorBlindMode"
+                        @change="applyColorBlindMode"
+                        class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:border-wellcare-500 focus:ring-2 focus:ring-wellcare-200"
+                    >
+                        <option value="none">{{ 'Aucun'|trans }}</option>
+                        <option value="protanopia">{{ 'Protanopie (rouge)'|trans }}</option>
+                        <option value="deuteranopia">{{ 'Deutéranopie (vert)'|trans }}</option>
+                        <option value="tritanopia">{{ 'Tritanopie (bleu)'|trans }}</option>
+                        <option value="achromatopsia">{{ 'Achromatopsie (aucune couleur)'|trans }}</option>
+                    </select>
+                </div>
+
+                {# Reduce Motion #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="reduce-motion" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Réduire les animations'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="reduce-motion"
+                            role="switch"
+                            :aria-checked="reduceMotion"
+                            @click="toggleReduceMotion"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="reduceMotion ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="reduceMotion ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            {# Motor Impairments Section #}
+            <section class="mb-6" aria-labelledby="motor-heading">
+                <h3 id="motor-heading" class="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <i class="fa-solid fa-keyboard text-wellcare-500" aria-hidden="true"></i>
+                    {{ 'Accessibilité motrice'|trans }}
+                </h3>
+
+                {# Keyboard Navigation Help #}
+                <div class="mb-4">
+                    <button
+                        type="button"
+                        @click="showKeyboardShortcuts = !showKeyboardShortcuts"
+                        class="flex items-center justify-between w-full px-3 py-2 text-sm text-left text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                        aria-expanded="showKeyboardShortcuts"
+                        aria-controls="keyboard-shortcuts"
+                    >
+                        <span>{{ 'Raccourcis clavier'|trans }}</span>
+                        <i class="fa-solid" :class="showKeyboardShortcuts ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
+                    </button>
+                    <div
+                        id="keyboard-shortcuts"
+                        x-show="showKeyboardShortcuts"
+                        x-transition
+                        class="mt-2 space-y-2 text-xs text-gray-600 dark:text-gray-400"
+                    >
+                        <div class="flex justify-between">
+                            <kbd class="px-2 py-1 font-mono bg-gray-100 rounded dark:bg-gray-800">Tab</kbd>
+                            <span>{{ 'Navigation entre éléments'|trans }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <kbd class="px-2 py-1 font-mono bg-gray-100 rounded dark:bg-gray-800">Entrée</kbd>
+                            <span>{{ 'Activer un élément'|trans }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <kbd class="px-2 py-1 font-mono bg-gray-100 rounded dark:bg-gray-800">Échap</kbd>
+                            <span>{{ 'Fermer une fenêtre'|trans }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <kbd class="px-2 py-1 font-mono bg-gray-100 rounded dark:bg-gray-800">Alt + 1</kbd>
+                            <span>{{ 'Aller au contenu principal'|trans }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <kbd class="px-2 py-1 font-mono bg-gray-100 rounded dark:bg-gray-800">Alt + A</kbd>
+                            <span>{{ 'Ouvrir ce panneau'|trans }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Focus Indicator #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="focus-indicator" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Indicateur de focus visible'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="focus-indicator"
+                            role="switch"
+                            :aria-checked="focusIndicator"
+                            @click="toggleFocusIndicator"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="focusIndicator ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="focusIndicator ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            {# Cognitive Accessibility Section #}
+            <section class="mb-6" aria-labelledby="cognitive-heading">
+                <h3 id="cognitive-heading" class="flex items-center gap-2 mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <i class="fa-solid fa-brain text-wellcare-500" aria-hidden="true"></i>
+                    {{ 'Accessibilité cognitive'|trans }}
+                </h3>
+
+                {# Simplified Mode #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="simplified-mode" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Mode simplifié'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="simplified-mode"
+                            role="switch"
+                            :aria-checked="simplifiedMode"
+                            @click="toggleSimplifiedMode"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="simplifiedMode ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="simplifiedMode ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">
+                        {{ 'Réduit la complexité visuelle'|trans }}
+                    </p>
+                </div>
+
+                {# Reading Guide #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="reading-guide" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Guide de lecture'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="reading-guide"
+                            role="switch"
+                            :aria-checked="readingGuide"
+                            @click="toggleReadingGuide"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="readingGuide ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="readingGuide ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                </div>
+
+                {# Voice Control #}
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="voice-control" class="text-sm text-gray-600 dark:text-gray-400">
+                            {{ 'Contrôle vocal'|trans }}
+                        </label>
+                        <button
+                            type="button"
+                            id="voice-control"
+                            role="switch"
+                            :aria-checked="voiceControl"
+                            @click="toggleVoiceControl"
+                            class="relative inline-flex items-center h-6 transition-colors rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+                            :class="voiceControl ? 'bg-wellcare-600' : 'bg-gray-200 dark:bg-gray-700'"
+                            :disabled="!voiceControlSupported"
+                        >
+                            <span
+                                class="inline-block w-4 h-4 transition-transform transform bg-white rounded-full"
+                                :class="voiceControl ? 'translate-x-6' : 'translate-x-1'"
+                            ></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500" x-show="!voiceControlSupported">
+                        {{ 'Non supporté par votre navigateur'|trans }}
+                    </p>
+                </div>
+            </section>
+
+            {# Reset Button #}
+            <button
+                type="button"
+                @click="resetAllSettings"
+                class="w-full px-4 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-200 rounded-xl hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+                <i class="mr-2 fa-solid fa-rotate-left" aria-hidden="true"></i>
+                {{ 'Réinitialiser les paramètres'|trans }}
+            </button>
+        </div>
+    </div>
+</div>
+
+{# Reading Guide Line #}
+<div
+    x-show="readingGuide"
+    x-data="{ y: 0 }"
+    @mousemove.window="y = $event.clientY - 10"
+    class="fixed left-0 right-0 z-40 h-5 pointer-events-none bg-wellcare-500/20 border-y-2 border-wellcare-500"
+    :style="`top: ${y}px`"
+    aria-hidden="true"
+></div>
+
+<script>
+function accessibilityPanel() {
+    return {
+        isOpen: false,
+        highContrast: false,
+        largeText: false,
+        colorBlindMode: 'none',
+        reduceMotion: false,
+        focusIndicator: true,
+        simplifiedMode: false,
+        readingGuide: false,
+        voiceControl: false,
+        voiceControlSupported: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
+        showKeyboardShortcuts: false,
+
+        init() {
+            // Load saved preferences
+            this.loadSettings();
+            
+            // Apply initial settings
+            this.applySettings();
+            
+            // Setup keyboard shortcuts
+            this.setupKeyboardShortcuts();
+            
+            // Announce to screen readers
+            this.announceToScreenReader('{{ 'Panneau d\'accessibilité prêt'|trans }}');
+        },
+
+        togglePanel() {
+            this.isOpen = !this.isOpen;
+            this.announceToScreenReader(this.isOpen ? '{{ 'Panneau d\'accessibilité ouvert'|trans }}' : '{{ 'Panneau d\'accessibilité fermé'|trans }}');
+        },
+
+        toggleHighContrast() {
+            this.highContrast = !this.highContrast;
+            this.applyHighContrast();
+            this.saveSettings();
+            this.announceToScreenReader(this.highContrast ? '{{ 'Contraste élevé activé'|trans }}' : '{{ 'Contraste élevé désactivé'|trans }}');
+        },
+
+        toggleLargeText() {
+            this.largeText = !this.largeText;
+            this.applyLargeText();
+            this.saveSettings();
+            this.announceToScreenReader(this.largeText ? '{{ 'Texte agrandi activé'|trans }}' : '{{ 'Texte agrandi désactivé'|trans }}');
+        },
+
+        applyColorBlindMode() {
+            this.applyColorBlindFilter();
+            this.saveSettings();
+            this.announceToScreenReader('{{ 'Mode daltonien modifié'|trans }}');
+        },
+
+        toggleReduceMotion() {
+            this.reduceMotion = !this.reduceMotion;
+            this.applyReduceMotion();
+            this.saveSettings();
+            this.announceToScreenReader(this.reduceMotion ? '{{ 'Animations réduites'|trans }}' : '{{ 'Animations normales'|trans }}');
+        },
+
+        toggleFocusIndicator() {
+            this.focusIndicator = !this.focusIndicator;
+            this.applyFocusIndicator();
+            this.saveSettings();
+            this.announceToScreenReader(this.focusIndicator ? '{{ 'Indicateur de focus visible'|trans }}' : '{{ 'Indicateur de focus standard'|trans }}');
+        },
+
+        toggleSimplifiedMode() {
+            this.simplifiedMode = !this.simplifiedMode;
+            this.applySimplifiedMode();
+            this.saveSettings();
+            this.announceToScreenReader(this.simplifiedMode ? '{{ 'Mode simplifié activé'|trans }}' : '{{ 'Mode simplifié désactivé'|trans }}');
+        },
+
+        toggleReadingGuide() {
+            this.readingGuide = !this.readingGuide;
+            this.saveSettings();
+            this.announceToScreenReader(this.readingGuide ? '{{ 'Guide de lecture activé'|trans }}' : '{{ 'Guide de lecture désactivé'|trans }}');
+        },
+
+        toggleVoiceControl() {
+            if (!this.voiceControlSupported) return;
+            this.voiceControl = !this.voiceControl;
+            this.applyVoiceControl();
+            this.saveSettings();
+            this.announceToScreenReader(this.voiceControl ? '{{ 'Contrôle vocal activé'|trans }}' : '{{ 'Contrôle vocal désactivé'|trans }}');
+        },
+
+        applySettings() {
+            this.applyHighContrast();
+            this.applyLargeText();
+            this.applyColorBlindFilter();
+            this.applyReduceMotion();
+            this.applyFocusIndicator();
+            this.applySimplifiedMode();
+        },
+
+        applyHighContrast() {
+            document.documentElement.classList.toggle('a11y-high-contrast', this.highContrast);
+        },
+
+        applyLargeText() {
+            document.documentElement.classList.toggle('a11y-large-text', this.largeText);
+        },
+
+        applyColorBlindFilter() {
+            document.documentElement.setAttribute('data-color-blind', this.colorBlindMode);
+        },
+
+        applyReduceMotion() {
+            document.documentElement.classList.toggle('a11y-reduce-motion', this.reduceMotion);
+        },
+
+        applyFocusIndicator() {
+            document.documentElement.classList.toggle('a11y-focus-indicator', this.focusIndicator);
+        },
+
+        applySimplifiedMode() {
+            document.documentElement.classList.toggle('a11y-simplified', this.simplifiedMode);
+        },
+
+        applyVoiceControl() {
+            if (this.voiceControl) {
+                this.initVoiceControl();
+            } else {
+                this.stopVoiceControl();
+            }
+        },
+
+        setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Alt + A to toggle accessibility panel
+                if (e.altKey && e.key === 'a') {
+                    e.preventDefault();
+                    this.togglePanel();
+                }
+                // Escape to close panel
+                if (e.key === 'Escape' && this.isOpen) {
+                    this.isOpen = false;
+                }
+            });
+        },
+
+        initVoiceControl() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                this.recognition = new SpeechRecognition();
+                this.recognition.lang = 'fr-FR';
+                this.recognition.continuous = true;
+                this.recognition.interimResults = false;
+                
+                this.recognition.onresult = (event) => {
+                    const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                    this.processVoiceCommand(command);
+                };
+                
+                this.recognition.start();
+            }
+        },
+
+        stopVoiceControl() {
+            if (this.recognition) {
+                this.recognition.stop();
+                this.recognition = null;
+            }
+        },
+
+        processVoiceCommand(command) {
+            const commands = {
+                'ouvrir panneau': () => this.isOpen = true,
+                'fermer panneau': () => this.isOpen = false,
+                'contraste élevé': () => this.toggleHighContrast(),
+                'texte grand': () => this.toggleLargeText(),
+                'mode simple': () => this.toggleSimplifiedMode(),
+                'guide lecture': () => this.toggleReadingGuide(),
+            };
+            
+            for (const [phrase, action] of Object.entries(commands)) {
+                if (command.includes(phrase)) {
+                    action();
+                    break;
+                }
+            }
+        },
+
+        saveSettings() {
+            const settings = {
+                highContrast: this.highContrast,
+                largeText: this.largeText,
+                colorBlindMode: this.colorBlindMode,
+                reduceMotion: this.reduceMotion,
+                focusIndicator: this.focusIndicator,
+                simplifiedMode: this.simplifiedMode,
+                readingGuide: this.readingGuide,
+                voiceControl: this.voiceControl,
+            };
+            localStorage.setItem('a11y-settings', JSON.stringify(settings));
+        },
+
+        loadSettings() {
+            const saved = localStorage.getItem('a11y-settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                this.highContrast = settings.highContrast || false;
+                this.largeText = settings.largeText || false;
+                this.colorBlindMode = settings.colorBlindMode || 'none';
+                this.reduceMotion = settings.reduceMotion || false;
+                this.focusIndicator = settings.focusIndicator !== false;
+                this.simplifiedMode = settings.simplifiedMode || false;
+                this.readingGuide = settings.readingGuide || false;
+                this.voiceControl = settings.voiceControl || false;
+            }
+            
+            // Check system preferences
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                this.reduceMotion = true;
+            }
+            if (window.matchMedia('(prefers-contrast: high)').matches) {
+                this.highContrast = true;
+            }
+        },
+
+        resetAllSettings() {
+            this.highContrast = false;
+            this.largeText = false;
+            this.colorBlindMode = 'none';
+            this.reduceMotion = false;
+            this.focusIndicator = true;
+            this.simplifiedMode = false;
+            this.readingGuide = false;
+            this.voiceControl = false;
+            this.applySettings();
+            this.saveSettings();
+            this.announceToScreenReader('{{ 'Paramètres réinitialisés'|trans }}');
+        },
+
+        announceToScreenReader(message) {
+            const liveRegion = document.getElementById('a11y-live-region');
+            if (liveRegion) {
+                liveRegion.textContent = message;
+                setTimeout(() => {
+                    liveRegion.textContent = '';
+                }, 1000);
+            }
+        }
+    };
+}
+</script>

@@ -1,0 +1,358 @@
+/**
+ * Analytics Dashboard Styles
+ * Custom CSS for appointment analytics, clinic performance, and financial reports
+ */
+
+/* ============================================
+   ANALYTICS COMMON STYLES
+   ============================================ */
+
+.analytics-card {
+    @apply p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800;
+}
+
+.analytics-card-header {
+    @apply flex items-center justify-between mb-4;
+}
+
+.analytics-title {
+    @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.analytics-subtitle {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+/* ============================================
+   KPI CARDS
+   ============================================ */
+
+.kpi-card {
+    @apply p-4 bg-white border border-gray-200 dark:bg-gray-900 rounded-xl dark:border-gray-800;
+}
+
+.kpi-value {
+    @apply mt-1 text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.kpi-label {
+    @apply text-sm text-gray-500;
+}
+
+.kpi-trend {
+    @apply flex items-center gap-2 mt-2;
+}
+
+.kpi-trend-positive {
+    @apply text-sm text-emerald-600 dark:text-emerald-400;
+}
+
+.kpi-trend-negative {
+    @apply text-sm text-red-600 dark:text-red-400;
+}
+
+/* ============================================
+   CHARTS
+   ============================================ */
+
+.chart-container {
+    @apply relative w-full;
+}
+
+.chart-title {
+    @apply mb-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+/* ============================================
+   DATA TABLES
+   ============================================ */
+
+.analytics-table {
+    @apply w-full;
+}
+
+.analytics-table th {
+    @apply px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700;
+}
+
+.analytics-table td {
+    @apply px-4 py-3 text-sm text-gray-900 border-b border-gray-100 dark:text-white dark:border-gray-800;
+}
+
+.analytics-table tr:hover {
+    @apply bg-gray-50 dark:hover:bg-gray-800/50;
+}
+
+/* ============================================
+   HEATMAP STYLES
+   ============================================ */
+
+.heatmap-container {
+    @apply overflow-x-auto;
+}
+
+.heatmap-table {
+    @apply w-full;
+}
+
+.heatmap-cell {
+    @apply p-1;
+}
+
+.heatmap-cell-content {
+    @apply flex items-center justify-center h-8 text-xs font-medium;
+}
+
+/* ============================================
+   PROGRESS BARS
+   ============================================ */
+
+.progress-bar {
+    @apply w-full h-2 overflow-hidden bg-gray-100 rounded-full dark:bg-gray-800;
+}
+
+.progress-bar-fill {
+    @apply h-full transition-all duration-500 rounded-full;
+}
+
+.progress-bar-success {
+    @apply bg-emerald-500;
+}
+
+.progress-bar-warning {
+    @apply bg-amber-500;
+}
+
+.progress-bar-danger {
+    @apply bg-red-500;
+}
+
+.progress-bar-primary {
+    @apply bg-wellcare-500;
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+
+.status-badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full;
+}
+
+.status-badge-success {
+    @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+}
+
+.status-badge-warning {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+}
+
+.status-badge-danger {
+    @apply text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.status-badge-info {
+    @apply text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+/* ============================================
+   FILTERS
+   ============================================ */
+
+.filter-bar {
+    @apply flex items-center gap-4 mb-6;
+}
+
+.filter-select {
+    @apply px-4 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800 dark:text-white;
+}
+
+.filter-button {
+    @apply px-3 py-1 text-xs font-medium transition-colors rounded-lg;
+}
+
+.filter-button-active {
+    @apply text-white bg-wellcare-500;
+}
+
+.filter-button-inactive {
+    @apply text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700;
+}
+
+/* ============================================
+   EXPORT BUTTONS
+   ============================================ */
+
+.export-btn {
+    @apply flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.print-btn {
+    @apply flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600;
+}
+
+/* ============================================
+   NOTIFICATIONS & ALERTS
+   ============================================ */
+
+.notification-badge {
+    @apply absolute flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full -top-1 -right-1;
+}
+
+.alert-box {
+    @apply p-4 border rounded-xl;
+}
+
+.alert-box-info {
+    @apply border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800;
+}
+
+.alert-box-success {
+    @apply bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800;
+}
+
+.alert-box-warning {
+    @apply bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800;
+}
+
+.alert-box-danger {
+    @apply border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800;
+}
+
+/* ============================================
+   SCORECARD
+   ============================================ */
+
+.scorecard {
+    @apply relative;
+}
+
+.scorecard-ring {
+    @apply transform -rotate-90;
+}
+
+.scorecard-value {
+    @apply absolute inset-0 flex items-center justify-center text-2xl font-bold;
+}
+
+/* ============================================
+   FUNNEL CHART
+   ============================================ */
+
+.funnel-stage {
+    @apply relative;
+}
+
+.funnel-bar {
+    @apply h-10 overflow-hidden transition-all duration-500 bg-gray-100 rounded-lg dark:bg-gray-800;
+}
+
+.funnel-label {
+    @apply flex items-center justify-between mb-1;
+}
+
+/* ============================================
+   RADAR CHART LEGEND
+   ============================================ */
+
+.radar-legend {
+    @apply flex flex-wrap items-center gap-4 mt-4;
+}
+
+.radar-legend-item {
+    @apply flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400;
+}
+
+.radar-legend-color {
+    @apply w-3 h-3 rounded-full;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .filter-bar {
+        @apply flex-col items-start;
+    }
+    
+    .analytics-table {
+        @apply text-xs;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+    .no-print {
+        @apply hidden;
+    }
+    
+    .analytics-card {
+        @apply border-gray-300 shadow-none;
+    }
+    
+    .chart-container {
+        @apply h-64;
+    }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.skeleton {
+    @apply bg-gray-200 rounded dark:bg-gray-700 animate-pulse;
+}
+
+.skeleton-text {
+    @apply w-full h-4;
+}
+
+.skeleton-title {
+    @apply w-3/4 h-6;
+}
+
+.skeleton-avatar {
+    @apply w-10 h-10 rounded-full;
+}
+
+.skeleton-card {
+    @apply p-4 bg-gray-50 dark:bg-gray-800 rounded-xl;
+}

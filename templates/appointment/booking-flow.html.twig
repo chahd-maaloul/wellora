@@ -1,0 +1,901 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Book Appointment - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('appointment') }}
+{% endblock %}
+
+{% block scripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('appointment-booking') }}
+    <script>
+        window.rescheduleId = {{ rescheduleId|default(null)|json_encode|raw }};
+        window.rescheduleData = {{ rescheduleData|default(null)|json_encode|raw }};
+    </script>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8 bg-gray-50 dark:bg-gray-900" x-data="bookingFlow()" x-init="init()">
+    <div class="max-w-5xl container-wellcare">
+        
+        {# Header #}
+        <div class="mb-8 text-center">
+            <h1 class="mb-2 text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white">Book Your Appointment</h1>
+            <p class="text-gray-600 dark:text-gray-400">Complete the steps below to schedule your consultation</p>
+        </div>
+        
+        {# Progress Steps #}
+        <div class="mb-8">
+            <div class="flex items-center justify-center">
+                <template x-for="(step, index) in steps" :key="index">
+                    <div class="flex items-center">
+                        {# Step Circle #}
+                        <div 
+                            class="flex items-center justify-center w-10 h-10 font-semibold transition-all duration-300 rounded-full"
+                            :class="{
+                                'bg-wellcare-500 text-white': currentStep > index + 1,
+                                'bg-wellcare-600 text-white ring-4 ring-wellcare-200 dark:ring-wellcare-900': currentStep === index + 1,
+                                'bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-400': currentStep < index + 1
+                            }"
+                        >
+                            <template x-if="currentStep > index + 1">
+                                <i class="fas fa-check"></i>
+                            </template>
+                            <template x-if="currentStep <= index + 1">
+                                <span x-text="index + 1"></span>
+                            </template>
+                        </div>
+                        
+                        {# Step Label #}
+                        <div class="hidden ml-3 mr-8 sm:block">
+                            <p 
+                                class="text-sm font-medium transition-colors"
+                                :class="currentStep >= index + 1 ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'"
+                                x-text="step.label"
+                            ></p>
+                        </div>
+                        
+                        {# Connector Line #}
+                        <div 
+                            x-show="index < steps.length - 1"
+                            class="w-12 h-1 mr-8 transition-colors lg:w-24"
+                            :class="currentStep > index + 1 ? 'bg-wellcare-500' : 'bg-gray-200 dark:bg-gray-700'"
+                        ></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+        
+        {# Main Content Card #}
+        <div class="card">
+            <div class="p-6 lg:p-8">
+                
+                {# Step 1: Select Service #}
+                <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">Select Service</h2>
+                    
+                    {# Doctor Summary - MODIFIÉ : Information dynamique du docteur #}
+                    <div class="flex items-center gap-4 p-4 mb-6 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
+                        <div class="flex items-center justify-center w-16 h-16 rounded-xl bg-wellcare-100 dark:bg-wellcare-800">
+                            <i class="text-3xl fas fa-user-md text-wellcare-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white" x-text="'Dr. ' + doctorName"></h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400" x-text="doctorSpecialty + ' • Tunis'"></p>
+                        </div>
+                    </div>
+                    
+                    {# Consultation Type #}
+                    <div class="mb-6">
+                        <label class="form-label">Consultation Type <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <button 
+                                @click="formData.consultationType = 'first-visit'"
+                                :class="formData.consultationType === 'first-visit' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
+                                class="p-4 text-left transition-all border-2 rounded-xl hover:border-wellcare-300"
+                            >
+                                <i class="mb-2 text-2xl fas fa-user-plus text-wellcare-500"></i>
+                                <h4 class="font-medium text-gray-900 dark:text-white">First Visit</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Initial consultation</p>
+                            </button>
+                            <button 
+                                @click="formData.consultationType = 'follow-up'"
+                                :class="formData.consultationType === 'follow-up' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
+                                class="p-4 text-left transition-all border-2 rounded-xl hover:border-wellcare-300"
+                            >
+                                <i class="mb-2 text-2xl fas fa-redo text-wellcare-500"></i>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Follow-up</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Continuing care</p>
+                            </button>
+                            <button 
+                                @click="formData.consultationType = 'emergency'"
+                                :class="formData.consultationType === 'emergency' ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-gray-200 dark:border-gray-700'"
+                                class="p-4 text-left transition-all border-2 rounded-xl hover:border-red-300"
+                            >
+                                <i class="mb-2 text-2xl text-red-500 fas fa-ambulance"></i>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Emergency</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Urgent care needed</p>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {# Appointment Mode - MODIFIÉ : Supprimé Video Call #}
+                    <div class="mb-6">
+                        <label class="form-label">Appointment Mode <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <button 
+                                @click="formData.appointmentMode = 'in-person'"
+                                :class="formData.appointmentMode === 'in-person' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
+                                class="p-4 text-left transition-all border-2 rounded-xl hover:border-wellcare-300"
+                            >
+                                <div class="flex items-center justify-between mb-2">
+                                    <i class="text-2xl fas fa-hospital text-wellcare-500"></i>
+                                    <span class="font-bold text-wellcare-600">120 TND</span>
+                                </div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">In-Person</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">At clinic • 45 min</p>
+                            </button>
+                            
+                            <button 
+                                @click="formData.appointmentMode = 'phone'"
+                                :class="formData.appointmentMode === 'phone' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
+                                class="p-4 text-left transition-all border-2 rounded-xl hover:border-wellcare-300"
+                            >
+                                <div class="flex items-center justify-between mb-2">
+                                    <i class="text-2xl fas fa-phone text-wellcare-500"></i>
+                                    <span class="font-bold text-wellcare-600">70 TND</span>
+                                </div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Phone Call</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Call • 20 min</p>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {# Reason for Visit #}
+                    <div class="mb-6">
+                        <label class="form-label">Reason for Visit <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-2 mb-3 sm:grid-cols-4">
+                            <template x-for="symptom in commonSymptoms" :key="symptom">
+                                <button 
+                                    @click="toggleSymptom(symptom)"
+                                    :class="formData.symptoms.includes(symptom) ? 'bg-wellcare-100 text-wellcare-700 border-wellcare-300 dark:bg-wellcare-900 dark:text-wellcare-300' : 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'"
+                                    class="px-3 py-2 text-sm transition-colors border rounded-lg"
+                                    x-text="symptom"
+                                ></button>
+                            </template>
+                        </div>
+                        <textarea 
+                            x-model="formData.reason"
+                            rows="3"
+                            placeholder="Please describe your symptoms or reason for the visit in detail..."
+                            class="input"
+                        ></textarea>
+                    </div>
+                    
+                    {# Duration #}
+                    <div class="mb-6">
+                        <label class="form-label">Preferred Duration</label>
+                        <div class="flex flex-wrap gap-3">
+                            <template x-for="duration in durations" :key="duration.value">
+                                <button 
+                                    @click="formData.duration = duration.value"
+                                    :class="formData.duration === duration.value ? 'bg-wellcare-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'"
+                                    class="px-4 py-2 text-sm font-medium transition-colors rounded-lg"
+                                >
+                                    <span x-text="duration.label"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Step 2: Date & Time #}
+                <div x-show="currentStep === 2" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">Choose Date & Time</h2>
+                    
+                    {# Calendar View #}
+                    <div class="mb-6">
+                        <label class="form-label">Select Date <span class="text-red-500">*</span></label>
+                        <div class="p-4 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                            {# Calendar Header #}
+                            <div class="flex items-center justify-between mb-4">
+                                <button @click="previousMonth()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="text-gray-600 fas fa-chevron-left dark:text-gray-400"></i>
+                                </button>
+                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="currentMonthYear"></h3>
+                                <button @click="nextMonth()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="text-gray-600 fas fa-chevron-right dark:text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            {# Days Header #}
+                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day">
+                                    <div class="py-2 text-xs font-medium text-center text-gray-500 dark:text-gray-400" x-text="day"></div>
+                                </template>
+                            </div>
+                            
+                            {# Calendar Days #}
+                            <div class="grid grid-cols-7 gap-1">
+                                <template x-for="date in calendarDays" :key="date.date">
+                                    <button 
+                                        @click="date.available && selectDate(date)"
+                                        :disabled="!date.available"
+                                        :class="{
+                                            'bg-wellcare-500 text-white': isSelectedDate(date),
+                                            'bg-wellcare-50 text-wellcare-700 border-wellcare-200 dark:bg-wellcare-900/30 dark:text-wellcare-300 dark:border-wellcare-700': date.available && !isSelectedDate(date),
+                                            'bg-gray-50 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600': !date.available,
+                                            'hover:bg-wellcare-100 dark:hover:bg-wellcare-800': date.available && !isSelectedDate(date)
+                                        }"
+                                        class="flex flex-col items-center justify-center text-sm transition-colors border rounded-lg aspect-square"
+                                    >
+                                        <span x-text="date.day"></span>
+                                        <span x-show="date.available && !isSelectedDate(date)" class="w-1.5 h-1.5 bg-wellcare-500 rounded-full mt-1"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Time Slots #}
+                    <div x-show="formData.selectedDate" class="mb-6">
+                        <label class="form-label">Available Time Slots <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                            <template x-for="slot in availableSlots" :key="slot.time">
+                                <button 
+                                    @click="slot.available && selectTime(slot)"
+                                    :disabled="!slot.available"
+                                    :class="{
+                                        'bg-wellcare-500 text-white': formData.selectedTime === slot.time,
+                                        'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600': !slot.available,
+                                        'border border-gray-200 text-gray-700 hover:border-wellcare-300 dark:border-gray-700 dark:text-gray-300': slot.available && formData.selectedTime !== slot.time
+                                    }"
+                                    class="px-3 py-2 text-sm font-medium transition-colors rounded-lg"
+                                    x-text="slot.time"
+                                ></button>
+                            </template>
+                        </div>
+                        
+                        {# Legend #}
+                        <div class="flex items-center gap-4 mt-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded bg-wellcare-500"></span>
+                                <span class="text-gray-600 dark:text-gray-400">Selected</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 border border-gray-200 rounded dark:border-gray-700"></span>
+                                <span class="text-gray-600 dark:text-gray-400">Available</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-gray-100 rounded dark:bg-gray-800"></span>
+                                <span class="text-gray-600 dark:text-gray-400">Booked</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Timezone Info #}
+                    <div class="p-4 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-globe text-wellcare-500 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Timezone</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    All times are shown in <span class="font-medium" x-text="userTimezone"></span>. 
+                                    The doctor is in Africa/Tunis (UTC+1).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Step 3: Patient Information #}
+                <div x-show="currentStep === 3" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">Patient Information</h2>
+                    
+                    {# Pre-filled Notice #}
+                    <div class="p-4 mb-6 border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-medium text-blue-900 dark:text-blue-300">Information from your profile</h4>
+                                <p class="text-sm text-blue-700 dark:text-blue-400">We've pre-filled your details. Please review and update if needed.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        {# Personal Info #}
+                        <div>
+                            <label class="form-label">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.firstName" class="input" placeholder="Enter first name">
+                        </div>
+                        <div>
+                            <label class="form-label">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.lastName" class="input" placeholder="Enter last name">
+                        </div>
+                        <div>
+                            <label class="form-label">Email <span class="text-red-500">*</span></label>
+                            <input type="email" x-model="formData.email" class="input" placeholder="your@email.com">
+                        </div>
+                        <div>
+                            <label class="form-label">Phone Number <span class="text-red-500">*</span></label>
+                            <input type="tel" x-model="formData.phone" class="input" placeholder="+216 XX XXX XXX">
+                        </div>
+                        <div>
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" x-model="formData.dateOfBirth" class="input">
+                        </div>
+                        <div>
+                            <label class="form-label">Gender</label>
+                            <select x-model="formData.gender" class="input">
+                                <option value="">Select gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {# Emergency Contact #}
+                    <div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Emergency Contact</h3>
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div>
+                                <label class="form-label">Contact Name</label>
+                                <input type="text" x-model="formData.emergencyName" class="input" placeholder="Emergency contact name">
+                            </div>
+                            <div>
+                                <label class="form-label">Contact Phone</label>
+                                <input type="tel" x-model="formData.emergencyPhone" class="input" placeholder="+216 XX XXX XXX">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="form-label">Relationship</label>
+                                <select x-model="formData.emergencyRelation" class="input">
+                                    <option value="">Select relationship</option>
+                                    <option value="spouse">Spouse</option>
+                                    <option value="parent">Parent</option>
+                                    <option value="child">Child</option>
+                                    <option value="sibling">Sibling</option>
+                                    <option value="friend">Friend</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Insurance #}
+                    <div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Insurance Information</h3>
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div>
+                                <label class="form-label">Insurance Provider</label>
+                                <select x-model="formData.insuranceProvider" class="input">
+                                    <option value="">Select provider</option>
+                                    <option value="cnam">CNAM</option>
+                                    <option value="comar">COMAR</option>
+                                    <option value="star">STAR</option>
+                                    <option value="gat">GAT</option>
+                                    <option value="bh">BH Assurance</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Policy Number</label>
+                                <input type="text" x-model="formData.policyNumber" class="input" placeholder="Enter policy number">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Special Requirements #}
+                    <div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Special Requirements</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" x-model="formData.wheelchairAccess" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                                <span class="ml-2 text-gray-700 dark:text-gray-300">Wheelchair accessibility needed</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" x-model="formData.interpreterNeeded" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                                <span class="ml-2 text-gray-700 dark:text-gray-300">Interpreter needed</span>
+                            </label>
+                            <div x-show="formData.interpreterNeeded" class="ml-6">
+                                <select x-model="formData.interpreterLanguage" class="w-auto input">
+                                    <option value="">Select language</option>
+                                    <option value="arabic">Arabic</option>
+                                    <option value="french">French</option>
+                                    <option value="english">English</option>
+                                    <option value="italian">Italian</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Step 4: Confirmation #}
+                <div x-show="currentStep === 4" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                    <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">Confirm & Pay</h2>
+                    
+                    {# Appointment Summary - MODIFIÉ : Information dynamique du docteur #}
+                    <div class="p-6 mb-6 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
+                        <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Appointment Summary</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Doctor</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="'Dr. ' + doctorName"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Specialty</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="doctorSpecialty"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Type</span>
+                                <span class="font-medium text-gray-900 capitalize dark:text-white" x-text="formData.consultationType ? formData.consultationType.replace('-', ' ') : ''"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Mode</span>
+                                <span class="font-medium text-gray-900 capitalize dark:text-white" x-text="formData.appointmentMode"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Date & Time</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    <span x-text="formatDate(formData.selectedDate)"></span> at <span x-text="formData.selectedTime"></span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Duration</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="formData.duration + ' minutes'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Patient</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="(formData.firstName || '') + ' ' + (formData.lastName || '')"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4 mt-4 border-t border-wellcare-200 dark:border-wellcare-800">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 dark:text-gray-400">Consultation Fee</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="getConsultationPrice() + ' TND'"></span>
+                            </div>
+                            <div class="flex justify-between mt-2">
+                                <span class="text-gray-600 dark:text-gray-400">Platform Fee</span>
+                                <span class="font-medium text-gray-900 dark:text-white">5 TND</span>
+                            </div>
+                            <div class="flex justify-between pt-3 mt-3 border-t border-wellcare-200 dark:border-wellcare-800">
+                                <span class="font-semibold text-gray-900 dark:text-white">Total Amount</span>
+                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400" x-text="(getConsultationPrice() + 5) + ' TND'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Cancellation Policy #}
+                    <div class="p-4 mb-6 border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 rounded-xl">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-medium text-yellow-900 dark:text-yellow-300">Cancellation Policy</h4>
+                                <p class="text-sm text-yellow-700 dark:text-yellow-400">
+                                    Free cancellation up to 24 hours before the appointment. 
+                                    Cancellations within 24 hours may incur a 50% fee. 
+                                    Medical emergencies are exempt from cancellation fees with proper documentation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Payment Methods #}
+                    <div class="mb-6">
+                        <label class="form-label">Payment Method</label>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-4 border-2 cursor-pointer border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
+                                <input type="radio" x-model="formData.paymentMethod" value="card" class="w-4 h-4 border-gray-300 text-wellcare-600 focus:ring-wellcare-500">
+                                <span class="flex-1 ml-3">
+                                    <span class="block font-medium text-gray-900 dark:text-white">Credit/Debit Card</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Pay securely with your card</span>
+                                </span>
+                                <div class="flex gap-2">
+                                    <i class="text-2xl text-gray-400 fab fa-cc-visa"></i>
+                                    <i class="text-2xl text-gray-400 fab fa-cc-mastercard"></i>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 border-2 border-gray-200 cursor-pointer dark:border-gray-700 rounded-xl hover:border-wellcare-300">
+                                <input type="radio" x-model="formData.paymentMethod" value="insurance" class="w-4 h-4 border-gray-300 text-wellcare-600 focus:ring-wellcare-500">
+                                <span class="flex-1 ml-3">
+                                    <span class="block font-medium text-gray-900 dark:text-white">Insurance</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Direct billing to your insurance</span>
+                                </span>
+                                <i class="text-2xl text-gray-400 fas fa-file-medical"></i>
+                            </label>
+                            
+                            <label class="flex items-center p-4 border-2 border-gray-200 cursor-pointer dark:border-gray-700 rounded-xl hover:border-wellcare-300">
+                                <input type="radio" x-model="formData.paymentMethod" value="cash" class="w-4 h-4 border-gray-300 text-wellcare-600 focus:ring-wellcare-500">
+                                <span class="flex-1 ml-3">
+                                    <span class="block font-medium text-gray-900 dark:text-white">Pay at Clinic</span>
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Pay during your visit</span>
+                                </span>
+                                <i class="text-2xl text-gray-400 fas fa-money-bill-wave"></i>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    {# Terms & Conditions #}
+                    <div class="mb-6">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" x-model="formData.agreeTerms" class="w-4 h-4 mt-0.5 text-wellcare-600 border-gray-300 rounded focus:ring-wellcare-500">
+                            <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                                I agree to the <a href="#" class="text-wellcare-600 hover:underline">Terms of Service</a> and 
+                                <a href="#" class="text-wellcare-600 hover:underline">Privacy Policy</a>. I confirm that the information provided is accurate.
+                            </span>
+                        </label>
+                    </div>
+                    
+                    {# Add to Calendar Options #}
+                    <div class="mb-6">
+                        <label class="form-label">Add to Calendar</label>
+                        <div class="flex flex-wrap gap-3">
+                            <button class="flex items-center gap-2 px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <i class="fab fa-google"></i> Google
+                            </button>
+                            <button class="flex items-center gap-2 px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <i class="fab fa-apple"></i> Apple
+                            </button>
+                            <button class="flex items-center gap-2 px-4 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <i class="fab fa-microsoft"></i> Outlook
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Navigation Buttons #}
+                <div class="flex items-center justify-between pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
+                    <button 
+                        x-show="currentStep > 1"
+                        @click="previousStep()"
+                        class="btn-outline"
+                    >
+                        <i class="mr-2 fas fa-arrow-left"></i>Back
+                    </button>
+                    <div x-show="currentStep === 1"></div>
+                    
+                    <button 
+                        x-show="currentStep < 4"
+                        @click="nextStep()"
+                        class="btn-primary"
+                    >
+                        Continue<i class="ml-2 fas fa-arrow-right"></i>
+                    </button>
+                    
+                    <button 
+                        x-show="currentStep === 4"
+                        @click="submitBooking()"
+                        :disabled="!formData.agreeTerms || isLoading"
+                        class="btn-primary"
+                    >
+                        <template x-if="!isLoading">
+                            <span><i class="mr-2 fas fa-check"></i>Confirm Booking</span>
+                        </template>
+                        <template x-if="isLoading">
+                            <span><i class="mr-2 fas fa-spinner fa-spin"></i>Processing...</span>
+                        </template>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function bookingFlow() {
+    return {
+        currentStep: 1,
+        isLoading: false,
+        steps: [
+            { label: 'Service', number: 1 },
+            { label: 'Date & Time', number: 2 },
+            { label: 'Patient Info', number: 3 },
+            { label: 'Confirm', number: 4 }
+        ],
+        
+        // NOUVEAU : Propriétés pour les informations du docteur
+        doctorId: null,
+        doctorName: 'Ahmed Ben Ali', // Valeur par défaut
+        doctorSpecialty: 'Cardiologist', // Valeur par défaut
+        
+        formData: {
+            consultationType: 'first-visit',
+            appointmentMode: 'in-person', // Par défaut In-Person
+            reason: '',
+            symptoms: [],
+            duration: 30,
+            selectedDate: null,
+            selectedTime: null,
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com',
+            phone: '+216 12 345 678',
+            dateOfBirth: '1985-05-15',
+            gender: 'male',
+            emergencyName: '',
+            emergencyPhone: '',
+            emergencyRelation: '',
+            insuranceProvider: '',
+            policyNumber: '',
+            wheelchairAccess: false,
+            interpreterNeeded: false,
+            interpreterLanguage: '',
+            paymentMethod: 'card',
+            agreeTerms: false,
+            notes: ''
+        },
+        
+        commonSymptoms: ['Chest Pain', 'Shortness of Breath', 'Fatigue', 'Palpitations', 'Dizziness', 'High BP', 'Diabetes', 'Headache'],
+        durations: [
+            { value: 15, label: '15 min' },
+            { value: 30, label: '30 min' },
+            { value: 45, label: '45 min' },
+            { value: 60, label: '60 min' }
+        ],
+        
+        currentMonth: new Date(),
+        calendarDays: [],
+        availableSlots: [],
+        userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        
+        init() {
+            // Récupérer l'ID du docteur depuis l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            this.doctorId = urlParams.get('doctorId') || 1; // Par défaut ID 1
+            
+            // Définir les informations du docteur selon l'ID
+            this.setDoctorInfo(this.doctorId);
+            
+            this.generateCalendar();
+            this.generateTimeSlots();
+
+            if (window.rescheduleId && window.rescheduleData) {
+                this.formData.selectedDate = window.rescheduleData.date || null;
+                this.formData.selectedTime = window.rescheduleData.time || null;
+                if (window.rescheduleData.consultationType) {
+                    this.formData.consultationType = window.rescheduleData.consultationType;
+                }
+                if (window.rescheduleData.appointmentMode) {
+                    this.formData.appointmentMode = window.rescheduleData.appointmentMode;
+                }
+                if (window.rescheduleData.duration) {
+                    this.formData.duration = window.rescheduleData.duration;
+                }
+                if (window.rescheduleData.reason) {
+                    this.formData.reason = window.rescheduleData.reason;
+                }
+            }
+        },
+        
+        // NOUVELLE MÉTHODE : Définir les informations du docteur
+        setDoctorInfo(doctorId) {
+            // Définir les informations selon l'ID du docteur
+            const doctors = {
+                1: { name: 'Ahmed Ben Ali', specialty: 'Cardiologist' },
+                2: { name: 'Fatima Trabelsi', specialty: 'Dermatologist' },
+                3: { name: 'Sami Guesmi', specialty: 'General Medicine' },
+                4: { name: 'Amel Chaabane', specialty: 'Pediatrics' },
+                5: { name: 'Karim Mansouri', specialty: 'Orthopedics' }
+            };
+            
+            const doctor = doctors[doctorId] || doctors[1]; // Par défaut le premier
+            this.doctorName = doctor.name;
+            this.doctorSpecialty = doctor.specialty;
+        },
+        
+        get currentMonthYear() {
+            return this.currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        },
+        
+        generateCalendar() {
+            const year = this.currentMonth.getFullYear();
+            const month = this.currentMonth.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            this.calendarDays = [];
+            
+            // Empty slots for days before the first of the month
+            for (let i = 0; i < firstDay; i++) {
+                this.calendarDays.push({ day: '', date: null, available: false });
+            }
+            
+            // Days of the month
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const date = new Date(year, month, i);
+                const isPast = date < today;
+                const isAvailable = !isPast && Math.random() > 0.3;
+                
+                this.calendarDays.push({
+                    day: i,
+                    date: date.toISOString().split('T')[0],
+                    available: isAvailable
+                });
+            }
+        },
+        
+        generateTimeSlots() {
+            const times = ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', 
+                          '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'];
+            
+            this.availableSlots = times.map(time => ({
+                time: time,
+                available: Math.random() > 0.4
+            }));
+        },
+        
+        previousMonth() {
+            this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() - 1, 1);
+            this.generateCalendar();
+        },
+        
+        nextMonth() {
+            this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + 1, 1);
+            this.generateCalendar();
+        },
+        
+        selectDate(date) {
+            this.formData.selectedDate = date.date;
+            this.generateTimeSlots();
+        },
+        
+        isSelectedDate(date) {
+            return this.formData.selectedDate === date.date;
+        },
+        
+        selectTime(slot) {
+            this.formData.selectedTime = slot.time;
+        },
+        
+        toggleSymptom(symptom) {
+            const index = this.formData.symptoms.indexOf(symptom);
+            if (index > -1) {
+                this.formData.symptoms.splice(index, 1);
+            } else {
+                this.formData.symptoms.push(symptom);
+            }
+        },
+        
+        nextStep() {
+            if (this.validateStep()) {
+                this.currentStep++;
+            }
+        },
+        
+        previousStep() {
+            this.currentStep--;
+        },
+        
+        validateStep() {
+            switch(this.currentStep) {
+                case 1:
+                    if (!this.formData.consultationType || !this.formData.appointmentMode) {
+                        alert('Please select consultation type and mode');
+                        return false;
+                    }
+                    return true;
+                case 2:
+                    if (!this.formData.selectedDate || !this.formData.selectedTime) {
+                        alert('Please select a date and time');
+                        return false;
+                    }
+                    return true;
+                case 3:
+                    if (!this.formData.firstName || !this.formData.lastName || !this.formData.email || !this.formData.phone) {
+                        alert('Please fill in all required fields');
+                        return false;
+                    }
+                    return true;
+                default:
+                    return true;
+            }
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        },
+        
+        getConsultationPrice() {
+            const prices = {
+                'in-person': 120,
+                'phone': 70
+            };
+            return prices[this.formData.appointmentMode] || 120;
+        },
+        
+        async submitBooking() {
+            if (!this.formData.agreeTerms) {
+                alert('Please agree to the terms and conditions');
+                return;
+            }
+            
+            this.isLoading = true;
+            
+            try {
+                // Préparer les données à envoyer
+                const bookingData = {
+                    doctorId: this.doctorId,
+                    doctorName: this.doctorName,
+                    doctorSpecialty: this.doctorSpecialty,
+                    consultationType: this.formData.consultationType,
+                    appointmentMode: this.formData.appointmentMode,
+                    reason: this.formData.reason,
+                    symptoms: this.formData.symptoms,
+                    duration: this.formData.duration,
+                    selectedDate: this.formData.selectedDate,
+                    selectedTime: this.formData.selectedTime,
+                    firstName: this.formData.firstName,
+                    lastName: this.formData.lastName,
+                    email: this.formData.email,
+                    phone: this.formData.phone,
+                    dateOfBirth: this.formData.dateOfBirth,
+                    gender: this.formData.gender,
+                    notes: 'Notes: ' + JSON.stringify({
+                        emergencyContact: {
+                            name: this.formData.emergencyName,
+                            phone: this.formData.emergencyPhone,
+                            relation: this.formData.emergencyRelation
+                        },
+                        insurance: {
+                            provider: this.formData.insuranceProvider,
+                            policyNumber: this.formData.policyNumber
+                        },
+                        specialRequirements: {
+                            wheelchairAccess: this.formData.wheelchairAccess,
+                            interpreterNeeded: this.formData.interpreterNeeded,
+                            interpreterLanguage: this.formData.interpreterLanguage
+                        },
+                        paymentMethod: this.formData.paymentMethod
+                    })
+                };
+                
+                console.log('Sending booking data:', bookingData);
+                
+                // Envoyer les données au serveur
+                const isReschedule = !!window.rescheduleId;
+                const endpoint = isReschedule ? `/appointment/reschedule/${window.rescheduleId}` : '/appointment/create';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('Booking successful, ID:', result.appointmentId);
+                    // Rediriger vers la page de confirmation
+                    if (isReschedule) {
+                        window.location.href = '/appointment/patient-dashboard';
+                    } else {
+                        window.location.href = `/appointment/confirmation/${result.appointmentId}`;
+                    }
+                } else {
+                    alert('Error: ' + (result.message || 'Unknown error occurred'));
+                    console.error('Booking error:', result);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                alert('Network error. Please check your connection and try again.');
+            } finally {
+                this.isLoading = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

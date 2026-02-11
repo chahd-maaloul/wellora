@@ -1,0 +1,296 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Health Trail Dashboard - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+{% endblock %}
+
+{% block body %}
+{# Page Header #}
+<div class="py-4 mb-4 -mx-4 -mt-4 bg-gradient-to-r from-wellcare-500 to-wellcare-light-500">
+    <div class="px-4 mx-auto">
+        <div class="flex flex-col items-start justify-between md:flex-row md:items-center">
+            <div>
+                <h1 class="mb-1 text-xl font-bold text-white font-display">
+                    <i class="mr-2 fa-solid fa-tree"></i>Health Trail
+                </h1>
+                <p class="text-sm text-white/80">Discover, create, and share healthy outdoor experiences</p>
+            </div>
+            <div class="flex gap-2 mt-3 md:mt-0">
+                <a href="/trail/discover" class="px-3 py-1.5 text-sm text-white transition rounded-lg bg-white/20 hover:bg-white/30">
+                    <i class="mr-1 fa-solid fa-compass"></i>Discover
+                </a>
+                <a href="/trail/create" class="px-3 py-1.5 text-sm transition bg-white rounded-lg text-wellcare-600 hover:bg-gray-100">
+                    <i class="mr-1 fa-solid fa-plus"></i>Create
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Main Content #}
+<div class="px-4 mx-auto">
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 gap-3 mb-6 md:grid-cols-4">
+        <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Trails Explored</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">12</p>
+                </div>
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="text-lg fa-solid fa-route text-wellcare-500"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Publications</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">8</p>
+                </div>
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-900/30">
+                    <i class="text-lg fa-solid fa-pen text-sky-500"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Favorites</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">24</p>
+                </div>
+                <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full dark:bg-red-900/30">
+                    <i class="text-lg text-red-500 fa-solid fa-heart"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Distance</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">45.2 km</p>
+                </div>
+                <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full dark:bg-green-900/30">
+                    <i class="text-lg text-green-500 fa-solid fa-person-hiking"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <!-- Main Content -->
+        <div class="space-y-4 lg:col-span-2">
+            <!-- Featured Trails -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-star text-amber-500"></i>Featured Trails
+                    </h2>
+                    <a href="/trail/discover" class="text-xs text-wellcare-500 hover:text-wellcare-600">View All</a>
+                </div>
+                
+                <div class="grid gap-3 md:grid-cols-2">
+                    <!-- Recommendation Card 1 -->
+                    <div class="relative overflow-hidden cursor-pointer group rounded-xl" onclick="window.location.href='/trail/detail'">
+                        <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop" alt="Forest Trail" class="object-cover w-full h-32 transition duration-300 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-3">
+                            <p class="font-semibold text-white">Forest Wellness Path</p>
+                            <p class="text-xs text-white/80"><i class="mr-1 fa-solid fa-location-dot"></i>Central Park • 5.2 km</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendation Card 2 -->
+                    <div class="relative overflow-hidden cursor-pointer group rounded-xl" onclick="window.location.href='/trail/detail'">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop" alt="Mountain Trail" class="object-cover w-full h-32 transition duration-300 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-3">
+                            <p class="font-semibold text-white">Summit View Trail</p>
+                            <p class="text-xs text-white/80"><i class="mr-1 fa-solid fa-location-dot"></i>Mountain Ridge • 8.4 km</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-clock text-wellcare-500"></i>Continue Exploring
+                    </h2>
+                    <a href="/trail/my-trails" class="text-xs text-wellcare-500 hover:text-wellcare-600">View All</a>
+                </div>
+                
+                <div class="p-3 space-y-2">
+                    <!-- Trail Item 1 -->
+                    <div class="flex gap-3 p-3 transition cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50" onclick="window.location.href='/trail/detail'">
+                        <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&h=70&fit=crop" alt="Forest Trail" class="object-cover w-20 h-16 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900 dark:text-white">Forest Wellness Path</p>
+                            <p class="text-xs text-gray-500">Last visited: 2 days ago • 60% complete</p>
+                            <div class="w-full h-1.5 mt-2 bg-gray-200 rounded-full dark:bg-gray-600">
+                                <div class="h-1.5 rounded-full bg-wellcare-500" style="width: 60%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trail Item 2 -->
+                    <div class="flex gap-3 p-3 transition cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50" onclick="window.location.href='/trail/detail'">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=70&fit=crop" alt="Mountain Trail" class="object-cover w-20 h-16 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900 dark:text-white">Summit View Trail</p>
+                            <p class="text-xs text-gray-500">Last visited: 1 week ago • 25% complete</p>
+                            <div class="w-full h-1.5 mt-2 bg-gray-200 rounded-full dark:bg-gray-600">
+                                <div class="h-1.5 rounded-full bg-wellcare-500" style="width: 25%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trail Item 3 -->
+                    <div class="flex gap-3 p-3 transition cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50" onclick="window.location.href='/trail/detail'">
+                        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=100&h=70&fit=crop" alt="Lake Trail" class="object-cover w-20 h-16 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900 dark:text-white">Lakeside Serenity</p>
+                            <p class="text-xs text-gray-500">Last visited: 2 weeks ago • 80% complete</p>
+                            <div class="w-full h-1.5 mt-2 bg-gray-200 rounded-full dark:bg-gray-600">
+                                <div class="h-1.5 rounded-full bg-wellcare-500" style="width: 80%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Publications -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-users text-wellcare-500"></i>Community Publications
+                    </h2>
+                    <a href="/trail/publications/feed" class="text-xs text-wellcare-500 hover:text-wellcare-600">View All</a>
+                </div>
+                
+                <div class="grid gap-3 md:grid-cols-2">
+                    <!-- Publication Preview 1 -->
+                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div class="flex items-center gap-2 mb-2">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" class="w-8 h-8 rounded-full">
+                            <div>
+                                <p class="text-xs font-medium text-gray-900 dark:text-white">Sarah Johnson</p>
+                                <p class="text-[10px] text-gray-500">Forest Wellness Path</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">Absolutely stunning trail! The forest canopy provides amazing shade...</p>
+                        <div class="flex items-center gap-2 mt-2 text-xs text-amber-500">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <span class="text-gray-500">5.0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Publication Preview 2 -->
+                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div class="flex items-center gap-2 mb-2">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="w-8 h-8 rounded-full">
+                            <div>
+                                <p class="text-xs font-medium text-gray-900 dark:text-white">Michael Chen</p>
+                                <p class="text-[10px] text-gray-500">Summit View Trail</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">Challenging but rewarding hike! The panoramic views from the summit...</p>
+                        <div class="flex items-center gap-2 mt-2 text-xs text-amber-500">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star-half-stroke"></i>
+                            <span class="text-gray-500">4.5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-4">
+            <!-- Quick Actions -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-bolt text-wellcare-500"></i>Quick Actions
+                </h3>
+                <div class="space-y-2">
+                    <a href="/trail/create" class="flex items-center p-2 transition rounded-lg hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20 group">
+                        <div class="flex items-center justify-center w-8 h-8 mr-2 transition rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30 group-hover:bg-wellcare-500 group-hover:text-white">
+                            <i class="fa-solid fa-plus"></i>
+                        </div>
+                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-wellcare-600 dark:group-hover:text-wellcare-400">Create New Trail</span>
+                    </a>
+                    <a href="/trail/my-trails" class="flex items-center p-2 transition rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
+                        <div class="flex items-center justify-center w-8 h-8 mr-2 transition bg-green-100 rounded-lg dark:bg-green-900/30 group-hover:bg-green-500 group-hover:text-white">
+                            <i class="fa-solid fa-route"></i>
+                        </div>
+                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400">My Trails</span>
+                    </a>
+                    <a href="/trail/publications/feed" class="flex items-center p-2 transition rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 group">
+                        <div class="flex items-center justify-center w-8 h-8 mr-2 transition rounded-lg bg-sky-100 dark:bg-sky-900/30 group-hover:bg-sky-500 group-hover:text-white">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <span class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-sky-600 dark:group-hover:text-sky-400">Community</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Seasonal Picks -->
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 text-green-500 fa-solid fa-leaf"></i>Seasonal Picks
+                </h3>
+                <div class="relative mb-3 overflow-hidden rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1518182383224-643565593605?w=300&h=150&fit=crop" alt="Winter Trail" class="object-cover w-full h-24">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <p class="text-sm font-medium text-white">Winter Wonderland</p>
+                        <p class="text-xs text-white/80">Perfect for cold weather hikes</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Discover our curated selection of trails perfect for winter.</p>
+                <a href="/trail/discover" class="inline-flex items-center mt-2 text-xs font-medium text-wellcare-600 hover:text-wellcare-700">
+                    Explore Winter Trails
+                    <i class="ml-1 fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Health Integration -->
+            <div class="p-4 bg-gradient-to-br from-wellcare-500 to-wellcare-light-500 rounded-xl">
+                <h3 class="mb-2 font-semibold text-white">
+                    <i class="mr-2 fa-solid fa-heart-pulse"></i>Health Benefits
+                </h3>
+                <p class="mb-3 text-xs text-white/80">Track your trail activities and connect them with your health goals.</p>
+                <div class="space-y-2 text-xs text-white">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Cardiovascular Health</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Mental Wellness</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Muscle Strength</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

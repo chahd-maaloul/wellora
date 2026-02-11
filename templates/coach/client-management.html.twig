@@ -1,0 +1,269 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('coach') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('coach') }}
+{% endblock %}
+
+{% block body %}
+<div x-data="clientManagement()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('coach_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-users text-wellcare-500"></i>
+                            {{ 'Client Management' }}
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Manage your clients and their programs' }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button @click="openAddClientModal()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fas fa-user-plus"></i>
+                        {{ 'Add Client' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <!-- Filters -->
+        <div class="mb-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <div class="relative">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2 fas fa-search"></i>
+                            <input 
+                                type="text" 
+                                x-model="searchQuery"
+                                placeholder="{{ 'Search clients...' }}"
+                                class="w-full py-2 pl-10 pr-4 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select x-model="statusFilter" class="px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                            <option value="all">{{ 'All Status' }}</option>
+                            <option value="active">{{ 'Active' }}</option>
+                            <option value="inactive">{{ 'Inactive' }}</option>
+                            <option value="pending">{{ 'Pending' }}</option>
+                        </select>
+                        <select x-model="goalFilter" class="px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                            <option value="all">{{ 'All Goals' }}</option>
+                            <option value="weight_loss">{{ 'Weight Loss' }}</option>
+                            <option value="strength">{{ 'Strength' }}</option>
+                            <option value="cardio">{{ 'Cardio' }}</option>
+                            <option value="flexibility">{{ 'Flexibility' }}</option>
+                        </select>
+                        <select x-model="sortBy" class="px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                            <option value="name">{{ 'Sort by Name' }}</option>
+                            <option value="adherence">{{ 'Sort by Adherence' }}</option>
+                            <option value="progress">{{ 'Sort by Progress' }}</option>
+                            <option value="recent">{{ 'Recently Active' }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Grid -->
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {% for client in clients %}
+            <div class="transition-shadow bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 hover:shadow-md">
+                <div class="p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="font-medium text-wellcare-600 dark:text-wellcare-400">{{ client.avatar }}</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ client.name }}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ client.email }}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                            {% if client.status == 'active' %}
+                                bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400
+                            {% elseif client.status == 'inactive' %}
+                                bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400
+                            {% else %}
+                                bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400
+                            {% endif %}
+                        ">
+                            {{ client.status|capitalize }}
+                        </span>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Adherence' }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ client.adherenceRate }}%</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Progress' }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ client.progress }}%</p>
+                        </div>
+                    </div>
+
+                    <!-- Goals -->
+                    <div class="mb-4">
+                        <p class="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">{{ 'Goals' }}</p>
+                        <div class="flex flex-wrap gap-1">
+                            {% for goal in client.goals %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-wellcare-100 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                                {{ goal }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Program Progress' }}</span>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ client.progress }}%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                            <div class="h-2 rounded-full bg-wellcare-500" style="width: {{ client.progress }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Meta Info -->
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            <i class="mr-1 fas fa-calendar"></i>{{ client.nextCheckIn }}
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            <i class="mr-1 fas fa-clock"></i>{{ client.lastActive }}
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 mt-4">
+                        <a href="{{ path('coach_client_detail', {'id': client.id}) }}" class="flex-1 px-3 py-2 text-sm font-medium text-center text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="mr-1 fas fa-eye"></i>{{ 'View Profile' }}
+                        </a>
+                        <button @click="openMessageClient('{{ client.id }}')" class="px-3 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <i class="fas fa-comment-alt"></i>
+                        </button>
+                        <button @click="openClientMenu('{{ client.id }}')" class="px-3 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Client Summary -->
+        <div class="mt-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-chart-bar text-wellcare-500"></i>
+                    {{ 'Client Summary' }}
+                </h2>
+            </div>
+            <div class="p-4">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ clients|length }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Total Clients' }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-green-500">{{ clients|filter(c => c.status == 'active')|length }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Active' }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-amber-500">{{ clients|filter(c => c.status == 'inactive')|length }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Inactive' }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-wellcare-500">
+                            {% set totalAdherence = 0 %}
+                            {% for client in clients %}
+                                {% set totalAdherence = totalAdherence + client.adherenceRate %}
+                            {% endfor %}
+                            {{ (totalAdherence / clients|length)|round }}%
+                        </p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Avg Adherence' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function clientManagement() {
+    return {
+        clients: {{ clients|json_encode|raw }},
+        searchQuery: '',
+        statusFilter: 'all',
+        goalFilter: 'all',
+        sortBy: 'name',
+        
+        get filteredClients() {
+            let filtered = this.clients;
+            
+            if (this.searchQuery) {
+                filtered = filtered.filter(c => 
+                    c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    c.email.toLowerCase().includes(this.searchQuery.toLowerCase())
+                );
+            }
+            
+            if (this.statusFilter !== 'all') {
+                filtered = filtered.filter(c => c.status === this.statusFilter);
+            }
+            
+            if (this.goalFilter !== 'all') {
+                filtered = filtered.filter(c => 
+                    c.goals.some(g => g.toLowerCase().includes(this.goalFilter))
+                );
+            }
+            
+            filtered.sort((a, b) => {
+                switch (this.sortBy) {
+                    case 'name': return a.name.localeCompare(b.name);
+                    case 'adherence': return b.adherenceRate - a.adherenceRate;
+                    case 'progress': return b.progress - a.progress;
+                    case 'recent': return a.lastActive.localeCompare(b.lastActive);
+                    default: return 0;
+                }
+            });
+            
+            return filtered;
+        },
+        
+        openAddClientModal() {
+            console.log('Open add client modal');
+        },
+        
+        openMessageClient(clientId) {
+            console.log('Open message for client:', clientId);
+        },
+        
+        openClientMenu(clientId) {
+            console.log('Open menu for client:', clientId);
+        }
+    }
+}
+</script>
+{% endblock %}

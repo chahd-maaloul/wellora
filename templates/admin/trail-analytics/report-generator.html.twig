@@ -1,0 +1,196 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Report Generator - WellCare Connect Admin{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-analytics-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="py-4 mb-6 -mx-4 -mt-4 bg-gradient-to-r from-slate-600 to-gray-600">
+    <div class="px-4 mx-auto">
+        <div class="flex flex-col items-start justify-between md:flex-row md:items-center">
+            <div>
+                <h1 class="mb-1 text-xl font-bold text-white font-display">
+                    <i class="mr-2 fa-solid fa-file-pdf"></i>Report Generator
+                </h1>
+                <p class="text-sm text-white/80">Generate and download comprehensive trail analytics reports</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="px-4 mx-auto">
+    <!-- Report Configuration -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Report Type Selection -->
+        <div class="lg:col-span-2">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-cog"></i>Report Configuration
+                </h2>
+                
+                <!-- Report Type -->
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Report Type</label>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {% for type in [
+                            {'icon': 'fa-chart-line', 'title': 'Usage Report', 'desc': 'Track trail usage and user activity'},
+                            {'icon': 'fa-users', 'title': 'User Engagement', 'desc': 'Analyze user behavior patterns'},
+                            {'icon': 'fa-shield-alt', 'title': 'Safety Summary', 'desc': 'Review safety incidents and alerts'},
+                            {'icon': 'fa-star', 'title': 'Ratings Analysis', 'desc': 'Evaluate trail ratings and reviews'},
+                            {'icon': 'fa-calendar', 'title': 'Monthly Summary', 'desc': 'Comprehensive monthly overview'},
+                            {'icon': 'fa-map-marked-alt', 'title': 'Trail Performance', 'desc': 'Individual trail metrics'}
+                        ] %}
+                        <label class="relative flex items-start p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700">
+                            <input type="checkbox" class="sr-only peer">
+                            <div class="flex items-center h-5">
+                                <i class="mr-3 text-wellcare-500 {{ type.icon }}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ type.title }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ type.desc }}</p>
+                            </div>
+                            <div class="absolute w-4 h-4 border border-gray-300 rounded-full top-2 right-2 peer-checked:bg-wellcare-500 peer-checked:border-wellcare-500"></div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Date Range -->
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Start Date</label>
+                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">End Date</label>
+                            <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trail Selection -->
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Trail(s)</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500">
+                        <option>All Trails</option>
+                        <option>Forest Trail 1</option>
+                        <option>Mountain Trail</option>
+                        <option>River Trail</option>
+                        <option>Valley Path</option>
+                    </select>
+                </div>
+
+                <!-- Format Selection -->
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Export Format</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="format" value="pdf" checked class="w-4 h-4 text-wellcare-600 focus:ring-wellcare-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 text-red-500 fa-solid fa-file-pdf"></i> PDF
+                            </span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="format" value="excel" class="w-4 h-4 text-wellcare-600 focus:ring-wellcare-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 text-green-500 fa-solid fa-file-excel"></i> Excel
+                            </span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="format" value="csv" class="w-4 h-4 text-wellcare-600 focus:ring-wellcare-500">
+                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 text-blue-500 fa-solid fa-file-csv"></i> CSV
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Reports Sidebar -->
+        <div>
+            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-bolt"></i>Quick Reports
+                </h2>
+                <div class="space-y-3">
+                    <button class="flex items-center justify-between w-full p-3 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-wellcare-500 fa-solid fa-calendar-check"></i>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">Today's Summary</span>
+                        </div>
+                        <i class="text-gray-400 fa-solid fa-download"></i>
+                    </button>
+                    <button class="flex items-center justify-between w-full p-3 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-wellcare-500 fa-solid fa-calendar-week"></i>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">This Week</span>
+                        </div>
+                        <i class="text-gray-400 fa-solid fa-download"></i>
+                    </button>
+                    <button class="flex items-center justify-between w-full p-3 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-wellcare-500 fa-solid fa-calendar-alt"></i>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">This Month</span>
+                        </div>
+                        <i class="text-gray-400 fa-solid fa-download"></i>
+                    </button>
+                    <button class="flex items-center justify-between w-full p-3 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-wellcare-500 fa-solid fa-chart-bar"></i>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">Yearly Report</span>
+                        </div>
+                        <i class="text-gray-400 fa-solid fa-download"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scheduled Reports -->
+            <div class="p-6 mt-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-clock"></i>Scheduled
+                    </h2>
+                    <button class="text-sm text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">Weekly Summary</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Every Monday</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-wellcare-300 dark:peer-focus:ring-wellcare-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-wellcare-500"></div>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">Monthly Report</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">1st of month</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-wellcare-300 dark:peer-focus:ring-wellcare-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-wellcare-500"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Button -->
+    <div class="mt-6 text-center">
+        <button class="px-8 py-3 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600 focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2">
+            <i class="mr-2 fa-solid fa-file-export"></i> Generate Report
+        </button>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,659 @@
+{% extends 'layouts/auth.html.twig' %}
+{% set auth_container_class = 'max-w-5xl' %}
+
+{% block title %}Professional Registration - WellCare Connect{% endblock %}
+
+{% block auth_heading %}{% endblock %}
+{% block auth_description %}{% endblock %}
+
+{% block auth_form %}
+  <form 
+    class="min-h-[650px]" 
+    action="/register-professional" 
+    method="POST" 
+    enctype="multipart/form-data"
+    x-data="{
+      step: 1,
+      showPw: false,
+      showPw2: false,
+      pw: '',
+      confirmPw: '',
+      email: '',
+      firstName: '',
+      lastName: '',
+      specialization: '',
+      licenseNumber: '',
+      diplomaFile: null,
+      diplomaName: '',
+      isSubmitting: false,
+      fileError: '',
+      isDragging: false,
+      touched: {},
+      get strength() {
+        const p = this.pw || '';
+        let s = 0;
+        if (p.length >= 8) s++;
+        if (/[A-Z]/.test(p)) s++;
+        if (/[0-9]/.test(p)) s++;
+        if (/[^A-Za-z0-9]/.test(p)) s++;
+        return s;
+      },
+      get strengthLabel() {
+        const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+        return labels[this.strength];
+      },
+      get strengthColor() {
+        const colors = ['bg-red-500', 'bg-red-500', 'bg-yellow-500', 'bg-wellcare-500', 'bg-green-500'];
+        return colors[this.strength];
+      },
+      get strengthTextColor() {
+        const colors = ['text-red-500', 'text-red-500', 'text-yellow-600', 'text-wellcare-600', 'text-green-600'];
+        return colors[this.strength];
+      },
+      get pct() { return Math.round(((this.step - 1) / 2) * 100); },
+      get canProceed() {
+        if (this.step === 1) return this.firstName && this.lastName && this.email && this.validateEmail(this.email);
+        if (this.step === 2) return this.specialization && this.licenseNumber && this.diplomaFile && !this.fileError;
+        if (this.step === 3) return this.pw && this.confirmPw && this.pw === this.confirmPw && this.strength >= 2;
+        return false;
+      },
+      get passwordsMatch() {
+        return this.confirmPw && this.pw === this.confirmPw;
+      },
+      validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      },
+      handleFileSelect(event) {
+        const file = event.target.files[0];
+        this.processFile(file);
+      },
+      handleDrop(event) {
+        event.preventDefault();
+        this.isDragging = false;
+        const file = event.dataTransfer.files[0];
+        this.processFile(file);
+      },
+      processFile(file) {
+        this.fileError = '';
+        
+        if (!file) {
+          this.diplomaFile = null;
+          this.diplomaName = '';
+          return;
+        }
+        
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+          this.fileError = 'Please upload a PDF, JPG, or PNG file';
+          this.diplomaFile = null;
+          this.diplomaName = '';
+          return;
+        }
+        
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          this.fileError = 'File size must be less than 5MB';
+          this.diplomaFile = null;
+          this.diplomaName = '';
+          return;
+        }
+        
+        this.diplomaFile = file;
+        this.diplomaName = file.name;
+      },
+      removeFile() {
+        this.diplomaFile = null;
+        this.diplomaName = '';
+        this.fileError = '';
+        const input = document.getElementById('diploma');
+        if (input) input.value = '';
+      },
+      goNext() {
+        if (this.canProceed && this.step < 3) {
+          this.step++;
+          this.touched = {};
+        }
+      },
+      goBack() {
+        if (this.step > 1) {
+          this.step--;
+          this.touched = {};
+        }
+      }
+    }"
+    @submit.prevent="if (canProceed) { isSubmitting = true; $el.submit(); }"
+  >
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('register_professional') }}">
+
+    <div class="grid grid-cols-1 gap-0 lg:grid-cols-12">
+      {# Left Panel - Progress & Trust Elements #}
+      <div class="hidden lg:col-span-4 lg:flex lg:flex-col">
+        <div class="relative flex flex-col h-full p-6 overflow-hidden bg-gradient-to-br from-wellcare-dark-500 via-wellcare-dark-600 to-wellcare-dark-700 rounded-l-2xl">
+          {# Decorative circles with animation #}
+          <div class="absolute top-0 right-0 w-40 h-40 -mt-10 -mr-10 rounded-full bg-white/10 blur-2xl animate-pulse"></div>
+          <div class="absolute bottom-0 left-0 w-32 h-32 -mb-8 -ml-8 rounded-full bg-wellcare-400/10 blur-xl"></div>
+          
+          <div class="relative z-10">
+            <h3 class="text-xl font-bold text-white">Professional Registration</h3>
+            <p class="mt-2 text-sm text-wellcare-100">Join our network of healthcare professionals and connect with patients in a secure, verified environment.</p>
+          </div>
+
+          {# Progress Steps with enhanced styling #}
+          <div class="relative z-10 flex flex-col gap-3 mt-8">
+            {# Step 1 #}
+            <div class="flex items-center gap-3 transition-opacity duration-300" :class="step >= 1 ? 'opacity-100' : 'opacity-50'">
+              <div 
+                class="flex items-center justify-center w-10 h-10 transition-all duration-300 border-2 rounded-full shadow-lg"
+                :class="step === 1 ? 'bg-white border-white text-wellcare-dark-600 shadow-white/30' : (step > 1 ? 'bg-green-400 border-green-400 text-white' : 'border-white/50 text-white')"
+              >
+                <svg x-show="step > 1" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span x-show="step <= 1" class="text-sm font-semibold">1</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Personal</p>
+                <p class="text-xs text-wellcare-100">Basic information</p>
+              </div>
+            </div>
+
+            {# Connector #}
+            <div class="ml-5 w-0.5 h-8 bg-white/30 rounded-full overflow-hidden">
+              <div class="w-full transition-all duration-500 bg-white" :style="`height: ${step > 1 ? '100%' : '0%'}`"></div>
+            </div>
+
+            {# Step 2 #}
+            <div class="flex items-center gap-3 transition-opacity duration-300" :class="step >= 2 ? 'opacity-100' : 'opacity-50'">
+              <div 
+                class="flex items-center justify-center w-10 h-10 transition-all duration-300 border-2 rounded-full shadow-lg"
+                :class="step === 2 ? 'bg-white border-white text-wellcare-dark-600 shadow-white/30' : (step > 2 ? 'bg-green-400 border-green-400 text-white' : 'border-white/50 text-white')"
+              >
+                <svg x-show="step > 2" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span x-show="step <= 2" class="text-sm font-semibold">2</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Professional</p>
+                <p class="text-xs text-wellcare-100">Credentials & diploma</p>
+              </div>
+            </div>
+
+            {# Connector #}
+            <div class="ml-5 w-0.5 h-8 bg-white/30 rounded-full overflow-hidden">
+              <div class="w-full transition-all duration-500 bg-white" :style="`height: ${step > 2 ? '100%' : '0%'}`"></div>
+            </div>
+
+            {# Step 3 #}
+            <div class="flex items-center gap-3 transition-opacity duration-300" :class="step >= 3 ? 'opacity-100' : 'opacity-50'">
+              <div 
+                class="flex items-center justify-center w-10 h-10 transition-all duration-300 border-2 rounded-full shadow-lg"
+                :class="step === 3 ? 'bg-white border-white text-wellcare-dark-600 shadow-white/30' : 'border-white/50 text-white'"
+              >
+                <span class="text-sm font-semibold">3</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Security</p>
+                <p class="text-xs text-wellcare-100">Password setup</p>
+              </div>
+            </div>
+          </div>
+
+          {# Trust indicators #}
+          <div class="relative z-10 pt-6 mt-auto space-y-3">
+            <div class="flex items-center gap-2 text-xs text-wellcare-100">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              <span>Verified professional network</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-wellcare-100">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              <span>Secure credential verification</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Right Panel - Form Content #}
+      <div class="lg:col-span-8">
+        <div class="p-6 lg:p-10">
+          {# Mobile Header #}
+          <div class="mb-6 text-center lg:hidden">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Join as a professional</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Already have an account? 
+              <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">Sign in</a>
+            </p>
+          </div>
+
+          {# Desktop Header #}
+          <div class="hidden mb-8 lg:block">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Join as a healthcare professional</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Already have an account?
+              <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>.
+            </p>
+          </div>
+
+          {# Mobile Progress Bar with enhanced styling #}
+          <div class="mb-8 space-y-3 lg:hidden">
+            <div class="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <span>Step <span x-text="step"></span> of 3</span>
+              <span class="text-wellcare-dark-600 dark:text-wellcare-dark-400" x-text="`${pct()}%`"></span>
+            </div>
+            <div class="h-2.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 shadow-inner">
+              <div class="h-full transition-all duration-500 ease-out rounded-full bg-gradient-to-r from-wellcare-dark-500 to-wellcare-dark-600" :style="`width: ${pct()}%`"></div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+              <span :class="step === 1 ? 'text-wellcare-dark-600 dark:text-wellcare-dark-400 font-semibold' : ''">Personal</span>
+              <span :class="step === 2 ? 'text-wellcare-dark-600 dark:text-wellcare-dark-400 font-semibold' : ''">Professional</span>
+              <span :class="step === 3 ? 'text-wellcare-dark-600 dark:text-wellcare-dark-400 font-semibold' : ''">Security</span>
+            </div>
+          </div>
+
+          {# Step 1: Personal Information #}
+          <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="p-2 rounded-lg bg-wellcare-dark-100 dark:bg-wellcare-dark-900/30">
+                <svg class="w-5 h-5 text-wellcare-dark-600 dark:text-wellcare-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Personal Information</h3>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="space-y-1.5">
+                <label for="first-name" class="label">First name <span class="text-red-500">*</span></label>
+                <input 
+                  id="first-name" 
+                  name="first_name" 
+                  type="text" 
+                  x-model="firstName"
+                  required 
+                  class="input"
+                  placeholder="Dr. John"
+                >
+              </div>
+              <div class="space-y-1.5">
+                <label for="last-name" class="label">Last name <span class="text-red-500">*</span></label>
+                <input 
+                  id="last-name" 
+                  name="last_name" 
+                  type="text" 
+                  x-model="lastName"
+                  required 
+                  class="input"
+                  placeholder="Doe"
+                >
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="email" class="label">Professional email <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  x-model="email"
+                  required 
+                  class="input"
+                  :class="email && !validateEmail(email) ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (email && validateEmail(email) ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
+                  placeholder="john.doe@clinic.com"
+                >
+                <div x-show="email && validateEmail(email)" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none" style="display: none;">
+                  <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              </div>
+              <p x-show="email && !validateEmail(email)" class="flex items-center gap-1 text-xs text-red-500" style="display: none;">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Please enter a valid email address
+              </p>
+              <p class="helper-text">Use your professional email associated with your practice.</p>
+            </div>
+          </div>
+
+          {# Step 2: Professional Details with enhanced file upload #}
+          <div x-show="step === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5" style="display: none;">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="p-2 rounded-lg bg-wellcare-dark-100 dark:bg-wellcare-dark-900/30">
+                <svg class="w-5 h-5 text-wellcare-dark-600 dark:text-wellcare-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Professional Credentials</h3>
+            </div>
+            
+            <div class="space-y-1.5">
+              <label for="specialization" class="label">Specialization <span class="text-red-500">*</span></label>
+              <input 
+                id="specialization" 
+                name="specialization" 
+                type="text" 
+                x-model="specialization"
+                required 
+                class="input"
+                placeholder="e.g., Cardiology, Pediatrics, Neurology"
+              >
+              <p class="helper-text">This helps patients find the right specialist for their needs.</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="license-number" class="label">License Number <span class="text-red-500">*</span></label>
+              <input 
+                id="license-number" 
+                name="license_number" 
+                type="text" 
+                x-model="licenseNumber"
+                required 
+                class="input"
+                placeholder="Your medical license number"
+              >
+              <p class="helper-text">Your professional license number for verification purposes.</p>
+            </div>
+            
+            <div class="space-y-1.5">
+              <label for="diploma" class="label">Diploma / Certification <span class="text-red-500">*</span></label>
+              
+              <div 
+                class="relative p-6 transition-all duration-200 border-2 border-dashed rounded-xl"
+                :class="fileError ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/10' : (diplomaFile ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-900/10' : (isDragging ? 'border-wellcare-500 bg-wellcare-50 dark:border-wellcare-500 dark:bg-wellcare-900/20' : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/30 hover:border-wellcare-400 dark:hover:border-wellcare-600'))"
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="handleDrop($event)"
+              >
+                <input 
+                  id="diploma" 
+                  name="diploma" 
+                  type="file" 
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  required
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  @change="handleFileSelect($event)"
+                >
+                
+                {# Empty State #}
+                <div x-show="!diplomaFile && !fileError" class="text-center">
+                  <div class="flex items-center justify-center mx-auto mb-3 transition-transform duration-200 rounded-full h-14 w-14 bg-wellcare-100 dark:bg-wellcare-900/30" :class="isDragging ? 'scale-110' : ''">
+                    <svg class="h-7 w-7 text-wellcare-600 dark:text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                  </div>
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span x-show="!isDragging">Click to upload or drag and drop</span>
+                    <span x-show="isDragging" class="text-wellcare-600 dark:text-wellcare-400">Drop your file here</span>
+                  </p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">PDF, JPG, or PNG (max 5MB)</p>
+                </div>
+                
+                {# File Selected State #}
+                <div x-show="diplomaFile && !fileError" class="flex items-center gap-3" style="display: none;">
+                  <div class="flex items-center justify-center w-12 h-12 bg-green-100 shrink-0 rounded-xl dark:bg-green-900/30">
+                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-100" x-text="diplomaName"></p>
+                    <p class="text-xs text-green-600 dark:text-green-400">Ready for upload</p>
+                  </div>
+                  <button 
+                    type="button"
+                    @click="removeFile()"
+                    class="flex items-center justify-center text-gray-400 transition-colors rounded-lg h-9 w-9 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+                
+                {# Error State #}
+                <div x-show="fileError" class="flex items-center gap-3" style="display: none;">
+                  <div class="flex items-center justify-center w-12 h-12 bg-red-100 shrink-0 rounded-xl dark:bg-red-900/30">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-red-800 dark:text-red-200" x-text="fileError"></p>
+                    <p class="text-xs text-red-600 dark:text-red-400">Please try again</p>
+                  </div>
+                  <button 
+                    type="button"
+                    @click="removeFile()"
+                    class="flex items-center justify-center text-gray-400 transition-colors rounded-lg h-9 w-9 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <p class="helper-text">Your diploma will be securely stored and used for verification purposes only. All documents are encrypted and handled according to HIPAA standards.</p>
+            </div>
+
+            <div class="p-4 border rounded-xl bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20 border-wellcare-dark-200 dark:border-wellcare-dark-800">
+              <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-wellcare-dark-600 dark:text-wellcare-dark-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Verification Process</p>
+                  <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">Your credentials will be reviewed by our team within 24-48 hours. You'll receive an email once your account is verified.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# Step 3: Account Security with enhanced password strength #}
+          <div x-show="step === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5" style="display: none;">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="p-2 rounded-lg bg-wellcare-dark-100 dark:bg-wellcare-dark-900/30">
+                <svg class="w-5 h-5 text-wellcare-dark-600 dark:text-wellcare-dark-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Account Security</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="space-y-1.5">
+                <label for="password" class="label">Password <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <input 
+                    id="password" 
+                    name="password" 
+                    :type="showPw ? 'text' : 'password'" 
+                    x-model="pw"
+                    required 
+                    class="pr-20 input"
+                    placeholder="••••••••"
+                  >
+                  <button 
+                    type="button" 
+                    class="absolute inset-y-0 right-0 inline-flex items-center gap-1 px-3 text-xs font-medium text-gray-500 transition-colors hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-300"
+                    @click="showPw = !showPw"
+                  >
+                    <span x-text="showPw ? 'Hide' : 'Show'"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label for="confirm-password" class="label">Confirm password <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <input 
+                    id="confirm-password" 
+                    name="confirm_password" 
+                    :type="showPw2 ? 'text' : 'password'" 
+                    x-model="confirmPw"
+                    required 
+                    class="pr-20 input"
+                    :class="confirmPw && !passwordsMatch ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : (confirmPw && passwordsMatch ? 'border-green-300 focus:border-green-500 focus:ring-green-500/20' : '')"
+                    placeholder="••••••••"
+                  >
+                  <button 
+                    type="button" 
+                    class="absolute inset-y-0 right-0 inline-flex items-center gap-1 px-3 text-xs font-medium text-gray-500 transition-colors hover:text-wellcare-600 dark:text-gray-400 dark:hover:text-wellcare-300"
+                    @click="showPw2 = !showPw2"
+                  >
+                    <span x-text="showPw2 ? 'Hide' : 'Show'"></span>
+                  </button>
+                </div>
+                <p x-show="confirmPw && !passwordsMatch" class="flex items-center gap-1 text-xs text-red-500" style="display: none;">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Passwords do not match
+                </p>
+                <p x-show="confirmPw && passwordsMatch" class="flex items-center gap-1 text-xs text-green-600" style="display: none;">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Passwords match
+                </p>
+              </div>
+            </div>
+            
+            {# Enhanced Password Strength Indicator #}
+            <div class="p-5 space-y-3 border border-gray-100 rounded-xl bg-gray-50 dark:bg-gray-900/50 dark:border-gray-800">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Password strength</span>
+                <span 
+                  class="text-sm font-semibold"
+                  :class="strengthTextColor"
+                  x-text="pw ? strengthLabel : 'Not entered'"
+                ></span>
+              </div>
+              <div class="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700 shadow-inner">
+                <div
+                  class="h-full transition-all duration-500 ease-out rounded-full"
+                  :class="strengthColor"
+                  :style="`width: ${Math.min(100, (strength/4)*100)}%`"
+                ></div>
+              </div>
+              <ul class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <li class="flex items-center gap-1.5 transition-colors duration-200" :class="pw.length >= 8 ? 'text-green-600 dark:text-green-400' : ''">
+                  <svg x-show="pw.length >= 8" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span x-show="pw.length < 8" class="h-3.5 w-3.5 rounded-full border border-gray-300 dark:border-gray-600"></span>
+                  8+ characters
+                </li>
+                <li class="flex items-center gap-1.5 transition-colors duration-200" :class="/[A-Z]/.test(pw) ? 'text-green-600 dark:text-green-400' : ''">
+                  <svg x-show="/[A-Z]/.test(pw)" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span x-show="!/[A-Z]/.test(pw)" class="h-3.5 w-3.5 rounded-full border border-gray-300 dark:border-gray-600"></span>
+                  Uppercase letter
+                </li>
+                <li class="flex items-center gap-1.5 transition-colors duration-200" :class="/[0-9]/.test(pw) ? 'text-green-600 dark:text-green-400' : ''">
+                  <svg x-show="/[0-9]/.test(pw)" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span x-show="!/[0-9]/.test(pw)" class="h-3.5 w-3.5 rounded-full border border-gray-300 dark:border-gray-600"></span>
+                  Number
+                </li>
+                <li class="flex items-center gap-1.5 transition-colors duration-200" :class="/[^A-Za-z0-9]/.test(pw) ? 'text-green-600 dark:text-green-400' : ''">
+                  <svg x-show="/[^A-Za-z0-9]/.test(pw)" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span x-show="!/[^A-Za-z0-9]/.test(pw)" class="h-3.5 w-3.5 rounded-full border border-gray-300 dark:border-gray-600"></span>
+                  Special character
+                </li>
+              </ul>
+            </div>
+
+            {# Terms agreement #}
+            <div class="flex items-start gap-3 p-4 border rounded-xl bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20 border-wellcare-dark-200 dark:border-wellcare-dark-800">
+              <input id="terms" name="terms" type="checkbox" required class="w-4 h-4 mt-0.5 text-wellcare-dark-600 border-gray-300 rounded focus:ring-wellcare-dark-500">
+              <label for="terms" class="text-xs text-gray-600 dark:text-gray-400">
+                I confirm that I am a licensed healthcare professional and agree to the <a href="/terms" class="text-wellcare-dark-600 hover:text-wellcare-dark-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-dark-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-dark-600 hover:text-wellcare-dark-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-dark-300 hover:underline">Privacy Policy</a>. I understand that my credentials will be verified before account activation.
+              </label>
+            </div>
+          </div>
+
+          {# Navigation Buttons with enhanced styling #}
+          <div class="flex items-center justify-between pt-6 mt-8 border-t border-gray-100 dark:border-gray-800">
+            <button 
+              type="button" 
+              @click="goBack()" 
+              x-show="step > 1"
+              class="flex items-center gap-2 btn-outline"
+              style="display: none;"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back
+            </button>
+            <div x-show="step === 1" class="w-20"></div>
+
+            <button 
+              type="button" 
+              @click="goNext()" 
+              x-show="step < 3"
+              class="flex items-center gap-2 ml-auto btn-solid"
+              :disabled="!canProceed"
+              :class="!canProceed ? 'opacity-50 cursor-not-allowed' : ''"
+            >
+              Next
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+
+            <button 
+              type="submit" 
+              x-show="step === 3"
+              class="flex items-center gap-2 ml-auto btn-solid"
+              :disabled="isSubmitting || !canProceed"
+              :class="(isSubmitting || !canProceed) ? 'opacity-50 cursor-not-allowed' : ''"
+            >
+              <span x-show="!isSubmitting" class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Complete registration
+              </span>
+              <span x-show="isSubmitting" class="flex items-center gap-2" style="display: none;">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block auth_footer %}
+  <div class="flex flex-col items-center justify-center gap-2 text-sm">
+    <span class="text-gray-600 dark:text-gray-400">Looking for patient registration?</span>
+    <a href="/register-patient" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">
+      Register as patient
+    </a>
+  </div>
+{% endblock %}
+
+{% block auth_below %}
+  <div class="text-xs text-center text-gray-500 dark:text-gray-400">
+    By registering, you confirm that you are a licensed healthcare professional and agree to our 
+    <a href="/terms" class="underline transition-colors hover:text-wellcare-600 dark:hover:text-wellcare-400">Terms of Service</a> 
+    and <a href="/privacy" class="underline transition-colors hover:text-wellcare-600 dark:hover:text-wellcare-400">Privacy Policy</a>.
+    All credentials are verified before account activation.
+  </div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Critères de succès - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8" x-data="successMetrics()">
+    <div class="max-w-5xl px-4 mx-auto">
+        {# Header #}
+        <div class="mb-8">
+            <a href="{{ path('nutrition_goals_detail', {'id': goal.id|default(1)}) }}" class="inline-flex items-center mb-4 text-gray-500 transition-colors dark:text-gray-400 hover:text-wellcare-500">
+                <i class="mr-2 fas fa-arrow-left"></i>Retour à l'objectif
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Critères de succès</h1>
+            <p class="mt-1 text-gray-500 dark:text-gray-400">{{ goal.name|default('Perte de poids été 2024') }}</p>
+        </div>
+
+        {# Overall Completion #}
+        <div class="p-6 mb-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <div class="flex items-center gap-6">
+                <div class="relative w-32 h-32">
+                    <svg class="w-32 h-32 transform -rotate-90">
+                        <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="12" fill="none" class="text-gray-200 dark:text-gray-700"/>
+                        <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="12" fill="none" 
+                                stroke-dasharray="293 351"
+                                :stroke-dashoffset="351 - (351 * {{ metrics.overallCompletion|default(65) }} / 100)"
+                                class="transition-all duration-1000 text-wellcare-500"/>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ metrics.overallCompletion|default(65) }}%</span>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <h2 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Progression globale</h2>
+                    <p class="mb-4 text-gray-500 dark:text-gray-400">
+                        Vous êtes sur la bonne voie pour atteindre votre objectif. 
+                        {% if metrics.overallCompletion >= 80 %}
+                            <span class="text-green-500">Félicitations ! Vous approchez de la ligne d'arrivée.</span>
+                        {% elseif metrics.overallCompletion >= 50 %}
+                            <span class="text-blue-500">Vous avez passé la moitié du chemin.</span>
+                        {% else %}
+                            <span class="text-amber-500">Continuez vos efforts, chaque petit pas compte.</span>
+                        {% endif %}
+                    </p>
+                    <div class="flex gap-4">
+                        <span class="px-3 py-1 text-sm font-medium text-green-600 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
+                            <i class="mr-1 fas fa-check"></i>{{ metrics.completedCriteria|default(5) }}/{{ metrics.totalCriteria|default(8) }} critères atteints
+                        </span>
+                        <span class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-300">
+                            <i class="mr-1 fas fa-clock"></i>{{ metrics.remainingDays|default(45) }} jours restants
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Criteria Categories #}
+        <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
+            {# Primary Criteria #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                        <i class="text-xl fas fa-bullseye text-wellcare-500"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Critères principaux</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Objectifs obligatoires</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    {# Weight Goal #}
+                    <div class="p-4 rounded-xl {% if criteria.weight.completed %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900 dark:text-white">体重目標の達成</h3>
+                            <span class="text-sm font-medium {% if criteria.weight.completed %}text-green-500{% else %}text-gray-500{% endif %}">
+                                {% if criteria.weight.completed %}
+                                    <i class="fas fa-check-circle"></i> Atteint
+                                {% else %}
+                                    {{ criteria.weight.progress|default(65) }}%
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">{{ criteria.weight.current|default(78.5) }} kg</span>
+                            <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full {% if criteria.weight.completed %}bg-green-500{% else %}bg-wellcare-500{% endif %} rounded-full" 
+                                     style="width: {{ criteria.weight.progress|default(65) }}%"></div>
+                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">{{ criteria.weight.target|default(72.0) }} kg</span>
+                        </div>
+                    </div>
+
+                    {# Calorie Adherence #}
+                    <div class="p-4 rounded-xl {% if criteria.calories.completed %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Adhésion calorique</h3>
+                            <span class="text-sm font-medium {% if criteria.calories.completed %}text-green-500{% else %}text-gray-500{% endif %}">
+                                {% if criteria.calories.completed %}
+                                    <i class="fas fa-check-circle"></i> Atteint
+                                {% else %}
+                                    {{ criteria.calories.adherence|default(87) }}%
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">Moyenne</span>
+                            <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full {% if criteria.calories.completed %}bg-green-500{% else %}bg-blue-500{% endif %} rounded-full" 
+                                     style="width: {{ criteria.calories.adherence|default(87) }}%"></div>
+                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">Cible: 80%</span>
+                        </div>
+                    </div>
+
+                    {# Timeline #}
+                    <div class="p-4 rounded-xl {% if criteria.timeline.completed %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Respect du calendrier</h3>
+                            <span class="text-sm font-medium {% if criteria.timeline.completed %}text-green-500{% else %}text-gray-500{% endif %}">
+                                {% if criteria.timeline.completed %}
+                                    <i class="fas fa-check-circle"></i> Atteint
+                                {% else %}
+                                    {{ criteria.timeline.daysOnTrack|default(28) }}/{{ criteria.timeline.totalDays|default(30) }} jours
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">{{ criteria.timeline.daysOnTrack|default(28) }} jours</span>
+                            <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full {% if criteria.timeline.completed %}bg-green-500{% else %}bg-amber-500{% endif %} rounded-full" 
+                                     style="width: {{ (criteria.timeline.daysOnTrack|default(28) / criteria.timeline.totalDays|default(30) * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">Objectif: 90%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Secondary Criteria #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                        <i class="text-xl text-blue-500 fas fa-star"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Critères secondaires</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Objectifs bonus</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    {# Macro Balance #}
+                    <div class="p-4 rounded-xl {% if criteria.macros.completed %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Équilibre des macros</h3>
+                            <span class="text-sm font-medium {% if criteria.macros.completed %}text-green-500{% else %}text-gray-500{% endif %}">
+                                {% if criteria.macros.completed %}
+                                    <i class="fas fa-check-circle"></i> Atteint
+                                {% else %}
+                                    {{ criteria.macros.adherence|default(92) }}%
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-xs">
+                            <div class="text-center">
+                                <div class="flex items-center justify-center w-8 h-8 mx-auto mb-1 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                    <span class="font-bold text-wellcare-500">{{ criteria.macros.protein|default(88) }}%</span>
+                                </div>
+                                <span class="text-gray-500">Protéines</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="flex items-center justify-center w-8 h-8 mx-auto mb-1 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                                    <span class="font-bold text-blue-500">{{ criteria.macros.carbs|default(95) }}%</span>
+                                </div>
+                                <span class="text-gray-500">Glucides</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="flex items-center justify-center w-8 h-8 mx-auto mb-1 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                                    <span class="font-bold text-amber-500">{{ criteria.macros.fats|default(97) }}%</span>
+                                </div>
+                                <span class="text-gray-500">Lipides</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Consistency #}
+                    <div class="p-4 rounded-xl {% if criteria.consistency.completed %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Cohérence</h3>
+                            <span class="text-sm font-medium {% if criteria.consistency.completed %}text-green-500{% else %}text-gray-500{% endif %}">
+                                {% if criteria.consistency.completed %}
+                                    <i class="fas fa-check-circle"></i> Atteint
+                                {% else %}
+                                    {{ criteria.consistency.streak|default(12) }} jours
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% for i in 1..14 %}
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium {% if i <= 12 %}bg-wellcare-500 text-white{% else %}bg-gray-200 dark:bg-gray-700 text-gray-400{% endif %}">
+                                J{{ i }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Série actuelle: {{ criteria.consistency.streak|default(12) }} jours (Cible: 14)</p>
+                    </div>
+
+                    {# Hydration #}
+                    <div class="p-4 rounded-xl {% if criteria.hydration.completed %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800{% else %}bg-gray-50 dark:bg-gray-700/50{% endif %}">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Hydratation</h3>
+                            <span class="text-sm font-medium {% if criteria.hydration.completed %}text-green-500{% else %}text-gray-500{% endif %}">
+                                {% if criteria.hydration.completed %}
+                                    <i class="fas fa-check-circle"></i> Atteint
+                                {% else %}
+                                    {{ criteria.hydration.adherence|default(75) }}%
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm">
+                            <span class="text-gray-500 dark:text-gray-400">6/8</span>
+                            <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full {% if criteria.hydration.completed %}bg-green-500{% else %}bg-cyan-500{% endif %} rounded-full" 
+                                     style="width: {{ criteria.hydration.adherence|default(75) }}%"></div>
+                            </div>
+                            <span class="text-gray-500 dark:text-gray-400">Cible: 8 verres/jour</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Prediction #}
+        <div class="p-6 mb-6 text-white shadow-lg bg-gradient-to-br from-wellcare-500 to-wellcare-600 rounded-2xl">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-white/20">
+                    <i class="text-xl fas fa-calendar-check"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold">Prédiction de succès</h2>
+                    <p class="text-white/80">Basé sur votre progression actuelle</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div class="text-center">
+                    <p class="mb-2 text-4xl font-bold">{{ metrics.prediction.successRate|default(78) }}%</p>
+                    <p class="text-sm text-white/80">Probabilité de succès</p>
+                </div>
+                <div class="text-center">
+                    <p class="mb-2 text-4xl font-bold">{{ metrics.prediction.estimatedDate|default('+30 days')|date('d/m/Y') }}</p>
+                    <p class="text-sm text-white/80">Date estimée d'atteinte</p>
+                </div>
+                <div class="text-center">
+                    <p class="mb-2 text-4xl font-bold">{{ metrics.prediction.estimatedWeight|default(71.5) }} kg</p>
+                    <p class="text-sm text-white/80">体重予測</p>
+                </div>
+            </div>
+            <div class="p-4 mt-6 bg-white/10 rounded-xl">
+                <p class="text-sm">
+                    <i class="mr-2 fas fa-lightbulb"></i>
+                    {% if metrics.prediction.successRate|default(78) >= 80 %}
+                        Excellent ! Vous êtes en bonne voie pour atteindre votre objectif dans les temps.
+                    {% elseif metrics.prediction.successRate|default(78) >= 60 %}
+                        Bien ! Quelques ajustements mineurs pourraient vous aider à accélérer vos progrès.
+                    {% else %}
+                        Attention ! Nous vous recommandons d'ajuster votre objectif ou votre stratégie.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        {# Recommendations #}
+        <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+                <i class="mr-2 fas fa-lightbulb text-amber-500"></i>Recommandations
+            </h2>
+            <div class="space-y-3">
+                {% for recommendation in recommendations|default([]) %}
+                <div class="flex items-start gap-4 p-4 rounded-xl {% if recommendation.priority == 'high' %}bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800{% elseif recommendation.priority == 'medium' %}bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800{% else %}bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800{% endif %}">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 {% if recommendation.priority == 'high' %}bg-red-100 dark:bg-red-900/30 text-red-500{% elseif recommendation.priority == 'medium' %}bg-amber-100 dark:bg-amber-900/30 text-amber-500{% else %}bg-blue-100 dark:bg-blue-900/30 text-blue-500{% endif %}">
+                        <i class="fas {% if recommendation.priority == 'high' %}fa-exclamation-triangle{% elseif recommendation.priority == 'medium' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-medium text-gray-900 dark:text-white">{{ recommendation.title }}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ recommendation.description }}</p>
+                    </div>
+                    <a href="{{ recommendation.actionUrl|default('#') }}" class="px-4 py-2 rounded-lg text-sm font-medium {% if recommendation.priority == 'high' %}bg-red-500 text-white hover:bg-red-600{% elseif recommendation.priority == 'medium' %}bg-amber-500 text-white hover:bg-amber-600{% else %}bg-blue-500 text-white hover:bg-blue-600{% endif %} transition-colors">
+                        {{ recommendation.actionText|default('Agir') }}
+                    </a>
+                </div>
+                {% else %}
+                    <div class="flex items-start gap-4 p-4 border border-green-200 rounded-xl bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+                        <div class="flex items-center justify-center w-10 h-10 text-green-500 bg-green-100 rounded-full dark:bg-green-900/30">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900 dark:text-white">Tout va bien !</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Vous êtes en bonne voie pour atteindre votre objectif. Continuez comme ça !</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/nutrition-goals.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
+  <!-- Logo Icon - Stylized Person with Leaves -->
+  <g transform="translate(50, 20)">
+    <!-- Left Dark Blue Leaf -->
+    <path d="M10 60 C5 80, 15 110, 35 130 C40 100, 35 70, 25 50 C20 45, 15 50, 10 60 Z" fill="#002F5C"/>
+    <path d="M25 50 C30 70, 32 100, 35 130 L32 128 C30 100, 28 70, 23 52 Z" fill="#001c37"/>
+    
+    <!-- Right Dark Blue Leaf -->
+    <path d="M90 55 C95 75, 85 105, 65 125 C60 95, 65 65, 75 45 C80 40, 85 45, 90 55 Z" fill="#002F5C"/>
+    <path d="M75 45 C70 65, 68 95, 65 125 L68 123 C70 95, 72 65, 77 47 Z" fill="#001c37"/>
+    
+    <!-- Center Teal Person/Figure -->
+    <ellipse cx="50" cy="35" rx="12" ry="12" fill="#00DBB6"/>
+    <path d="M35 55 C30 75, 35 100, 45 120 L50 130 L55 120 C65 100, 70 75, 65 55 C60 45, 55 48, 50 50 C45 48, 40 45, 35 55 Z" fill="#00A790"/>
+    
+    <!-- Small Accent Leaf -->
+    <path d="M75 85 C85 80, 95 85, 100 95 C90 100, 80 95, 75 85 Z" fill="#00DBB6"/>
+  </g>
+  
+  <!-- WELLORA Text -->
+  <text x="100" y="180" font-family="Montserrat, Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#000000">
+    WELLORA
+  </text>
+  
+  <!-- Tagline -->
+  <text x="100" y="205" font-family="Open Sans, Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" fill="#666666" letter-spacing="2">
+    Live well, every day
+  </text>
+</svg>

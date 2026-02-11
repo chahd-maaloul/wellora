@@ -1,0 +1,360 @@
+/**
+ * Nutrition Module Styles
+ * WellCare Connect - Medical Nutrition Dashboard
+ */
+
+/* Nutrition-specific animations */
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 167, 144, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(0, 167, 144, 0); }
+}
+
+@keyframes food-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes calorie-counter {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Nutrition color palette */
+.nutrition-colors {
+    --nutrition-calories: #00A790;
+    --nutrition-proteins: #f59e0b;
+    --nutrition-carbs: #22c55e;
+    --nutrition-fats: #a855f7;
+    --nutrition-water: #3b82f6;
+    --nutrition-fiber: #84cc16;
+    --nutrition-sugar: #ec4899;
+    --nutrition-sodium: #6366f1;
+}
+
+/* Meal type colors */
+.meal-breakfast {
+    @apply border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800;
+}
+
+.meal-lunch {
+    @apply border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800;
+}
+
+.meal-dinner {
+    @apply border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800;
+}
+
+.meal-snacks {
+    @apply border-pink-200 bg-pink-50 dark:bg-pink-900/20 dark:border-pink-800;
+}
+
+/* Macro indicator styles */
+.macro-protein {
+    @apply bg-amber-500;
+}
+
+.macro-carbs {
+    @apply bg-green-500;
+}
+
+.macro-fats {
+    @apply bg-purple-500;
+}
+
+.macro-fiber {
+    @apply bg-lime-500;
+}
+
+/* Nutrition card hover effects */
+.nutrition-card {
+    @apply transition-all duration-300 ease-in-out;
+}
+
+.nutrition-card:hover {
+    @apply transform -translate-y-1 shadow-lg;
+}
+
+/* Food item hover animation */
+.food-item {
+    @apply transition-all duration-200;
+}
+
+.food-item:hover {
+    @apply bg-gray-50 dark:bg-gray-700/50;
+}
+
+/* Progress circle styles */
+.progress-circle {
+    @apply relative inline-flex items-center justify-center;
+}
+
+.progress-circle svg {
+    @apply transform -rotate-90;
+}
+
+.progress-circle svg circle {
+    @apply transition-all duration-500 ease-out;
+}
+
+/* Water tracker styles */
+.water-glass {
+    @apply flex items-center justify-center w-8 h-8 transition-all duration-200 border-2 border-white rounded-full dark:border-gray-800;
+}
+
+.water-glass.filled {
+    @apply text-white bg-blue-500;
+}
+
+.water-glass.empty {
+    @apply text-gray-400 bg-gray-100 dark:bg-gray-700;
+}
+
+/* Macro slider styles */
+.macro-slider {
+    @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700;
+}
+
+.macro-slider::-webkit-slider-thumb {
+    @apply w-5 h-5 transition-transform duration-200 rounded-full appearance-none cursor-pointer bg-wellcare-500;
+}
+
+.macro-slider::-webkit-slider-thumb:hover {
+    @apply transform scale-110;
+}
+
+/* Food search dropdown */
+.food-search-results {
+    @apply absolute z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl dark:bg-gray-800 dark:border-gray-700 max-h-64;
+}
+
+.food-search-item {
+    @apply flex items-center justify-between p-3 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+/* Barcode scanner overlay */
+.scanner-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/80;
+}
+
+.scanner-frame {
+    @apply relative w-64 h-40 border-2 rounded-lg border-wellcare-500;
+}
+
+.scanner-frame::before {
+    content: '';
+    @apply absolute inset-0 border-2 rounded-lg border-white/50;
+}
+
+/* Recipe card styles */
+.recipe-card {
+    @apply overflow-hidden transition-all duration-300 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700;
+}
+
+.recipe-card:hover {
+    @apply shadow-lg transform scale-[1.02];
+}
+
+.recipe-card-image {
+    @apply object-cover h-48 transition-transform duration-300;
+}
+
+.recipe-card:hover .recipe-card-image {
+    @apply scale-105;
+}
+
+/* Meal planner grid */
+.meal-planner-cell {
+    @apply min-h-[120px] bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3 transition-all duration-200;
+}
+
+.meal-planner-cell:hover {
+    @apply shadow-md;
+}
+
+.meal-planner-cell.drag-over {
+    @apply border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20;
+}
+
+/* Goals progress indicator */
+.goal-progress {
+    @apply w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700;
+}
+
+.goal-progress-bar {
+    @apply h-2 transition-all duration-500 rounded-full;
+}
+
+/* Nutrition alerts */
+.nutrition-alert {
+    @apply p-3 transition-colors border rounded-lg;
+}
+
+.nutrition-alert.warning {
+    @apply bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800;
+}
+
+.nutrition-alert.danger {
+    @apply border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800;
+}
+
+.nutrition-alert.success {
+    @apply border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800;
+}
+
+/* Badge styles for achievements */
+.nutrition-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full;
+}
+
+.nutrition-badge.gold {
+    @apply text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300;
+}
+
+.nutrition-badge.silver {
+    @apply text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-300;
+}
+
+.nutrition-badge.bronze {
+    @apply text-orange-700 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-300;
+}
+
+/* Streak counter */
+.streak-counter {
+    @apply inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full;
+}
+
+.streak-counter.active {
+    @apply text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400;
+}
+
+/* Nutrition icons */
+.nutrition-icon {
+    @apply flex items-center justify-center w-10 h-10 rounded-full;
+}
+
+.nutrition-icon.calories {
+    @apply bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-500;
+}
+
+.nutrition-icon.proteins {
+    @apply bg-amber-100 dark:bg-amber-900/30 text-amber-500;
+}
+
+.nutrition-icon.carbs {
+    @apply text-green-500 bg-green-100 dark:bg-green-900/30;
+}
+
+.nutrition-icon.fats {
+    @apply text-purple-500 bg-purple-100 dark:bg-purple-900/30;
+}
+
+/* Food diary timeline */
+.diary-timeline {
+    @apply relative pl-8 border-l-2 border-gray-200 dark:border-gray-700;
+}
+
+.diary-entry {
+    @apply relative mb-6;
+}
+
+.diary-entry::before {
+    content: '';
+    @apply absolute -left-[37px] top-0 w-4 h-4 rounded-full bg-wellcare-500 border-4 border-white dark:border-gray-800;
+}
+
+/* Quick add button */
+.quick-add-btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-white transition-colors rounded-lg shadow-sm bg-wellcare-500 hover:bg-wellcare-600;
+}
+
+/* Nutrition dashboard stats */
+.stat-card {
+    @apply p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700;
+}
+
+.stat-value {
+    @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.stat-label {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+/* Voice input indicator */
+.voice-input-active {
+    @apply text-red-500 animate-pulse;
+}
+
+/* Dark mode nutrition specific */
+.dark .nutrition-card:hover,
+.dark .recipe-card:hover {
+    @apply bg-gray-700;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+    .nutrition-stats-grid {
+        @apply grid-cols-2;
+    }
+    
+    .meal-planner-cell {
+        @apply min-h-[100px];
+    }
+    
+    .water-glass {
+        @apply w-6 h-6;
+    }
+}
+
+/* Print styles for nutrition reports */
+@media print {
+    .nutrition-card,
+    .recipe-card,
+    .meal-planner-cell {
+        @apply border shadow-none;
+    }
+    
+    .no-print {
+        @apply hidden;
+    }
+}
+
+/* Accessibility styles for nutrition */
+.nutrition-focus:focus {
+    @apply outline-none ring-2 ring-wellcare-500 ring-offset-2;
+}
+
+/* Loading states */
+.nutrition-loading {
+    @apply bg-gray-200 animate-pulse dark:bg-gray-700;
+}
+
+/* Tooltip styles for nutrition info */
+.nutrition-tooltip {
+    @apply absolute z-50 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg;
+}
+
+/* Food group colors */
+.food-group-fruits {
+    @apply text-green-600 bg-green-100 dark:bg-green-900/30;
+}
+
+.food-group-vegetables {
+    @apply text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30;
+}
+
+.food-group-proteins {
+    @apply text-amber-600 bg-amber-100 dark:bg-amber-900/30;
+}
+
+.food-group-dairy {
+    @apply text-blue-600 bg-blue-100 dark:bg-blue-900/30;
+}
+
+.food-group-grains {
+    @apply text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30;
+}
+
+.food-group-fats {
+    @apply text-purple-600 bg-purple-100 dark:bg-purple-900/30;
+}

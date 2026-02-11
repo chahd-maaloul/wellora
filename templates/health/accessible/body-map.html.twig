@@ -1,0 +1,386 @@
+﻿{# templates/health/accessible/body-map.html.twig #}
+{# Accessible Body Map for Symptom Tracking - WCAG 2.1 AA Compliant #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Carte Corporelle Interactive'|trans }} - {{ 'Localisation des Symptômes'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/health/accessible/journal-entry" class="breadcrumb-link">{{ 'Nouvelle entrée'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Carte Corporelle'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full" x-data="bodyMap()" x-init="initBodyMap()">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="text-xl fa-solid fa-child text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Carte Corporelle Interactive'|trans }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Sélectionnez la zone du corps où vous ressentez des symptômes'|trans }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button @click="clearSelection()" class="btn-secondary">
+                    <i class="mr-2 fa-solid fa-rotate-left"></i>
+                    {{ 'Réinitialiser'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {# Body Map Section #}
+        <div class="lg:col-span-2">
+            <div class="p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                {# Accessibility Controls #}
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        {{ 'Sélectionnez une zone'|trans }}
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <button @click="toggleHighContrast()" 
+                                class="p-2 transition-colors rounded-lg"
+                                :class="highContrast ? 'bg-wellcare-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'"
+                                :title="'Mode contraste élevé'|trans">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button @click="toggleLabels()" 
+                                class="p-2 transition-colors rounded-lg"
+                                :class="showLabels ? 'bg-wellcare-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'"
+                                :title="'Afficher les labels'|trans">
+                            <i class="fa-solid fa-font"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {# Interactive Body Map #}
+                <div class="relative" role="img" aria-label="Carte interactive du corps humain">
+                    {# SVG Body Map #}
+                    <svg viewBox="0 0 200 400" class="w-full h-auto max-h-[500px] mx-auto" 
+                         :class="{ 'invert-colors': highContrast }">
+                        {# Head #}
+                        <ellipse cx="100" cy="35" rx="25" ry="30" 
+                                 class="transition-all duration-200 cursor-pointer body-part"
+                                 :class="selectedParts.includes('head') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                                 @click="togglePart('head')"
+                                 @focus="hoveredPart = 'head'"
+                                 @blur="hoveredPart = null"
+                                 tabindex="0"
+                                 role="button"
+                                 :aria-pressed="selectedParts.includes('head')"
+                                 aria-label="Tête"/>
+                        
+                        {# Neck #}
+                        <rect x="90" y="65" width="20" height="20" rx="5"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('neck') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('neck')"
+                              @focus="hoveredPart = 'neck'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('neck')"
+                              aria-label="Cou"/>
+                        
+                        {# Torso #}
+                        <rect x="60" y="85" width="80" height="120" rx="10"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('torso') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('torso')"
+                              @focus="hoveredPart = 'torso'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('torso')"
+                              aria-label="Torse"/>
+                        
+                        {# Left Arm #}
+                        <rect x="25" y="90" width="30" height="100" rx="8"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('left-arm') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('left-arm')"
+                              @focus="hoveredPart = 'left-arm'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('left-arm')"
+                              aria-label="Bras gauche"/>
+                        
+                        {# Right Arm #}
+                        <rect x="145" y="90" width="30" height="100" rx="8"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('right-arm') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('right-arm')"
+                              @focus="hoveredPart = 'right-arm'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('right-arm')"
+                              aria-label="Bras droit"/>
+                        
+                        {# Left Hand #}
+                        <rect x="20" y="195" width="40" height="35" rx="5"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('left-hand') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('left-hand')"
+                              @focus="hoveredPart = 'left-hand'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('left-hand')"
+                              aria-label="Main gauche"/>
+                        
+                        {# Right Hand #}
+                        <rect x="140" y="195" width="40" height="35" rx="5"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('right-hand') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('right-hand')"
+                              @focus="hoveredPart = 'right-hand'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('right-hand')"
+                              aria-label="Main droite"/>
+                        
+                        {# Left Leg #}
+                        <rect x="65" y="210" width="30" height="110" rx="8"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('left-leg') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('left-leg')"
+                              @focus="hoveredPart = 'left-leg'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('left-leg')"
+                              aria-label="Jambe gauche"/>
+                        
+                        {# Right Leg #}
+                        <rect x="105" y="210" width="30" height="110" rx="8"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('right-leg') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('right-leg')"
+                              @focus="hoveredPart = 'right-leg'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('right-leg')"
+                              aria-label="Jambe droite"/>
+                        
+                        {# Left Foot #}
+                        <rect x="60" y="325" width="40" height="25" rx="5"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('left-foot') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('left-foot')"
+                              @focus="hoveredPart = 'left-foot'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('left-foot')"
+                              aria-label="Pied gauche"/>
+                        
+                        {# Right Foot #}
+                        <rect x="100" y="325" width="40" height="25" rx="5"
+                              class="transition-all duration-200 cursor-pointer body-part"
+                              :class="selectedParts.includes('right-foot') ? 'fill-wellcare-500 stroke-wellcare-700' : 'fill-gray-300 dark:fill-gray-700 stroke-gray-400'"
+                              @click="togglePart('right-foot')"
+                              @focus="hoveredPart = 'right-foot'"
+                              @blur="hoveredPart = null"
+                              tabindex="0"
+                              role="button"
+                              :aria-pressed="selectedParts.includes('right-foot')"
+                              aria-label="Pied droit"/>
+                    </svg>
+
+                    {# Keyboard Navigation Instructions #}
+                    <p class="mt-4 text-xs text-center text-gray-500 dark:text-gray-400">
+                        {{ 'Utilisez les touches Tab pour naviguer et Entrée pour sélectionner'|trans }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {# Selected Parts & Symptoms Section #}
+        <div class="lg:col-span-1">
+            <div class="sticky p-6 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800 top-24">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                    {{ 'Zones sélectionnées'|trans }}
+                    <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300 rounded-full"
+                          x-text="selectedParts.length"></span>
+                </h2>
+
+                {# Selected Parts List #}
+                <div class="mb-6 space-y-2">
+                    <template x-if="selectedParts.length === 0">
+                        <p class="py-4 text-sm text-center text-gray-500 dark:text-gray-400">
+                            {{ 'Aucune zone sélectionnée'|trans }}
+                        </p>
+                    </template>
+                    <template x-for="part in selectedParts" :key="part">
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <span class="text-sm font-medium text-gray-900 dark:text-white" 
+                                  x-text="getPartLabel(part)"></span>
+                            <button @click="togglePart(part)" 
+                                    class="p-1 text-gray-400 transition-colors hover:text-red-500"
+                                    :aria-label="'Supprimer ' + getPartLabel(part)">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                {# Symptoms Description #}
+                <div class="space-y-4">
+                    <div>
+                        <label for="symptom-description" class="flex items-center gap-2 label">
+                            <i class="text-gray-400 fa-solid fa-comment-medical"></i>
+                            {{ 'Décrivez vos symptômes'|trans }}
+                        </label>
+                        <textarea 
+                            id="symptom-description"
+                            x-model="symptomDescription"
+                            class="w-full h-32 resize-none input"
+                            :placeholder="'例如：头痛持续了2天...'|trans"
+                            aria-describedby="symptom-help"></textarea>
+                        <p id="symptom-help" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {{ 'Plus vous donnez de détails, mieux nous pouvons vous aider'|trans }}
+                        </p>
+                    </div>
+
+                    {# Pain Level #}
+                    <div>
+                        <label class="flex items-center gap-2 label">
+                            <i class="text-gray-400 fa-solid fa-scale-balanced"></i>
+                            {{ 'Niveau de douleur'|trans }}
+                        </label>
+                        <div class="flex items-center gap-2 mt-2">
+                            <template x-for="level in 5" :key="level">
+                                <button @click="painLevel = level"
+                                        class="flex-1 p-3 transition-all border-2 rounded-lg"
+                                        :class="painLevel === level ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'"
+                                        :aria-label="'Niveau de douleur ' + level + ' sur 5'"
+                                        :aria-pressed="painLevel === level">
+                                    <span class="text-lg" x-text="level"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    {# Submit Button #}
+                    <button @click="saveSelection()" 
+                            :disabled="selectedParts.length === 0"
+                            class="w-full btn-primary"
+                            :class="selectedParts.length === 0 ? 'opacity-50 cursor-not-allowed' : ''">
+                        <i class="mr-2 fa-solid fa-check"></i>
+                        {{ 'Valider la sélection'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('bodyMap', () => ({
+        selectedParts: [],
+        hoveredPart: null,
+        symptomDescription: '',
+        painLevel: 0,
+        highContrast: false,
+        showLabels: false,
+
+        partLabels: {
+            'head': 'Tête',
+            'neck': 'Cou',
+            'torso': 'Torse',
+            'left-arm': 'Bras gauche',
+            'right-arm': 'Bras droit',
+            'left-hand': 'Main gauche',
+            'right-hand': 'Main droite',
+            'left-leg': 'Jambe gauche',
+            'right-leg': 'Jambe droite',
+            'left-foot': 'Pied gauche',
+            'right-foot': 'Pied droit'
+        },
+
+        initBodyMap() {
+            // Initialize with empty selection
+        },
+
+        togglePart(part) {
+            const index = this.selectedParts.indexOf(part);
+            if (index > -1) {
+                this.selectedParts.splice(index, 1);
+            } else {
+                this.selectedParts.push(part);
+            }
+        },
+
+        getPartLabel(part) {
+            return this.partLabels[part] || part;
+        },
+
+        clearSelection() {
+            this.selectedParts = [];
+            this.symptomDescription = '';
+            this.painLevel = 0;
+        },
+
+        toggleHighContrast() {
+            this.highContrast = !this.highContrast;
+        },
+
+        toggleLabels() {
+            this.showLabels = !this.showLabels;
+        },
+
+        saveSelection() {
+            if (this.selectedParts.length === 0) return;
+
+            // Store selection in sessionStorage for the journal entry page
+            sessionStorage.setItem('bodyMapSelectedParts', JSON.stringify(this.selectedParts));
+            sessionStorage.setItem('bodyMapSymptomDescription', this.symptomDescription);
+            sessionStorage.setItem('bodyMapPainLevel', this.painLevel);
+
+            // Navigate to journal entry
+            window.location.href = '/health/accessible/journal-entry?from=body-map';
+        }
+    }));
+});
+</script>
+{% endblock %}

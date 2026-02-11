@@ -1,0 +1,117 @@
+{# templates/health/records.html.twig #}
+{# Medical Records Page - Patient Health History #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Historique Médical'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Historique Médical'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="text-xl fa-solid fa-file-medical text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Historique Médical'|trans }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Tous vos consultations et documents médicaux'|trans }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button class="btn-secondary">
+                    <i class="mr-2 fa-solid fa-download"></i>
+                    {{ 'Exporter'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Records List #}
+    <div class="space-y-4">
+        {% for record in records %}
+            <div class="p-5 transition-shadow bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800 hover:shadow-lg">
+                <div class="flex items-start gap-4">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl 
+                        {% if record.type == 'consultation' %}bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400
+                        {% elseif record.type == 'lab_result' %}bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400
+                        {% else %}bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400{% endif %}">
+                        <i class="fa-solid 
+                            {% if record.type == 'consultation' %}fa-user-doctor
+                            {% elseif record.type == 'lab_result' %}fa-flask
+                            {% else %}fa-file-medical{% endif %} text-xl"></i>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">
+                                    {{ record.title }}
+                                </h3>
+                                {% if record.doctor is defined and record.doctor %}
+                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                        <i class="mr-1 fa-solid fa-user-graduate"></i>
+                                        {{ record.doctor }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ record.date|date('d/m/Y') }}
+                            </span>
+                        </div>
+                        
+                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            {{ record.summary }}
+                        </p>
+                        
+                        <div class="flex items-center gap-2 mt-3">
+                            <button class="text-xs text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">
+                                <i class="mr-1 fa-solid fa-eye"></i>
+                                {{ 'Voir détails'|trans }}
+                            </button>
+                            <span class="text-gray-300 dark:text-gray-700">|</span>
+                            <button class="text-xs text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300">
+                                <i class="mr-1 fa-solid fa-download"></i>
+                                {{ 'Télécharger'|trans }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="p-8 text-center bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <i class="mb-4 text-4xl text-gray-300 fa-solid fa-folder-open dark:text-gray-700"></i>
+                <p class="text-gray-500 dark:text-gray-400">
+                    {{ 'Aucun historique médical trouvé'|trans }}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

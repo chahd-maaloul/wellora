@@ -1,0 +1,201 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Trail Usage Analytics - WellCare Connect Admin{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-analytics-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="py-4 mb-6 -mx-4 -mt-4 bg-gradient-to-r from-blue-600 to-indigo-600">
+    <div class="px-4 mx-auto">
+        <div class="flex flex-col items-start justify-between md:flex-row md:items-center">
+            <div>
+                <h1 class="mb-1 text-xl font-bold text-white font-display">
+                    <i class="mr-2 fa-solid fa-users"></i>Trail Usage Analytics
+                </h1>
+                <p class="text-sm text-white/80">Track trail engagement and user activity patterns</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <select class="px-4 py-2 text-sm text-white border rounded-lg bg-white/20 border-white/30 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/50">
+                    <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
+                    <option>Last 90 Days</option>
+                    <option>This Year</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="px-4 mx-auto">
+    <!-- Usage Statistics -->
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">12,847</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-lg dark:bg-blue-900/30">
+                    <i class="text-xl text-blue-600 fa-solid fa-users"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-green-600">
+                <i class="fa-solid fa-arrow-up"></i> +12.5% from last month
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Trail Users</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">8,432</p>
+                </div>
+                <div class="p-3 bg-green-100 rounded-lg dark:bg-green-900/30">
+                    <i class="text-xl text-green-600 fa-solid fa-person-hiking"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-green-600">
+                <i class="fa-solid fa-arrow-up"></i> +8.3% from last month
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Completions</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">45,231</p>
+                </div>
+                <div class="p-3 bg-purple-100 rounded-lg dark:bg-purple-900/30">
+                    <i class="text-xl text-purple-600 fa-solid fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-green-600">
+                <i class="fa-solid fa-arrow-up"></i> +15.7% from last month
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg. Session Duration</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">24 min</p>
+                </div>
+                <div class="p-3 bg-orange-100 rounded-lg dark:bg-orange-900/30">
+                    <i class="text-xl text-orange-600 fa-solid fa-clock"></i>
+                </div>
+            </div>
+            <div class="mt-2 text-sm text-green-600">
+                <i class="fa-solid fa-arrow-up"></i> +3.2 min from last month
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Chart -->
+    <div class="p-6 mb-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Daily Active Users</h2>
+        <div class="flex items-center justify-center h-64 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
+            <div class="text-center">
+                <i class="mb-2 text-4xl text-gray-400 fa-solid fa-chart-area"></i>
+                <p class="text-gray-500 dark:text-gray-400">Chart visualization placeholder</p>
+                <p class="text-sm text-gray-400">Active users over time</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trail Popularity -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 fa-solid fa-fire"></i>Most Popular Trails
+            </h2>
+            <div class="space-y-3">
+                {% for i in 1..5 %}
+                <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center w-8 h-8 mr-3 font-bold text-white rounded-full bg-wellcare-500">{{ i }}</div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">Forest Trail {{ i }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">2,{{ i }}45 completions</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="flex items-center text-yellow-500">
+                            <i class="fa-solid fa-star"></i>
+                            <span class="ml-1 text-sm text-gray-600 dark:text-gray-300">4.{{ i }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 fa-solid fa-clock"></i>Peak Usage Times
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Morning (6AM - 12PM)</span>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">35%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div class="bg-wellcare-500 h-2.5 rounded-full" style="width: 35%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Afternoon (12PM - 6PM)</span>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">45%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div class="bg-wellcare-light-500 h-2.5 rounded-full" style="width: 45%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Evening (6PM - 12AM)</span>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">20%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div class="bg-indigo-500 h-2.5 rounded-full" style="width: 20%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Demographics -->
+    <div class="p-6 mt-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            <i class="mr-2 fa-solid fa-users-rectangle"></i>User Demographics
+        </h2>
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 mb-3 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                    <i class="text-2xl text-blue-600 fa-solid fa-child"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">Age Distribution</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">18-24: 15% | 25-34: 35% | 35-44: 28% | 45+: 22%</p>
+            </div>
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 mb-3 bg-green-100 rounded-full dark:bg-green-900/30">
+                    <i class="text-2xl text-green-600 fa-solid fa-venus-mars"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">Gender</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Male: 52% | Female: 46% | Other: 2%</p>
+            </div>
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 mb-3 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                    <i class="text-2xl text-purple-600 fa-solid fa-mobile-screen"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">Device Usage</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Mobile: 62% | Desktop: 28% | Tablet: 10%</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

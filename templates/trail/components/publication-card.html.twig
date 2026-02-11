@@ -1,0 +1,66 @@
+<div class="pb-6 border-b border-gray-100 dark:border-gray-700 last:border-0 last:pb-0">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+            <img src="https://ui-avatars.com/api/?name={{ user }}&background=00A790&color=fff" alt="{{ user }}" class="w-10 h-10 rounded-full">
+            <div>
+                <p class="font-medium text-gray-900 dark:text-white">{{ user }}</p>
+                <p class="text-sm text-gray-500">{{ date }}</p>
+            </div>
+        </div>
+        <button class="p-2 text-gray-400 transition hover:text-gray-600">
+            <i class="fa-solid fa-ellipsis"></i>
+        </button>
+    </div>
+    
+    <!-- Photos -->
+    {% if photos > 0 %}
+    <div class="mb-3">
+        <div class="grid gap-1 {% if photos == 1 %}grid-cols-1{% else %}grid-cols-{% if photos == 2 %}2{% else %}3{% endif %}{% endif %}">
+            <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop" alt="Trail photo" class="object-cover w-full transition rounded-lg cursor-pointer aspect-square hover:opacity-90">
+            {% if photos > 1 %}
+            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&h=300&fit=crop" alt="Trail photo" class="object-cover w-full transition rounded-lg cursor-pointer aspect-square hover:opacity-90">
+            {% endif %}
+            {% if photos > 2 %}
+            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop" alt="Trail photo" class="object-cover w-full transition rounded-lg cursor-pointer aspect-square hover:opacity-90">
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Ratings -->
+    <div class="flex items-center gap-4 mb-2">
+        <div class="flex items-center">
+            <i class="mr-1 fa-solid fa-star text-amber-400"></i>
+            <span class="mr-1 font-medium text-gray-900 dark:text-white">{{ rating }}</span>
+            <span class="text-sm text-gray-500">Ambiance</span>
+        </div>
+        <div class="flex items-center">
+            <i class="mr-1 text-green-500 fa-solid fa-shield-halved"></i>
+            <span class="mr-1 font-medium text-gray-900 dark:text-white">{{ safetyRating }}</span>
+            <span class="text-sm text-gray-500">Safety</span>
+        </div>
+    </div>
+    
+    <!-- Comment -->
+    <p class="mb-3 text-gray-600 dark:text-gray-300">{{ comment }}</p>
+    
+    <!-- Actions -->
+    <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+        <button class="flex items-center gap-2 text-sm text-gray-500 transition hover:text-red-500">
+            <i class="fa-regular fa-heart"></i>
+            <span>Like</span>
+        </button>
+        <button class="flex items-center gap-2 text-sm text-gray-500 transition hover:text-wellcare-500">
+            <i class="fa-regular fa-comment"></i>
+            <span>Comment</span>
+        </button>
+        <button class="flex items-center gap-2 text-sm text-gray-500 transition hover:text-wellcare-500">
+            <i class="fa-solid fa-share"></i>
+            <span>Share</span>
+        </button>
+        <button class="flex items-center gap-2 ml-auto text-sm text-gray-500 transition hover:text-amber-500">
+            <i class="fa-regular fa-flag"></i>
+        </button>
+    </div>
+</div>

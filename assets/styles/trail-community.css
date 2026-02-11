@@ -1,0 +1,428 @@
+/**
+ * Trail Community Module - Styles
+ * Reviews, Discussions, Groups, Profiles, Safety Tools
+ */
+
+/* ===== Reviews Page ===== */
+
+/* Rating Stars Animation */
+.rating-star {
+    transition: all 0.2s ease;
+}
+
+.rating-star:hover {
+    transform: scale(1.15);
+}
+
+/* Review Cards */
+.review-card {
+    transition: all 0.3s ease;
+}
+
+.review-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Verified Badge */
+.verified-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Helpful Button */
+.helpful-btn {
+    transition: all 0.2s ease;
+}
+
+.helpful-btn:hover {
+    transform: scale(1.05);
+}
+
+.helpful-btn.active {
+    background-color: rgba(0, 167, 144, 0.1);
+    color: #00A790;
+}
+
+/* Photo Gallery */
+.photo-gallery {
+    scrollbar-width: thin;
+    scrollbar-color: #00A790 transparent;
+}
+
+.photo-gallery::-webkit-scrollbar {
+    height: 6px;
+}
+
+.photo-gallery::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.photo-gallery::-webkit-scrollbar-thumb {
+    background-color: #00A790;
+    border-radius: 3px;
+}
+
+/* ===== Write Review Wizard ===== */
+
+/* Progress Steps */
+.wizard-step {
+    transition: all 0.3s ease;
+}
+
+.wizard-step.active {
+    background-color: #00A790;
+    color: white;
+}
+
+.wizard-step.completed {
+    background-color: #00DBB6;
+    color: white;
+}
+
+/* Rating Preview */
+.rating-preview {
+    animation: starPop 0.3s ease;
+}
+
+@keyframes starPop {
+    0% {
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Photo Dropzone */
+.dropzone {
+    transition: all 0.3s ease;
+}
+
+.dropzone.dragover {
+    border-color: #00A790;
+    background-color: rgba(0, 167, 144, 0.05);
+}
+
+.dropzone-preview {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ===== Discussions Forum ===== */
+
+/* Topic List */
+.topic-item {
+    transition: all 0.2s ease;
+}
+
+.topic-item:hover {
+    background-color: rgba(0, 167, 144, 0.02);
+}
+
+.topic-item.pinned {
+    border-left: 3px solid #00A790;
+}
+
+/* Category Badge */
+.category-badge {
+    transition: all 0.2s ease;
+}
+
+.category-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Tag Pills */
+.tag-pill {
+    transition: all 0.2s ease;
+}
+
+.tag-pill:hover {
+    background-color: #00A790;
+    color: white;
+}
+
+/* ===== Groups ===== */
+
+/* Group Cards */
+.group-card {
+    transition: all 0.3s ease;
+}
+
+.group-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Event Cards */
+.event-card {
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    transform: translateX(4px);
+}
+
+/* Member Avatars */
+.member-avatar-stack {
+    transition: all 0.2s ease;
+}
+
+.member-avatar-stack:hover {
+    transform: translateX(-4px);
+}
+
+/* ===== User Profile ===== */
+
+/* Profile Header */
+.profile-cover {
+    transition: all 0.3s ease;
+}
+
+/* Avatar Ring */
+.avatar-ring {
+    transition: all 0.3s ease;
+}
+
+.avatar-ring:hover {
+    box-shadow: 0 0 0 4px rgba(0, 167, 144, 0.3);
+}
+
+/* Stats Counter */
+.stat-counter {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Level Progress */
+.level-progress {
+    background: linear-gradient(90deg, #00A790 0%, #00DBB6 100%);
+}
+
+/* Badges Grid */
+.badge-item {
+    transition: all 0.3s ease;
+}
+
+.badge-item:hover {
+    transform: scale(1.1);
+}
+
+.badge-item:hover .badge-glow {
+    opacity: 1;
+}
+
+.badge-glow {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Tab Navigation */
+.profile-tab {
+    position: relative;
+}
+
+.profile-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #00A790;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.profile-tab.active::after {
+    transform: scaleX(1);
+}
+
+/* ===== Activity Feed ===== */
+
+/* Activity Card */
+.activity-card {
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Action Buttons */
+.action-btn {
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+.action-btn.liked {
+    color: #00A790;
+}
+
+.action-btn.liked svg {
+    fill: currentColor;
+}
+
+/* Activity Type Icons */
+.activity-icon {
+    animation: activityPop 0.3s ease;
+}
+
+@keyframes activityPop {
+    0% {
+        transform: scale(0.8);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ===== Safety Tools ===== */
+
+/* Emergency Banner */
+.emergency-banner {
+    animation: emergencyPulse 1.5s infinite;
+}
+
+@keyframes emergencyPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(220, 38, 38, 0);
+    }
+}
+
+/* SOS Button */
+.sos-button {
+    animation: sosPulse 2s infinite;
+}
+
+@keyframes sosPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 20px rgba(220, 38, 38, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+}
+
+/* Weather Widget */
+.weather-icon {
+    animation: weatherFloat 3s ease-in-out infinite;
+}
+
+@keyframes weatherFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Condition Indicators */
+.condition-open {
+    animation: conditionPulse 2s infinite;
+}
+
+@keyframes conditionPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* ===== Common Components ===== */
+
+/* Cards */
+.community-card {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #008674 0%, #00A790 100%);
+    box-shadow: 0 4px 20px rgba(0, 167, 144, 0.4);
+}
+
+/* Form Inputs */
+.community-input:focus {
+    border-color: #00A790;
+    box-shadow: 0 0 0 3px rgba(0, 167, 144, 0.1);
+}
+
+/* Selection */
+::selection {
+    background-color: rgba(0, 167, 144, 0.3);
+    color: inherit;
+}
+
+/* ===== Responsive Adjustments ===== */
+
+@media (max-width: 768px) {
+    .review-card,
+    .activity-card,
+    .group-card {
+        transform: none !important;
+    }
+    
+    .action-btn:hover {
+        transform: none;
+    }
+    
+    .badge-item:hover {
+        transform: none;
+    }
+}
+
+/* ===== Dark Mode ===== */
+
+.dark .community-card {
+    background-color: #1F2937;
+    border-color: #374151;
+}
+
+.dark .community-input {
+    background-color: #374151;
+    border-color: #4B5563;
+}
+
+.dark .community-input:focus {
+    background-color: #374151;
+}
+
+/* ===== Print Styles ===== */
+
+@media print {
+    .sos-button,
+    .action-btn,
+    .filter-panel {
+        display: none !important;
+    }
+}

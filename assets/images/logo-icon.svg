@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Logo Icon Only - Stylized Person with Leaves -->
+  <!-- Left Dark Blue Leaf -->
+  <path d="M15 50 C10 70, 20 95, 40 110 C45 85, 40 60, 30 45 C25 40, 20 45, 15 50 Z" fill="#002F5C"/>
+  <path d="M30 45 C35 60, 37 85, 40 110 L37 108 C35 85, 33 60, 28 47 Z" fill="#001c37"/>
+  
+  <!-- Right Dark Blue Leaf -->
+  <path d="M85 48 C90 65, 80 90, 60 105 C55 80, 60 55, 70 40 C75 35, 80 40, 85 48 Z" fill="#002F5C"/>
+  <path d="M70 40 C65 55, 63 80, 60 105 L63 103 C65 80, 67 55, 72 42 Z" fill="#001c37"/>
+  
+  <!-- Center Teal Person/Figure -->
+  <ellipse cx="50" cy="30" rx="10" ry="10" fill="#00DBB6"/>
+  <path d="M38 48 C34 65, 38 85, 47 102 L50 110 L53 102 C62 85, 66 65, 62 48 C58 40, 54 42, 50 44 C46 42, 42 40, 38 48 Z" fill="#00A790"/>
+  
+  <!-- Small Accent Leaf -->
+  <path d="M70 70 C78 66, 86 70, 90 78 C82 82, 74 78, 70 70 Z" fill="#00DBB6"/>
+</svg>

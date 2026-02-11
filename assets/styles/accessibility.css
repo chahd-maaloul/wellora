@@ -1,0 +1,656 @@
+/**
+ * Accessibility Styles - WCAG 2.1 AA Compliance
+ * WellCare Connect - Healthcare Application
+ * 
+ * Features:
+ * - High contrast mode support
+ * - Large text mode (up to 200%)
+ * - Color-blind friendly palettes
+ * - Reduced motion support
+ * - Focus indicators
+ * - Screen reader optimizations
+ */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+
+:root {
+  /* Standard color palette with WCAG AA compliant contrast ratios */
+  --a11y-text-primary: #1a1a1a;
+  --a11y-text-secondary: #4a4a4a;
+  --a11y-text-muted: #6b7280;
+  --a11y-bg-primary: #ffffff;
+  --a11y-bg-secondary: #f9fafb;
+  --a11y-border: #d1d5db;
+  
+  /* Medical color palette - color blind friendly */
+  --a11y-medical-normal: #22c55e;
+  --a11y-medical-caution: #f59e0b;
+  --a11y-medical-alert: #dc2626;
+  --a11y-medical-info: #2563eb;
+  
+  /* Focus indicators */
+  --a11y-focus-color: #00A790;
+  --a11y-focus-width: 3px;
+  --a11y-focus-offset: 2px;
+  
+  /* Font sizes */
+  --a11y-font-base: 1rem;
+  --a11y-font-scale: 1;
+}
+
+/* Dark mode support */
+.dark {
+  --a11y-text-primary: #f9fafb;
+  --a11y-text-secondary: #e5e7eb;
+  --a11y-text-muted: #9ca3af;
+  --a11y-bg-primary: #111827;
+  --a11y-bg-secondary: #1f2937;
+  --a11y-border: #374151;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   ============================================ */
+
+.a11y-high-contrast {
+  --a11y-text-primary: #000000;
+  --a11y-text-secondary: #000000;
+  --a11y-text-muted: #333333;
+  --a11y-bg-primary: #ffffff;
+  --a11y-bg-secondary: #ffffff;
+  --a11y-border: #000000;
+  --a11y-focus-color: #0000ff;
+  
+  /* Override medical colors for high contrast */
+  --a11y-medical-normal: #006400;
+  --a11y-medical-caution: #ff8c00;
+  --a11y-medical-alert: #8b0000;
+  --a11y-medical-info: #00008b;
+}
+
+.a11y-high-contrast.dark {
+  --a11y-text-primary: #ffffff;
+  --a11y-text-secondary: #ffffff;
+  --a11y-text-muted: #cccccc;
+  --a11y-bg-primary: #000000;
+  --a11y-bg-secondary: #000000;
+  --a11y-border: #ffffff;
+  --a11y-focus-color: #ffff00;
+  
+  --a11y-medical-normal: #00ff00;
+  --a11y-medical-caution: #ffff00;
+  --a11y-medical-alert: #ff0000;
+  --a11y-medical-info: #00ffff;
+}
+
+.a11y-high-contrast * {
+  border-color: var(--a11y-border) !important;
+}
+
+.a11y-high-contrast button,
+.a11y-high-contrast a,
+.a11y-high-contrast input,
+.a11y-high-contrast select,
+.a11y-high-contrast textarea {
+  border: 2px solid var(--a11y-border) !important;
+}
+
+.a11y-high-contrast .bg-wellcare-50,
+.a11y-high-contrast .bg-wellcare-100,
+.a11y-high-contrast .bg-emerald-50,
+.a11y-high-contrast .bg-amber-50,
+.a11y-high-contrast .bg-rose-50 {
+  background-color: var(--a11y-bg-primary) !important;
+  border: 2px solid currentColor !important;
+}
+
+/* ============================================
+   LARGE TEXT MODE (200% zoom support)
+   ============================================ */
+
+.a11y-large-text {
+  --a11y-font-scale: 1.25;
+  font-size: calc(var(--a11y-font-base) * 1.25);
+}
+
+.a11y-large-text h1 { font-size: 2.5rem !important; }
+.a11y-large-text h2 { font-size: 2rem !important; }
+.a11y-large-text h3 { font-size: 1.75rem !important; }
+.a11y-large-text h4 { font-size: 1.5rem !important; }
+.a11y-large-text h5 { font-size: 1.25rem !important; }
+.a11y-large-text h6 { font-size: 1.125rem !important; }
+.a11y-large-text p,
+.a11y-large-text span,
+.a11y-large-text a,
+.a11y-large-text button,
+.a11y-large-text input,
+.a11y-large-text select,
+.a11y-large-text textarea,
+.a11y-large-text label {
+  font-size: 1.125rem !important;
+  line-height: 1.6 !important;
+}
+
+.a11y-large-text .text-xs { font-size: 0.875rem !important; }
+.a11y-large-text .text-sm { font-size: 1rem !important; }
+.a11y-large-text .text-base { font-size: 1.125rem !important; }
+.a11y-large-text .text-lg { font-size: 1.375rem !important; }
+.a11y-large-text .text-xl { font-size: 1.625rem !important; }
+.a11y-large-text .text-2xl { font-size: 2rem !important; }
+.a11y-large-text .text-3xl { font-size: 2.5rem !important; }
+
+/* Ensure containers adapt to larger text */
+.a11y-large-text .max-w-7xl,
+.a11y-large-text .max-w-6xl,
+.a11y-large-text .max-w-5xl,
+.a11y-large-text .max-w-4xl,
+.a11y-large-text .max-w-3xl,
+.a11y-large-text .max-w-2xl,
+.a11y-large-text .max-w-xl {
+  max-width: 100% !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+/* ============================================
+   COLOR BLIND FILTERS
+   ============================================ */
+
+/* Protanopia (red-blind) filter */
+[data-color-blind="protanopia"] {
+  filter: url('#protanopia-filter');
+}
+
+[data-color-blind="protanopia"] .text-rose-500,
+[data-color-blind="protanopia"] .text-rose-600,
+[data-color-blind="protanopia"] .bg-rose-50,
+[data-color-blind="protanopia"] .bg-rose-100,
+[data-color-blind="protanopia"] .bg-rose-500,
+[data-color-blind="protanopia"] .bg-rose-600 {
+  /* Use patterns/icons instead of red */
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(0, 0, 0, 0.1) 5px,
+    rgba(0, 0, 0, 0.1) 10px
+  );
+}
+
+/* Deuteranopia (green-blind) filter */
+[data-color-blind="deuteranopia"] {
+  filter: url('#deuteranopia-filter');
+}
+
+[data-color-blind="deuteranopia"] .text-emerald-500,
+[data-color-blind="deuteranopia"] .text-emerald-600,
+[data-color-blind="deuteranopia"] .bg-emerald-50,
+[data-color-blind="deuteranopia"] .bg-emerald-100,
+[data-color-blind="deuteranopia"] .bg-emerald-500,
+[data-color-blind="deuteranopia"] .bg-emerald-600 {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(0, 0, 0, 0.1) 5px,
+    rgba(0, 0, 0, 0.1) 10px
+  );
+}
+
+/* Tritanopia (blue-blind) filter */
+[data-color-blind="tritanopia"] {
+  filter: url('#tritanopia-filter');
+}
+
+/* Achromatopsia (no color) filter */
+[data-color-blind="achromatopsia"] {
+  filter: grayscale(100%) contrast(1.2);
+}
+
+[data-color-blind="achromatopsia"] .bg-emerald-50,
+[data-color-blind="achromatopsia"] .bg-emerald-100,
+[data-color-blind="achromatopsia"] .bg-emerald-500 {
+  background-color: #e5e5e5 !important;
+  border: 2px solid #22c55e;
+}
+
+[data-color-blind="achromatopsia"] .bg-amber-50,
+[data-color-blind="achromatopsia"] .bg-amber-100,
+[data-color-blind="achromatopsia"] .bg-amber-500 {
+  background-color: #e5e5e5 !important;
+  border: 2px solid #f59e0b;
+}
+
+[data-color-blind="achromatopsia"] .bg-rose-50,
+[data-color-blind="achromatopsia"] .bg-rose-100,
+[data-color-blind="achromatopsia"] .bg-rose-500 {
+  background-color: #e5e5e5 !important;
+  border: 2px solid #ef4444;
+}
+
+/* Add icons to color-coded elements for color-blind users */
+[data-color-blind="protanopia"] .status-normal::before,
+[data-color-blind="deuteranopia"] .status-normal::before,
+[data-color-blind="tritanopia"] .status-normal::before,
+[data-color-blind="achromatopsia"] .status-normal::before {
+  content: "✓ ";
+  font-weight: bold;
+}
+
+[data-color-blind="protanopia"] .status-caution::before,
+[data-color-blind="deuteranopia"] .status-caution::before,
+[data-color-blind="tritanopia"] .status-caution::before,
+[data-color-blind="achromatopsia"] .status-caution::before {
+  content: "! ";
+  font-weight: bold;
+}
+
+[data-color-blind="protanopia"] .status-alert::before,
+[data-color-blind="deuteranopia"] .status-alert::before,
+[data-color-blind="tritanopia"] .status-alert::before,
+[data-color-blind="achromatopsia"] .status-alert::before {
+  content: "✕ ";
+  font-weight: bold;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+.a11y-reduce-motion *,
+.a11y-reduce-motion *::before,
+.a11y-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.a11y-reduce-motion .animate-heartbeat,
+.a11y-reduce-motion .animate-pulse,
+.a11y-reduce-motion .animate-bounce,
+.a11y-reduce-motion .animate-fade-in,
+.a11y-reduce-motion .animate-slide-up {
+  animation: none !important;
+}
+
+/* Respect user's system preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   FOCUS INDICATORS
+   ============================================ */
+
+/* Enhanced focus indicators for keyboard navigation */
+.a11y-focus-indicator :focus,
+.a11y-focus-indicator :focus-visible {
+  outline: var(--a11y-focus-width) solid var(--a11y-focus-color) !important;
+  outline-offset: var(--a11y-focus-offset) !important;
+  box-shadow: 0 0 0 4px rgba(0, 167, 144, 0.3) !important;
+}
+
+.a11y-focus-indicator button:focus,
+.a11y-focus-indicator a:focus,
+.a11y-focus-indicator input:focus,
+.a11y-focus-indicator select:focus,
+.a11y-focus-indicator textarea:focus {
+  outline: var(--a11y-focus-width) solid var(--a11y-focus-color) !important;
+  outline-offset: var(--a11y-focus-offset) !important;
+}
+
+/* Skip link for keyboard navigation */
+.a11y-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--a11y-focus-color);
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.a11y-skip-link:focus {
+  top: 0;
+}
+
+/* ============================================
+   SIMPLIFIED MODE (Cognitive Accessibility)
+   ============================================ */
+
+.a11y-simplified {
+  /* Reduce visual clutter */
+  --a11y-bg-secondary: #ffffff;
+}
+
+.a11y-simplified .bg-gradient-to-r,
+.a11y-simplified .bg-gradient-to-br,
+.a11y-simplified .bg-gradient-to-b {
+  background: var(--a11y-bg-primary) !important;
+}
+
+.a11y-simplified .shadow-lg,
+.a11y-simplified .shadow-xl,
+.a11y-simplified .shadow-2xl,
+.a11y-simplified .shadow-md,
+.a11y-simplified .shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.a11y-simplified .backdrop-blur {
+  backdrop-filter: none !important;
+}
+
+.a11y-simplified .blur-xl,
+.a11y-simplified .blur-2xl {
+  display: none !important;
+}
+
+/* Increase spacing for better readability */
+.a11y-simplified .p-4 { padding: 1.5rem !important; }
+.a11y-simplified .p-5 { padding: 2rem !important; }
+.a11y-simplified .p-6 { padding: 2.5rem !important; }
+.a11y-simplified .gap-4 { gap: 1.5rem !important; }
+.a11y-simplified .gap-6 { gap: 2rem !important; }
+
+/* Simplify borders */
+.a11y-simplified .rounded-2xl,
+.a11y-simplified .rounded-xl,
+.a11y-simplified .rounded-lg {
+  border-radius: 4px !important;
+}
+
+/* ============================================
+   SCREEN READER OPTIMIZATIONS
+   ============================================ */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.sr-only-focusable:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+}
+
+/* Hide decorative elements from screen readers */
+[aria-hidden="true"] {
+  pointer-events: none;
+}
+
+/* Announce dynamic content changes */
+[aria-live="polite"] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ============================================
+   MEDICAL DATA ACCESSIBILITY
+   ============================================ */
+
+/* Ensure medical status indicators are accessible */
+.medical-status {
+  position: relative;
+}
+
+.medical-status::before {
+  content: attr(data-status);
+  position: absolute;
+  left: -9999px;
+}
+
+/* Accessible charts and data visualizations */
+.chart-container {
+  position: relative;
+}
+
+.chart-sr-description {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Data tables accessibility */
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--a11y-border);
+}
+
+.data-table th {
+  font-weight: 600;
+  background-color: var(--a11y-bg-secondary);
+}
+
+.data-table caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ============================================
+   FORM ACCESSIBILITY
+   ============================================ */
+
+/* Enhanced form labels */
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--a11y-text-primary);
+}
+
+.form-label-required::after {
+  content: " *";
+  color: var(--a11y-medical-alert);
+}
+
+/* Error messages */
+.form-error {
+  color: var(--a11y-medical-alert);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.form-error::before {
+  content: "⚠ ";
+}
+
+/* Help text */
+.form-help {
+  color: var(--a11y-text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Fieldset and legend */
+fieldset {
+  border: 1px solid var(--a11y-border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
+/* ============================================
+   TOUCH TARGET SIZES (Motor Accessibility)
+   ============================================ */
+
+/* Minimum 44x44px touch targets */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 12px;
+}
+
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Increase spacing between interactive elements */
+.interactive-spacing > * + * {
+  margin-left: 8px;
+}
+
+/* ============================================
+   PRINT ACCESSIBILITY
+   ============================================ */
+
+@media print {
+  .a11y-skip-link,
+  #accessibility-panel,
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  
+  a {
+    text-decoration: underline;
+    color: #000 !important;
+  }
+  
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+  }
+}
+
+/* ============================================
+   SVG FILTERS FOR COLOR BLINDNESS
+   ============================================ */
+
+/* These filters are referenced by the color-blind modes */
+svg.a11y-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Text truncation with ellipsis */
+.a11y-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line text truncation */
+.a11y-line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.a11y-line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Focus trap for modals */
+.a11y-focus-trap {
+  outline: none;
+}
+
+.a11y-focus-trap:focus {
+  outline: 2px solid var(--a11y-focus-color);
+}
+
+/* Loading state announcement */
+.a11y-loading {
+  position: relative;
+}
+
+.a11y-loading::after {
+  content: attr(aria-label);
+  position: absolute;
+  left: -10000px;
+}
+
+/* Status messages */
+.a11y-status {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 1rem;
+  background: var(--a11y-bg-primary);
+  border: 2px solid var(--a11y-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* Medical emergency indicator */
+.a11y-emergency {
+  border: 3px solid var(--a11y-medical-alert);
+  animation: a11y-pulse-border 2s infinite;
+}
+
+@keyframes a11y-pulse-border {
+  0%, 100% { border-color: var(--a11y-medical-alert); }
+  50% { border-color: transparent; }
+}
+
+.a11y-reduce-motion .a11y-emergency {
+  animation: none;
+  border: 3px solid var(--a11y-medical-alert);
+}

@@ -1,0 +1,344 @@
+{# templates/teleconsultation/waiting-room.html.twig #}
+{# Virtual Waiting Room for Teleconsultation #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Waiting Room - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/teleconsultation.css') }}">
+{% endblock %}
+
+{% block body %}
+<div x-data="waitingRoom()" x-init="init()" 
+     class="min-h-screen bg-gradient-to-br from-wellcare-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+    
+    <div class="container px-4 py-8 mx-auto">
+        <div class="max-w-5xl mx-auto">
+            
+            {# Progress Header #}
+            <div class="mb-6 overflow-hidden bg-white shadow-xl dark:bg-gray-900 rounded-2xl">
+                <div class="p-6 text-white bg-gradient-to-r from-wellcare-500 to-wellcare-light-500">
+                    <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold">
+                                <i class="mr-2 fa-solid fa-user-md"></i>
+                                Virtual Waiting Room
+                            </h1>
+                            <p class="mt-1 opacity-90">Your consultation will begin shortly</p>
+                        </div>
+                        <div class="text-left md:text-right">
+                            <p class="text-3xl font-bold" x-text="estimatedWait + ' min'"></p>
+                            <p class="text-sm opacity-90">Estimated wait time</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Progress Steps #}
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+                    <div class="flex items-center justify-between">
+                        <template x-for="(step, index) in preparationSteps" :key="step.id">
+                            <div class="flex items-center flex-1">
+                                <div class="flex items-center justify-center w-10 h-10 transition-all rounded-full"
+                                     :class="step.completed ? 'bg-wellcare-500 text-white' : (index === currentStep ? 'bg-wellcare-100 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400' : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400')">
+                                    <template x-if="step.completed">
+                                        <i class="fa-solid fa-check"></i>
+                                    </template>
+                                    <template x-if="!step.completed && index === currentStep">
+                                        <i class="fa-solid fa-spinner fa-spin"></i>
+                                    </template>
+                                    <template x-if="!step.completed && index > currentStep">
+                                        <span x-text="index + 1"></span>
+                                    </template>
+                                </div>
+                                <div class="flex-1 hidden ml-3 sm:block">
+                                    <p class="text-sm font-medium"
+                                       :class="step.completed ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'"
+                                       x-text="step.title"></p>
+                                </div>
+                                <div class="flex-1 h-0.5 mx-2 bg-gray-200 dark:bg-gray-700" 
+                                     x-show="index < preparationSteps.length - 1"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            {# Main Content Grid #}
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                
+                {# Left Column #}
+                <div class="space-y-6 lg:col-span-2">
+                    
+                    {# Connection Test #}
+                    <div class="p-6 bg-white shadow-lg dark:bg-gray-900 rounded-2xl">
+                        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-wifi text-wellcare-500"></i>
+                            Device Check
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            {# Video Test #}
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <div class="relative flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-gray-100 rounded-full dark:bg-gray-700">
+                                    <template x-if="connectionStatus.video">
+                                        <div class="w-12 h-12 overflow-hidden rounded-full">
+                                            <video id="video-preview" autoplay muted playsinline class="object-cover w-full h-full"></video>
+                                        </div>
+                                    </template>
+                                    <template x-if="!connectionStatus.video">
+                                        <i class="text-2xl text-gray-400 fa-solid fa-video"></i>
+                                    </template>
+                                    <template x-if="connectionStatus.video">
+                                        <span class="absolute flex items-center justify-center w-5 h-5 rounded-full -bottom-1 -right-1 bg-emerald-500">
+                                            <i class="text-xs text-white fa-solid fa-check"></i>
+                                        </span>
+                                    </template>
+                                </div>
+                                <p class="text-sm font-medium text-center text-gray-900 dark:text-white">Camera</p>
+                                <p class="mt-1 text-xs text-center"
+                                   :class="connectionStatus.video ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'"
+                                   x-text="connectionStatus.video ? 'Ready' : 'Testing...'"></p>
+                                <button @click="testCamera()" 
+                                        class="w-full px-3 py-1 mt-2 text-xs font-medium border rounded-lg text-wellcare-600 dark:text-wellcare-400 border-wellcare-200 dark:border-wellcare-800 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                                    <template x-if="!connectionStatus.video">
+                                        <span><i class="mr-1 fa-solid fa-rotate"></i>Test</span>
+                                    </template>
+                                    <template x-if="connectionStatus.video">
+                                        <span><i class="mr-1 fa-solid fa-check"></i>OK</span>
+                                    </template>
+                                </button>
+                            </div>
+                            
+                            {# Audio Test #}
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <div class="relative flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-gray-100 rounded-full dark:bg-gray-700">
+                                    <i class="text-2xl fa-solid fa-microphone"
+                                       :class="connectionStatus.audio ? 'text-wellcare-500' : 'text-gray-400'"></i>
+                                    <template x-if="connectionStatus.audio">
+                                        <span class="absolute flex items-center justify-center w-5 h-5 rounded-full -bottom-1 -right-1 bg-emerald-500">
+                                            <i class="text-xs text-white fa-solid fa-check"></i>
+                                        </span>
+                                    </template>
+                                </div>
+                                <p class="text-sm font-medium text-center text-gray-900 dark:text-white">Microphone</p>
+                                <p class="mt-1 text-xs text-center"
+                                   :class="connectionStatus.audio ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'"
+                                   x-text="connectionStatus.audio ? 'Ready' : 'Testing...'"></p>
+                                <button @click="testMicrophone()"
+                                        class="w-full px-3 py-1 mt-2 text-xs font-medium border rounded-lg text-wellcare-600 dark:text-wellcare-400 border-wellcare-200 dark:border-wellcare-800 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                                    <template x-if="!connectionStatus.audio">
+                                        <span><i class="mr-1 fa-solid fa-rotate"></i>Test</span>
+                                    </template>
+                                    <template x-if="connectionStatus.audio">
+                                        <span><i class="mr-1 fa-solid fa-check"></i>OK</span>
+                                    </template>
+                                </button>
+                            </div>
+                            
+                            {# Network Test #}
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                <div class="relative flex items-center justify-center w-16 h-16 mx-auto mb-3 bg-gray-100 rounded-full dark:bg-gray-700">
+                                    <i class="text-2xl fa-solid fa-network-wired"
+                                       :class="connectionStatus.internet ? 'text-wellcare-500' : 'text-gray-400'"></i>
+                                    <template x-if="connectionStatus.internet">
+                                        <span class="absolute flex items-center justify-center w-5 h-5 rounded-full -bottom-1 -right-1 bg-emerald-500">
+                                            <i class="text-xs text-white fa-solid fa-check"></i>
+                                        </span>
+                                    </template>
+                                </div>
+                                <p class="text-sm font-medium text-center text-gray-900 dark:text-white">Connection</p>
+                                <p class="mt-1 text-xs text-center"
+                                   :class="connectionStatus.internet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'"
+                                   x-text="connectionStatus.internet ? 'Good' : 'Checking...'"></p>
+                                <button @click="testConnection()"
+                                        class="w-full px-3 py-1 mt-2 text-xs font-medium border rounded-lg text-wellcare-600 dark:text-wellcare-400 border-wellcare-200 dark:border-wellcare-800 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                                    <template x-if="!connectionStatus.internet">
+                                        <span><i class="mr-1 fa-solid fa-rotate"></i>Retry</span>
+                                    </template>
+                                    <template x-if="connectionStatus.internet">
+                                        <span><i class="mr-1 fa-solid fa-check"></i>OK</span>
+                                    </template>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Medical Questionnaire #}
+                    <div class="p-6 bg-white shadow-lg dark:bg-gray-900 rounded-2xl">
+                        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-clipboard-question text-wellcare-500"></i>
+                            Pre-Consultation Checklist
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Reason for visit
+                                </label>
+                                <textarea x-model="consultation.reason" 
+                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                          rows="3"
+                                          placeholder="Briefly describe the reason for your visit..."></textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Current symptoms
+                                </label>
+                                <textarea x-model="symptoms"
+                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                          rows="3"
+                                          placeholder="List your symptoms, duration, and intensity..."></textarea>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Current medications
+                                    </label>
+                                    <input type="text" 
+                                           x-model="medications"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                           placeholder="Medications, supplements, vitamins...">
+                                </div>
+                                
+                                <div>
+                                    <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Allergies
+                                    </label>
+                                    <input type="text" 
+                                           x-model="allergies"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
+                                           placeholder="Do you have any allergies?">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end mt-4">
+                            <button @click="saveQuestionnaire()" 
+                                    class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                <i class="mr-2 fa-solid fa-save"></i>
+                                Save & Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Right Column #}
+                <div class="space-y-6">
+                    
+                    {# Appointment Summary #}
+                    <div class="p-6 bg-white shadow-lg dark:bg-gray-900 rounded-2xl">
+                        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-calendar-check text-wellcare-500"></i>
+                            Appointment Details
+                        </h2>
+                        
+                        <div class="flex items-center gap-4 mb-4">
+                            <img :src="patient.avatar" 
+                                 :alt="patient.name" 
+                                 class="w-16 h-16 rounded-full">
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="patient.name"></h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="consultation.type"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <i class="fa-solid fa-user-doctor text-wellcare-500"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Physician</p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.doctorName"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <i class="fa-regular fa-clock text-wellcare-500"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Scheduled Time</p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.appointmentTime"></p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                <i class="fa-solid fa-hourglass-half text-wellcare-500"></i>
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Duration</p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="consultation.duration + ' minutes'"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Documents Upload #}
+                    <div class="p-6 bg-white shadow-lg dark:bg-gray-900 rounded-2xl">
+                        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-file-medical text-wellcare-500"></i>
+                            Upload Documents
+                        </h2>
+                        
+                        <div class="p-6 text-center transition-colors border-2 border-dashed cursor-pointer rounded-xl hover:border-wellcare-500"
+                             @dragover.prevent="dragOver = true"
+                             @dragleave.prevent="dragOver = false"
+                             @drop.prevent="handleDrop($event)"
+                             :class="dragOver ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-300 dark:border-gray-600'">
+                            <i class="mb-2 text-3xl text-gray-400 fa-solid fa-cloud-upload-alt"></i>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                Drag files here or
+                                <label class="font-medium cursor-pointer text-wellcare-500 hover:text-wellcare-600">
+                                    browse
+                                    <input type="file" class="hidden" multiple @change="handleFileSelect($event)">
+                                </label>
+                            </p>
+                            <p class="mt-1 text-xs text-gray-500">PDF, JPG, PNG (max 10MB)</p>
+                        </div>
+                        
+                        {# Uploaded Files List #}
+                        <div class="mt-4 space-y-2" x-show="uploadedFiles.length > 0">
+                            <template x-for="(file, index) in uploadedFiles" :key="index">
+                                <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <div class="flex items-center gap-2">
+                                        <i class="text-wellcare-500 fa-solid fa-file-pdf" x-show="file.type.includes('pdf')"></i>
+                                        <i class="text-wellcare-500 fa-solid fa-file-image" x-show="file.type.includes('image')"></i>
+                                        <span class="text-sm text-gray-700 dark:text-gray-300" x-text="file.name"></span>
+                                    </div>
+                                    <button @click="removeFile(index)" class="text-gray-400 hover:text-red-500">
+                                        <i class="fa-solid fa-times"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    {# Join Button #}
+                    <button @click="joinConsultation()"
+                            :disabled="!canJoin"
+                            class="w-full py-4 text-lg font-semibold text-white transition-all shadow-lg rounded-xl"
+                            :class="canJoin ? 'bg-wellcare-500 hover:bg-wellcare-600 hover:shadow-xl transform -translate-y-0.5 cursor-pointer' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'">
+                        <template x-if="!connectionTestPassed">
+                            <span><i class="mr-2 fa-solid fa-spinner fa-spin"></i>Preparing...</span>
+                        </template>
+                        <template x-if="connectionTestPassed">
+                            <span><i class="mr-2 fa-solid fa-video"></i>Join Consultation</span>
+                        </template>
+                    </button>
+                    
+                    {# Status Message #}
+                    <p class="text-sm text-center text-gray-500 dark:text-gray-400" x-show="!canJoin">
+                        <i class="mr-1 fa-solid fa-info-circle"></i>
+                        Please complete all preparation steps before joining
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/teleconsultation.js') }}"></script>
+{% endblock %}

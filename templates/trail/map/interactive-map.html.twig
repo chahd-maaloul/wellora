@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Trail Map - WellCare Connect</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet-gpx@1.7.0/gpx.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f9f6; }
+        
+        .map-container { display: flex; height: 100vh; }
+        
+        .sidebar-panel {
+            width: 320px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            color: white;
+            padding: 20px;
+        }
+        
+        .sidebar-header h1 { font-size: 1.3rem; margin-bottom: 5px; }
+        .sidebar-header p { font-size: 0.85rem; opacity: 0.9; }
+        
+        .search-box { padding: 15px; border-bottom: 1px solid #e5e7eb; }
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        .search-input:focus {
+            border-color: #00A790;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 167, 144, 0.1);
+        }
+        
+        .layer-controls { padding: 15px; border-bottom: 1px solid #e5e7eb; }
+        .layer-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        
+        .layer-option {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .layer-option:hover { background: #f0f9f6; }
+        .layer-option.active { background: rgba(0, 167, 144, 0.1); border: 1px solid #00A790; }
+        .layer-icon { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1.2rem; }
+        .layer-info h3 { font-size: 0.9rem; margin-bottom: 2px; }
+        .layer-info p { font-size: 0.75rem; color: #6b7280; }
+        
+        .map-section { flex: 1; position: relative; }
+        #trail-map { height: 100%; width: 100%; }
+        
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { background: #f0f9f6; transform: scale(1.05); }
+        
+        .map-legend {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .legend-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; }
+        .legend-item { display: flex; align-items: center; margin: 8px 0; font-size: 0.8rem; }
+        .legend-color { width: 20px; height: 4px; border-radius: 2px; margin-right: 10px; }
+        
+        .poi-list { padding: 15px; }
+        .poi-title { font-size: 0.8rem; text-transform: uppercase; color: #6b7280; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .poi-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f9fafb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .poi-item:hover { background: #f0f9f6; transform: translateX(5px); }
+        .poi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 1.1rem; }
+        .poi-info h4 { font-size: 0.9rem; margin-bottom: 3px; }
+        .poi-info p { font-size: 0.75rem; color: #6b7280; }
+        
+        .trails-nearby { padding: 15px; border-top: 1px solid #e5e7eb; }
+        .trail-nearby-item {
+            display: flex;
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .trail-nearby-item:hover { border-color: #00A790; box-shadow: 0 2px 8px rgba(0, 167, 144, 0.15); }
+        .trail-thumb { width: 60px; height: 60px; border-radius: 8px; margin-right: 12px; object-fit: cover; }
+        .trail-details h4 { font-size: 0.9rem; margin-bottom: 5px; }
+        .trail-stats { display: flex; gap: 10px; font-size: 0.75rem; color: #6b7280; }
+        .trail-difficulty { padding: 3px 8px; border-radius: 15px; font-size: 0.7rem; font-weight: 600; }
+        
+        .difficulty-easy { background: #d1fae5; color: #059669; }
+        .difficulty-moderate { background: #fef3c7; color: #d97706; }
+        .difficulty-hard { background: #fee2e2; color: #dc2626; }
+        
+        .location-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 340px;
+            z-index: 1000;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 167, 144, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        .location-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 167, 144, 0.5); }
+        
+        .elevation-profile {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            right: 320px;
+            height: 120px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding: 15px;
+        }
+        
+        .measurement-tool {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .measurement-result { font-size: 1.1rem; font-weight: 600; color: #00A790; }
+        
+        @media (max-width: 768px) {
+            .map-container { flex-direction: column; }
+            .sidebar-panel { width: 100%; height: auto; max-height: 40vh; }
+            .map-section { height: 60vh; }
+            .location-btn { left: 20px; bottom: auto; top: 50vh; }
+            .elevation-profile { left: 20px; right: 20px; bottom: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="map-container" x-data="interactiveTrailMap()">
+        <!-- Left Sidebar -->
+        <div class="sidebar-panel">
+            <div class="sidebar-header">
+                <h1>🏔️ Interactive Trail Map</h1>
+                <p>Explore trails near you</p>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search trails, locations..." x-model="searchQuery" @input="searchTrails()">
+            </div>
+            
+            <div class="layer-controls">
+                <div class="layer-title">🗺️ Base Layers</div>
+                <div class="layer-option" :class="{ active: currentLayer === 'street' }" @click="setLayer('street')">
+                    <div class="layer-icon" style="background: #e8f4f8;">🛣️</div>
+                    <div class="layer-info">
+                        <h3>Street Map</h3>
+                        <p>OpenStreetMap streets</p>
+                    </div>
+                </div>
+                <div class="layer-option" :class="{ active: currentLayer === 'satellite' }" @click="setLayer('satellite')">
+                    <div class="layer-icon" style="background: #d4e8d4;">🛰️</div>
+                    <div class="layer-info">
+                        <h3>Satellite</h3>
+                        <p>Aerial imagery</p>
+                    </div>
+                </div>
+                <div class="layer-option" :class="{ active: currentLayer === 'topo' }" @click="setLayer('topo')">
+                    <div class="layer-icon" style="background: #e8dcc8;">🏔️</div>
+                    <div class="layer-info">
+                        <h3>Topographic</h3>
+                        <p>Contour lines & terrain</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="layer-controls">
+                <div class="layer-title">📍 Points of Interest</div>
+                <div class="layer-option" @click="toggleLayer('trailheads')">
+                    <div class="layer-icon" style="background: #dbeafe;">🚶</div>
+                    <div class="layer-info">
+                        <h3>Trailheads</h3>
+                        <p x-text="layers.trailheads ? '✓ Showing' : '○ Hidden'"></p>
+                    </div>
+                </div>
+                <div class="layer-option" @click="toggleLayer('water')">
+                    <div class="layer-icon" style="background: #dbeafe;">💧</div>
+                    <div class="layer-info">
+                        <h3>Water Sources</h3>
+                        <p x-text="layers.water ? '✓ Showing' : '○ Hidden'"></p>
+                    </div>
+                </div>
+                <div class="layer-option" @click="toggleLayer('viewpoints')">
+                    <div class="layer-icon" style="background: #fef3c7;">📸</div>
+                    <div class="layer-info">
+                        <h3>Viewpoints</h3>
+                        <p x-text="layers.viewpoints ? '✓ Showing' : '○ Hidden'"></p>
+                    </div>
+                </div>
+                <div class="layer-option" @click="toggleLayer('restareas')">
+                    <div class="layer-icon" style="background: #d1fae5;">🪑</div>
+                    <div class="layer-info">
+                        <h3>Rest Areas</h3>
+                        <p x-text="layers.restareas ? '✓ Showing' : '○ Hidden'"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="poi-list">
+                <div class="poi-title">📍 Nearby Points of Interest</div>
+                <template x-for="poi in nearbyPOIs" :key="poi.id">
+                    <div class="poi-item" @click="flyToPOI(poi)">
+                        <div class="poi-icon" :style="'background: ' + poi.color + '20; color: ' + poi.color" x-text="poi.icon"></div>
+                        <div class="poi-info">
+                            <h4 x-text="poi.name"></h4>
+                            <p x-text="poi.distance + ' from your location'"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <div class="trails-nearby">
+                <div class="poi-title">🥾 Nearby Trails</div>
+                <template x-for="trail in nearbyTrails" :key="trail.id">
+                    <div class="trail-nearby-item" @click="showTrailOnMap(trail)">
+                        <img :src="trail.thumbnail" :alt="trail.name" class="trail-thumb">
+                        <div class="trail-details">
+                            <h4 x-text="trail.name"></h4>
+                            <div class="trail-stats">
+                                <span>📏 <span x-text="trail.distance"></span> km</span>
+                                <span>⏱️ <span x-text="trail.duration"></span></span>
+                            </div>
+                            <span class="trail-difficulty" :class="'difficulty-' + trail.difficulty" x-text="trail.difficulty"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+        
+        <!-- Map Section -->
+        <div class="map-section">
+            <div id="trail-map"></div>
+            
+            <!-- Map Controls -->
+            <div class="map-controls">
+                <button class="control-btn" @click="zoomIn()" title="Zoom In">➕</button>
+                <button class="control-btn" @click="zoomOut()" title="Zoom Out">➖</button>
+                <button class="control-btn" @click="toggleMeasurement()" title="Measure Distance" :class="{ 'bg-wellcare-100': measuring }">📏</button>
+                <button class="control-btn" @click="toggleFullscreen()" title="Fullscreen">⛶</button>
+                <button class="control-btn" @click="shareLocation()" title="Share Location">📤</button>
+            </div>
+            
+            <!-- Measurement Tool -->
+            <div class="measurement-tool" x-show="measuring">
+                <div class="legend-title">📏 Distance Measurement</div>
+                <div class="measurement-result"><span x-text="measurementDistance"></span> km</div>
+                <p style="font-size: 0.75rem; color: #6b7280; margin-top: 5px;">Click points to measure</p>
+            </div>
+            
+            <!-- Elevation Profile -->
+            <div class="elevation-profile">
+                <canvas id="elevationChart"></canvas>
+            </div>
+            
+            <!-- Map Legend -->
+            <div class="map-legend">
+                <div class="legend-title">🗺️ Trail Difficulty</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #22c55e;"></div>
+                    <span>Easy</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b;"></div>
+                    <span>Moderate</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>Hard</span>
+                </div>
+            </div>
+            
+            <!-- GPS Location Button -->
+            <button class="location-btn" @click="centerOnUserLocation()">
+                📍 My Location
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function interactiveTrailMap() {
+            return {
+                map: null,
+                currentLayer: 'street',
+                measuring: false,
+                measurementDistance: 0,
+                measurementPoints: [],
+                searchQuery: '',
+                userLocation: null,
+                layers: {
+                    trailheads: true,
+                    water: true,
+                    viewpoints: true,
+                    restareas: true
+                },
+                nearbyPOIs: [
+                    { id: 1, name: 'Pine Ridge Trailhead', icon: '🚶', color: '#00A790', distance: '0.3 km', lat: 45.5234, lng: -122.6762 },
+                    { id: 2, name: 'Crystal Spring', icon: '💧', color: '#3b82f6', distance: '0.8 km', lat: 45.5240, lng: -122.6780 },
+                    { id: 3, name: 'Eagle Viewpoint', icon: '📸', color: '#f59e0b', distance: '1.2 km', lat: 45.5260, lng: -122.6750 },
+                    { id: 4, name: 'Meadow Rest Area', icon: '🪑', color: '#22c55e', distance: '1.5 km', lat: 45.5225, lng: -122.6800 }
+                ],
+                nearbyTrails: [
+                    { id: 1, name: 'Pine Ridge Loop', distance: '5.2', duration: '1h 30m', difficulty: 'easy', thumbnail: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=100&h=100&fit=crop' },
+                    { id: 2, name: 'Summit Trail', distance: '8.4', duration: '3h', difficulty: 'hard', thumbnail: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&h=100&fit=crop' },
+                    { id: 3, name: 'Forest Path', distance: '3.7', duration: '1h', difficulty: 'moderate', thumbnail: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=100&h=100&fit=crop' }
+                ],
+                markers: {},
+                polylines: {},
+                
+                init() {
+                    this.$nextTick(() => {
+                        this.initMap();
+                        this.initChart();
+                    });
+                },
+                
+                initMap() {
+                    this.map = L.map('trail-map').setView([45.5234, -122.6762], 13);
+                    
+                    this.tileLayers = {
+                        street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors'
+                        }),
+                        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                            attribution: '© Esri'
+                        }),
+                        topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenTopoMap'
+                        })
+                    };
+                    
+                    this.tileLayers.street.addTo(this.map);
+                    
+                    // Add sample trail polyline
+                    this.addSampleTrail();
+                    this.addPOIMarkers();
+                    this.addUserMarker();
+                    
+                    // Handle measurement clicks
+                    this.map.on('click', (e) => {
+                        if (this.measuring) {
+                            this.addMeasurementPoint(e.latlng);
+                        }
+                    });
+                },
+                
+                addSampleTrail() {
+                    const trailCoords = [
+                        [45.5234, -122.6762],
+                        [45.5240, -122.6770],
+                        [45.5250, -122.6780],
+                        [45.5260, -122.6770],
+                        [45.5270, -122.6760],
+                        [45.5280, -122.6750],
+                        [45.5290, -122.6740]
+                    ];
+                    
+                    const trailPolyline = L.polyline(trailCoords, {
+                        color: '#22c55e',
+                        weight: 5,
+                        opacity: 0.8
+                    }).addTo(this.map);
+                    
+                    trailPolyline.bindPopup(`
+                        <strong>Pine Ridge Loop</strong><br>
+                        Distance: 5.2 km<br>
+                        Difficulty: Easy<br>
+                        <button class="mt-2 btn btn-wellcare" style="background: #00A790; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Start Trail</button>
+                    `);
+                    
+                    this.polylines.sampleTrail = trailPolyline;
+                },
+                
+                addPOIMarkers() {
+                    const poiIcons = {
+                        trailhead: L.divIcon({
+                            html: '<div style="background: #00A790; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">🚶</div>',
+                            className: 'custom-marker'
+                        }),
+                        water: L.divIcon({
+                            html: '<div style="background: #3b82f6; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">💧</div>',
+                            className: 'custom-marker'
+                        }),
+                        viewpoint: L.divIcon({
+                            html: '<div style="background: #f59e0b; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">📸</div>',
+                            className: 'custom-marker'
+                        }),
+                        restarea: L.divIcon({
+                            html: '<div style="background: #22c55e; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">🪑</div>',
+                            className: 'custom-marker'
+                        })
+                    };
+                    
+                    const pois = [
+                        { lat: 45.5234, lng: -122.6762, type: 'trailhead', name: 'Pine Ridge Trailhead' },
+                        { lat: 45.5240, lng: -122.6780, type: 'water', name: 'Crystal Spring' },
+                        { lat: 45.5260, lng: -122.6750, type: 'viewpoint', name: 'Eagle Viewpoint' },
+                        { lat: 45.5225, lng: -122.6800, type: 'restarea', name: 'Meadow Rest Area' }
+                    ];
+                    
+                    pois.forEach((poi, index) => {
+                        const marker = L.marker([poi.lat, poi.lng], { icon: poiIcons[poi.type] })
+                            .addTo(this.map)
+                            .bindPopup(`<strong>${poi.name}</strong>`);
+                        this.markers['poi_' + index] = marker;
+                    });
+                },
+                
+                addUserMarker() {
+                    this.userLocation = [45.5230, -122.6750];
+                    const userIcon = L.divIcon({
+                        html: '<div style="background: #002F5C; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">👤</div>',
+                        className: 'user-marker'
+                    });
+                    
+                    this.markers.user = L.marker(this.userLocation, { icon: userIcon })
+                        .addTo(this.map)
+                        .bindPopup('<strong>Your Location</strong><br>GPS accuracy: 10m');
+                },
+                
+                initChart() {
+                    const ctx = document.getElementById('elevationChart');
+                    if (!ctx) return;
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['0', '1', '2', '3', '4', '5'],
+                            datasets: [{
+                                label: 'Elevation (m)',
+                                data: [150, 180, 220, 280, 350, 420],
+                                borderColor: '#00A790',
+                                backgroundColor: 'rgba(0, 167, 144, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: true, text: '📈 Elevation Profile' }
+                            },
+                            scales: {
+                                x: { title: { display: true, text: 'Distance (km)' } },
+                                y: { title: { display: true, text: 'Elevation (m)' } }
+                            }
+                        }
+                    });
+                },
+                
+                setLayer(layer) {
+                    this.map.removeLayer(this.tileLayers[this.currentLayer]);
+                    this.tileLayers[layer].addTo(this.map);
+                    this.currentLayer = layer;
+                },
+                
+                toggleLayer(layer) {
+                    this.layers[layer] = !this.layers[layer];
+                    // Show/hide markers based on layer state
+                },
+                
+                zoomIn() {
+                    this.map.zoomIn();
+                },
+                
+                zoomOut() {
+                    this.map.zoomOut();
+                },
+                
+                toggleMeasurement() {
+                    this.measuring = !this.measuring;
+                    this.measurementPoints = [];
+                    this.measurementDistance = 0;
+                },
+                
+                addMeasurementPoint(latlng) {
+                    this.measurementPoints.push(latlng);
+                    
+                    if (this.measurementPoints.length > 1) {
+                        let totalDistance = 0;
+                        for (let i = 1; i < this.measurementPoints.length; i++) {
+                            totalDistance += this.measurementPoints[i - 1].distanceTo(this.measurementPoints[i]);
+                        }
+                        this.measurementDistance = (totalDistance / 1000).toFixed(2);
+                    }
+                    
+                    // Add measurement marker
+                    L.marker(latlng, {
+                        icon: L.divIcon({
+                            html: '<div style="background: #002F5C; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px;">' + this.measurementPoints.length + '</div>'
+                        })
+                    }).addTo(this.map);
+                },
+                
+                toggleFullscreen() {
+                    const mapSection = document.querySelector('.map-section');
+                    if (!document.fullscreenElement) {
+                        mapSection.requestFullscreen();
+                    } else {
+                        document.exitFullscreen();
+                    }
+                },
+                
+                shareLocation() {
+                    const url = window.location.href;
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'My Trail Location',
+                            text: 'Check out this trail on WellCare Connect!',
+                            url: url
+                        });
+                    } else {
+                        navigator.clipboard.writeText(url);
+                        alert('Link copied to clipboard!');
+                    }
+                },
+                
+                centerOnUserLocation() {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const userLat = position.coords.latitude;
+                                const userLng = position.coords.longitude;
+                                this.map.setView([userLat, userLng], 15);
+                                this.markers.user.setLatLng([userLat, userLng]);
+                            },
+                            (error) => {
+                                alert('Unable to get your location. Please enable GPS.');
+                            }
+                        );
+                    } else {
+                        alert('Geolocation is not supported by your browser.');
+                    }
+                },
+                
+                flyToPOI(poi) {
+                    this.map.flyTo([poi.lat, poi.lng], 16);
+                },
+                
+                showTrailOnMap(trail) {
+                    this.map.setView([45.5234, -122.6762], 14);
+                },
+                
+                searchTrails() {
+                    // Implement search functionality
+                }
+            };
+        }
+    </script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</body>
+</html>

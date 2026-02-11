@@ -1,0 +1,433 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Avis & Notes - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('trail-community') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-900" x-data="{
+    activeTab: 'all',
+    searchQuery: '',
+    filterDifficulty: '',
+    filterRating: '',
+    sortBy: 'recent'
+}">
+    {# Header #}
+    <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-star text-amber-400"></i>
+                    Avis & Notes des Trails
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">
+                    Découvrez les expériences des autres randonneurs
+                </p>
+            </div>
+            <div class="flex gap-3 mt-4 md:mt-0">
+                <a href="/trail/community/write-review" class="flex items-center gap-2 px-4 py-2 font-medium text-white rounded-lg btn-primary">
+                    <i class="fas fa-pen"></i>
+                    Écrire un Avis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Stats Cards #}
+    <div class="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
+        <div class="p-4 bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Avis</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">2,847</p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fas fa-comments text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Moyenne Notes</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">4.6</p>
+                </div>
+                <div class="flex text-amber-400">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star-half-alt"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Rédacteurs</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">1,203</p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg dark:bg-purple-900/30">
+                    <i class="text-purple-600 fas fa-users dark:text-purple-400"></i>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Cette Semaine</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">+156</p>
+                </div>
+                <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg dark:bg-green-900/30">
+                    <i class="text-green-600 fas fa-trending-up dark:text-green-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Filters #}
+    <div class="p-4 mb-6 bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
+            {# Search #}
+            <div class="relative flex-1">
+                <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                <input 
+                    type="text" 
+                    x-model="searchQuery"
+                    placeholder="Rechercher un trail, un auteur..." 
+                    class="w-full py-2 pl-10 pr-4 text-gray-900 bg-white border border-gray-200 rounded-lg community-input dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                >
+            </div>
+            
+            {# Difficulty Filter #}
+            <select x-model="filterDifficulty" class="px-4 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                <option value="">Toutes difficultés</option>
+                <option value="easy">Facile</option>
+                <option value="moderate">Modéré</option>
+                <option value="difficult">Difficile</option>
+                <option value="expert">Expert</option>
+            </select>
+            
+            {# Rating Filter #}
+            <select x-model="filterRating" class="px-4 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                <option value="">Toutes notes</option>
+                <option value="5">5 étoiles</option>
+                <option value="4">4+ étoiles</option>
+                <option value="3">3+ étoiles</option>
+            </select>
+            
+            {# Sort #}
+            <select x-model="sortBy" class="px-4 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                <option value="recent">Plus récents</option>
+                <option value="rating">Meilleures notes</option>
+                <option value="helpful">Plus utiles</option>
+                <option value="photos">Avec photos</option>
+            </select>
+        </div>
+    </div>
+
+    {# Tabs #}
+    <div class="flex gap-2 pb-2 mb-6 overflow-x-auto">
+        <button 
+            @click="activeTab = 'all'"
+            class="px-4 py-2 font-medium transition-colors rounded-lg whitespace-nowrap"
+            :class="activeTab === 'all' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+        >
+            Tous les Avis
+        </button>
+        <button 
+            @click="activeTab = 'recent'"
+            class="px-4 py-2 font-medium transition-colors rounded-lg whitespace-nowrap"
+            :class="activeTab === 'recent' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+        >
+            Récents
+        </button>
+        <button 
+            @click="activeTab = 'popular'"
+            class="px-4 py-2 font-medium transition-colors rounded-lg whitespace-nowrap"
+            :class="activeTab === 'popular' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+        >
+            Populaires
+        </button>
+        <button 
+            @click="activeTab = 'with-photos'"
+            class="px-4 py-2 font-medium transition-colors rounded-lg whitespace-nowrap"
+            :class="activeTab === 'with-photos' ? 'bg-wellcare-500 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+        >
+            Avec Photos
+        </button>
+    </div>
+
+    {# Reviews Grid #}
+    <div class="space-y-4">
+        {# Review Card 1 #}
+        <div class="p-6 bg-white shadow-sm review-card dark:bg-gray-800 rounded-xl">
+            <div class="flex items-start gap-4">
+                {# Author Avatar #}
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center w-12 h-12 font-bold text-white rounded-full bg-gradient-to-br from-wellcare-400 to-wellcare-600">
+                        MC
+                    </div>
+                </div>
+                
+                {# Content #}
+                <div class="flex-1">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Marie C.</h3>
+                                <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-check-circle verified-badge"></i>
+                                    Vérifié
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">il y a 2 jours</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="flex text-amber-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </span>
+                            <span class="ml-1 text-sm text-gray-500 dark:text-gray-400">5.0</span>
+                        </div>
+                    </div>
+                    
+                    {# Trail Info #}
+                    <div class="flex items-center gap-2 mt-3 text-sm">
+                        <a href="/trail/detail/1" class="font-medium text-wellcare-600 dark:text-wellcare-400 hover:underline">
+                            Sentier des Cascades
+                        </a>
+                        <span class="text-gray-400">•</span>
+                        <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full">
+                            Modéré
+                        </span>
+                    </div>
+                    
+                    {# Review Text #}
+                    <p class="mt-3 text-gray-700 dark:text-gray-300 line-clamp-3">
+                        Expérience absolument fantastique ! Le sentier est bien entretenu et les vues sont à couper le souffle. J'ai particulièrement apprécié la diversité du paysage : forêt dense, prairies ouvertes, et bien sûr les cascades majestueuses. La montée finale demande un peu d'effort mais la récompense en vaut vraiment la peine. Je recommande vivement d'y aller tôt le matin pour éviter la foule et profiter de la sérénité des lieux.
+                    </p>
+                    
+                    {# Photos #}
+                    <div class="flex gap-2 mt-4 overflow-x-auto photo-gallery">
+                        <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=200&h=150&fit=crop" class="flex-shrink-0 object-cover w-24 h-24 transition-transform rounded-lg cursor-pointer hover:scale-105" alt="Trail photo">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&h=150&fit=crop" class="flex-shrink-0 object-cover w-24 h-24 transition-transform rounded-lg cursor-pointer hover:scale-105" alt="Trail photo">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=150&fit=crop" class="flex-shrink-0 object-cover w-24 h-24 transition-transform rounded-lg cursor-pointer hover:scale-105" alt="Trail photo">
+                    </div>
+                    
+                    {# Actions #}
+                    <div class="flex items-center gap-4 mt-4">
+                        <button class="flex items-center gap-1 text-gray-500 helpful-btn dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-thumbs-up"></i>
+                            <span>Utile (24)</span>
+                        </button>
+                        <button class="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="far fa-comment"></i>
+                            <span>Répondre (3)</span>
+                        </button>
+                        <button onclick="reportContent('review-1')" class="flex items-center gap-1 ml-auto text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400">
+                            <i class="far fa-flag"></i>
+                            <span>Signaler</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Review Card 2 #}
+        <div class="p-6 bg-white shadow-sm review-card dark:bg-gray-800 rounded-xl">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center w-12 h-12 font-bold text-white rounded-full bg-gradient-to-br from-purple-400 to-purple-600">
+                        JL
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Jean-Luc M.</h3>
+                                <span class="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-hiking"></i>
+                                    Randonneur Expert
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">il y a 5 jours</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="flex text-amber-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="far fa-star"></i>
+                            </span>
+                            <span class="ml-1 text-sm text-gray-500 dark:text-gray-400">4.0</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 text-sm">
+                        <a href="/trail/detail/2" class="font-medium text-wellcare-600 dark:text-wellcare-400 hover:underline">
+                            Montagne Bleue - Sommet Nord
+                        </a>
+                        <span class="text-gray-400">•</span>
+                        <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded-full">
+                            Difficile
+                        </span>
+                    </div>
+                    <p class="mt-3 text-gray-700 dark:text-gray-300 line-clamp-3">
+                        Un trail exigeant mais gratifiant. La montée est raide par endroits mais bien balisée. Les points de vue depuis le sommet sont exceptionnels. Cependant, j'ai trouvé le dernier kilomètre un peu dangereux avec des rocailles lâches. Prévoir de bonnes chaussures de randonnée et suffisamment d'eau. À faire par temps clair pour profiter des vues.
+                    </p>
+                    <div class="flex items-center gap-4 mt-4">
+                        <button class="flex items-center gap-1 text-gray-500 helpful-btn dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-thumbs-up"></i>
+                            <span>Utile (18)</span>
+                        </button>
+                        <button class="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="far fa-comment"></i>
+                            <span>Répondre (1)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Review Card 3 #}
+        <div class="p-6 bg-white shadow-sm review-card dark:bg-gray-800 rounded-xl">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center w-12 h-12 font-bold text-white rounded-full bg-gradient-to-br from-orange-400 to-orange-600">
+                        SB
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Sophie B.</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">il y a 1 semaine</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="flex text-amber-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                                <i class="far fa-star"></i>
+                            </span>
+                            <span class="ml-1 text-sm text-gray-500 dark:text-gray-400">3.5</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 text-sm">
+                        <a href="/trail/detail/3" class="font-medium text-wellcare-600 dark:text-wellcare-400 hover:underline">
+                            Forêt de Pins - Circuit Nord
+                        </a>
+                        <span class="text-gray-400">•</span>
+                        <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full">
+                            Facile
+                        </span>
+                    </div>
+                    <p class="mt-3 text-gray-700 dark:text-gray-300 line-clamp-3">
+                        Trail agréable pour une sortie en famille. Le chemin est plat et ombragé, parfait par temps chaud. Les enfants ont adorés le parcours d'exploration avec les nombreux pins. Seul bémol : certains panneaux sont manquants au niveau des embranchements, ce qui peut porter à confusion. Sinon très belle expérience.
+                    </p>
+                    <div class="flex items-center gap-4 mt-4">
+                        <button class="flex items-center gap-1 text-gray-500 helpful-btn dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-thumbs-up"></i>
+                            <span>Utile (12)</span>
+                        </button>
+                        <button class="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="far fa-comment"></i>
+                            <span>Répondre (2)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Review Card 4 #}
+        <div class="p-6 bg-white shadow-sm review-card dark:bg-gray-800 rounded-xl">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center w-12 h-12 font-bold text-white rounded-full bg-gradient-to-br from-teal-400 to-teal-600">
+                        AP
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Alain P.</h3>
+                                <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full flex items-center gap-1">
+                                    <i class="fas fa-check-circle verified-badge"></i>
+                                    Vérifié
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">il y a 2 semaines</p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="flex text-amber-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </span>
+                            <span class="ml-1 text-sm text-gray-500 dark:text-gray-400">5.0</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 text-sm">
+                        <a href="/trail/detail/4" class="font-medium text-wellcare-600 dark:text-wellcare-400 hover:underline">
+                            Lac de Haute Montagne
+                        </a>
+                        <span class="text-gray-400">•</span>
+                        <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs rounded-full">
+                            Expert
+                        </span>
+                    </div>
+                    <p class="mt-3 text-gray-700 dark:text-gray-300 line-clamp-3">
+                        Expérience inoubliable ! Ce trail est réservé aux randonneurs expérimentés. L'ascension est longue et éprouvante, mais atteindre le lac de haute montagne et se baigner dans ses eaux cristallines justifie tous les efforts. Bivouac autorisé près du lac pour les plus courageux. Un conseil : partez à l'aube pour admirer le lever du soleil sur les sommets enneigés.
+                    </p>
+                    <div class="flex gap-2 mt-4 overflow-x-auto photo-gallery">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&h=150&fit=crop" class="flex-shrink-0 object-cover w-24 h-24 transition-transform rounded-lg cursor-pointer hover:scale-105" alt="Trail photo">
+                        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=150&fit=crop" class="flex-shrink-0 object-cover w-24 h-24 transition-transform rounded-lg cursor-pointer hover:scale-105" alt="Trail photo">
+                    </div>
+                    <div class="flex items-center gap-4 mt-4">
+                        <button class="flex items-center gap-1 helpful-btn text-wellcare-600 dark:text-wellcare-400">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span>Utile (45)</span>
+                        </button>
+                        <button class="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="far fa-comment"></i>
+                            <span>Répondre (7)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Pagination #}
+    <div class="flex items-center justify-center gap-2 mt-8">
+        <button class="px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="px-4 py-2 text-white rounded-lg bg-wellcare-500">1</button>
+        <button class="px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">2</button>
+        <button class="px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">3</button>
+        <span class="px-2 text-gray-500 dark:text-gray-400">...</span>
+        <button class="px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">28</button>
+        <button class="px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}

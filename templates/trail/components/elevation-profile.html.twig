@@ -1,0 +1,381 @@
+<div class="elevation-profile" x-data="elevationProfile()" x-init="initChart()">
+    <!-- Chart Container -->
+    <div class="elevation-chart" x-show="chartReady" style="height: 200px;">
+        <canvas id="elevationChart"></canvas>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="elevation-loading" x-show="!chartReady" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center; color: #6b7280;">
+            <span style="font-size: 2rem;">📈</span>
+            <p>Loading elevation data...</p>
+        </div>
+    </div>
+    
+    <!-- Elevation Stats -->
+    <div class="elevation-stats">
+        <div class="stat-card">
+            <div class="stat-icon">⬆️</div>
+            <div class="stat-content">
+                <div class="stat-value" x-text="maxElevation + ' m'"></div>
+                <div class="stat-label">Highest Point</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⬇️</div>
+            <div class="stat-content">
+                <div class="stat-value" x-text="minElevation + ' m'"></div>
+                <div class="stat-label">Lowest Point</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <div class="stat-value" x-text="totalAscent + ' m'"></div>
+                <div class="stat-label">Total Ascent</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📉</div>
+            <div class="stat-content">
+                <div class="stat-value" x-text="totalDescent + ' m'"></div>
+                <div class="stat-label">Total Descent</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Interactive Elevation Points -->
+    <div class="elevation-points" x-show="showPoints">
+        <h4 class="points-title">📍 Key Elevation Points</h4>
+        <div class="points-list">
+            <template x-for="(point, index) in elevationPoints" :key="index">
+                <div class="elevation-point" @click="focusPoint(index)">
+                    <div class="point-marker" :style="'background: ' + getPointColor(point.type)">
+                        <span x-text="point.icon"></span>
+                    </div>
+                    <div class="point-info">
+                        <div class="point-name" x-text="point.name"></div>
+                        <div class="point-elevation" x-text="point.elevation + ' m'"></div>
+                        <div class="point-distance" x-text="point.distance + ' km from start'"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Chart Controls -->
+    <div class="chart-controls">
+        <button class="chart-btn" @click="toggleFullscreen()" title="Fullscreen">
+            <span x-text="isFullscreen ? '⛶' : '⛶'"></span>
+        </button>
+        <button class="chart-btn" @click="exportData()" title="Export Data">
+            📥
+        </button>
+        <button class="chart-btn" @click="togglePoints()" :title="showPoints ? 'Hide Points' : 'Show Points'">
+            📍
+        </button>
+    </div>
+</div>
+
+<style>
+    .elevation-profile {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .elevation-chart {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .elevation-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 10px;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #00A790;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+    
+    .elevation-points {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .points-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #1f2937;
+    }
+    
+    .points-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .elevation-point {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .elevation-point:hover {
+        background: #f0f9f6;
+        transform: translateX(5px);
+    }
+    
+    .point-marker {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .point-name {
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 2px;
+    }
+    
+    .point-elevation {
+        font-size: 0.9rem;
+        color: #00A790;
+        font-weight: 600;
+    }
+    
+    .point-distance {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    .chart-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: flex-end;
+    }
+    
+    .chart-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        background: #f3f4f6;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+    
+    .chart-btn:hover {
+        background: #00A790;
+        color: white;
+    }
+    
+    @media (max-width: 640px) {
+        .elevation-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+
+<script>
+    function elevationProfile() {
+        return {
+            chart: null,
+            chartReady: false,
+            isFullscreen: false,
+            showPoints: true,
+            
+            // Elevation data (sample - would come from API/trail data)
+            elevationData: [150, 180, 220, 280, 320, 350, 380, 420, 400, 380, 350, 320, 280, 250, 220, 200],
+            distances: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            
+            // Stats
+            maxElevation: 420,
+            minElevation: 150,
+            totalAscent: 850,
+            totalDescent: 780,
+            
+            // Key elevation points
+            elevationPoints: [
+                { name: 'Trailhead', elevation: 150, distance: 0, type: 'start', icon: '🚩' },
+                { name: 'First Viewpoint', elevation: 280, distance: 3, type: 'view', icon: '📷' },
+                { name: 'Summit', elevation: 420, distance: 7, type: 'peak', icon: '⛰️' },
+                { name: 'Crystal Spring', elevation: 320, distance: 10, type: 'water', icon: '💧' },
+                { name: 'Finish', elevation: 200, distance: 15, type: 'end', icon: '🏁' }
+            ],
+            
+            initChart() {
+                this.$nextTick(() => {
+                    const canvas = document.getElementById('elevationChart');
+                    if (!canvas) {
+                        setTimeout(() => this.initChart(), 100);
+                        return;
+                    }
+                    
+                    const ctx = canvas.getContext('2d');
+                    
+                    this.chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: this.distances,
+                            datasets: [{
+                                label: 'Elevation (m)',
+                                data: this.elevationData,
+                                borderColor: '#00A790',
+                                backgroundColor: (context) => {
+                                    const ctx = context.chart.ctx;
+                                    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                                    gradient.addColorStop(0, 'rgba(0, 167, 144, 0.3)');
+                                    gradient.addColorStop(1, 'rgba(0, 167, 144, 0)');
+                                    return gradient;
+                                },
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0,
+                                pointHoverRadius: 8,
+                                pointHoverBackgroundColor: '#00A790',
+                                pointHoverBorderColor: 'white',
+                                pointHoverBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 47, 92, 0.9)',
+                                    titleFont: { size: 14, weight: 'bold' },
+                                    bodyFont: { size: 13 },
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    displayColors: false,
+                                    callbacks: {
+                                        title: (items) => `Distance: ${items[0].label} km`,
+                                        label: (item) => `Elevation: ${item.raw}m`
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Distance (km)',
+                                        color: '#6b7280'
+                                    },
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Elevation (m)',
+                                        color: '#6b7280'
+                                    },
+                                    beginAtZero: false,
+                                    min: 100
+                                }
+                            },
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            }
+                        }
+                    });
+                    
+                    this.chartReady = true;
+                });
+            },
+            
+            getPointColor(type) {
+                const colors = {
+                    start: '#22c55e',
+                    view: '#f59e0b',
+                    peak: '#ef4444',
+                    water: '#3b82f6',
+                    end: '#8b5cf6'
+                };
+                return colors[type] || '#00A790';
+            },
+            
+            focusPoint(index) {
+                const point = this.elevationPoints[index];
+                // Emit event for map to handle
+                this.$dispatch('elevation-point-click', { point });
+            },
+            
+            toggleFullscreen() {
+                const container = this.$el.querySelector('.elevation-chart');
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen();
+                    this.isFullscreen = true;
+                } else {
+                    document.exitFullscreen();
+                    this.isFullscreen = false;
+                }
+            },
+            
+            exportData() {
+                const data = {
+                    elevationData: this.elevationData,
+                    distances: this.distances,
+                    maxElevation: this.maxElevation,
+                    minElevation: this.minElevation,
+                    totalAscent: this.totalAscent,
+                    totalDescent: this.totalDescent
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'elevation-data.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            
+            togglePoints() {
+                this.showPoints = !this.showPoints;
+            }
+        };
+    }
+</script>

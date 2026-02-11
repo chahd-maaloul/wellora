@@ -1,0 +1,76 @@
+{% extends 'layouts/auth.html.twig' %}
+{% set auth_container_class = 'max-w-lg' %}
+
+{% block title %}Verify Your Email - WellCare Connect{% endblock %}
+
+{% block auth_heading %}{% endblock %}
+{% block auth_description %}{% endblock %}
+
+{% block auth_form %}
+<div class="flex flex-col items-center justify-center py-12">
+    <div class="w-full max-w-md text-center">
+        {# Email Icon #}
+        <div class="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+            <svg class="w-10 h-10 text-wellcare-600 dark:text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+        </div>
+
+        {# Heading #}
+        <h1 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Check your email</h1>
+        <p class="mb-8 text-sm text-gray-600 dark:text-gray-400">
+            We've sent a verification link to your email address. Please click the link to verify your account.
+        </p>
+
+        {# Resend Email Form #}
+        <form action="/verify-email" method="POST" class="space-y-4" x-data="{ email: '', isSubmitting: false }" @submit.prevent="isSubmitting = true; $el.submit()">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('verify_email') }}">
+
+            <div class="space-y-1.5 text-left">
+                <label for="email" class="flex items-center gap-2 label">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
+                    </svg>
+                    Email address
+                </label>
+                <input 
+                    id="email" 
+                    name="email" 
+                    type="email" 
+                    x-model="email"
+                    required 
+                    class="w-full input pl-11"
+                    placeholder="you@example.com"
+                >
+            </div>
+
+            <button type="submit" :disabled="isSubmitting" class="w-full btn-primary">
+                <span x-show="!isSubmitting">Resend verification email</span>
+                <span x-show="isSubmitting" class="flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Sending...
+                </span>
+            </button>
+        </form>
+
+        {# Back to Login #}
+        <div class="mt-6">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Already verified?
+                <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>
+            </p>
+        </div>
+
+        {# Help Link #}
+        <div class="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                Didn't receive the email? Check your spam folder or
+                <a href="/contact" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">contact support</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

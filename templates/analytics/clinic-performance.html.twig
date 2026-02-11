@@ -1,0 +1,971 @@
+{# templates/doctor/clinical-notes.html.twig #}
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Notes Cliniques'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <style>
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification.success {
+            background-color: #10b981; /* Emerald-500 */
+        }
+        
+        .notification.error {
+            background-color: #ef4444; /* Red-500 */
+        }
+        
+        .notification.warning {
+            background-color: #f59e0b; /* Amber-500 */
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="clinicalNotes()" x-init="init()">
+    {# Header #}
+    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="/doctor/patients" class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-notes-medical text-wellcare-500"></i>
+                            {{ 'Notes Cliniques'|trans }}
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'SOAP notes, prescriptions et ordonnances de laboratoire'|trans }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button 
+                        @click="createNewNote('soap')"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        {{ 'Nouvelle Note'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
+            {# Sidebar - Patient Info & Note List #}
+            <div class="space-y-6 lg:col-span-1">
+                {# Patient Quick Info #}
+                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center gap-4">
+                        <img 
+                            src="/images/avatar-default.png"
+                            alt="Patient"
+                            class="object-cover w-16 h-16 border-2 rounded-full border-wellcare-100 dark:border-wellcare-900"
+                        >
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Jean Dupont</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">PAT-2024-001</p>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                Actif
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Notes List #}
+                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Historique des notes'|trans }}</h3>
+                    </div>
+                    <div class="overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 max-h-96">
+                        <template x-for="note in notes" :key="note.id">
+                            <div 
+                                @click="selectNote(note)"
+                                class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                :class="selectedNote?.id === note.id ? 'bg-wellcare-50 dark:bg-wellcare-900/20 border-l-4 border-wellcare-500' : ''"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="note.date"></span>
+                                        <h4 class="mt-1 text-sm font-medium text-gray-900 dark:text-white" x-text="note.typeLabel"></h4>
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2" x-text="note.summary"></p>
+                                    </div>
+                                    <span 
+                                        class="w-2 h-2 rounded-full"
+                                        :class="note.isComplete ? 'bg-emerald-500' : 'bg-amber-500'"
+                                    ></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {# Quick Actions #}
+                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Actions rapides'|trans }}</h3>
+                    <div class="space-y-2">
+                        <button @click="createNewNote('prescription')" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-prescription text-wellcare-500"></i>
+                            {{ 'Nouvelle ordonnance'|trans }}
+                        </button>
+                        <button @click="createNewNote('lab')" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+                            <i class="fa-solid fa-flask text-wellcare-500"></i>
+                            {{ 'Ordonnance labo'|trans }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Main Content - SOAP Note Editor #}
+            <div class="lg:col-span-3">
+                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+                    {# Note Header #}
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900 dark:text-white" x-text="selectedNote ? selectedNote.typeLabel : 'Nouvelle Note SOAP'"></h2>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    <span x-text="selectedNote ? selectedNote.date : new Date().toLocaleDateString('fr-FR')"></span>
+                                    <span x-text="' • Dr. Martin'"></span>
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click="saveNote()"
+                                    :disabled="isSaving"
+                                    class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <i class="mr-2 fa-solid" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                                    <span x-text="isSaving ? 'Enregistrement...' : 'Enregistrer'"></span>
+                                </button>
+                                <button 
+                                    x-show="selectedNote"
+                                    @click="printNote()"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
+                                >
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
+                                <button 
+                                    x-show="selectedNote"
+                                    @click="deleteNote()"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                                >
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# SOAP Form #}
+                    <div class="p-6 space-y-6">
+                        {# Chief Complaint #}
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {{ 'Motif de consultation'|trans }}
+                            </label>
+                            <input 
+                                type="text" 
+                                x-model="currentNote.chiefComplaint"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                placeholder="{{ 'Décrivez le motif principal de la consultation...'|trans }}"
+                            >
+                        </div>
+
+                        {# Subjective #}
+                        <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white bg-blue-500 rounded">S</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Subjectif'|trans }}</h3>
+                            </div>
+                            <textarea 
+                                x-model="currentNote.subjective"
+                                rows="4"
+                                class="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-blue-800 dark:text-white"
+                                placeholder="{{ 'Symptômes rapportés par le patient, antécédents, histoire de la maladie...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Objective #}
+                        <div class="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-emerald-500">O</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Objectif'|trans }}</h3>
+                            </div>
+                            
+                            {# Vital Signs in Objective #}
+                            <div class="grid grid-cols-2 gap-4 mb-4 md:grid-cols-4">
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Tension (mmHg)'|trans }}</label>
+                                    <div class="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            x-model="currentNote.vitals.bpSystolic"
+                                            class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                            placeholder="120"
+                                        >
+                                        <span class="text-gray-400">/</span>
+                                        <input 
+                                            type="text" 
+                                            x-model="currentNote.vitals.bpDiastolic"
+                                            class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                            placeholder="80"
+                                        >
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Pouls (bpm)'|trans }}</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="currentNote.vitals.pulse"
+                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                        placeholder="72"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Température (°C)'|trans }}</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="currentNote.vitals.temperature"
+                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                        placeholder="36.6"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'SpO2 (%)'|trans }}</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="currentNote.vitals.spo2"
+                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                        placeholder="98"
+                                    >
+                                </div>
+                            </div>
+
+                            <textarea 
+                                x-model="currentNote.objective"
+                                rows="4"
+                                class="w-full px-4 py-2 border rounded-lg border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
+                                placeholder="{{ 'Examen physique, signes vitaux, résultats d\'examens observables...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Assessment - DIAGNOSTIC #}
+                        <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-amber-500">A</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Évaluation'|trans }}</h3>
+                            </div>
+                            
+                            {# Diagnoses #}
+                            <div class="mb-4">
+                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Diagnostics (CIM-10)'|trans }}</label>
+                                <div class="flex flex-wrap gap-2 mb-2">
+                                    <template x-for="(dx, index) in currentNote.diagnoses" :key="index">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                            <span x-text="dx.code ? dx.code + ' - ' + dx.description : dx.description"></span>
+                                            <button @click="removeDiagnosis(index)" class="ml-1 text-amber-600 hover:text-amber-800">
+                                                <i class="fa-solid fa-times"></i>
+                                            </button>
+                                        </span>
+                                    </template>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        x-model="newDiagnosis"
+                                        @keydown.enter.prevent="addDiagnosis()"
+                                        class="flex-1 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-800 dark:border-amber-800 dark:text-white"
+                                        placeholder="{{ 'Code CIM-10 ou description...'|trans }}"
+                                    >
+                                    <button @click="addDiagnosis()" class="px-3 py-1.5 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <textarea 
+                                x-model="currentNote.assessment"
+                                rows="3"
+                                class="w-full px-4 py-2 border rounded-lg border-amber-200 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-800 dark:border-amber-800 dark:text-white"
+                                placeholder="{{ 'Interprétation des données, diagnostic différentiel, gravité...'|trans }}"
+                            ></textarea>
+                        </div>
+
+                        {# Plan - ORDONNANCE DÉTAILLÉE & EXAMENS #}
+                        <div class="p-4 rounded-lg bg-rose-50 dark:bg-rose-900/20">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-rose-500">P</span>
+                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Plan'|trans }}</h3>
+                            </div>
+                            
+                            {# ORDONNANCE DÉTAILLÉE #}
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="mr-2 fa-solid fa-prescription text-rose-500"></i>
+                                        {{ 'Ordonnance Médicamenteuse'|trans }}
+                                    </label>
+                                    <button @click="addMedication()" class="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">
+                                        <i class="mr-1 fa-solid fa-plus"></i>{{ 'Ajouter un médicament'|trans }}
+                                    </button>
+                                </div>
+                                
+                                <div class="mb-4 space-y-4">
+                                    <template x-for="(med, index) in currentNote.medications" :key="index">
+                                        <div class="p-4 bg-white border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800">
+                                            <div class="flex items-start justify-between mb-3">
+                                                <h4 class="font-medium text-gray-900 dark:text-white">Médicament <span x-text="index + 1"></span></h4>
+                                                <button @click="removeMedication(index)" class="text-red-500 hover:text-red-700">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                {# Diagnostic associé #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Diagnostic associé'|trans }}</label>
+                                                    <select x-model="med.diagnosis" class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white">
+                                                        <option value="">Sélectionner un diagnostic</option>
+                                                        <template x-for="dx in currentNote.diagnoses" :key="dx.code">
+                                                            <option :value="dx.code" x-text="dx.code ? dx.code + ' - ' + dx.description : dx.description"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Nom du médicament #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Nom du médicament'|trans }}</label>
+                                                    <input 
+                                                        type="text" 
+                                                        x-model="med.name"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                        placeholder="ex: Metformine"
+                                                    >
+                                                </div>
+                                                
+                                                {# Dosage #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Dosage'|trans }}</label>
+                                                    <input 
+                                                        type="text" 
+                                                        x-model="med.dosage"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                        placeholder="ex: 850mg"
+                                                    >
+                                                </div>
+                                                
+                                                {# Forme galénique #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Forme'|trans }}</label>
+                                                    <select x-model="med.form" class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white">
+                                                        <option value="comprimé">Comprimé</option>
+                                                        <option value="gélule">Gélule</option>
+                                                        <option value="sirop">Sirop</option>
+                                                        <option value="solution">Solution</option>
+                                                        <option value="pommade">Pommade</option>
+                                                        <option value="injection">Injection</option>
+                                                        <option value="suppositoire">Suppositoire</option>
+                                                        <option value="collyre">Collyre</option>
+                                                        <option value="aérosol">Aérosol</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Fréquence #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Fréquence'|trans }}</label>
+                                                    <select x-model="med.frequency" class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white">
+                                                        <option value="1x/jour">1 fois par jour</option>
+                                                        <option value="2x/jour">2 fois par jour</option>
+                                                        <option value="3x/jour">3 fois par jour</option>
+                                                        <option value="4x/jour">4 fois par jour</option>
+                                                        <option value="au besoin">Au besoin</option>
+                                                        <option value="hebdomadaire">Hebdomadaire</option>
+                                                        <option value="mensuel">Mensuel</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Durée du traitement #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Durée du traitement'|trans }}</label>
+                                                    <input 
+                                                        type="text" 
+                                                        x-model="med.duration"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                        placeholder="ex: 7 jours, 1 mois"
+                                                    >
+                                                </div>
+                                            </div>
+                                            
+                                            {# Instructions #}
+                                            <div class="mt-3">
+                                                <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Instructions particulières'|trans }}</label>
+                                                <textarea 
+                                                    x-model="med.instructions"
+                                                    rows="2"
+                                                    class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                    placeholder="ex: Prendre pendant les repas, à jeun, éviter l'alcool..."
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    
+                                    <div x-show="currentNote.medications.length === 0" class="p-4 text-center border border-dashed rounded-lg border-rose-300 dark:border-rose-700">
+                                        <i class="block mb-2 text-rose-400 fa-solid fa-prescription-bottle-medical"></i>
+                                        <p class="text-sm text-rose-600 dark:text-rose-400">{{ 'Aucun médicament prescrit'|trans }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {# EXAMENS COMPLÉMENTAIRES #}
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="mr-2 fa-solid fa-flask text-rose-500"></i>
+                                        {{ 'Examens Complémentaires'|trans }}
+                                    </label>
+                                    <button @click="addLabTest()" class="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">
+                                        <i class="mr-1 fa-solid fa-plus"></i>{{ 'Ajouter un examen'|trans }}
+                                    </button>
+                                </div>
+                                
+                                <div class="mb-4 space-y-4">
+                                    <template x-for="(test, index) in currentNote.labTests" :key="index">
+                                        <div class="p-4 bg-white border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800">
+                                            <div class="flex items-start justify-between mb-3">
+                                                <h4 class="font-medium text-gray-900 dark:text-white">Examen <span x-text="index + 1"></span></h4>
+                                                <button @click="removeLabTest(index)" class="text-red-500 hover:text-red-700">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                {# Type d'examen #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Type d\'examen'|trans }}</label>
+                                                    <select x-model="test.type" class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white">
+                                                        <option value="">Sélectionner un type</option>
+                                                        <option value="sanguin">Biologie sanguine</option>
+                                                        <option value="urinaire">Analyse d'urine</option>
+                                                        <option value="radiographie">Radiographie</option>
+                                                        <option value="scanner">Scanner</option>
+                                                        <option value="irm">IRM</option>
+                                                        <option value="echographie">Échographie</option>
+                                                        <option value="ecg">ECG</option>
+                                                        <option value="eeg">EEG</option>
+                                                        <option value="biopsie">Biopsie</option>
+                                                        <option value="endoscopie">Endoscopie</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Nom de l'examen #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Nom de l\'examen'|trans }}</label>
+                                                    <input 
+                                                        type="text" 
+                                                        x-model="test.name"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                        placeholder="ex: NFS, Radiographie thoracique"
+                                                    >
+                                                </div>
+                                                
+                                                {# Date demandée #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Date demandée'|trans }}</label>
+                                                    <input 
+                                                        type="date" 
+                                                        x-model="test.requestedDate"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                    >
+                                                </div>
+                                                
+                                                {# Date de réalisation #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Date de réalisation'|trans }}</label>
+                                                    <input 
+                                                        type="date" 
+                                                        x-model="test.performedDate"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                    >
+                                                </div>
+                                                
+                                                {# Résultat #}
+                                                <div class="md:col-span-2">
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Résultat'|trans }}</label>
+                                                    <textarea 
+                                                        x-model="test.result"
+                                                        rows="2"
+                                                        class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                        placeholder="Saisir le résultat de l'examen..."
+                                                    ></textarea>
+                                                </div>
+                                                
+                                                {# Statut #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Statut'|trans }}</label>
+                                                    <select x-model="test.status" class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white">
+                                                        <option value="prescrit">Prescrit</option>
+                                                        <option value="en_attente">En attente</option>
+                                                        <option value="realise">Réalisé</option>
+                                                        <option value="valide">Validé</option>
+                                                        <option value="annule">Annulé</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Fichier résultat #}
+                                                <div>
+                                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Fichier résultat'|trans }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input 
+                                                            type="text" 
+                                                            x-model="test.resultFile"
+                                                            class="flex-1 px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                            placeholder="Nom du fichier..."
+                                                        >
+                                                        <button type="button" class="px-3 py-2 text-sm text-white bg-rose-500 rounded-lg hover:bg-rose-600">
+                                                            <i class="fa-solid fa-upload"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {# Notes additionnelles #}
+                                            <div class="mt-3">
+                                                <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Notes additionnelles'|trans }}</label>
+                                                <textarea 
+                                                    x-model="test.notes"
+                                                    rows="2"
+                                                    class="w-full px-3 py-2 text-sm border border-rose-200 rounded-lg dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                                    placeholder="Notes complémentaires sur l'examen..."
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    
+                                    <div x-show="currentNote.labTests.length === 0" class="p-4 text-center border border-dashed rounded-lg border-rose-300 dark:border-rose-700">
+                                        <i class="block mb-2 text-rose-400 fa-solid fa-flask"></i>
+                                        <p class="text-sm text-rose-600 dark:text-rose-400">{{ 'Aucun examen demandé'|trans }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Plan de traitement général #}
+                            <div class="mt-4">
+                                <label class="block mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">{{ 'Plan de traitement général'|trans }}</label>
+                                <textarea 
+                                    x-model="currentNote.plan"
+                                    rows="4"
+                                    class="w-full px-4 py-2 border rounded-lg border-rose-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:border-rose-800 dark:text-white"
+                                    placeholder="{{ 'Traitement global, recommandations, suivi, référencement...'|trans }}"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        {# Follow-up #}
+                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Prochain rendez-vous'|trans }}</h3>
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Date'|trans }}</label>
+                                    <input 
+                                        type="date" 
+                                        x-model="currentNote.followUp.date"
+                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Type'|trans }}</label>
+                                    <select x-model="currentNote.followUp.type" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="consultation">{{ 'Consultation'|trans }}</option>
+                                        <option value="control">{{ 'Contrôle'|trans }}</option>
+                                        <option value="results">{{ 'Résultats'|trans }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Priorité'|trans }}</label>
+                                    <select x-model="currentNote.followUp.priority" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <option value="routine">{{ 'Routine'|trans }}</option>
+                                        <option value="urgent">{{ 'Urgent'|trans }}</option>
+                                        <option value="asap">{{ 'Dès que possible'|trans }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function clinicalNotes() {
+    return {
+        // État de l'application
+        isSaving: false,
+        notes: [],
+        selectedNote: null,
+        newDiagnosis: '',
+        
+        // Note en cours d'édition
+        currentNote: {
+            id: null,
+            typeLabel: 'Nouvelle Note SOAP',
+            date: new Date().toLocaleDateString('fr-FR'),
+            summary: '',
+            chiefComplaint: '',
+            subjective: '',
+            objective: '',
+            assessment: '',
+            plan: '',
+            vitals: {
+                bpSystolic: '',
+                bpDiastolic: '',
+                pulse: '',
+                temperature: '',
+                spo2: ''
+            },
+            diagnoses: [],
+            medications: [],
+            labTests: [],
+            followUp: {
+                date: '',
+                type: 'consultation',
+                priority: 'routine'
+            },
+            isComplete: false
+        },
+        
+        // Initialisation
+        async init() {
+            await this.loadNotesFromAPI();
+        },
+        
+        // Charger les notes depuis l'API
+        async loadNotesFromAPI() {
+            try {
+                const response = await fetch('/doctor/api/notes/list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.notes = data.data.map(note => ({
+                        ...note,
+                        // Format correct pour les diagnostics
+                        diagnoses: (note.diagnoses || []).map(dx => 
+                            typeof dx === 'string' 
+                                ? { code: '', description: dx }
+                                : dx
+                        )
+                    }));
+                } else {
+                    this.showNotification('Erreur lors du chargement des notes', 'error');
+                }
+            } catch (error) {
+                console.error('Erreur API:', error);
+                this.showNotification('Erreur de connexion au serveur', 'error');
+            }
+        },
+        
+        // Gestion des diagnostics
+        addDiagnosis() {
+            if (!this.newDiagnosis.trim()) return;
+            
+            const hasCode = this.newDiagnosis.includes('-');
+            const diagnosis = hasCode
+                ? {
+                    code: this.newDiagnosis.split('-')[0].trim(),
+                    description: this.newDiagnosis.split('-').slice(1).join('-').trim()
+                }
+                : { code: '', description: this.newDiagnosis };
+            
+            this.currentNote.diagnoses.push(diagnosis);
+            this.newDiagnosis = '';
+        },
+        
+        removeDiagnosis(index) {
+            this.currentNote.diagnoses.splice(index, 1);
+        },
+        
+        // Gestion des médicaments
+        addMedication() {
+            this.currentNote.medications.push({
+                diagnosis: '',
+                name: '',
+                dosage: '',
+                form: 'comprimé',
+                frequency: '1x/jour',
+                duration: '',
+                instructions: ''
+            });
+        },
+        
+        removeMedication(index) {
+            this.currentNote.medications.splice(index, 1);
+        },
+        
+        // Gestion des examens
+        addLabTest() {
+            this.currentNote.labTests.push({
+                type: '',
+                name: '',
+                requestedDate: new Date().toISOString().split('T')[0],
+                performedDate: '',
+                result: '',
+                status: 'prescrit',
+                resultFile: '',
+                notes: ''
+            });
+        },
+        
+        removeLabTest(index) {
+            this.currentNote.labTests.splice(index, 1);
+        },
+        
+        // Créer une nouvelle note
+        createNewNote(type = 'soap') {
+            this.currentNote = {
+                id: null,
+                typeLabel: type === 'soap' ? 'Nouvelle Note SOAP' : 
+                          type === 'prescription' ? 'Nouvelle Ordonnance' : 'Ordonnance Labo',
+                date: new Date().toLocaleDateString('fr-FR'),
+                summary: '',
+                chiefComplaint: '',
+                subjective: '',
+                objective: '',
+                assessment: '',
+                plan: '',
+                vitals: {
+                    bpSystolic: '',
+                    bpDiastolic: '',
+                    pulse: '',
+                    temperature: '',
+                    spo2: ''
+                },
+                diagnoses: [],
+                medications: [],
+                labTests: [],
+                followUp: {
+                    date: '',
+                    type: 'consultation',
+                    priority: 'routine'
+                },
+                isComplete: false
+            };
+            this.selectedNote = null;
+        },
+        
+        // Sélectionner une note
+        async selectNote(note) {
+            try {
+                if (!note.id) {
+                    this.selectedNote = note;
+                    this.currentNote = { ...note };
+                    return;
+                }
+                
+                const response = await fetch(`/doctor/api/notes/${note.id}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.selectedNote = note;
+                    this.currentNote = { 
+                        ...data.data,
+                        // S'assurer des formats corrects
+                        vitals: data.data.vitals || {
+                            bpSystolic: '',
+                            bpDiastolic: '',
+                            pulse: '',
+                            temperature: '',
+                            spo2: ''
+                        },
+                        followUp: data.data.followUp || {
+                            date: '',
+                            type: 'consultation',
+                            priority: 'routine'
+                        },
+                        diagnoses: (data.data.diagnoses || []).map(dx => 
+                            typeof dx === 'string' 
+                                ? { code: '', description: dx }
+                                : dx
+                        )
+                    };
+                } else {
+                    this.showNotification('Erreur lors du chargement de la note', 'error');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                this.selectedNote = note;
+                this.currentNote = { ...note };
+            }
+        },
+        
+        // Sauvegarder une note
+        async saveNote() {
+            if (!this.currentNote.chiefComplaint.trim()) {
+                this.showNotification('Veuillez saisir le motif de consultation', 'warning');
+                return;
+            }
+            
+            this.isSaving = true;
+            
+            try {
+                const noteData = {
+                    patientId: 1,
+                    chiefComplaint: this.currentNote.chiefComplaint,
+                    subjective: this.currentNote.subjective,
+                    objective: this.currentNote.objective,
+                    assessment: this.currentNote.assessment,
+                    plan: this.currentNote.plan,
+                    vitals: this.currentNote.vitals,
+                    diagnoses: this.currentNote.diagnoses,
+                    medications: this.currentNote.medications,
+                    labTests: this.currentNote.labTests,
+                    followUp: this.currentNote.followUp
+                };
+                
+                const url = this.currentNote.id 
+                    ? `/doctor/api/notes/${this.currentNote.id}` 
+                    : '/doctor/api/notes';
+                    
+                const method = this.currentNote.id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(noteData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Rafraîchir la liste
+                    await this.loadNotesFromAPI();
+                    
+                    // Sélectionner la note créée/mise à jour
+                    if (!this.currentNote.id) {
+                        const newNote = this.notes.find(n => n.id === data.data.id);
+                        if (newNote) {
+                            await this.selectNote(newNote);
+                        }
+                    }
+                    
+                    this.showNotification(
+                        this.currentNote.id 
+                            ? 'Note mise à jour avec succès' 
+                            : 'Note créée avec succès',
+                        'success'
+                    );
+                } else {
+                    this.showNotification('Erreur: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erreur sauvegarde:', error);
+                this.showNotification('Erreur de connexion au serveur', 'error');
+            } finally {
+                this.isSaving = false;
+            }
+        },
+        
+        // Supprimer une note
+        async deleteNote() {
+            if (!this.selectedNote || !confirm('Êtes-vous sûr de vouloir supprimer cette note ?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/doctor/api/notes/${this.selectedNote.id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Rafraîchir la liste
+                    await this.loadNotesFromAPI();
+                    
+                    // Créer une nouvelle note vide
+                    this.createNewNote();
+                    
+                    this.showNotification('Note supprimée avec succès', 'success');
+                } else {
+                    this.showNotification('Erreur: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erreur suppression:', error);
+                this.showNotification('Erreur de connexion au serveur', 'error');
+            }
+        },
+        
+        // Imprimer une note
+        printNote() {
+            if (this.selectedNote) {
+                window.print();
+            }
+        },
+        
+        // Afficher une notification
+        showNotification(message, type = 'success') {
+            // Supprimer les anciennes notifications
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
+            // Créer la nouvelle notification
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Supprimer après 3 secondes
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    };
+}
+</script>
+{% endblock %}

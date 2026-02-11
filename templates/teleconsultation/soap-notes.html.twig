@@ -1,0 +1,613 @@
+{# templates/teleconsultation/soap-notes.html.twig #}
+{# SOAP Notes Template for Teleconsultation #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Notes SOAP'|trans }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/teleconsultation.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-950" x-data="soapNotes()" x-init="init()">
+    
+    {# Header #}
+    <div class="max-w-5xl mx-auto mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-file-medical-alt text-wellcare-500"></i>
+                    {{ "Notes SOAP"|trans }}
+                </h1>
+                <div class="flex items-center gap-2">
+                    <span 
+                        class="px-3 py-1 text-xs font-medium rounded-full"
+                        :class="status === 'draft' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' : status === 'saved' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'"
+                        x-text="status === 'draft' ? '{{ 'Brouillon'|trans }}' : status === 'saved' ? '{{ 'Sauvegardé'|trans }}' : '{{ 'Finalisé'|trans }}'"
+                    ></span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button 
+                    @click="saveNotes()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                    <i class="mr-2 fa-solid fa-save"></i>
+                    {{ "Sauvegarder"|trans }}
+                </button>
+                <button 
+                    @click="finalizeNotes()"
+                    class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
+                >
+                    <i class="mr-2 fa-solid fa-check"></i>
+                    {{ "Finaliser"|trans }}
+                </button>
+                <button 
+                    @click="printNotes()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                    <i class="mr-2 fa-solid fa-print"></i>
+                    {{ "Imprimer"|trans }}
+                </button>
+            </div>
+        </div>
+        
+        {# Consultation Info #}
+        <div class="flex items-center gap-6 pt-4 mt-4 border-t border-gray-200 dark:border-gray-800">
+            <div class="flex items-center gap-2">
+                <img 
+                    src="https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff" 
+                    alt="Patient"
+                    class="w-10 h-10 rounded-full"
+                >
+                <div>
+                    <p class="font-medium text-gray-900 dark:text-white">Marie Dupont</p>
+                    <p class="text-xs text-gray-500">{{ "Patient"|trans }}</p>
+                </div>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="mr-1 fa-solid fa-calendar"></i>
+                <span>{{ "03/02/2024"|trans }}</span>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="mr-1 fa-solid fa-clock"></i>
+                <span>14:30 - 15:00</span>
+            </div>
+            <div class="text-sm text-gray-500">
+                <i class="mr-1 fa-solid fa-video"></i>
+                <span>{{ "Téléconsultation"|trans }}</span>
+            </div>
+            <div class="flex items-center gap-2 ml-auto">
+                <span class="text-sm text-gray-500">{{ "ID:" |trans }}</span>
+                <span class="font-mono text-sm text-gray-900 dark:text-white">CONS-2024-0203-001</span>
+            </div>
+        </div>
+    </div>
+    
+    {# Main Content #}
+    <div class="grid max-w-5xl grid-cols-1 gap-6 mx-auto lg:grid-cols-4">
+        
+        {# Main Form #}
+        <div class="space-y-6 lg:col-span-3">
+            
+            {# S - Subjective #}
+            <div class="soap-notes-container">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg dark:bg-purple-900/30">
+                            <span class="text-lg font-bold text-purple-600 dark:text-purple-400">S</span>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Subjectif"|trans }}</h2>
+                            <p class="text-sm text-gray-500">{{ "Données rapportées par le patient"|trans }}</p>
+                        </div>
+                    </div>
+                    <button 
+                        @click="autoFillSubjective()"
+                        class="text-sm text-wellcare-600 dark:text-wellcare-400 hover:underline"
+                    >
+                        <i class="mr-1 fa-solid fa-magic"></i>
+                        {{ "Remplir depuis questionnaire"|trans }}
+                    </button>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Motif de consultation"|trans }}</label>
+                        <input 
+                            type="text" 
+                            x-model="soap.subjective.chiefComplaint"
+                            class="soap-field-input"
+                            placeholder="{{ "Raison principale de la visite"|trans }}"
+                        >
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Histoire de la maladie"|trans }}</label>
+                        <textarea 
+                            x-model="soap.subjective.historyOfPresentIllness"
+                            class="h-32 soap-field-textarea"
+                            placeholder="{{ "Decrivez l'evolution des symptoms, leur duree, leur intensite..."|trans }}"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Revue des systèmes"|trans }}</label>
+                        <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+                            <template x-for="system in systems" :key="system.id">
+                                <label class="flex items-center gap-2 p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <input 
+                                        type="checkbox" 
+                                        x-model="soap.subjective.systems[system.id]"
+                                        class="w-4 h-4 rounded text-wellcare-500"
+                                    >
+                                    <span class="text-sm text-gray-700 dark:text-gray-300" x-text="system.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Antécédents médicaux"|trans }}</label>
+                        <textarea 
+                            x-model="soap.subjective.pastMedicalHistory"
+                            class="h-20 soap-field-textarea"
+                            placeholder="{{ "Maladies, chirurgies, hospitalisations..."|trans }}"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Médicaments actuels"|trans }}</label>
+                        <textarea 
+                            x-model="soap.subjective.currentMedications"
+                            class="h-16 soap-field-textarea"
+                            placeholder="{{ "Liste des traitements en cours"|trans }}"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Allergies"|trans }}</label>
+                        <input 
+                            type="text" 
+                            x-model="soap.subjective.allergies"
+                            class="soap-field-input"
+                            placeholder="{{ "Allergies médicamenteuses et autres"|trans }}"
+                        >
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Habitudes de vie"|trans }}</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-gray-500">{{ "Tabac"|trans }}</label>
+                                <select 
+                                    x-model="soap.subjective.tobacco"
+                                    class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                                >
+                                    <option value="never">{{ "Jamais"|trans }}</option>
+                                    <option value="former">{{ "Ancien fumeur"|trans }}</option>
+                                    <option value="current">{{ "Fumeur actuel"|trans }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">{{ "Alcool"|trans }}</label>
+                                <select 
+                                    x-model="soap.subjective.alcohol"
+                                    class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                                >
+                                    <option value="none">{{ "Aucun"|trans }}</option>
+                                    <option value="occasional">{{ "Occasionnel"|trans }}</option>
+                                    <option value="regular">{{ "Régulier"|trans }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# O - Objective #}
+            <div class="soap-notes-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg dark:bg-blue-900/30">
+                            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">O</span>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Objectif"|trans }}</h2>
+                            <p class="text-sm text-gray-500">{{ "Données cliniques objectives"|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    {# Vitals #}
+                    <h3 class="font-medium text-gray-900 dark:text-white">{{ "Constantes"|trans }}</h3>
+                    <div class="vitals-grid">
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "TA (mmHg)"|trans }}</label>
+                            <input 
+                                type="text" 
+                                x-model="soap.objective.vitals.bloodPressure"
+                                class="vitals-item-input"
+                                placeholder="120/80"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "FC (bpm)"|trans }}</label>
+                            <input 
+                                type="number" 
+                                x-model="soap.objective.vitals.heartRate"
+                                class="vitals-item-input"
+                                placeholder="72"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "FR (/min)"|trans }}</label>
+                            <input 
+                                type="number" 
+                                x-model="soap.objective.vitals.respiratoryRate"
+                                class="vitals-item-input"
+                                placeholder="16"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "SpO2 (%)"|trans }}</label>
+                            <input 
+                                type="number" 
+                                x-model="soap.objective.vitals.oxygenSaturation"
+                                class="vitals-item-input"
+                                placeholder="98"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "Temp (°C)"|trans }}</label>
+                            <input 
+                                type="number" 
+                                step="0.1"
+                                x-model="soap.objective.vitals.temperature"
+                                class="vitals-item-input"
+                                placeholder="37.0"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "Poids (kg)"|trans }}</label>
+                            <input 
+                                type="number" 
+                                step="0.1"
+                                x-model="soap.objective.vitals.weight"
+                                class="vitals-item-input"
+                                placeholder="68"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "Taille (cm)"|trans }}</label>
+                            <input 
+                                type="number" 
+                                x-model="soap.objective.vitals.height"
+                                class="vitals-item-input"
+                                placeholder="165"
+                            >
+                        </div>
+                        <div class="vitals-item">
+                            <label class="vitals-item-label">{{ "IMC"|trans }}</label>
+                            <p class="vitals-item-value" x-text="calculateBMI()"></p>
+                        </div>
+                    </div>
+                    
+                    {# Examination #}
+                    <h3 class="mt-6 font-medium text-gray-900 dark:text-white">{{ "Examen Clinique"|trans }}</h3>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="text-xs text-gray-500">{{ "État général"|trans }}</label>
+                            <select 
+                                x-model="soap.objective.generalState"
+                                class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                            >
+                                <option value="">{{ "Sélectionner..."|trans }}</option>
+                                <option value="good">{{ "Bon"|trans }}</option>
+                                <option value="conserved">{{ "Conservé"|trans }}</option>
+                                <option value="altered">{{ "Altéré"|trans }}</option>
+                                <option value="poor">{{ "Mauvais"|trans }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">{{ "Conscience"|trans }}</label>
+                            <select 
+                                x-model="soap.objective.consciousness"
+                                class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                            >
+                                <option value="">{{ "Sélectionner..."|trans }}</option>
+                                <option value="clear">{{ "Claire"|trans }}</option>
+                                <option value="confused">{{ "Confuse"|trans }}</option>
+                                <option value="somnolent">{{ "Somnolent"|trans }}</option>
+                                <option value="comatose">{{ "Comateux"|trans }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 soap-field">
+                        <label class="soap-field-label">{{ "Examen par appareil"|trans }}</label>
+                        <textarea 
+                            x-model="soap.objective.physicalExamination"
+                            class="h-24 soap-field-textarea"
+                            placeholder="{{ "Décrivez les résultats de l'examen physique..."|trans }}"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            {# A - Assessment #}
+            <div class="soap-notes-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                            <span class="text-lg font-bold text-amber-600 dark:text-amber-400">A</span>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Assessment"|trans }}</h2>
+                            <p class="text-sm text-gray-500">{{ "Diagnostic et interprétation"|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Diagnostics (ICD-10)"|trans }}</label>
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                x-model="diagnosisSearch"
+                                @input="searchDiagnoses(diagnosisSearch)"
+                                class="flex-1 soap-field-input"
+                                placeholder="{{ "Rechercher un diagnostic..."|trans }}"
+                            >
+                            <button 
+                                @click="addDiagnosis()"
+                                class="px-4 py-2 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
+                            >
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        {# Search Results #}
+                        <div 
+                            x-show="diagnosisResults.length > 0"
+                            class="p-3 mt-2 overflow-y-auto rounded-lg bg-gray-50 dark:bg-gray-800 max-h-48"
+                        >
+                            <template x-for="diag in diagnosisResults" :key="diag.code">
+                                <div 
+                                    class="p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    @click="selectDiagnosis(diag)"
+                                >
+                                    <p class="font-medium text-gray-900 dark:text-white" x-text="diag.code + ' - ' + diag.description"></p>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        {# Selected Diagnoses #}
+                        <div class="mt-3 space-y-2">
+                            <template x-for="(diag, index) in soap.assessment.diagnoses" :key="index">
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                                    <span class="px-2 py-1 text-xs font-medium bg-gray-200 rounded dark:bg-gray-700" x-text="diag.code"></span>
+                                    <span class="flex-1 text-sm text-gray-900 dark:text-white" x-text="diag.description"></span>
+                                    <select 
+                                        x-model="diag.type"
+                                        class="px-2 py-1 text-xs border border-gray-300 rounded dark:border-gray-600"
+                                    >
+                                        <option value="primary">{{ "Principal"|trans }}</option>
+                                        <option value="secondary">{{ "Secondaire"|trans }}</option>
+                                    </select>
+                                    <button 
+                                        @click="removeDiagnosis(index)"
+                                        class="p-1 text-gray-400 hover:text-red-500"
+                                    >
+                                        <i class="fa-solid fa-times"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ 'Differentiel'|trans }}</label>
+                        <textarea 
+                            x-model="soap.assessment.differential"
+                            class="h-20 soap-field-textarea"
+                            placeholder="{{ "Diagnostics différentiels considérés"|trans }}"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            {# P - Plan #}
+            <div class="soap-notes-container">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                            <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">P</span>
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-gray-900 dark:text-white">{{ "Plan"|trans }}</h2>
+                            <p class="text-sm text-gray-500">{{ "Conduite à tenir"|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Traitement"|trans }}</label>
+                        <textarea 
+                            x-model="soap.plan.treatment"
+                            class="h-24 soap-field-textarea"
+                            placeholder="{{ "Prescriptions, soins, recommandations..."|trans }}"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Examens complémentaires"|trans }}</label>
+                        <textarea 
+                            x-model="soap.plan.investigations"
+                            class="h-20 soap-field-textarea"
+                            placeholder="{{ "Analyses, imagerie, specialist consultations..."|trans }}"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "Suivi"|trans }}</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <select 
+                                x-model="soap.plan.followUp.duration"
+                                class="px-3 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                            >
+                                <option value="">{{ "Pas de suivi"|trans }}</option>
+                                <option value="1week">{{ "1 semaine"|trans }}</option>
+                                <option value="2weeks">{{ "2 semaines"|trans }}</option>
+                                <option value="1month">{{ "1 mois"|trans }}</option>
+                                <option value="3months">{{ "3 mois"|trans }}</option>
+                                <option value="6months">{{ "6 mois"|trans }}</option>
+                                <option value="1year">{{ "1 an"|trans }}</option>
+                            </select>
+                            <input 
+                                type="text" 
+                                x-model="soap.plan.followUp.notes"
+                                class="px-3 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800"
+                                placeholder="{{ "Notes sur le suivi"|trans }}"
+                            >
+                        </div>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ " Recommandations"|trans }}</label>
+                        <textarea 
+                            x-model="soap.plan.recommendations"
+                            class="h-20 soap-field-textarea"
+                            placeholder="{{ "Conseils au patient, lifestyle..."|trans }}"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="soap-field">
+                        <label class="soap-field-label">{{ "_SIGNATURES_"|trans }}</label>
+                        <div class="flex items-center gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ "Dr. Jean Martin"|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ "Médecin Généraliste"|trans }}</p>
+                                <p class="text-xs text-gray-500">{{ "N° Ordre: 12345"|trans }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">{{ "Date:" |trans }} <span x-text="new Date().toLocaleDateString('fr-FR')"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {# Sidebar #}
+        <div class="space-y-6">
+            
+            {# Quick Templates #}
+            <div class="p-4 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-magic text-wellcare-500"></i>
+                    {{ "Modèles Rapides"|trans }}
+                </h3>
+                
+                <div class="space-y-2">
+                    <button 
+                        @click="applyTemplate('hypertension')"
+                        class="w-full px-3 py-2 text-sm text-left transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                        {{ "Suivi Hypertension"|trans }}
+                    </button>
+                    <button 
+                        @click="applyTemplate('diabetes')"
+                        class="w-full px-3 py-2 text-sm text-left transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                        {{ "Suivi Diabète"|trans }}
+                    </button>
+                    <button 
+                        @click="applyTemplate('uri')"
+                        class="w-full px-3 py-2 text-sm text-left transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                        {{ "Infection Respi"|trans }}
+                    </button>
+                </div>
+            </div>
+            
+            {# Recent Notes #}
+            <div class="p-4 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-history text-wellcare-500"></i>
+                    {{ "Consultations Récentes"|trans }}
+                </h3>
+                
+                <div class="space-y-2">
+                    <div class="p-3 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ "15/01/2024"|trans }}</p>
+                        <p class="text-xs text-gray-500">{{ "Suivi tensionnel"|trans }}</p>
+                    </div>
+                    <div class="p-3 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ "20/12/2023"|trans }}</p>
+                        <p class="text-xs text-gray-500">{{ "Bilan diabète"|trans }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            {# Status Summary #}
+            <div class="p-4 bg-white border border-gray-200 dark:bg-gray-900 rounded-2xl dark:border-gray-800">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-check-circle text-wellcare-500"></i>
+                    {{ "Avancement"|trans }}
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" :class="soap.subjective.chiefComplaint ? 'bg-emerald-500' : 'bg-gray-300'"></div>
+                        <span class="text-sm" :class="soap.subjective.chiefComplaint ? 'text-gray-900 dark:text-white' : 'text-gray-500'">{{ "Subjectif"|trans }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" :class="soap.objective.vitals.heartRate ? 'bg-emerald-500' : 'bg-gray-300'"></div>
+                        <span class="text-sm" :class="soap.objective.vitals.heartRate ? 'text-gray-900 dark:text-white' : 'text-gray-500'">{{ "Objectif"|trans }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" :class="soap.assessment.diagnoses.length > 0 ? 'bg-emerald-500' : 'bg-gray-300'"></div>
+                        <span class="text-sm" :class="soap.assessment.diagnoses.length > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-500'">{{ "Assessment"|trans }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full" :class="soap.plan.treatment ? 'bg-emerald-500' : 'bg-gray-300'"></div>
+                        <span class="text-sm" :class="soap.plan.treatment ? 'text-gray-900 dark:text-white' : 'text-gray-500'">{{ "Plan"|trans }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {# AI Suggestions #}
+            <div class="p-4 border bg-gradient-to-br from-wellcare-50 to-purple-50 dark:from-wellcare-900/20 dark:to-purple-900/20 rounded-2xl border-wellcare-200 dark:border-wellcare-800">
+                <h3 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-robot text-wellcare-500"></i>
+                    {{ "Suggestions IA"|trans }}
+                </h3>
+                
+                <div class="space-y-2">
+                    <div class="p-3 bg-white rounded-lg dark:bg-gray-800">
+                        <p class="mb-1 text-xs text-gray-500">{{ "Basé sur les symptômes:" |trans }}</p>
+                        <p class="text-sm text-gray-900 dark:text-white">{{ "Envisager un dosage de l'HbA1c"|trans }}</p>
+                    </div>
+                    <div class="p-3 bg-white rounded-lg dark:bg-gray-800">
+                        <p class="mb-1 text-xs text-gray-500">{{ "Recommandation:" |trans }}</p>
+                        <p class="text-sm text-gray-900 dark:text-white">{{ "Rappel des objectifs tensionnels"|trans }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/teleconsultation.js') }}"></script>
+{% endblock %}

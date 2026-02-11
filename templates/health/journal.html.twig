@@ -1,0 +1,272 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Journal de Santé - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <style>
+        .mood-emoji { font-size: 1.5rem; }
+        .stat-card { @apply bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700; }
+        .entry-card { @apply bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow; }
+    </style>
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="p-6 mx-auto lg:p-8 max-w-7xl" x-data="healthJournal()">
+    
+    {# Page Header #}
+    <div class="mb-8">
+        <h1 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Journal de Santé</h1>
+        <p class="text-gray-600 dark:text-gray-400">Suivez votre bien-être quotidien et identifiez des patterns</p>
+    </div>
+
+    {# Quick Stats #}
+    <div class="grid grid-cols-2 gap-4 mb-8 md:grid-cols-4">
+        <div class="stat-card">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Total Entrées</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.totalEntries }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-yellow-100 rounded-full dark:bg-yellow-900/30">
+                    <span class="text-lg text-yellow-600 dark:text-yellow-400">😊</span>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Humeur Moy.</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.averageMood }}/5</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full dark:bg-green-900/30">
+                    <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Énergie Moy.</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.averageEnergy }}/10</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Sommeil Moy.</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.averageSleep }}h</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-3">
+        {# Journal Entries #}
+        <div class="space-y-4 lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Entrées Récentes</h2>
+                <button @click="showAddEntry = true" class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    + Nouvelle Entrée
+                </button>
+            </div>
+            
+            {% for entry in entries %}
+            <div class="entry-card">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-wellcare-100 to-wellcare-200 dark:from-wellcare-900/30 dark:to-wellcare-800/30">
+                            {% if entry.mood >= 4 %}
+                                <span class="text-2xl">😊</span>
+                            {% elseif entry.mood >= 3 %}
+                                <span class="text-2xl">😐</span>
+                            {% else %}
+                                <span class="text-2xl">😔</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ entry.date|date('d/m/Y') }}
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ entry.notes }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            {{ entry.energy }}/10
+                        </div>
+                        <div class="flex items-center gap-1 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                            </svg>
+                            {{ entry.sleep }}h
+                        </div>
+                    </div>
+                </div>
+                
+                {% if entry.symptoms|length > 0 %}
+                <div class="flex flex-wrap gap-2 mb-3">
+                    {% for symptom in entry.symptoms %}
+                    <span class="px-2 py-1 text-xs text-red-700 bg-red-100 rounded-full dark:bg-red-900/30 dark:text-red-300">
+                        {{ symptom }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if entry.activities|length > 0 %}
+                <div class="flex flex-wrap gap-2">
+                    {% for activity in entry.activities %}
+                    <span class="px-2 py-1 text-xs text-blue-700 bg-blue-100 rounded-full dark:bg-blue-900/30 dark:text-blue-300">
+                        {{ activity }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-6">
+            {# Common Symptoms #}
+            <div class="stat-card">
+                <h3 class="mb-3 font-medium text-gray-900 dark:text-white">Symptômes Fréquents</h3>
+                <div class="space-y-2">
+                    {% for symptom in stats.mostCommonSymptoms %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ symptom }}</span>
+                        <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full">3x</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Best/Worst Days #}
+            <div class="stat-card">
+                <h3 class="mb-3 font-medium text-gray-900 dark:text-white">Tendances</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
+                        <span class="text-2xl">📈</span>
+                        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">Meilleur jour</p>
+                        <p class="font-medium text-green-700 dark:text-green-400">{{ stats.bestDay }}</p>
+                    </div>
+                    <div class="p-3 text-center rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                        <span class="text-2xl">📉</span>
+                        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">Jour à risque</p>
+                        <p class="font-medium text-orange-700 dark:text-orange-400">{{ stats.worstDay }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {# Quick Tips #}
+            <div class="stat-card">
+                <h3 class="mb-3 font-medium text-gray-900 dark:text-white">💡 Conseils</h3>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <li class="flex items-start gap-2">
+                        <span class="text-wellcare-500">•</span>
+                        Essayez de maintenir un horaires de sommeil régulier
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-wellcare-500">•</span>
+                        Notez vos symptômes dès leur apparition
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-wellcare-500">•</span>
+                        L'activité physique améliore votre énergie
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {# Add Entry Modal #}
+    <div x-show="showAddEntry" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" style="display: none;">
+        <div @click.outside="showAddEntry = false" class="w-full max-w-md p-6 mx-4 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Nouvelle Entrée</h3>
+            
+            <form @submit.prevent="saveEntry">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Humeur</label>
+                        <div class="flex gap-2">
+                            <template x-for="i in 5">
+                                <button type="button" 
+                                    @click="newEntry.mood = i"
+                                    :class="newEntry.mood === i ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'"
+                                    class="w-10 h-10 text-lg transition-transform rounded-full hover:scale-110"
+                                x-text="['😔', '😕', '😐', '🙂', '😊'][i-1]"></button>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Énergie (1-10)</label>
+                        <input type="range" x-model="newEntry.energy" min="1" max="10" class="w-full">
+                        <p class="text-sm text-center text-gray-600 dark:text-gray-400" x-text="newEntry.energy"></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Sommeil (heures)</label>
+                        <input type="number" x-model="newEntry.sleep" min="0" max="24" step="0.5" class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                        <textarea x-model="newEntry.notes" rows="3" class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white" placeholder="Comment était votre journée?"></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" @click="showAddEntry = false" class="flex-1 px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+                    <button type="submit" class="flex-1 px-4 py-2 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function healthJournal() {
+    return {
+        showAddEntry: false,
+        newEntry: {
+            mood: 3,
+            energy: 5,
+            sleep: 7,
+            notes: ''
+        },
+        saveEntry() {
+            // TODO: API call to save entry
+            this.showAddEntry = false;
+            this.newEntry = { mood: 3, energy: 5, sleep: 7, notes: '' };
+            alert('Entrée enregistrée avec succès!');
+        }
+    }
+}
+</script>
+{% endblock %}

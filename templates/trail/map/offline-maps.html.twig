@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Maps - WellCare Connect</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f9f6; }
+        
+        .offline-header {
+            background: linear-gradient(135deg, #002F5C 0%, #00A790 100%);
+            color: white;
+            padding: 25px 30px;
+        }
+        
+        .offline-header h1 { font-size: 1.6rem; margin-bottom: 8px; }
+        .offline-header p { font-size: 0.95rem; opacity: 0.9; }
+        
+        .offline-content { padding: 20px; }
+        
+        .offline-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .offline-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .offline-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .offline-card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-available { background: #dcfce7; color: #166534; }
+        .status-downloading { background: #fef3c7; color: #92400e; }
+        .status-expired { background: #fee2e2; color: #991b1b; }
+        
+        .storage-bar {
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .storage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00A790 0%, #00DBB6 100%);
+            border-radius: 5px;
+            transition: width 0.5s;
+        }
+        
+        .storage-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        
+        .download-size { font-size: 0.8rem; color: #6b7280; margin-top: 10px; }
+        
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .btn-download { background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%); color: white; }
+        .btn-download:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 167, 144, 0.3); }
+        .btn-delete { background: #f3f4f6; color: #6b7280; }
+        .btn-delete:hover { background: #fee2e2; color: #991b1b; }
+        
+        .offline-list { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .list-title { font-size: 1.1rem; font-weight: 600; }
+        
+        .offline-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9fafb;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .offline-item:hover { background: #f0f9f6; transform: translateX(5px); }
+        .item-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00A790 0%, #00DBB6 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+        .item-info { flex: 1; }
+        .item-name { font-weight: 600; margin-bottom: 4px; }
+        .item-details { font-size: 0.85rem; color: #6b7280; }
+        .item-actions { display: flex; gap: 10px; }
+        .action-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .btn-view { background: #f0f9f6; color: #00A790; }
+        .btn-view:hover { background: #00A790; color: white; }
+        .btn-remove { background: #fee2e2; color: #ef4444; }
+        .btn-remove:hover { background: #ef4444; color: white; }
+        
+        .storage-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .summary-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .summary-icon { font-size: 2rem; margin-bottom: 10px; }
+        .summary-value { font-size: 1.5rem; font-weight: 700; color: #00A790; }
+        .summary-label { font-size: 0.85rem; color: #6b7280; margin-top: 5px; }
+        
+        .tips-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .tips-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .tips-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .tip-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        .tip-icon { font-size: 1.5rem; }
+        .tip-content h4 { font-size: 0.95rem; margin-bottom: 5px; }
+        .tip-content p { font-size: 0.85rem; color: #6b7280; }
+        
+        .offline-map-preview {
+            height: 300px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+        
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #f0f9f6;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+        
+        @media (max-width: 1024px) {
+            .offline-grid { grid-template-columns: repeat(2, 1fr); }
+            .tips-grid { grid-template-columns: 1fr; }
+            .storage-summary { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .offline-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div x-data="offlineMapsManager()">
+        <!-- Header -->
+        <div class="offline-header">
+            <h1>📴 Offline Maps</h1>
+            <p>Download trail maps for offline use when you're out of coverage</p>
+        </div>
+        
+        <div class="offline-content">
+            <!-- Sync Status -->
+            <div class="sync-status">
+                <div class="sync-indicator"></div>
+                <span>Last synced: <strong x-text="lastSync"></strong></span>
+                <button style="margin-left: auto; padding: 8px 15px; background: white; border: none; border-radius: 8px; cursor: pointer;" @click="syncNow()">
+                    🔄 Sync Now
+                </button>
+            </div>
+            
+            <!-- Storage Summary -->
+            <div class="storage-summary">
+                <div class="summary-card">
+                    <div class="summary-icon">💾</div>
+                    <div class="summary-value" x-text="totalStorage"></div>
+                    <div class="summary-label">Total Storage</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">🗺️</div>
+                    <div class="summary-value" x-text="mapsCount"></div>
+                    <div class="summary-label">Offline Maps</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">📍</div>
+                    <div class="summary-value" x-text="waypointsCount"></div>
+                    <div class="summary-label">Waypoints</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">📶</div>
+                    <div class="summary-value" x-text="connectionStatus"></div>
+                    <div class="summary-label">Status</div>
+                </div>
+            </div>
+            
+            <!-- Available Downloads -->
+            <div class="offline-grid" style="margin-top: 20px;">
+                <!-- Pine Ridge Trail -->
+                <div class="offline-card">
+                    <div class="offline-card-header">
+                        <div class="offline-card-title">
+                            🏔️ Pine Ridge Trail
+                        </div>
+                        <span class="status-badge status-available">Available</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        12.5 km trail with scenic viewpoints and forest sections
+                    </p>
+                    <div class="download-size">📥 45.2 MB • Last updated: 2 days ago</div>
+                    <button class="action-btn btn-download" @click="downloadMap('pine-ridge')">
+                        ⬇️ Download for Offline
+                    </button>
+                </div>
+                
+                <!-- Crystal Springs -->
+                <div class="offline-card">
+                    <div class="offline-card-header">
+                        <div class="offline-card-title">
+                            💧 Crystal Springs
+                        </div>
+                        <span class="status-badge status-downloading">Downloading</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        8.3 km trail along mountain streams and waterfalls
+                    </p>
+                    <div class="storage-bar">
+                        <div class="storage-fill" style="width: 65%;"></div>
+                    </div>
+                    <div class="storage-info">
+                        <span>32.1 MB of 45.8 MB</span>
+                        <span>65%</span>
+                    </div>
+                    <button class="action-btn btn-delete" @click="cancelDownload('crystal-springs')">
+                        ❌ Cancel Download
+                    </button>
+                </div>
+                
+                <!-- Summit Loop -->
+                <div class="offline-card">
+                    <div class="offline-card-header">
+                        <div class="offline-card-title">
+                            ⛰️ Summit Loop
+                        </div>
+                        <span class="status-badge status-expired">Expired</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        15.8 km challenging trail to the mountain summit
+                    </p>
+                    <div class="download-size">📥 68.4 MB • Expired: 14 days ago</div>
+                    <button class="action-btn btn-download" @click="downloadMap('summit-loop')">
+                        🔄 Re-download
+                    </button>
+                </div>
+                
+                <!-- Forest Path -->
+                <div class="offline-card">
+                    <div class="offline-card-header">
+                        <div class="offline-card-title">
+                            🌲 Forest Path
+                        </div>
+                        <span class="status-badge status-available">Available</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        5.2 km easy trail through ancient redwood forest
+                    </p>
+                    <div class="download-size">📥 22.8 MB • Last updated: 1 week ago</div>
+                    <button class="action-btn btn-download" @click="downloadMap('forest-path')">
+                        ⬇️ Download for Offline
+                    </button>
+                </div>
+                
+                <!-- Lakeside Trail -->
+                <div class="offline-card">
+                    <div class="offline-card-header">
+                        <div class="offline-card-title">
+                            🌊 Lakeside Trail
+                        </div>
+                        <span class="status-badge status-available">Available</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        9.7 km trail around Crystal Lake with bird watching
+                    </p>
+                    <div class="download-size">📥 38.5 MB • Last updated: 3 days ago</div>
+                    <button class="action-btn btn-download" @click="downloadMap('lakeside')">
+                        ⬇️ Download for Offline
+                    </button>
+                </div>
+                
+                <!-- Canyon Road -->
+                <div class="offline-card">
+                    <div class="offline-card-header">
+                        <div class="offline-card-title">
+                            🏜️ Canyon Road
+                        </div>
+                        <span class="status-badge status-available">Available</span>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 15px;">
+                        18.2 km desert trail with unique geological formations
+                    </p>
+                    <div class="download-size">📥 72.1 MB • Last updated: 5 days ago</div>
+                    <button class="action-btn btn-download" @click="downloadMap('canyon-road')">
+                        ⬇️ Download for Offline
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Downloaded Maps List -->
+            <div class="offline-list">
+                <div class="list-header">
+                    <div class="list-title">📂 My Offline Maps</div>
+                    <button style="padding: 8px 15px; background: #f0f9f6; border: none; border-radius: 8px; cursor: pointer;" @click="downloadAll()">
+                        ⬇️ Download All Available
+                    </button>
+                </div>
+                
+                <template x-for="map in downloadedMaps" :key="map.id">
+                    <div class="offline-item">
+                        <div class="item-icon" x-text="map.icon"></div>
+                        <div class="item-info">
+                            <div class="item-name" x-text="map.name"></div>
+                            <div class="item-details">
+                                <span x-text="map.distance"></span> • 
+                                <span x-text="map.size"></span> • 
+                                <span x-text="map.lastUsed"></span>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="action-icon btn-view" @click="viewMap(map.id)" title="View Map">
+                                👁️
+                            </button>
+                            <button class="action-icon btn-remove" @click="removeMap(map.id)" title="Remove">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Tips Section -->
+            <div class="tips-section">
+                <div class="tips-title">💡 Tips for Offline Use</div>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">📶</div>
+                        <div class="tip-content">
+                            <h4>Download Before You Go</h4>
+                            <p>Always download maps while you have a good internet connection. Most phones don't work well without signal.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">🔋</div>
+                        <div class="tip-content">
+                            <h4>Save Battery</h4>
+                            <p>GPS drains battery quickly. Keep your phone charged and consider a portable power bank for long trails.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">📍</div>
+                        <div class="tip-content">
+                            <h4>Mark Your Start Point</h4>
+                            <p>Save your starting location as a waypoint so you can easily find your way back to your car or campsite.</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">🗺️</div>
+                        <div class="tip-content">
+                            <h4>Bring a Paper Backup</h4>
+                            <p>Electronic devices can fail. Always carry a physical map and compass as a backup.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function offlineMapsManager() {
+            return {
+                lastSync: '2 hours ago',
+                totalStorage: '156 MB',
+                mapsCount: '3',
+                waypointsCount: '24',
+                connectionStatus: 'Online',
+                
+                downloadedMaps: [
+                    { id: 'pine-ridge', name: 'Pine Ridge Trail', icon: '🏔️', distance: '12.5 km', size: '45.2 MB', lastUsed: 'Used 2d ago' },
+                    { id: 'forest-path', name: 'Forest Path', icon: '🌲', distance: '5.2 km', size: '22.8 MB', lastUsed: 'Used 1w ago' },
+                    { id: 'lakeside', name: 'Lakeside Trail', icon: '🌊', distance: '9.7 km', size: '38.5 MB', lastUsed: 'Used 3d ago' }
+                ],
+                
+                downloadMap(mapId) {
+                    alert('Downloading ' + mapId + '... This may take a few minutes depending on your connection.');
+                },
+                
+                cancelDownload(mapId) {
+                    alert('Download cancelled for ' + mapId);
+                },
+                
+                downloadAll() {
+                    alert('Starting download for all available maps...');
+                },
+                
+                syncNow() {
+                    this.lastSync = 'Just now';
+                    alert('Syncing offline maps...');
+                },
+                
+                viewMap(mapId) {
+                    window.location.href = '/trail/map/detail/' + mapId;
+                },
+                
+                removeMap(mapId) {
+                    if (confirm('Are you sure you want to remove this offline map?')) {
+                        this.downloadedMaps = this.downloadedMaps.filter(m => m.id !== mapId);
+                        this.mapsCount = this.downloadedMaps.length;
+                    }
+                }
+            };
+        }
+    </script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</body>
+</html>

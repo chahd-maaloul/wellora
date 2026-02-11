@@ -1,0 +1,593 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Écrire un Avis - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('trail-community') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen p-6 bg-gray-50 dark:bg-gray-900" 
+     x-data="writeReviewWizard()"
+     x-init="init()">
+    
+    {# Header #}
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="/trail/community/reviews" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-star text-amber-400"></i>
+                    Écrire un Avis
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">
+                    Partagez votre expérience avec la communauté
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {# Progress Steps #}
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="flex items-center justify-between">
+            {# Step 1 #}
+            <div class="flex flex-col items-center">
+                <div class="flex items-center justify-center w-10 h-10 font-bold transition-all duration-300 rounded-full"
+                     :class="currentStep >= 1 ? 'bg-wellcare-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'">
+                    <i class="fas fa-map-marker-alt" x-show="currentStep < 1"></i>
+                    <i class="fas fa-check" x-show="currentStep >= 1"></i>
+                </div>
+                <span class="mt-2 text-sm font-medium" :class="currentStep >= 1 ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400'">Trail</span>
+            </div>
+            
+            <div class="flex-1 h-1 mx-2 rounded" :class="currentStep >= 2 ? 'bg-wellcare-500' : 'bg-gray-200 dark:bg-gray-700'"></div>
+            
+            {# Step 2 #}
+            <div class="flex flex-col items-center">
+                <div class="flex items-center justify-center w-10 h-10 font-bold transition-all duration-300 rounded-full"
+                     :class="currentStep >= 2 ? 'bg-wellcare-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'">
+                    <i class="fas fa-star" x-show="currentStep < 2"></i>
+                    <i class="fas fa-check" x-show="currentStep >= 2"></i>
+                </div>
+                <span class="mt-2 text-sm font-medium" :class="currentStep >= 2 ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400'">Note</span>
+            </div>
+            
+            <div class="flex-1 h-1 mx-2 rounded" :class="currentStep >= 3 ? 'bg-wellcare-500' : 'bg-gray-200 dark:bg-gray-700'"></div>
+            
+            {# Step 3 #}
+            <div class="flex flex-col items-center">
+                <div class="flex items-center justify-center w-10 h-10 font-bold transition-all duration-300 rounded-full"
+                     :class="currentStep >= 3 ? 'bg-wellcare-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'">
+                    <i class="fas fa-pen" x-show="currentStep < 3"></i>
+                    <i class="fas fa-check" x-show="currentStep >= 3"></i>
+                </div>
+                <span class="mt-2 text-sm font-medium" :class="currentStep >= 3 ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400'">Avis</span>
+            </div>
+            
+            <div class="flex-1 h-1 mx-2 rounded" :class="currentStep >= 4 ? 'bg-wellcare-500' : 'bg-gray-200 dark:bg-gray-700'"></div>
+            
+            {# Step 4 #}
+            <div class="flex flex-col items-center">
+                <div class="flex items-center justify-center w-10 h-10 font-bold transition-all duration-300 rounded-full"
+                     :class="currentStep >= 4 ? 'bg-wellcare-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'">
+                    <i class="fas fa-check-circle" x-show="currentStep < 4"></i>
+                    <i class="fas fa-check" x-show="currentStep >= 4"></i>
+                </div>
+                <span class="mt-2 text-sm font-medium" :class="currentStep >= 4 ? 'text-wellcare-600 dark:text-wellcare-400' : 'text-gray-500 dark:text-gray-400'">Aperçu</span>
+            </div>
+        </div>
+    </div>
+
+    {# Form Container #}
+    <div class="max-w-4xl mx-auto overflow-hidden bg-white shadow-sm dark:bg-gray-800 rounded-xl">
+        
+        {# Step 1: Trail Selection #}
+        <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-map-marker-alt text-wellcare-500"></i>
+                    Sélectionnez le Trail
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Quel trail avez-vous récemment parcouru ?
+                </p>
+            </div>
+            
+            <div class="p-6">
+                {# Recent Trails #}
+                <div class="mb-6">
+                    <h3 class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Vos trails récents</h3>
+                    <div class="grid gap-3">
+                        <label class="flex items-center p-4 transition-colors border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:border-wellcare-500" 
+                               :class="selectedTrail === 1 ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : ''">
+                            <input type="radio" name="trail" value="1" x-model="selectedTrail" class="sr-only">
+                            <div class="flex-shrink-0 w-16 h-16 overflow-hidden bg-gray-200 rounded-lg dark:bg-gray-700">
+                                <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=100&h=100&fit=crop" class="object-cover w-full h-full" alt="Sentier des Cascades">
+                            </div>
+                            <div class="flex-1 ml-4">
+                                <h4 class="font-medium text-gray-900 dark:text-white">Sentier des Cascades</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Modéré • 8.5 km • il y a 3 jours</p>
+                            </div>
+                            <i class="text-xl fas fa-check-circle text-wellcare-500" x-show="selectedTrail === 1"></i>
+                        </label>
+                        
+                        <label class="flex items-center p-4 transition-colors border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:border-wellcare-500"
+                               :class="selectedTrail === 2 ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : ''">
+                            <input type="radio" name="trail" value="2" x-model="selectedTrail" class="sr-only">
+                            <div class="flex-shrink-0 w-16 h-16 overflow-hidden bg-gray-200 rounded-lg dark:bg-gray-700">
+                                <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&h=100&fit=crop" class="object-cover w-full h-full" alt="Montagne Bleue">
+                            </div>
+                            <div class="flex-1 ml-4">
+                                <h4 class="font-medium text-gray-900 dark:text-white">Montagne Bleue - Sommet Nord</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Difficile • 12.3 km • il y a 1 semaine</p>
+                            </div>
+                            <i class="text-xl fas fa-check-circle text-wellcare-500" x-show="selectedTrail === 2"></i>
+                        </label>
+                        
+                        <label class="flex items-center p-4 transition-colors border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:border-wellcare-500"
+                               :class="selectedTrail === 3 ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : ''">
+                            <input type="radio" name="trail" value="3" x-model="selectedTrail" class="sr-only">
+                            <div class="flex-shrink-0 w-16 h-16 overflow-hidden bg-gray-200 rounded-lg dark:bg-gray-700">
+                                <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&h=100&fit=crop" class="object-cover w-full h-full" alt="Forêt de Pins">
+                            </div>
+                            <div class="flex-1 ml-4">
+                                <h4 class="font-medium text-gray-900 dark:text-white">Forêt de Pins - Circuit Nord</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Facile • 5.2 km • il y a 2 semaines</p>
+                            </div>
+                            <i class="text-xl fas fa-check-circle text-wellcare-500" x-show="selectedTrail === 3"></i>
+                        </label>
+                    </div>
+                </div>
+                
+                {# Search Other Trail #}
+                <div>
+                    <h3 class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Ou rechercher un autre trail</h3>
+                    <div class="relative">
+                        <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                        <input type="text" placeholder="Rechercher un trail..." 
+                               class="w-full py-3 pl-10 pr-4 text-gray-900 bg-white border border-gray-200 rounded-lg community-input dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Step 2: Ratings #}
+        <div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-star text-amber-400"></i>
+                    Évaluez Votre Expérience
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Donnez votre avis sur différents aspects du trail
+                </p>
+            </div>
+            
+            <div class="p-6 space-y-8">
+                {# Ambiance Rating #}
+                <div class="text-center">
+                    <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">Ambiance & Paysage</h3>
+                    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">La beauté du paysage, l'atmosphère et le plaisir global</p>
+                    <div class="flex justify-center gap-2" id="ambiance-rating">
+                        {% for i in 1..5 %}
+                        <button type="button" 
+                                @click="ratings.ambiance = {{ i }}"
+                                class="p-2 transition-transform hover:scale-110">
+                            <svg class="w-10 h-10 transition-colors {{ i <= 3 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-300 dark:text-gray-600' }}"
+                                 :class="ratings.ambiance >= {{ i }} ? 'text-amber-400' : ''"
+                                 fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <p class="mt-2 text-sm font-medium" 
+                       x-text="ratings.ambiance ? ['Non évalué', 'Décevant', 'Moyen', 'Bien', 'Très bien', 'Excellent'][ratings.ambiance] : 'Sélectionnez une note'">
+                    </p>
+                </div>
+                
+                {# Safety Rating #}
+                <div class="text-center">
+                    <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">Sécurité & Entretien</h3>
+                    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">L'état du chemin, la signalisation et les risques potentiels</p>
+                    <div class="flex justify-center gap-2" id="safety-rating">
+                        {% for i in 1..5 %}
+                        <button type="button"
+                                @click="ratings.safety = {{ i }}"
+                                class="p-2 transition-transform hover:scale-110">
+                            <svg class="w-10 h-10 transition-colors"
+                                 :class="ratings.safety >= {{ i }} ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'"
+                                 fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <p class="mt-2 text-sm font-medium"
+                       x-text="ratings.safety ? ['Non évalué', 'Danger', 'Médiocre', 'Correct', 'Bon', 'Excellent'][ratings.safety] : 'Sélectionnez une note'">
+                    </p>
+                </div>
+                
+                {# Difficulty Rating #}
+                <div class="text-center">
+                    <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">Difficulté Perçue</h3>
+                    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">L'effort physique requis pour completing ce trail</p>
+                    <div class="flex justify-center gap-4">
+                        {% for i in 1..5 %}
+                        <button type="button"
+                                @click="ratings.difficulty = {{ i }}"
+                                class="px-4 py-2 transition-all border-2 rounded-lg"
+                                :class="ratings.difficulty === {{ i }} ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20 text-wellcare-600 dark:text-wellcare-400' : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-wellcare-300'">
+                            {{ i }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <p class="mt-2 text-sm font-medium" 
+                       x-text="ratings.difficulty ? ['Très facile', 'Facile', 'Modéré', 'Difficile', 'Très difficile', 'Expert'][ratings.difficulty - 1] : 'Sélectionnez'">
+                    </p>
+                </div>
+                
+                {# Visit Date #}
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Date de visite</label>
+                    <input type="date" x-model="visitDate" 
+                           class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg community-input md:w-64 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                </div>
+                
+                {# Weather Conditions #}
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Conditions météorologiques</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" 
+                                @click="weatherConditions = 'sunny'"
+                                class="px-3 py-1 text-sm transition-colors border rounded-full"
+                                :class="weatherConditions === 'sunny' ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-400 text-yellow-700 dark:text-yellow-400' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'">
+                            <i class="mr-1 fas fa-sun"></i> Ensoleillé
+                        </button>
+                        <button type="button"
+                                @click="weatherConditions = 'cloudy'"
+                                class="px-3 py-1 text-sm transition-colors border rounded-full"
+                                :class="weatherConditions === 'cloudy' ? 'bg-gray-100 dark:bg-gray-700 border-gray-400 text-gray-700 dark:text-gray-300' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'">
+                            <i class="mr-1 fas fa-cloud"></i> Nuageux
+                        </button>
+                        <button type="button"
+                                @click="weatherConditions = 'rainy'"
+                                class="px-3 py-1 text-sm transition-colors border rounded-full"
+                                :class="weatherConditions === 'rainy' ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 text-blue-700 dark:text-blue-400' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'">
+                            <i class="mr-1 fas fa-cloud-rain"></i> Pluvieux
+                        </button>
+                        <button type="button"
+                                @click="weatherConditions = 'windy'"
+                                class="px-3 py-1 text-sm transition-colors border rounded-full"
+                                :class="weatherConditions === 'windy' ? 'bg-teal-100 dark:bg-teal-900/30 border-teal-400 text-teal-700 dark:text-teal-400' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'">
+                            <i class="mr-1 fas fa-wind"></i> Venteux
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Step 3: Review Content #}
+        <div x-show="currentStep === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-pen text-wellcare-500"></i>
+                    Partagez Votre Expérience
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Décrivez votre aventure en détail
+                </p>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                {# Review Title #}
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Titre de votre avis</label>
+                    <input type="text" x-model="reviewTitle" placeholder="Ex: Une expérience inoubliable !"
+                           class="w-full px-4 py-3 text-gray-900 bg-white border border-gray-200 rounded-lg community-input dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                </div>
+                
+                {# Review Content #}
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Votre avis
+                        <span class="font-normal text-gray-400" x-text="'(' + reviewText.length + ' caractères)'"></span>
+                    </label>
+                    <textarea x-model="reviewText" rows="6" 
+                              placeholder="Décrivez votre expérience : ce que vous avez aimé, les points d'attention, vos conseils pour les autres randonneurs..."
+                              class="w-full px-4 py-3 text-gray-900 bg-white border border-gray-200 rounded-lg community-input dark:border-gray-700 dark dark:text-white resize:bg-gray-800-none"></textarea>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Minimum 50 caractères. Plus vous êtes détaillé, plus votre avis sera utile.</p>
+                </div>
+                
+                {# Tips Section #}
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <i class="mr-1 fas fa-lightbulb text-amber-400"></i>
+                        Conseils pour les futurs randonneurs
+                    </label>
+                    <textarea x-model="tips" rows="3" 
+                              placeholder="Équipement recommandé, meilleure période, points d'eau, risques à éviter..."
+                              class="w-full px-4 py-3 text-gray-900 bg-white border border-gray-200 rounded-lg resize-none community-input dark:border-gray-700 dark:bg-gray-800 dark:text-white"></textarea>
+                </div>
+                
+                {# Photo Upload #}
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Photos (optionnel)</label>
+                    <div class="p-6 text-center transition-colors border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 hover:border-wellcare-500"
+                         @dragover.prevent="dragOver = true"
+                         @dragleave.prevent="dragOver = false"
+                         @drop.prevent="handleDrop($event)"
+                         :class="dragOver ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : ''">
+                        <input type="file" id="photo-upload" multiple accept="image/*" class="hidden"
+                               @change="handleFileSelect($event)">
+                        <label for="photo-upload" class="cursor-pointer">
+                            <i class="mb-2 text-3xl text-gray-400 fas fa-cloud-upload-alt"></i>
+                            <p class="text-gray-600 dark:text-gray-400">
+                                <span class="font-medium text-wellcare-600 dark:text-wellcare-400">Cliquez pour télécharger</span>
+                                ou.glissez-déposez
+                            </p>
+                            <p class="mt-1 text-xs text-gray-400">PNG, JPG jusqu'à 10Mo each</p>
+                        </label>
+                    </div>
+                    
+                    {# Photo Previews #}
+                    <div class="flex flex-wrap gap-2 mt-4" x-show="uploadedPhotos.length > 0">
+                        <template x-for="(photo, index) in uploadedPhotos" :key="index">
+                            <div class="relative group">
+                                <img :src="photo.preview" class="object-cover w-24 h-24 rounded-lg">
+                                <button type="button" @click="uploadedPhotos.splice(index, 1)"
+                                        class="absolute flex items-center justify-center w-6 h-6 text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-2 -right-2 group-hover:opacity-100">
+                                    <i class="text-xs fas fa-times"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                {# Checkboxes #}
+                <div class="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" x-model="isOwner" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">J'ai personnellement parcouru ce trail</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" x-model="recommend" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Je recommande ce trail à d'autres randonneurs</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        {# Step 4: Preview #}
+        <div x-show="currentStep === 4" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fas fa-eye text-wellcare-500"></i>
+                    Aperçu de Votre Avis
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Vérifiez les informations avant de publier
+                </p>
+            </div>
+            
+            <div class="p-6">
+                {# Preview Card #}
+                <div class="p-6 rounded-lg bg-gray-50 dark:bg-gray-900">
+                    {# Trail Info #}
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=100&h=100&fit=crop" class="object-cover w-16 h-16 rounded-lg" alt="Trail">
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white" x-text="selectedTrail ? getTrailName(selectedTrail) : 'Trail non sélectionné'"></h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="visitDate ? 'Visité le ' + new Date(visitDate).toLocaleDateString('fr-FR') : 'Date non spécifiée'"></p>
+                        </div>
+                    </div>
+                    
+                    {# Ratings #}
+                    <div class="flex items-center gap-6 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="flex text-amber-400">
+                                <i class="fas fa-star" :class="ratings.ambiance >= 1 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-star" :class="ratings.ambiance >= 2 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-star" :class="ratings.ambiance >= 3 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-star" :class="ratings.ambiance >= 4 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-star" :class="ratings.ambiance >= 5 ? '' : 'opacity-30'"></i>
+                            </span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Ambiance</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="flex text-green-500">
+                                <i class="fas fa-shield-alt" :class="ratings.safety >= 1 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-shield-alt" :class="ratings.safety >= 2 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-shield-alt" :class="ratings.safety >= 3 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-shield-alt" :class="ratings.safety >= 4 ? '' : 'opacity-30'"></i>
+                                <i class="fas fa-shield-alt" :class="ratings.safety >= 5 ? '' : 'opacity-30'"></i>
+                            </span>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Sécurité</span>
+                        </div>
+                    </div>
+                    
+                    {# Title #}
+                    <h4 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white" x-text="reviewTitle || 'Sans titre'"></h4>
+                    
+                    {# Content Preview #}
+                    <p class="mb-4 text-gray-700 dark:text-gray-300" x-text="reviewText"></p>
+                    
+                    {# Tips #}
+                    <div x-show="tips" class="p-4 mb-4 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                        <h5 class="mb-2 text-sm font-medium text-wellcare-700 dark:text-wellcare-300">
+                            <i class="mr-1 fas fa-lightbulb"></i> Conseils
+                        </h5>
+                        <p class="text-sm text-gray-600 dark:text-gray-400" x-text="tips"></p>
+                    </div>
+                    
+                    {# Photos #}
+                    <div x-show="uploadedPhotos.length > 0" class="flex gap-2 overflow-x-auto photo-gallery">
+                        <template x-for="(photo, index) in uploadedPhotos" :key="index">
+                            <img :src="photo.preview" class="flex-shrink-0 object-cover w-20 h-20 rounded-lg">
+                        </template>
+                    </div>
+                </div>
+                
+                {# Terms #}
+                <div class="mt-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" x-model="acceptTerms" class="w-4 h-4 mt-1 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            J'accepte les <a href="#" class="text-wellcare-600 dark:text-wellcare-400 hover:underline">conditions d'utilisation</a> 
+                            et je confirme que cet avis reflète mon expérience réelle.
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        {# Navigation Buttons #}
+        <div class="flex justify-between p-6 border-t border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+            <button type="button" 
+                    x-show="currentStep > 1"
+                    @click="currentStep--"
+                    class="px-6 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <i class="mr-2 fas fa-arrow-left"></i>
+                Précédent
+            </button>
+            <div x-show="currentStep === 1" class="flex-1"></div>
+            
+            <button type="button"
+                    x-show="currentStep < 4"
+                    @click="nextStep()"
+                    :disabled="!canProceed()"
+                    class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                Suivant
+                <i class="ml-2 fas fa-arrow-right"></i>
+            </button>
+            
+            <button type="button"
+                    x-show="currentStep === 4"
+                    @click="submitReview()"
+                    :disabled="!acceptTerms"
+                    class="px-6 py-2 text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="mr-2 fas fa-check"></i>
+                Publier l'Avis
+            </button>
+        </div>
+    </div>
+
+    {# Success Modal #}
+    <div x-show="showSuccess" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style="display: none;">
+        <div @click.away="showSuccess = false" class="max-w-md p-8 mx-4 text-center bg-white dark:bg-gray-800 rounded-2xl">
+            <div class="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full dark:bg-green-900/30">
+                <i class="text-4xl text-green-500 fas fa-check"></i>
+            </div>
+            <h3 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">Avis publié !</h3>
+            <p class="mb-6 text-gray-600 dark:text-gray-400">Merci d'avoir partagé votre expérience. Votre avis aide la communauté !</p>
+            <div class="flex justify-center gap-3">
+                <a href="/trail/community/reviews" class="px-6 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                    Voir les avis
+                </a>
+                <a href="/trail/detail/1" class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    Retour au trail
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function writeReviewWizard() {
+    return {
+        currentStep: 1,
+        selectedTrail: null,
+        ratings: {
+            ambiance: 0,
+            safety: 0,
+            difficulty: 0
+        },
+        visitDate: '',
+        weatherConditions: '',
+        reviewTitle: '',
+        reviewText: '',
+        tips: '',
+        uploadedPhotos: [],
+        isOwner: false,
+        recommend: false,
+        acceptTerms: false,
+        dragOver: false,
+        showSuccess: false,
+        
+        trailNames: {
+            1: 'Sentier des Cascades',
+            2: 'Montagne Bleue - Sommet Nord',
+            3: 'Forêt de Pins - Circuit Nord'
+        },
+        
+        init() {
+            // Set default date to today
+            this.visitDate = new Date().toISOString().split('T')[0];
+        },
+        
+        getTrailName(id) {
+            return this.trailNames[id] || 'Trail inconnu';
+        },
+        
+        canProceed() {
+            switch(this.currentStep) {
+                case 1:
+                    return this.selectedTrail !== null;
+                case 2:
+                    return this.ratings.ambiance > 0 && this.ratings.safety > 0 && this.ratings.difficulty > 0;
+                case 3:
+                    return this.reviewText.length >= 50;
+                default:
+                    return true;
+            }
+        },
+        
+        nextStep() {
+            if (this.canProceed()) {
+                this.currentStep++;
+            }
+        },
+        
+        handleDrop(e) {
+            this.dragOver = false;
+            const files = e.dataTransfer.files;
+            this.processFiles(files);
+        },
+        
+        handleFileSelect(e) {
+            const files = e.target.files;
+            this.processFiles(files);
+        },
+        
+        processFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.uploadedPhotos.push({
+                            file: file,
+                            preview: e.target.result
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        },
+        
+        submitReview() {
+            // Simulate API call
+            this.showSuccess = true;
+        }
+    }
+}
+</script>
+{% endblock %}

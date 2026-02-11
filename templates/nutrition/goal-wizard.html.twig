@@ -1,0 +1,422 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Assistant de configuration d'objectifs - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8" x-data="goalWizard()">
+    {# Progress Bar #}
+    <div class="max-w-4xl px-4 mx-auto mb-8">
+        <div class="flex items-center justify-between">
+            {% for step in 1..5 %}
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center justify-center w-10 h-10 text-sm font-semibold transition-all duration-300 rounded-full"
+                         :class="{
+                             'bg-wellcare-500 text-white': currentStep >= {{ step }},
+                             'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400': currentStep < {{ step }}
+                         }">
+                        <span x-show="currentStep < {{ step }}">{{ step }}</span>
+                        <i class="fas fa-check" x-show="currentStep >= {{ step }}"></i>
+                    </div>
+                    <span class="hidden mt-2 text-xs text-gray-500 dark:text-gray-400 sm:block">
+                        {% if step == 1 %}Type d'objectif{% endif %}
+                        {% if step == 2 %}Mesures{% endif %}
+                        {% if step == 3 %}Calories{% endif %}
+                        {% if step == 4 %}Macros{% endif %}
+                        {% if step == 5 %}Récapitulatif{% endif %}
+                    </span>
+                </div>
+                {% if step < 5 %}
+                    <div class="flex-1 h-1 mx-2 transition-all duration-300 rounded"
+                         :class="currentStep >= {{ step + 1 }} ? 'bg-wellcare-500' : 'bg-gray-200 dark:bg-gray-700'"></div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Wizard Content #}
+    <div class="max-w-4xl px-4 mx-auto">
+        <div class="p-8 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+            
+            {# Step 1: Goal Type #}
+            <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0">
+                <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Quel type d'objectif souhaitez-vous atteindre ?</h2>
+                
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {% for type in goalTypes %}
+                        <div class="p-4 transition-all duration-300 border-2 cursor-pointer rounded-xl hover:border-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-gray-700"
+                             :class="formData.goalType === '{{ type.id }}' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-gray-700' : 'border-gray-200 dark:border-gray-700'"
+                             @click="selectGoalType('{{ type.id }}')">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                    <i class="fas {{ type.icon }} text-wellcare-500 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">{{ type.name }}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ type.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {# Goal-specific options #}
+                <div x-show="formData.goalType === 'WEIGHT_LOSS' || formData.goalType === 'WEIGHT_GAIN' || formData.goalType === 'BODY_RECOMPOSITION'" 
+                     x-transition class="p-4 mt-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nom de l'objectif (optionnel)</label>
+                    <input type="text" x-model="formData.name" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                           placeholder="Ex: Perte de poids été 2024">
+                </div>
+            </div>
+
+            {# Step 2: Measurements #}
+            <div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+                <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Vos mesures actuelles</h2>
+                
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Poids actuel (kg)</label>
+                        <input type="number" step="0.1" x-model="formData.currentWeight"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Taille (cm)</label>
+                        <input type="number" step="0.1" x-model="formData.height"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Âge (années)</label>
+                        <input type="number" x-model="formData.age"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Sexe</label>
+                        <select x-model="formData.gender" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                            <option value="male">Homme</option>
+                            <option value="female">Femme</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Date cible</label>
+                        <input type="date" x-model="formData.targetDate"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Niveau d'activité</label>
+                        <select x-model="formData.activityLevel"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                            {% for level in activityLevels %}
+                                <option value="{{ level.id }}">{{ level.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                {# Target Weight (conditional) #}
+                <div x-show="formData.goalType === 'WEIGHT_LOSS' || formData.goalType === 'WEIGHT_GAIN' || formData.goalType === 'BODY_RECOMPOSITION'" 
+                     x-transition class="p-4 mt-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Poids cible (kg)</label>
+                    <input type="number" step="0.1" x-model="formData.targetWeight"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                </div>
+            </div>
+
+            {# Step 3: Calories #}
+            <div x-show="currentStep === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+                <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Calcul des calories</h2>
+                
+                <div class="p-6 mb-6 border bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-200 dark:border-wellcare-800 rounded-xl">
+                    <h3 class="mb-4 font-semibold text-wellcare-700 dark:text-wellcare-300">Vos besoins caloriques estimés</h3>
+                    <div class="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Métabolisme de base (BMR)</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="calculations.bmr.toFixed(0) + ' kcal'">0 kcal</p>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Dépense quotidienne (TDEE)</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="calculations.tdee.toFixed(0) + ' kcal'">0 kcal</p>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Objectif calorique</p>
+                            <p class="text-2xl font-bold text-wellcare-500" x-text="calculations.targetCalories.toFixed(0) + ' kcal'">0 kcal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Calories quotidiennes recommandées
+                            <span class="font-normal text-gray-400" x-show="formData.goalType === 'WEIGHT_LOSS'">(déficit de 500 kcal pour une perte de ~0.5kg/semaine)</span>
+                            <span class="font-normal text-gray-400" x-show="formData.goalType === 'WEIGHT_GAIN'">(surplus de 300-500 kcal pour une prise de masse progressive)</span>
+                        </label>
+                        <input type="range" min="1200" max="3500" step="50" x-model="calculations.targetCalories"
+                               @input="updateMacroSplit()"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                        <div class="flex justify-between mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            <span>1200 kcal</span>
+                            <span class="font-semibold text-wellcare-500" x-text="calculations.targetCalories + ' kcal'"></span>
+                            <span>3500 kcal</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de repas par jour</label>
+                        <div class="flex gap-2">
+                            {% for i in 3..6 %}
+                                <button type="button" 
+                                        @click="formData.mealFrequency = {{ i }}"
+                                        class="flex-1 py-2 transition-all duration-300 border rounded-lg"
+                                        :class="formData.mealFrequency === {{ i }} ? 'bg-wellcare-500 text-white border-wellcare-500' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-wellcare-500'">
+                                    {{ i }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Hydratation quotidienne (verres)</label>
+                        <div class="flex items-center gap-4">
+                            <button type="button" @click="formData.waterIntake = Math.max(4, formData.waterIntake - 1)" class="p-2 bg-gray-100 rounded-full dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="text-gray-600 fas fa-minus dark:text-gray-300"></i>
+                            </button>
+                            <span class="w-12 text-2xl font-bold text-center text-gray-900 dark:text-white" x-text="formData.waterIntake"></span>
+                            <button type="button" @click="formData.waterIntake = Math.min(16, formData.waterIntake + 1)" class="p-2 bg-gray-100 rounded-full dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="text-gray-600 fas fa-plus dark:text-gray-300"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Step 4: Macros #}
+            <div x-show="currentStep === 4" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+                <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Répartition des macronutriments</h2>
+                
+                <div class="p-6 mb-6 border bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-200 dark:border-wellcare-800 rounded-xl">
+                    <h3 class="mb-4 font-semibold text-wellcare-700 dark:text-wellcare-300">Répartition recommandée</h3>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-wellcare-600">Protéines</span>
+                                <span class="font-semibold" x-text="formData.proteinPercent + '%'">30%</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full transition-all duration-300 bg-wellcare-500" :style="'width: ' + formData.proteinPercent + '%'"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500" x-text="(calculations.targetCalories * formData.proteinPercent / 100 / 4).toFixed(1) + 'g par jour'"></p>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-blue-500">Glucides</span>
+                                <span class="font-semibold" x-text="formData.carbPercent + '%'">40%</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full transition-all duration-300 bg-blue-500" :style="'width: ' + formData.carbPercent + '%'"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500" x-text="(calculations.targetCalories * formData.carbPercent / 100 / 4).toFixed(1) + 'g par jour'"></p>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-amber-500">Lipides</span>
+                                <span class="font-semibold" x-text="formData.fatPercent + '%'">30%</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full transition-all duration-300 bg-amber-500" :style="'width: ' + formData.fatPercent + '%'"></div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500" x-text="(calculations.targetCalories * formData.fatPercent / 100 / 9).toFixed(1) + 'g par jour'"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                        <h4 class="mb-3 font-medium text-gray-700 dark:text-gray-300">Protéines (g/jour)</h4>
+                        <input type="range" min="50" max="250" step="5" x-model="formData.targetProtein"
+                               @input="updateMacroPercents('protein')"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-wellcare-500">
+                        <p class="mt-2 text-xl font-bold text-center text-wellcare-500" x-text="formData.targetProtein + 'g'"></p>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                        <h4 class="mb-3 font-medium text-gray-700 dark:text-gray-300">Glucides (g/jour)</h4>
+                        <input type="range" min="50" max="400" step="10" x-model="formData.targetCarbs"
+                               @input="updateMacroPercents('carbs')"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500">
+                        <p class="mt-2 text-xl font-bold text-center text-blue-500" x-text="formData.targetCarbs + 'g'"></p>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                        <h4 class="mb-3 font-medium text-gray-700 dark:text-gray-300">Lipides (g/jour)</h4>
+                        <input type="range" min="30" max="150" step="5" x-model="formData.targetFats"
+                               @input="updateMacroPercents('fats')"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-amber-500">
+                        <p class="mt-2 text-xl font-bold text-center text-amber-500" x-text="formData.targetFats + 'g'"></p>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Présélection</label>
+                    <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+                        <button type="button" @click="applyMacroPreset('balanced')"
+                                class="px-3 py-2 text-sm transition-colors border border-gray-300 rounded-lg dark:border-gray-600 hover:border-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                            Équilibré (40/30/30)
+                        </button>
+                        <button type="button" @click="applyMacroPreset('lowcarb')"
+                                class="px-3 py-2 text-sm transition-colors border border-gray-300 rounded-lg dark:border-gray-600 hover:border-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                            Low-carb (25/45/30)
+                        </button>
+                        <button type="button" @click="applyMacroPreset('highprotein')"
+                                class="px-3 py-2 text-sm transition-colors border border-gray-300 rounded-lg dark:border-gray-600 hover:border-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                            Hauteprotéine (35/35/30)
+                        </button>
+                        <button type="button" @click="applyMacroPreset('athlete')"
+                                class="px-3 py-2 text-sm transition-colors border border-gray-300 rounded-lg dark:border-gray-600 hover:border-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                            Athlète (30/50/20)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Step 5: Summary #}
+            <div x-show="currentStep === 5" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-4" x-transition:enter-end="opacity-100 transform translate-x-0" style="display: none;">
+                <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Récapitulatif de votre objectif</h2>
+                
+                <div class="p-6 mb-6 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex items-center justify-center w-16 h-16 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <i class="text-2xl fas fa-check text-wellcare-500"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white" x-text="formData.name || 'Nouvel objectif'"></h3>
+                            <p class="text-gray-500 dark:text-gray-400" x-text="getGoalTypeName(formData.goalType)"></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-center md:grid-cols-4">
+                        <div class="p-3 bg-white rounded-lg dark:bg-gray-800">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">De</p>
+                            <p class="font-bold text-gray-900 dark:text-white" x-text="formData.currentWeight + ' kg'"></p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <i class="mx-auto mb-1 fas fa-arrow-right text-wellcare-500"></i>
+                        </div>
+                        <div class="p-3 bg-white rounded-lg dark:bg-gray-800">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Vers</p>
+                            <p class="font-bold text-wellcare-500" x-text="formData.targetWeight ? formData.targetWeight + ' kg' : 'Maintenance'"></p>
+                        </div>
+                        <div class="p-3 bg-white rounded-lg dark:bg-gray-800">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Calories</p>
+                            <p class="font-bold text-gray-900 dark:text-white" x-text="calculations.targetCalories.toFixed(0) + ' kcal'"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
+                    <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <h4 class="mb-3 font-medium text-gray-700 dark:text-gray-300">Macronutriments quotidiens</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400"><i class="mr-2 fas fa-drumstick-bite text-wellcare-500"></i>Protéines</span>
+                                <span class="font-medium" x-text="formData.targetProtein + 'g (' + formData.proteinPercent + '%)'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400"><i class="mr-2 text-blue-500 fas fa-bread-slice"></i>Glucides</span>
+                                <span class="font-medium" x-text="formData.targetCarbs + 'g (' + formData.carbPercent + '%)'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400"><i class="mr-2 fas fa-oil-can text-amber-500"></i>Lipides</span>
+                                <span class="font-medium" x-text="formData.targetFats + 'g (' + formData.fatPercent + '%)'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <h4 class="mb-3 font-medium text-gray-700 dark:text-gray-300">Objectifs quotidiens</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400"><i class="mr-2 fas fa-utensils text-wellcare-500"></i>Repas</span>
+                                <span class="font-medium" x-text="formData.mealFrequency + ' par jour'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400"><i class="mr-2 text-blue-500 fas fa-glass-water"></i>Eau</span>
+                                <span class="font-medium" x-text="formData.waterIntake + ' verres'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500 dark:text-gray-400"><i class="mr-2 text-gray-500 fas fa-calendar-alt"></i>Date cible</span>
+                                <span class="font-medium" x-text="formData.targetDate || 'Non définie'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Priorité</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        {% for priority in priorities %}
+                            <button type="button" 
+                                    @click="formData.priority = '{{ priority.id }}'"
+                                    class="py-2 transition-all duration-300 border rounded-lg"
+                                    :class="formData.priority === '{{ priority.id }}' ? 'bg-wellcare-500 text-white border-wellcare-500' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'">
+                                {{ priority.name }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Navigation Buttons #}
+            <div class="flex justify-between pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
+                <button type="button" 
+                        x-show="currentStep > 1"
+                        @click="currentStep--"
+                        class="px-6 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-arrow-left"></i>Précédent
+                </button>
+                <div class="flex-1"></div>
+                <button type="button" 
+                        x-show="currentStep < 5"
+                        @click="nextStep()"
+                        :disabled="!canProceed()"
+                        :class="!canProceed() ? 'opacity-50 cursor-not-allowed' : ''"
+                        class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    Suivant<i class="ml-2 fas fa-arrow-right"></i>
+                </button>
+                <button type="button" 
+                        x-show="currentStep === 5"
+                        @click="saveGoal()"
+                        class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-check"></i>Créer l'objectif
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Success Modal #}
+    <div x-show="showSuccess" x-transition style="display: none;"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+         @click="showSuccess = false">
+        <div class="max-w-md p-8 mx-4 text-center bg-white dark:bg-gray-800 rounded-2xl" @click.stop>
+            <div class="flex items-center justify-center w-20 h-20 mx-auto mb-4 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                <i class="text-4xl fas fa-trophy text-wellcare-500"></i>
+            </div>
+            <h3 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">Félicitations !</h3>
+            <p class="mb-6 text-gray-500 dark:text-gray-400">Votre objectif a été créé avec succès. Commencez votre parcours vers une meilleure santé !</p>
+            <a href="#" @click.prevent="window.location.href = '/nutrition/goals/' + savedGoalId"
+               class="inline-block px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                Voir mon objectif
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/nutrition-goals.js') }}"></script>
+{% endblock %}

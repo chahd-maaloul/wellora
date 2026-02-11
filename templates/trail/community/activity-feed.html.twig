@@ -1,0 +1,397 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Fil d'Activité - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-community-css') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('trail-community') }}
+{% endblock %}
+
+{% block body %}
+<div class="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen" x-data="{
+    activeFilter: 'all',
+    searchQuery: ''
+}">
+    {# Header #}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                <i class="fas fa-stream text-wellcare-500 mr-2"></i>
+                Fil d'Activité
+            </h1>
+            <p class="mt-1 text-gray-500 dark:text-gray-400">
+                Suivez l'activité de la communauté
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center gap-4">
+            <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <i class="fas fa-bell mr-1"></i> Notifications
+            </button>
+            <button class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <i class="fas fa-cog mr-1"></i> Paramètres
+            </button>
+        </div>
+    </div>
+
+    {# Filters #}
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center gap-4">
+            <div class="flex-1 relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" x-model="searchQuery" placeholder="Rechercher dans le fil..."
+                       class="community-input w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button @click="activeFilter = 'all'" 
+                        class="px-4 py-2 rounded-lg font-medium transition-colors"
+                        :class="activeFilter === 'all' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">
+                    Tout
+                </button>
+                <button @click="activeFilter = 'trails'" 
+                        class="px-4 py-2 rounded-lg font-medium transition-colors"
+                        :class="activeFilter === 'trails' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">
+                    <i class="fas fa-route mr-1"></i> Trails
+                </button>
+                <button @click="activeFilter = 'reviews'" 
+                        class="px-4 py-2 rounded-lg font-medium transition-colors"
+                        :class="activeFilter === 'reviews' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">
+                    <i class="fas fa-star mr-1"></i> Avis
+                </button>
+                <button @click="activeFilter = 'photos'" 
+                        class="px-4 py-2 rounded-lg font-medium transition-colors"
+                        :class="activeFilter === 'photos' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">
+                    <i class="fas fa-camera mr-1"></i> Photos
+                </button>
+                <button @click="activeFilter = 'records'" 
+                        class="px-4 py-2 rounded-lg font-medium transition-colors"
+                        :class="activeFilter === 'records' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">
+                    <i class="fas fa-trophy mr-1"></i> Records
+                </button>
+                <button @click="activeFilter = 'groups'" 
+                        class="px-4 py-2 rounded-lg font-medium transition-colors"
+                        :class="activeFilter === 'groups' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'">
+                    <i class="fas fa-users mr-1"></i> Groupes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {# Activity Feed #}
+    <div class="space-y-4 max-w-3xl">
+        {# Trail Completion #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-wellcare-400 to-wellcare-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-check-circle text-xl activity-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="#" class="font-semibold text-gray-900 dark:text-white hover:text-wellcare-600 dark:hover:text-wellcare-400">Marie C.</a>
+                        <span class="text-gray-500 dark:text-gray-400">a complété</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Sentier des Cascades</a>
+                        <span class="text-gray-500 dark:text-gray-400">•</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">il y a 2h</span>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-3">
+                        Quelle journée incroyable ! Le temps était parfait et les cascades étaient magnifique. À faire et refaire !
+                    </p>
+                    {# Trail Stats #}
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-3">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p class="text-lg font-bold text-gray-900 dark:text-white">2h 45min</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Durée</p>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold text-gray-900 dark:text-white">8.5 km</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Distance</p>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold text-gray-900 dark:text-white">420m</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Dénivelé</p>
+                            </div>
+                        </div>
+                    </div>
+                    {# Photos #}
+                    <div class="flex gap-2 overflow-x-auto photo-gallery mb-3">
+                        <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=200&h=150&fit=crop" class="w-28 h-28 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&h=150&fit=crop" class="w-28 h-28 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=150&fit=crop" class="w-28 h-28 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform">
+                    </div>
+                    {# Actions #}
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleLike(this)" class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-heart text-lg"></i>
+                            <span>142</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-comment text-lg"></i>
+                            <span>23</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="fas fa-share text-lg"></i>
+                            <span>Partager</span>
+                        </button>
+                        <button class="ml-auto flex items-center gap-2 text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
+                            <i class="fas fa-plus"></i>
+                            <span>Ajouter à mes trails</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Review #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-star text-xl activity-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="#" class="font-semibold text-gray-900 dark:text-white hover:text-wellcare-600 dark:hover:text-wellcare-400">Jean-Luc M.</a>
+                        <span class="text-gray-500 dark:text-gray-400">a publié un avis sur</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Montagne Bleue</a>
+                        <span class="text-gray-500 dark:text-gray-400">•</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">il y a 5h</span>
+                    </div>
+                    {# Rating #}
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="flex items-center gap-1 text-amber-400">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                        <div class="flex gap-2 text-sm">
+                            <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                                <i class="fas fa-leaf mr-1"></i>Ambiance: 4/5
+                            </span>
+                            <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">
+                                <i class="fas fa-shield-alt mr-1"></i>Sécurité: 4/5
+                            </span>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-3">
+                        Un trail exigeant mais gratifiant. La montée est raide par endroits mais bien balisée. Les points de vue depuis le sommet sont exceptionnels. Cependant, j'ai trouvé le dernier kilomètre un peu dangereux avec des rocailles lâches. Prévoir de bonnes chaussures de randonnée et suffisamment d'eau.
+                    </p>
+                    {# Actions #}
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleLike(this)" class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-heart text-lg"></i>
+                            <span>67</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-comment text-lg"></i>
+                            <span>8</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="fas fa-share text-lg"></i>
+                            <span>Partager</span>
+                        </button>
+                        <button class="ml-auto flex items-center gap-2 text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
+                            <i class="fas fa-plus"></i>
+                            <span>Voir le trail</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# New Record #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-trophy text-xl activity-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="#" class="font-semibold text-gray-900 dark:text-white hover:text-wellcare-600 dark:hover:text-wellcare-400">Alain P.</a>
+                        <span class="text-gray-500 dark:text-gray-400">a battu son record sur</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Lac de Haute Montagne</a>
+                        <span class="text-gray-500 dark:text-gray-400">•</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">il y a 8h</span>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-3">
+                        Nouveau record personnel ! J'ai battu mon temps de 15 minutes. La condition physique paye finally !
+                    </p>
+                    {# Record Stats #}
+                    <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-4 mb-3 text-white">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <p class="text-2xl font-bold">3h 12min</p>
+                                <p class="text-xs opacity-80">Nouveau record</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold">-15min</p>
+                                <p class="text-xs opacity-80">Amélioration</p>
+                            </div>
+                        </div>
+                    </div>
+                    {# Actions #}
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleLike(this)" class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-heart text-lg"></i>
+                            <span>234</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="fas fa-medal text-lg"></i>
+                            <span>Féliciter</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="fas fa-share text-lg"></i>
+                            <span>Partager</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Group Event #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-users text-xl activity-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="#" class="font-semibold text-gray-900 dark:text-white hover:text-wellcare-600 dark:hover:text-wellcare-400">Sophie B.</a>
+                        <span class="text-gray-500 dark:text-gray-400">et 8 autres membres de</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Rando en Famille</a>
+                        <span class="text-gray-500 dark:text-gray-400">ont participé à</span>
+                        <span class="px-2 py-0.5 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300 text-xs rounded-full">Événement</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">•</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">il y a 1j</span>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-3">
+                        Une journée inoubliable en famille ! Les enfants ont adore le parcours d'exploration. Merci à tous pour cette belle atmosphère !
+                    </p>
+                    {# Event Photos #}
+                    <div class="flex gap-2 overflow-x-auto photo-gallery mb-3">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=150&fit=crop" class="w-28 h-28 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform">
+                        <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=200&h=150&fit=crop" class="w-28 h-28 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform">
+                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&h=150&fit=crop" class="w-28 h-28 object-cover rounded-lg flex-shrink-0 cursor-pointer hover:scale-105 transition-transform">
+                    </div>
+                    {# Actions #}
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleLike(this)" class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-heart text-lg"></i>
+                            <span>89</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-comment text-lg"></i>
+                            <span>12</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="fas fa-user-plus text-lg"></i>
+                            <span>Rejoindre</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Photo Upload #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-camera text-xl activity-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="#" class="font-semibold text-gray-900 dark:text-white hover:text-wellcare-600 dark:hover:text-wellcare-400">Thomas D.</a>
+                        <span class="text-gray-500 dark:text-gray-400">a ajouté 5 photos à</span>
+                        <a href="#" class="text-wellcare-600 dark:text-wellcare-400 font-medium hover:underline">Forêt de Pins</a>
+                        <span class="text-gray-500 dark:text-gray-400">•</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">il y a 2j</span>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-3">
+                        La forêt est magique en cette saison ! Voici quelques clichés de ma dernière randonnée.
+                    </p>
+                    {# Photo Grid #}
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=200&h=150&fit=crop" class="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=150&fit=crop" class="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&h=150&fit=crop" class="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=200&h=150&fit=crop" class="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&h=150&fit=crop" class="w-full h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                    </div>
+                    {# Actions #}
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleLike(this)" class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-heart text-lg"></i>
+                            <span>156</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-comment text-lg"></i>
+                            <span>18</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="fas fa-download text-lg"></i>
+                            <span>Télécharger</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# New Trail Created #}
+        <div class="activity-card bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fas fa-plus-circle text-xl activity-icon"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <a href="#" class="font-semibold text-gray-900 dark:text-white hover:text-wellcare-600 dark:hover:text-wellcare-400">Emma L.</a>
+                        <span class="text-gray-500 dark:text-gray-400">a créé un nouveau trail</span>
+                        <span class="text-gray-500 dark:text-gray-400">•</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">il y a 3j</span>
+                    </div>
+                    {# Trail Preview #}
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 mb-3">
+                        <div class="flex gap-4">
+                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&h=100&fit=crop" class="w-32 h-24 object-cover rounded-lg flex-shrink-0">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 dark:text-white">Côte Sauvage - Sentier des Falaises</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">12.3 km • Difficile • Côte Atlantique</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">Nouveau</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Actions #}
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleLike(this)" class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-heart text-lg"></i>
+                            <span>45</span>
+                        </button>
+                        <button class="action-btn flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-wellcare-600 dark:hover:text-wellcare-400">
+                            <i class="far fa-bookmark text-lg"></i>
+                            <span>Sauvegarder</span>
+                        </button>
+                        <button class="ml-auto flex items-center gap-2 text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
+                            <i class="fas fa-eye"></i>
+                            <span>Voir le trail</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Load More #}
+    <div class="text-center mt-8">
+        <button class="px-8 py-3 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition-colors">
+            <i class="fas fa-plus mr-2"></i>Charger plus d'activité
+        </button>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Adaptive Progression System - WellCare Connect' | trans }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('fitness-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-800" x-data="progressionSystem()">
+    {# Header #}
+    <div class="bg-white shadow-sm dark:bg-gray-900">
+        <div class="px-4 py-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="{{ path('fitness_dashboard') }}" class="text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ 'Adaptive Progression System' | trans }}</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'AI-powered workout adaptation based on your performance' | trans }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400">
+                        {{ 'Adaptive Mode: ON' | trans }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        {# Current Status Overview #}
+        <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Current Fitness Level' | trans }}</span>
+                    <svg class="w-5 h-5 text-wellcare-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ fitnessLevel }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ 'Based on recent performance' | trans }}</p>
+            </div>
+
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Weekly Progress' | trans }}</span>
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p class="text-3xl font-bold text-green-500">+12%</p>
+                <p class="mt-1 text-xs text-gray-500">{{ 'vs. last week' | trans }}</p>
+            </div>
+
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Training Load' | trans }}</span>
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p class="text-3xl font-bold text-amber-500">{{ trainingLoad }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ 'Optimal range' | trans }}</p>
+            </div>
+
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Recovery Score' | trans }}</span>
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </div>
+                <p class="text-3xl font-bold text-blue-500">{{ recoveryScore }}%</p>
+                <p class="mt-1 text-xs text-gray-500">{{ 'Ready for training' | trans }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            {# Performance Analysis #}
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <h2 class="mb-6 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Performance Analysis' | trans }}</h2>
+                
+                {# Chart #}
+                <div class="p-4 mb-6 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <canvas id="performanceChart" class="w-full h-64"></canvas>
+                </div>
+
+                {# Metrics Comparison #}
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900 dark:text-white">{{ 'Progress Metrics' | trans }}</h3>
+                    
+                    {% for metric in progressMetrics %}
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full {{ metric.bgColor }} flex items-center justify-center mr-3">
+                                <svg class="w-5 h-5 {{ metric.iconColor }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ metric.icon }}"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ metric.name }}</p>
+                                <p class="text-xs text-gray-500">{{ metric.change }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-900 dark:text-white">{{ metric.current }}</p>
+                            <p class="text-xs text-green-500">{{ metric.improvement }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Adaptive Recommendations #}
+            <div class="p-6 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+                <h2 class="mb-6 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Adaptive Recommendations' | trans }}</h2>
+                
+                {# AI Insight #}
+                <div class="p-4 mb-6 text-white bg-gradient-to-r from-wellcare-500 to-wellcare-600 rounded-xl">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        <div>
+                            <h4 class="mb-1 font-bold">{{ 'AI Analysis' | trans }}</h4>
+                            <p class="text-sm opacity-90">{{ aiRecommendation }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Recommendations List #}
+                <div class="mb-6 space-y-4">
+                    {% for rec in recommendations %}
+                    <div class="flex items-start p-4 rounded-lg border-l-4 {{ rec.borderColor }} bg-gray-50 dark:bg-gray-800">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900 dark:text-white">{{ rec.title }}</h4>
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ rec.description }}</p>
+                            <div class="flex items-center mt-2 space-x-4">
+                                <span class="text-xs px-2 py-1 bg-white dark:bg-gray-700 rounded {{ rec.badgeColor }}">
+                                    {{ rec.impact }}
+                                </span>
+                                <span class="text-xs text-gray-500">{{ rec.timeframe }}</span>
+                            </div>
+                        </div>
+                        <button @click="applyRecommendation('{{ rec.id }}')" 
+                                class="px-3 py-1 text-sm text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            {{ 'Apply' | trans }}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {# Plateau Detection #}
+                <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="mb-4 font-medium text-gray-900 dark:text-white">{{ 'Plateau Detection' | trans }}</h3>
+                    
+                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ 'Current Status' | trans }}</span>
+                            <span class="px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
+                                {{ 'No Plateau Detected' | trans }}
+                            </span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                            <div class="h-2 bg-green-500 rounded-full" style="width: 25%"></div>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500">{{ 'Your progress is steady with consistent improvements' | trans }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Deload Week Scheduler #}
+        <div class="p-6 mt-8 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Deload Week Scheduler' | trans }}</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Strategic rest periods for optimal recovery' | trans }}</p>
+                </div>
+                <label class="flex items-center">
+                    <input type="checkbox" x-model="autoDeload" class="sr-only">
+                    <div class="relative">
+                        <div class="w-10 h-6 transition-colors bg-gray-300 rounded-full dark:bg-gray-600" 
+                             :class="autoDeload ? 'bg-wellcare-500' : ''"></div>
+                        <div class="absolute w-4 h-4 transition-transform bg-white rounded-full top-1 left-1"
+                             :class="autoDeload ? 'translate-x-4' : ''"></div>
+                    </div>
+                    <span class="ml-3 text-sm text-gray-700 dark:text-gray-300">{{ 'Auto-schedule deload weeks' | trans }}</span>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-7 gap-4">
+                {% for day in weekSchedule %}
+                <div class="text-center p-3 rounded-lg {% if day.isDeload %}bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800{% else %}bg-gray-50 dark:bg-gray-800{% endif %}">
+                    <p class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ day.name }}</p>
+                    <p class="mt-1 text-sm font-bold text-gray-900 dark:text-white">{{ day.activity }}</p>
+                    {% if day.isDeload %}
+                    <span class="text-xs text-amber-600 dark:text-amber-400">{{ 'Deload' | trans }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Progressive Overload Calculator #}
+        <div class="p-6 mt-8 bg-white shadow-sm dark:bg-gray-900 rounded-xl">
+            <h2 class="mb-6 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Progressive Overload Calculator' | trans }}</h2>
+            
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <h3 class="mb-3 font-medium text-gray-900 dark:text-white">{{ 'Weight Progression' | trans }}</h3>
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">{{ 'Increase by 2-5% each week when you can complete all sets with proper form' | trans }}</p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">{{ 'Current' | trans }}</span>
+                        <span class="font-bold text-gray-900 dark:text-white">50kg</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-sm">
+                        <span class="text-gray-500">{{ 'Next Week' | trans }}</span>
+                        <span class="font-bold text-wellcare-500">51-52.5kg</span>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <h3 class="mb-3 font-medium text-gray-900 dark:text-white">{{ 'Volume Progression' | trans }}</h3>
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">{{ 'Add 1-2 reps per set or add an additional set when ready' | trans }}</p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">{{ 'Current' | trans }}</span>
+                        <span class="font-bold text-gray-900 dark:text-white">3×10</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-sm">
+                        <span class="text-gray-500">{{ 'Next Week' | trans }}</span>
+                        <span class="font-bold text-wellcare-500">3×11 or 4×10</span>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <h3 class="mb-3 font-medium text-gray-900 dark:text-white">{{ 'Intensity Progression' | trans }}</h3>
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">{{ 'Increase tempo or decrease rest periods to boost intensity' | trans }}</p>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">{{ 'Current Rest' | trans }}</span>
+                        <span class="font-bold text-gray-900 dark:text-white">90s</span>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 text-sm">
+                        <span class="text-gray-500">{{ 'Next Week' | trans }}</span>
+                        <span class="font-bold text-wellcare-500">75-80s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('fitness') }}
+    {{ encore_entry_script_tags('fitness-js') }}
+    <script>
+        function progressionSystem() {
+            return {
+                fitnessLevel: 'Intermediate',
+                trainingLoad: 'Moderate',
+                recoveryScore: 85,
+                autoDeload: true,
+                aiRecommendation: 'Your performance data shows consistent improvement in cardiovascular metrics. Based on your recovery score and training load, I recommend maintaining current intensity for the next 3-4 days before gradually increasing workout volume.',
+                init() {
+                    // Initialize Chart.js
+                    this.initChart();
+                },
+                initChart() {
+                    const ctx = document.getElementById('performanceChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                                datasets: [{
+                                    label: '{{ 'Strength' | trans }}',
+                                    data: [65, 68, 72, 75, 78, 82],
+                                    borderColor: '#00A790',
+                                    backgroundColor: 'rgba(0, 167, 144, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }, {
+                                    label: '{{ 'Endurance' | trans }}',
+                                    data: [55, 58, 62, 65, 70, 74],
+                                    borderColor: '#00DBB6',
+                                    backgroundColor: 'rgba(0, 219, 182, 0.1)',
+                                    tension: 0.4,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: false,
+                                        min: 40,
+                                        max: 100
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+                applyRecommendation(id) {
+                    alert('Applying recommendation: ' + id);
+                }
+            };
+        }
+    </script>
+{% endblock %}

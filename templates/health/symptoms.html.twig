@@ -1,0 +1,291 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Suivi des Symptômes - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <style>
+        .body-part {
+            @apply cursor-pointer transition-all duration-200;
+        }
+        .body-part:hover {
+            filter: brightness(1.1);
+        }
+        .body-part.active {
+            fill: #00A790;
+        }
+        .severity-dot {
+            @apply w-3 h-3 rounded-full;
+        }
+    </style>
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="p-6 mx-auto lg:p-8 max-w-7xl" x-data="symptomTracker()">
+    
+    {# Page Header #}
+    <div class="mb-8">
+        <h1 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Suivi des Symptômes</h1>
+        <p class="text-gray-600 dark:text-gray-400">Localisez et suivez vos symptômes avec le corps humain interactif</p>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-3">
+        {# Body Map Section #}
+        <div class="lg:col-span-1">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Carte Corporelle</h2>
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">Cliquez sur une zone du corps pour ajouter un symptôme</p>
+                
+                {# Interactive Body Map SVG #}
+                <div class="relative">
+                    <svg viewBox="0 0 200 400" class="w-full h-auto">
+                        {# Head #}
+                        <ellipse cx="100" cy="50" rx="30" ry="35" 
+                            class="body-part" 
+                            :class="selectedPart === 'head' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('head')"/>
+                        
+                        {# Neck #}
+                        <rect x="85" y="85" width="30" height="20" 
+                            class="body-part"
+                            :class="selectedPart === 'throat' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('throat')"/>
+                        
+                        {# Torso #}
+                        <path d="M60 105 Q100 95 140 105 L135 200 Q100 210 65 200 Z" 
+                            class="body-part"
+                            :class="selectedPart === 'chest' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('chest')"/>
+                        
+                        {# Abdomen #}
+                        <path d="M65 200 Q100 210 135 200 L130 270 Q100 280 70 270 Z" 
+                            class="body-part"
+                            :class="selectedPart === 'stomach' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('stomach')"/>
+                        
+                        {# Left Arm #}
+                        <path d="M60 110 L30 160 L25 220 L35 225 L45 170 L70 130 Z" 
+                            class="body-part"
+                            :class="selectedPart === 'arms' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('arms')"/>
+                        
+                        {# Right Arm #}
+                        <path d="M140 110 L170 160 L175 220 L165 225 L155 170 L130 130 Z" 
+                            class="body-part"
+                            :class="selectedPart === 'arms' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('arms')"/>
+                        
+                        {# Left Leg #}
+                        <path d="M70 275 L55 330 L50 390 L70 395 L80 340 L90 280 Z" 
+                            class="body-part"
+                            :class="selectedPart === 'legs' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('legs')"/>
+                        
+                        {# Right Leg #}
+                        <path d="M130 275 L145 330 L150 390 L130 395 L120 340 L110 280 Z" 
+                            class="body-part"
+                            :class="selectedPart === 'legs' ? 'fill-wellcare-500' : 'fill-gray-300 dark:fill-gray-600'"
+                            @click="selectPart('legs')"/>
+                    </svg>
+                    
+                    {# Body Part Labels #}
+                    <div class="mt-4 space-y-2">
+                        {% for part in bodyParts %}
+                        <div 
+                            class="flex items-center gap-2 p-2 transition-colors rounded-lg cursor-pointer"
+                            :class="selectedPart === '{{ part.id }} ? 'bg-wellcare-100 dark:bg-wellcare-900/30' : 'hover:bg-gray-100 dark:hover:bg-gray-700'"
+                            @click="selectPart('{{ part.id }}')">
+                            <i class="fa {{ part.icon }} text-gray-500"></i>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ part.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Symptoms List #}
+        <div class="space-y-6 lg:col-span-2">
+            {# Add Symptom Button #}
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Symptômes Récents</h2>
+                <button @click="showAddSymptom = true" class="px-4 py-2 text-sm font-medium text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600">
+                    + Ajouter Symptôme
+                </button>
+            </div>
+            
+            {# Symptoms Cards #}
+            <div class="space-y-4">
+                {% for symptom in symptoms %}
+                <div class="p-5 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full dark:bg-red-900/30">
+                                <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ symptom.symptom }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ symptom.bodyPart|capitalize }} • {{ symptom.date|date('d/m/Y') }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            {% for i in 1..5 %}
+                            <div class="severity-dot {% if i <= symptom.severity %}bg-red-500{% else %}bg-gray-200 dark:bg-gray-600{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="grid gap-4 text-sm md:grid-cols-2">
+                        <div>
+                            <p class="text-gray-500 dark:text-gray-400">Durée</p>
+                            <p class="text-gray-700 dark:text-gray-300">{{ symptom.duration }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 dark:text-gray-400">Soulagement</p>
+                            <p class="text-gray-700 dark:text-gray-300">{{ symptom.relief|join(', ') }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if symptom.triggers|length > 0 %}
+                    <div class="pt-3 mt-3 border-t border-gray-100 dark:border-gray-700">
+                        <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Déclencheurs possibles:</p>
+                        <div class="flex flex-wrap gap-1">
+                            {% for trigger in symptom.triggers %}
+                            <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs rounded-full">{{ trigger }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            {# Symptom Patterns #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Patterns Identifiés</h3>
+                <div class="space-y-4">
+                    {% for pattern in patterns %}
+                    <div class="p-4 border border-orange-100 rounded-lg bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900/30">
+                        <div class="flex items-start justify-between mb-2">
+                            <div>
+                                <p class="font-medium text-orange-800 dark:text-orange-300">{{ pattern.symptom }}</p>
+                                <p class="text-xs text-orange-600 dark:text-orange-400">{{ pattern.frequency }}</p>
+                            </div>
+                            <span class="px-2 py-1 text-xs text-orange-800 bg-orange-200 rounded-full dark:bg-orange-800 dark:text-orange-200">Pattern</span>
+                        </div>
+                        <div class="grid gap-3 mt-3 text-sm md:grid-cols-2">
+                            <div>
+                                <p class="mb-1 text-xs text-orange-600 dark:text-orange-400">Déclencheurs fréquents:</p>
+                                <p class="text-orange-700 dark:text-orange-300">{{ pattern.commonTriggers|join(', ') }}</p>
+                            </div>
+                            <div>
+                                <p class="mb-1 text-xs text-green-600 dark:text-green-400">Recommandation:</p>
+                                <p class="text-green-700 dark:text-green-300">{{ pattern.recommendation }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Add Symptom Modal #}
+    <div x-show="showAddSymptom" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" style="display: none;">
+        <div @click.outside="showAddSymptom = false" class="w-full max-w-md p-6 mx-4 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Nouveau Symptôme</h3>
+            
+            <form @submit.prevent="saveSymptom">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Zone du corps</label>
+                        <select x-model="newSymptom.bodyPart" class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            {% for part in bodyParts %}
+                            <option value="{{ part.id }}">{{ part.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Symptôme</label>
+                        <input type="text" x-model="newSymptom.symptom" placeholder="Ex: Douleur, Fatigue..." class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Sévérité (1-5)</label>
+                        <div class="flex gap-2">
+                            <template x-for="i in 5">
+                                <button type="button" 
+                                    @click="newSymptom.severity = i"
+                                    :class="newSymptom.severity === i ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'"
+                                    class="w-8 h-8 text-sm font-medium rounded-full"
+                                x-text="i"></button>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Durée</label>
+                        <input type="text" x-model="newSymptom.duration" placeholder="Ex: 2 heures, Toute la journée..." class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Déclencheurs (séparés par des virgules)</label>
+                        <input type="text" x-model="newSymptom.triggers" placeholder="Ex: Stress, Alcool, Exercice..." class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Soulagement</label>
+                        <input type="text" x-model="newSymptom.relief" placeholder="Ex: Repos, Médicaments..." class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button type="button" @click="showAddSymptom = false" class="flex-1 px-4 py-2 text-gray-700 border border-gray-200 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Annuler</button>
+                    <button type="submit" class="flex-1 px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function symptomTracker() {
+    return {
+        selectedPart: null,
+        showAddSymptom: false,
+        newSymptom: {
+            bodyPart: 'head',
+            symptom: '',
+            severity: 3,
+            duration: '',
+            triggers: '',
+            relief: ''
+        },
+        selectPart(part) {
+            this.selectedPart = part;
+            this.newSymptom.bodyPart = part;
+            this.showAddSymptom = true;
+        },
+        saveSymptom() {
+            // TODO: API call to save symptom
+            this.showAddSymptom = false;
+            this.newSymptom = {
+                bodyPart: 'head',
+                symptom: '',
+                severity: 3,
+                duration: '',
+                triggers: '',
+                relief: ''
+            };
+            alert('Symptôme enregistré avec succès!');
+        }
+    }
+}
+</script>
+{% endblock %}
