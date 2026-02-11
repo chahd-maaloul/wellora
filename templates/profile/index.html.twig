@@ -1,0 +1,188 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}My Profile - WellCare Connect{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">Mon Profil</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full">
+    <!-- Profile Header Card -->
+    <div class="mb-6 overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+        <div class="h-32 bg-gradient-to-r from-wellcare-500 to-wellcare-600"></div>
+        <div class="px-6 pb-6">
+            <div class="relative flex items-end mb-4 -mt-12">
+                <div class="flex items-center justify-center w-24 h-24 overflow-hidden rounded-full ring-4 ring-white dark:ring-gray-800 bg-wellcare-100 dark:bg-wellcare-900">
+                    {% if user.avatarUrl %}
+                        <img src="{{ user.avatarUrl }}" alt="{{ user.firstName }}" class="object-cover w-full h-full">
+                    {% else %}
+                        <span class="text-3xl font-bold text-wellcare-600 dark:text-wellcare-400">
+                            {{ user.firstName|slice(0,1)|upper }}{{ user.lastName|slice(0,1)|upper }}
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="mb-1 ml-4">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        {{ user.firstName }} {{ user.lastName }}
+                    </h2>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-wellcare-100 dark:bg-wellcare-900 text-wellcare-700 dark:text-wellcare-300">
+                        {{ user.roles[0]|replace({'ROLE_': ''})|lower|title }}
+                    </span>
+                </div>
+                <div class="mb-1 ml-auto">
+                    <a href="{{ path('app_profile_edit') }}" class="text-sm btn btn-secondary">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Information -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <!-- Personal Information -->
+        <div class="overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+                    <svg class="w-5 h-5 mr-2 text-wellcare-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Informations Personnelles
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Email</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.email }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Prénom</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.firstName }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Nom</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.lastName }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Téléphone</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.phone ?: 'Non défini' }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Adresse</span>
+                    <span class="font-medium text-right text-gray-900 dark:text-white">{{ user.address ?: 'Non définie' }}</span>
+                </div>
+                {% if user.birthDate %}
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Date de Naissance</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.birthDate|date('d/m/Y') }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Account Information -->
+        <div class="overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+                    <svg class="w-5 h-5 mr-2 text-wellcare-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    Informations du Compte
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Statut</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if user.isActive %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300{% endif %}">
+                        {{ user.isActive ? 'Actif' : 'Inactif' }}
+                    </span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Email Vérifié</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if user.isEmailVerified %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300{% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300{% endif %}">
+                        {{ user.isEmailVerified ? 'Vérifié' : 'En attente' }}
+                    </span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Créé le</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.createdAt|date('d/m/Y') }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-500 dark:text-gray-400">Mis à jour</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ user.updatedAt|date('d/m/Y') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role-Specific Information -->
+    {% if is_granted('ROLE_MEDECIN') %}
+    <div class="mt-6 overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+                <svg class="w-5 h-5 mr-2 text-wellcare-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+                Informations Professionnelles
+            </h3>
+        </div>
+        <div class="grid grid-cols-1 gap-4 p-6 md:grid-cols-3">
+            <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span class="text-gray-500 dark:text-gray-400">Spécialité</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ user.specialite ?: 'Non définie' }}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span class="text-gray-500 dark:text-gray-400">Numéro de Licence</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ user.licenseNumber ?: 'Non défini' }}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                <span class="text-gray-500 dark:text-gray-400">Expérience</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ user.experienceYears ?: 0 }} ans</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="mt-6">
+        <div class="overflow-hidden bg-white border border-gray-200 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Actions Rapides</h3>
+            </div>
+            <div class="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+                <a href="{{ path('app_profile_edit') }}" class="flex items-center p-4 transition-colors border border-gray-200 rounded-lg dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900">
+                        <svg class="w-5 h-5 text-wellcare-600 dark:text-wellcare-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">Modifier le Profil</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Mettre à jour vos informations personnelles</p>
+                    </div>
+                </a>
+                <a href="{{ path('app_profile_change_password') }}" class="flex items-center p-4 transition-colors border border-gray-200 rounded-lg dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-red-100 rounded-full dark:bg-red-900">
+                        <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">Changer le Mot de Passe</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Mettre à jour votre mot de passe en toute sécurité</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
