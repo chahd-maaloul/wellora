@@ -1,0 +1,823 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('coach') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('coach') }}
+{% endblock %}
+
+{% block body %}
+<div x-data="dailyPlanManager()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('coach_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-calendar-alt text-wellcare-500"></i>
+                            {{ 'Daily Plans Manager' }}
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Create and manage daily workout plans for clients' }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('exercises_show') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="fas fa-dumbbell"></i>
+                        {{ 'Exercise Library' }}
+                    </a>
+                      <!-- Bouton pour créer un jour de repos -->
+    <a href="{{ path('coach_rest_day_new') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-orange-500 hover:bg-orange-600">
+        <i class="fas fa-bed"></i>
+        {{ 'New Rest Day' }}
+    </a>
+                    <a href="{{ path('coach_daily_plan_new') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fas fa-plus"></i>
+                        {{ 'New Daily Plan' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <!-- Colonne de gauche - Liste des plans -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Daily Plans List -->
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-list text-wellcare-500"></i>
+                            {{ 'Recent Daily Plans' }}
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <select x-model="filterStatus" class="px-3 py-1 text-sm text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                <option value="">{{ 'All Status' }}</option>
+                                <option value="planned">{{ 'Planned' }}</option>
+                                <option value="in_progress">{{ 'In Progress' }}</option>
+                                <option value="completed">{{ 'Completed' }}</option>
+                                <option value="cancelled">{{ 'Cancelled' }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <template x-if="filteredPlans.length === 0">
+                            <div class="p-8 text-center bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                                <i class="text-4xl text-gray-300 fas fa-calendar-plus dark:text-gray-600"></i>
+                                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">{{ 'No plans found' }}</h3>
+                                <p class="mt-2 text-gray-500 dark:text-gray-400">{{ 'Create your first daily plan to get started' }}</p>
+                                <button @click="createNewDailyPlan()" class="inline-flex items-center gap-2 px-4 py-2 mt-4 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                    <i class="fas fa-plus"></i>
+                                    {{ 'Create New Plan' }}
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <template x-for="plan in filteredPlans" :key="plan.id">
+                            <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div>
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="plan.title"></h3>
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full" 
+                                                      :class="getStatusColor(plan.status)"
+                                                      x-text="getStatusText(plan.status)"></span>
+                                            </div>
+                                            <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                                <span>
+                                                    <i class="mr-1 fas fa-user"></i>
+                                                    <span x-text="plan.clientName"></span>
+                                                </span>
+                                                <span>
+                                                    <i class="mr-1 fas fa-calendar"></i>
+                                                    <span x-text="formatDate(plan.date)"></span>
+                                                </span>
+                                                <span>
+                                                    <i class="mr-1 fas fa-clock"></i>
+                                                    <span x-text="plan.duration + ' min'"></span>
+                                                </span>
+                                                <span>
+                                                    <i class="mr-1 fas fa-fire"></i>
+                                                    <span x-text="plan.calories + ' cal'"></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <!-- Bouton EDIT avec JavaScript pur -->
+                                            <button @click="window.location.href = '/coach/daily-plans/' + plan.id + '/edit'"
+                                                    class="p-2 text-gray-400 transition-colors rounded-lg hover:text-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            
+                                            <!-- Bouton DELETE -->
+                                            <button @click="deletePlan(plan.id)" 
+                                                    class="p-2 text-gray-400 transition-colors rounded-lg hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Exercises Preview -->
+                                    <div class="mt-3">
+                                        <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            <i class="mr-1 fas fa-dumbbell"></i>
+                                            <span x-text="plan.exercises.length + ' exercises'"></span>
+                                        </p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="exercise in plan.exercises.slice(0, 3)" :key="exercise.id">
+                                                <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                                    <span x-text="exercise.name"></span>
+                                                    <template x-if="exercise.sets && exercise.reps">
+                                                        <span class="ml-1 text-gray-500" x-text="'(' + exercise.sets + 'x' + exercise.reps + ')'"></span>
+                                                    </template>
+                                                </span>
+                                            </template>
+                                            <template x-if="plan.exercises.length > 3">
+                                                <span class="px-2 py-1 text-xs text-gray-500">
+                                                    +<span x-text="plan.exercises.length - 3"></span> more
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Notes Preview -->
+                                    <template x-if="plan.notes">
+                                        <div class="mt-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                            <p class="text-sm text-gray-600 dark:text-gray-400" x-text="truncateText(plan.notes, 100)"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne de droite - Exercise Library et Formulaire -->
+            <div class="space-y-6">
+                <!-- Exercise Library Sidebar -->
+                <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-dumbbell text-wellcare-500"></i>
+                                {{ 'Exercise Library' }}
+                            </h2>
+                        </div>
+                        <div class="mt-3">
+                            <input 
+                                type="text" 
+                                x-model="exerciseSearch"
+                                placeholder="{{ 'Search exercises...' }}"
+                                class="w-full px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-2 max-h-[400px] overflow-y-auto">
+                        <template x-for="exercise in filteredExercises" :key="exercise.id">
+                            <div class="p-3 transition-colors rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                 @click="addExerciseToPlan(exercise)">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="font-medium text-gray-900 dark:text-white" x-text="exercise.name"></h3>
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full" 
+                                          :class="getDifficultyColor(exercise.difficulty)"
+                                          x-text="exercise.difficulty"></span>
+                                </div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="mr-1 fas fa-tag"></i>
+                                        <span x-text="exercise.category"></span>
+                                    </span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="mr-1 fas fa-clock"></i>
+                                        <span x-text="exercise.duration + ' min'"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                    <span>
+                                        <i class="mr-1 fas fa-fire"></i>
+                                        <span x-text="exercise.calories + ' cal/min'"></span>
+                                    </span>
+                                    <span class="text-wellcare-500 hover:text-wellcare-600">
+                                        <i class="fas fa-plus"></i> Add to plan
+                                    </span>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <template x-if="filteredExercises.length === 0">
+                            <div class="py-8 text-center">
+                                <i class="text-3xl text-gray-300 fas fa-search dark:text-gray-600"></i>
+                                <p class="mt-2 text-gray-500 dark:text-gray-400">No exercises found</p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Create New Daily Plan Sidebar -->
+                <div x-show="showPlanForm" class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <template x-if="editingPlan">
+                                    <span><i class="mr-2 fas fa-edit text-wellcare-500"></i>Edit Daily Plan</span>
+                                </template>
+                                <template x-if="!editingPlan">
+                                    <span><i class="mr-2 fas fa-plus text-wellcare-500"></i>New Daily Plan</span>
+                                </template>
+                            </h2>
+                            <button @click="showPlanForm = false" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <form @submit.prevent="saveDailyPlan()" class="p-4 space-y-4">
+                        <!-- Client Selection -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 fas fa-user"></i>Client *
+                            </label>
+                            <select x-model="newPlan.clientId" required class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                <option value="">{{ 'Select a client' }}</option>
+                                <template x-for="client in clients" :key="client.id">
+                                    <option :value="client.id" x-text="client.name + ' (' + client.email + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <!-- Plan Details -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 fas fa-heading"></i>Plan Title *
+                            </label>
+                            <input type="text" x-model="newPlan.title" required 
+                                   placeholder="E.g., Monday Morning Cardio"
+                                   class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="mr-1 fas fa-calendar"></i>Date *
+                                </label>
+                                <input type="date" x-model="newPlan.date" required
+                                       class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                            </div>
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="mr-1 fas fa-flag"></i>Status
+                                </label>
+                                <select x-model="newPlan.status"
+                                        class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                    <option value="planned">{{ 'Planned' }}</option>
+                                    <option value="in_progress">{{ 'In Progress' }}</option>
+                                    <option value="completed">{{ 'Completed' }}</option>
+                                    <option value="cancelled">{{ 'Cancelled' }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Associated Goal -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 fas fa-bullseye"></i>Associated Goal (Optional)
+                            </label>
+                            <select x-model="newPlan.goalId"
+                                    class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                <option value="">{{ 'No goal' }}</option>
+                                <template x-for="goal in goals" :key="goal.id">
+                                    <option :value="goal.id" x-text="goal.title"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <i class="mr-1 fas fa-sticky-note"></i>Notes & Instructions
+                            </label>
+                            <textarea x-model="newPlan.notes" rows="3"
+                                      placeholder="Special instructions for the client..."
+                                      class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500"></textarea>
+                        </div>
+
+                        <!-- Exercises Section -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="mr-1 fas fa-dumbbell"></i>Exercises *
+                                    <span class="ml-1 text-xs text-gray-500">(<span x-text="newPlan.exercises.length"></span> added)</span>
+                                </label>
+                                <a href="{{ path('exercises_show') }}" target="_blank" class="text-sm font-medium text-wellcare-500 hover:text-wellcare-600">
+                                    <i class="mr-1 fas fa-external-link-alt"></i>Browse Library
+                                </a>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <template x-for="(exercise, index) in newPlan.exercises" :key="index">
+                                    <div class="flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                        <button type="button" @click="removeExercise(index)" class="p-1 text-gray-400 hover:text-red-500">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        
+                                        <template x-if="getExerciseName(exercise.id)">
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2" 
+                                                  x-text="getExerciseName(exercise.id)"></span>
+                                        </template>
+                                        
+                                        <select x-model="exercise.id" required
+                                                class="flex-1 px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                            <option value="">{{ 'Select exercise' }}</option>
+                                            <template x-for="ex in availableExercises" :key="ex.id">
+                                                <option :value="ex.id" x-text="ex.name + ' (' + ex.category + ')'"></option>
+                                            </template>
+                                        </select>
+                                        
+                                        <input type="number" x-model="exercise.sets" placeholder="Sets"
+                                               class="w-16 px-2 py-2 text-sm text-center text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <input type="number" x-model="exercise.reps" placeholder="Reps"
+                                               class="w-16 px-2 py-2 text-sm text-center text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                    </div>
+                                </template>
+                                
+                                <button type="button" @click="addEmptyExercise()" class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 w-full">
+                                    <i class="fas fa-plus"></i>
+                                    {{ 'Add Exercise' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Totals -->
+                        <div class="p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                            <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-1 fas fa-calculator"></i>
+                                Plan Totals
+                            </h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total Duration</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" x-model="newPlan.duration" 
+                                               class="w-20 px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">min</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total Calories</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" x-model="newPlan.calories"
+                                               class="w-20 px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">cal</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                <i class="mr-1 fas fa-info-circle"></i>
+                                Totals are automatically calculated based on selected exercises
+                            </p>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-2 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <button type="button" @click="showPlanForm = false" class="flex-1 px-4 py-2 font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                {{ 'Cancel' }}
+                            </button>
+                            <button type="submit" class="flex-1 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                <template x-if="editingPlan">
+                                    <span>{{ 'Update Plan' }}</span>
+                                </template>
+                                <template x-if="!editingPlan">
+                                    <span>{{ 'Create Plan' }}</span>
+                                </template>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Stats & Quick Actions -->
+                <div class="space-y-6" :class="{'hidden': showPlanForm}">
+                    <!-- Quick Stats -->
+                    <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-chart-pie text-wellcare-500"></i>
+                                {{ 'Daily Plans Stats' }}
+                            </h2>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Today\'s Plans' }}</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="getTodaysPlans().length"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'This Week' }}</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="getThisWeeksPlans().length"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Planned' }}</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="getPlansByStatus('planned').length"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'In Progress' }}</span>
+                                <span class="font-semibold text-gray-900 dark:text-white" x-text="getPlansByStatus('in_progress').length"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                      
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function dailyPlanManager() {
+    return {
+        // Data from Symfony
+        clients: {{ clients|default([])|json_encode|raw }},
+        goals: {{ goals|default([])|json_encode|raw }},
+        dailyPlans: {{ dailyPlans|default([])|json_encode|raw }},
+        availableExercises: {{ exercises|default([])|json_encode|raw }},
+        
+        // UI State
+        showPlanForm: false,
+        editingPlan: false,
+        filterStatus: '',
+        currentDate: new Date(),
+        exerciseSearch: '',
+        
+        // New Plan Form
+        newPlan: {
+            id: null,
+            clientId: '',
+            title: '',
+            date: new Date().toISOString().split('T')[0],
+            status: 'planned',
+            goalId: '',
+            notes: '',
+            duration: 0,
+            calories: 0,
+            exercises: [
+                { id: '', sets: '', reps: '' }
+            ]
+        },
+        
+        // Computed
+        get currentMonth() {
+            return this.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        },
+        
+        get calendarDays() {
+            const year = this.currentDate.getFullYear();
+            const month = this.currentDate.getMonth();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+            
+            const days = [];
+            
+            // Previous month's days
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            for (let i = startingDay - 1; i >= 0; i--) {
+                const date = new Date(year, month - 1, prevMonthLastDay - i);
+                days.push({
+                    day: prevMonthLastDay - i,
+                    date: date.toISOString().split('T')[0],
+                    isCurrentMonth: false,
+                    isToday: false,
+                    hasPlan: this.getPlansForDate(date.toISOString().split('T')[0]).length > 0
+                });
+            }
+            
+            // Current month's days
+            for (let i = 1; i <= daysInMonth; i++) {
+                const date = new Date(year, month, i);
+                const dateStr = date.toISOString().split('T')[0];
+                days.push({
+                    day: i,
+                    date: dateStr,
+                    isCurrentMonth: true,
+                    isToday: dateStr === today.toISOString().split('T')[0],
+                    hasPlan: this.getPlansForDate(dateStr).length > 0
+                });
+            }
+            
+            // Next month's days
+            const totalCells = 42; // 6 weeks * 7 days
+            const remainingCells = totalCells - days.length;
+            for (let i = 1; i <= remainingCells; i++) {
+                const date = new Date(year, month + 1, i);
+                days.push({
+                    day: i,
+                    date: date.toISOString().split('T')[0],
+                    isCurrentMonth: false,
+                    isToday: false,
+                    hasPlan: this.getPlansForDate(date.toISOString().split('T')[0]).length > 0
+                });
+            }
+            
+            return days;
+        },
+        
+        get filteredPlans() {
+            if (!this.filterStatus) return this.dailyPlans;
+            return this.dailyPlans.filter(plan => plan.status === this.filterStatus);
+        },
+        
+        get filteredExercises() {
+            if (!this.exerciseSearch) {
+                return this.availableExercises.slice(0, 8); // Limiter à 8 résultats par défaut
+            }
+            
+            const searchTerm = this.exerciseSearch.toLowerCase();
+            return this.availableExercises
+                .filter(exercise => 
+                    exercise.name.toLowerCase().includes(searchTerm) ||
+                    (exercise.category && exercise.category.toLowerCase().includes(searchTerm)) ||
+                    (exercise.difficulty && exercise.difficulty.toLowerCase().includes(searchTerm))
+                )
+                .slice(0, 8); // Limiter à 8 résultats
+        },
+        
+        // Helper methods
+        getExerciseName(exerciseId) {
+            const exercise = this.availableExercises.find(e => e.id == exerciseId);
+            return exercise ? exercise.name : '';
+        },
+        
+        getDifficultyColor(difficulty) {
+            const colors = {
+                'Beginner': 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+                'Intermediate': 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+                'Advanced': 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+            };
+            return colors[difficulty] || 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+        },
+        
+        getStatusColor(status) {
+            const colors = {
+                planned: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                in_progress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
+        },
+        
+        getStatusText(status) {
+            const texts = {
+                planned: 'Planned',
+                in_progress: 'In Progress',
+                completed: 'Completed',
+                cancelled: 'Cancelled'
+            };
+            return texts[status] || status;
+        },
+        
+        formatDate(dateStr) {
+            if (!dateStr) return 'No date';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        },
+        
+        truncateText(text, maxLength) {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        },
+        
+        // Exercise Library methods
+        addExerciseToPlan(exercise) {
+            if (!this.showPlanForm) {
+                // Si le formulaire n'est pas ouvert, ouvrez-le d'abord
+                this.createNewDailyPlan();
+            }
+            
+            // Ajouter l'exercice à la liste
+            this.newPlan.exercises.push({
+                id: exercise.id,
+                sets: exercise.sets || 3,
+                reps: exercise.reps || 12
+            });
+            
+            // Recalculer les totaux
+            this.calculateTotals();
+            
+            // Clear search
+            this.exerciseSearch = '';
+            
+            // Scroll to exercises section
+            setTimeout(() => {
+                const form = document.querySelector('form');
+                if (form) {
+                    const exercisesLabel = form.querySelector('label:contains("Exercises")');
+                    if (exercisesLabel) {
+                        exercisesLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }, 100);
+        },
+        
+        // Plan management methods
+        createNewDailyPlan() {
+            this.editingPlan = false;
+            this.newPlan = {
+                id: null,
+                clientId: '',
+                title: '',
+                date: new Date().toISOString().split('T')[0],
+                status: 'planned',
+                goalId: '',
+                notes: '',
+                duration: 0,
+                calories: 0,
+                exercises: [{ id: '', sets: '', reps: '' }]
+            };
+            this.showPlanForm = true;
+        },
+        
+        editPlan(planId) {
+            window.location.href = `/coach/daily-plans/${planId}/edit`;
+        },
+        
+        deletePlan(planId) {
+            if (confirm('Are you sure you want to delete this plan?')) {
+                fetch(`/delete/${planId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        this.dailyPlans = this.dailyPlans.filter(p => p.id !== planId);
+                        alert('Plan deleted successfully!');
+                    } else if (data) {
+                        alert('Error deleting plan: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting plan');
+                });
+            }
+        },
+        
+        addEmptyExercise() {
+            this.newPlan.exercises.push({ id: '', sets: '', reps: '' });
+        },
+        
+        removeExercise(index) {
+            this.newPlan.exercises.splice(index, 1);
+            this.calculateTotals();
+        },
+        
+        calculateTotals() {
+            let totalDuration = 0;
+            let totalCalories = 0;
+            
+            this.newPlan.exercises.forEach(exercise => {
+                const exInfo = this.availableExercises.find(e => e.id == exercise.id);
+                if (exInfo) {
+                    totalDuration += exInfo.duration || 0;
+                    
+                    const caloriesPerMinute = exInfo.calories || 0;
+                    if (exercise.sets && exercise.reps) {
+                        const timePerSet = 2;
+                        totalCalories += (exercise.sets * timePerSet) * caloriesPerMinute;
+                    } else {
+                        totalCalories += (exInfo.duration || 0) * caloriesPerMinute;
+                    }
+                }
+            });
+            
+            this.newPlan.duration = totalDuration;
+            this.newPlan.calories = Math.round(totalCalories);
+        },
+        
+        getPlansForDate(date) {
+            return this.dailyPlans.filter(plan => plan.date === date);
+        },
+        
+        getTodaysPlans() {
+            const today = new Date().toISOString().split('T')[0];
+            return this.dailyPlans.filter(plan => plan.date === today);
+        },
+        
+        getThisWeeksPlans() {
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            const endOfWeek = new Date(today);
+            endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+            
+            return this.dailyPlans.filter(plan => {
+                const planDate = new Date(plan.date);
+                return planDate >= startOfWeek && planDate <= endOfWeek;
+            });
+        },
+        
+        getPlansByStatus(status) {
+            return this.dailyPlans.filter(plan => plan.status === status);
+        },
+        
+        createPlanForToday() {
+            this.newPlan.date = new Date().toISOString().split('T')[0];
+            this.createNewDailyPlan();
+        },
+        
+        createPlanForTomorrow() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            this.newPlan.date = tomorrow.toISOString().split('T')[0];
+            this.createNewDailyPlan();
+        },
+        
+        duplicateLastPlan() {
+            if (this.dailyPlans.length > 0) {
+                const lastPlan = this.dailyPlans[this.dailyPlans.length - 1];
+                this.newPlan = {
+                    ...lastPlan,
+                    id: null,
+                    title: lastPlan.title + ' (Copy)',
+                    date: new Date().toISOString().split('T')[0],
+                    status: 'planned'
+                };
+                this.editingPlan = false;
+                this.showPlanForm = true;
+            } else {
+                alert('No plans available to duplicate.');
+            }
+        },
+        
+        async saveDailyPlan() {
+            try {
+                // Calculate totals based on exercises
+                this.calculateTotals();
+                
+                // Prepare data for submission
+                const url = this.editingPlan 
+                    ? `/coach/daily-plans/${this.newPlan.id}` 
+                    : '/coach/daily-plans';
+                
+                const method = this.editingPlan ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(this.newPlan)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Plan saved successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Error saving plan: ' + data.message);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving plan. Please try again.');
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

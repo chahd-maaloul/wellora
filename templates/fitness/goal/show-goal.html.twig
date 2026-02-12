@@ -1,0 +1,872 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Goals Management{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+
+        <!-- Modern Header white style -->
+        <div class="mb-12">
+            <div class="relative overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-200">
+                <div class="relative p-8 md:p-10">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <!-- TEXT -->
+                        <div>
+                            <h1 class="text-4xl md:text-5xl font-bold mb-3 text-green-800">
+                                Goals Dashboard
+                            </h1>
+                            <p class="text-lg text-gray-700">
+                                Track, manage, and conquer your fitness journey
+                            </p>
+                            <div class="flex items-center gap-4 mt-4">
+                                <div class="flex items-center gap-2 text-black">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span class="text-sm font-medium">Live Updates</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-black">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm font-medium">Smart Tracking</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BUTTON -->
+                        <a href="{{ path('fitness_goal_new') }}"
+                           class="group inline-flex items-center px-8 py-4 bg-green-500 text-white rounded-2xl hover:bg-green-800 transition-all duration-300 shadow-lg hover:shadow-xl">
+                            <svg class="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            <span class="font-semibold text-lg">Create New Goal</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calcul des statistiques -->
+        {% set total = goals|length %}
+        {% set completed = 0 %}
+        {% set inProgress = 0 %}
+        {% set pending = 0 %}
+        
+        {% for goal in goals %}
+            {% if goal.getStatus() == 'completed' %}
+                {% set completed = completed + 1 %}
+            {% elseif goal.getStatus() == 'in progress' %}
+                {% set inProgress = inProgress + 1 %}
+            {% elseif goal.getStatus() == 'PENDING' %}
+                {% set pending = pending + 1 %}
+            {% endif %}
+        {% endfor %}
+        
+        {% set successRate = total > 0 ? (completed / total * 100)|round : 0 %}
+        {% set completedPct = total > 0 ? (completed / total * 100) : 0 %}
+        {% set inProgressPct = total > 0 ? (inProgress / total * 100) : 0 %}
+        {% set pendingPct = total > 0 ? (pending / total * 100) : 0 %}
+
+        <!-- Modern Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <!-- Total Goals Card -->
+            <div class="group relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                <div class="relative bg-white rounded-3xl border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-500 p-6 hover:-translate-y-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-widest">Total Goals</p>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">{{ total }}</p>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-2xl shadow-lg">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Completion Rate</span>
+                            <span class="text-blue-600 font-semibold">{{ completedPct|round }}%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000" 
+                                 style="width: {{ completedPct }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Goals Card -->
+            <div class="group relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-emerald-500 to-green-600 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                <div class="relative bg-white rounded-3xl border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-500 p-6 hover:-translate-y-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-widest">Completed</p>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">{{ completed }}</p>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-2xl shadow-lg">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Achievement</span>
+                            <span class="text-green-600 font-semibold">{{ completedPct|round }}%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-emerald-500 to-green-600 rounded-full transition-all duration-1000" 
+                                 style="width: {{ completedPct }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- In Progress Card -->
+            <div class="group relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                <div class="relative bg-white rounded-3xl border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-500 p-6 hover:-translate-y-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-widest">In Progress</p>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">{{ inProgress }}</p>
+                        </div>
+                        <div class="p-3 bg-yellow-100 rounded-2xl shadow-lg">
+                            <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Active Rate</span>
+                            <span class="text-yellow-600 font-semibold">{{ inProgressPct|round }}%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000" 
+                                 style="width: {{ inProgressPct }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Rate Card -->
+            <div class="group relative">
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                <div class="relative bg-white rounded-3xl border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-500 p-6 hover:-translate-y-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-widest">Success Rate</p>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">{{ successRate }}%</p>
+                        </div>
+                        <div class="p-3 bg-purple-100 rounded-2xl shadow-lg">
+                            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Overall Performance</span>
+                            <span class="text-purple-600 font-semibold">{{ successRate }}%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-1000" 
+                                 style="width: {{ successRate }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modern Main Content Card -->
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
+            <!-- Modern Header with search -->
+            <div class="px-8 py-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                           <span class="text-green-800">My Goals</span>
+                            <span class="text-sm font-normal px-3 py-1 bg-blue-100 text-blue-800 rounded-full">{{ total }} total</span>
+                        </h2>
+                        <p class="text-gray-600 mt-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <span id="goalsCount" class="text-gray-700">{{ total }} goal{{ total != 1 ? 's' : '' }} found</span>
+                        </p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="relative flex-1 sm:w-72">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <input type="text" 
+                                   id="searchInput"
+                                   placeholder="Search goals by title or description..." 
+                                   class="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-all duration-300 shadow-sm focus:shadow-lg">
+                        </div>
+                        <select id="statusFilter"
+                                class="px-5 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition-all duration-300 shadow-sm focus:shadow-lg text-gray-700">
+                            <option value="">All Status</option>
+                            <option value="in progress">🚀 In Progress</option>
+                            <option value="completed">✅ Completed</option>
+                            <option value="PENDING">⏳ Pending</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals List -->
+            <div id="goalsListContainer">
+                {% if goals is not empty %}
+                    {% for goal in goals %}
+                        {% set daysLeft = date(goal.endDate).diff(date()).days %}
+                        {% set progress = goal.getProgress() %}
+                        {% set progress = progress is defined ? progress : 0 %}
+                        
+                        <!-- COULEURS DE LA BARRE SELON LE NIVEAU DE PROGRESSION -->
+                        {% if progress >= 90 %}
+                            {% set progressBarColor = 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-green-500' %}
+                            {% set progressTextColor = 'text-emerald-600' %}
+                            {% set progressBg = 'bg-emerald-100' %}
+                        {% elseif progress >= 70 %}
+                            {% set progressBarColor = 'bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-500' %}
+                            {% set progressTextColor = 'text-blue-600' %}
+                            {% set progressBg = 'bg-blue-100' %}
+                        {% elseif progress >= 50 %}
+                            {% set progressBarColor = 'bg-gradient-to-r from-indigo-500 via-indigo-400 to-purple-500' %}
+                            {% set progressTextColor = 'text-indigo-600' %}
+                            {% set progressBg = 'bg-indigo-100' %}
+                        {% elseif progress >= 30 %}
+                            {% set progressBarColor = 'bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500' %}
+                            {% set progressTextColor = 'text-amber-600' %}
+                            {% set progressBg = 'bg-amber-100' %}
+                        {% elseif progress >= 10 %}
+                            {% set progressBarColor = 'bg-gradient-to-r from-orange-500 via-orange-400 to-red-500' %}
+                            {% set progressTextColor = 'text-orange-600' %}
+                            {% set progressBg = 'bg-orange-100' %}
+                        {% else %}
+                            {% set progressBarColor = 'bg-gradient-to-r from-rose-500 via-rose-400 to-pink-500' %}
+                            {% set progressTextColor = 'text-rose-600' %}
+                            {% set progressBg = 'bg-rose-100' %}
+                        {% endif %}
+                        
+                        <div class="group p-8 hover:bg-gray-50 transition-all duration-300 goal-item border-b border-gray-200 last:border-b-0" 
+                             data-status="{{ goal.getStatus() }}"
+                             data-title="{{ goal.getTitle()|lower }}"
+                             data-description="{{ goal.getDescription()|lower }}"
+                             data-progress="{{ progress }}">
+                            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                                <!-- Goal Info -->
+                                <div class="flex-1">
+                                    <div class="flex items-start gap-6">
+                                        <!-- Goal Icon -->
+                                        <div class="flex-shrink-0">
+                                            <div class="p-4 rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-lg">
+                                                {% if goal.getStatus() == 'completed' %}
+                                                    <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                {% elseif goal.getStatus() == 'PENDING' %}
+                                                    <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                                    </svg>
+                                                {% else %}
+                                                    <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Goal Details -->
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center gap-4 mb-4">
+                                                <h3 class="text-xl font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{{ goal.getTitle() }}</h3>
+                                                <div class="flex gap-2">
+                                                    {% if goal.getStatus() == 'PENDING' %}
+                                                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                                            <span class="w-2 h-2 mr-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                                                            ⏳ Pending
+                                                        </span>
+                                                    {% elseif goal.getStatus() == 'completed' %}
+                                                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">
+                                                            <span class="w-2 h-2 mr-2 bg-green-500 rounded-full"></span>
+                                                            ✅ Completed
+                                                        </span>
+                                                    {% elseif goal.getStatus() == 'in progress' %}
+                                                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                                            <span class="w-2 h-2 mr-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                                            🚀 In Progress
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="text-gray-600 mb-6 line-clamp-2 leading-relaxed">{{ goal.getDescription() }}</p>
+                                            
+                                            <!-- BARRE DE PROGRESSION COLORÉE SELON LE NIVEAU -->
+                                            <div class="mb-6">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <div class="flex items-center gap-3">
+                                                        <span class="text-sm font-semibold text-gray-700">Progress</span>
+                                                        <span class="text-lg font-bold {{ progressTextColor }}">{{ progress }}%</span>
+                                                        {% if progress == 100 %}
+                                                            <span class="text-xs px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full animate-pulse">🎯 Achieved</span>
+                                                        {% elseif progress >= 70 %}
+                                                            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">🚀 On Track</span>
+                                                        {% elseif progress <= 30 %}
+                                                            <span class="text-xs px-2 py-1 bg-rose-100 text-rose-800 rounded-full">⚠️ Needs Effort</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <span class="text-sm text-gray-500">{{ daysLeft }} days left</span>
+                                                </div>
+                                                
+                                                <!-- Barre de progression avec couleur dynamique -->
+                                                <div class="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                                                    <!-- Barre colorée selon le niveau -->
+                                                    <div class="h-full {{ progressBarColor }} rounded-full transition-all duration-1000 ease-out progress-bar-animate" 
+                                                         style="width: {{ progress }}%">
+                                                        <!-- Effet de brillance -->
+                                                        <div class="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent"></div>
+                                                    </div>
+                                                    
+                                                    <!-- Indicateur de position -->
+                                                    <div class="absolute top-1/2 transform -translate-y-1/2 w-3 h-3 bg-green-500 rounded-full border-2 {{ progressTextColor }} shadow-lg" 
+                                                         style="left: calc({{ progress }}% - 6px);"></div>
+                                                </div>
+                                                
+                                                <!-- Légende des couleurs -->
+                                                <div class="flex justify-between text-xs text-gray-500 mt-3 px-1">
+                                                    <div class="flex items-center gap-1">
+                                                        <div class="w-2 h-2 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full"></div>
+                                                        <span>0-29%</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-1">
+                                                        <div class="w-2 h-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
+                                                        <span>30-49%</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-1">
+                                                        <div class="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+                                                        <span>50-69%</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-1">
+                                                        <div class="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
+                                                        <span>70-89%</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-1">
+                                                        <div class="w-2 h-2 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"></div>
+                                                        <span>90-100%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Meta Info -->
+                                            <div class="flex items-center gap-8 text-sm">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="p-2 bg-blue-50 rounded-lg">
+                                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-xs text-gray-500">End Date</div>
+                                                        <div class="font-medium text-gray-900">{{ goal.endDate|date('M d, Y') }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-3">
+                                                    <div class="p-2 bg-purple-50 rounded-lg">
+                                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-xs text-gray-500">Time Remaining</div>
+                                                        <div class="font-medium text-gray-900">{{ daysLeft }} days</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex items-center gap-3">
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <button onclick="showGoalDetails('{{ goal.id }}', '{{ goal.getTitle()|e('js') }}', '{{ goal.getDescription()|e('js') }}', {{ progress }}, '{{ goal.endDate|date('M d, Y') }}', {{ daysLeft }}, '{{ goal.getStatus() }}')"
+                                                class="group/btn relative px-5 py-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            <span class="font-medium text-white">Details</span>
+                                        </button>
+                                        
+                                        <a href="{{ path('fitness_goal_edit', {id: goal.id}) }}" 
+                                           class="group/btn relative px-5 py-3 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                            <span class="font-medium text-white">Edit</span>
+                                        </a>
+                                        
+                                        <a href="{{ path('delete_goal', {id: goal.id}) }}"
+                                           onclick="return confirm('Are you sure you want to delete this goal?')"
+                                           class="group/btn relative px-5 py-3 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                            <span class="font-medium text-white">Delete</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Modern Empty State -->
+                    <div class="p-16 text-center">
+                        <div class="relative mx-auto w-32 h-32 mb-8">
+                            <div class="relative bg-white rounded-full flex items-center justify-center h-full w-full border border-gray-200 shadow-xl">
+                                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">No goals yet</h3>
+                        <p class="text-gray-600 mb-8 max-w-md mx-auto text-lg">Start your fitness journey by creating your first SMART goal. Track your progress and achieve your dreams!</p>
+                        <a href="{{ path('fitness_goal_new') }}" 
+                           class="inline-flex items-center px-8 py-4 bg-green-500 text-white rounded-2xl hover:bg-green-600 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                            <svg class="w-6 h-6 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            <span class="font-semibold text-lg text-white">Create Your First Goal</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Modal for Goal Details -->
+            <div id="goalDetailsModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 p-4">
+                <div class="flex items-center justify-center min-h-full">
+                    <div id="modalContent" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-200">
+                        <!-- Le contenu sera rempli par JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if goals is not empty %}
+                <div class="px-8 py-8 border-t border-gray-200 bg-gray-50">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="text-sm text-gray-600">
+                            Showing <span class="font-semibold text-gray-900">1-{{ total }}</span> of <span class="font-semibold text-gray-900">{{ total }}</span> goals
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Filtre et recherche
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    const goalItems = document.querySelectorAll('.goal-item');
+    const goalsCount = document.getElementById('goalsCount');
+    
+    function updateFilter() {
+        const statusValue = statusFilter.value;
+        const searchValue = searchInput.value.toLowerCase();
+        let visibleCount = 0;
+        
+        goalItems.forEach(item => {
+            const status = item.getAttribute('data-status');
+            const title = item.getAttribute('data-title');
+            const description = item.getAttribute('data-description');
+            
+            const statusMatch = !statusValue || status === statusValue;
+            const searchMatch = !searchValue || 
+                               title.includes(searchValue) || 
+                               description.includes(searchValue);
+            
+            if (statusMatch && searchMatch) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        if (goalsCount) {
+            goalsCount.textContent = `${visibleCount} goal${visibleCount !== 1 ? 's' : '' } found`;
+        }
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', updateFilter);
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', updateFilter);
+    }
+});
+
+// Modern Modal avec animations
+function showGoalDetails(goalId, title, description, progress, endDate, daysLeft, status) {
+    const modal = document.getElementById('goalDetailsModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    // Déterminer les couleurs selon la progression
+    let progressColor = '';
+    let progressTextColor = '';
+    let statusText = '';
+    let statusIcon = '';
+    let statusBg = '';
+    
+    if (progress >= 90) {
+        progressColor = 'from-emerald-500 via-emerald-400 to-green-500';
+        progressTextColor = 'text-emerald-600';
+    } else if (progress >= 70) {
+        progressColor = 'from-blue-500 via-blue-400 to-cyan-500';
+        progressTextColor = 'text-blue-600';
+    } else if (progress >= 50) {
+        progressColor = 'from-indigo-500 via-indigo-400 to-purple-500';
+        progressTextColor = 'text-indigo-600';
+    } else if (progress >= 30) {
+        progressColor = 'from-amber-500 via-amber-400 to-orange-500';
+        progressTextColor = 'text-amber-600';
+    } else if (progress >= 10) {
+        progressColor = 'from-orange-500 via-orange-400 to-red-500';
+        progressTextColor = 'text-orange-600';
+    } else {
+        progressColor = 'from-rose-500 via-rose-400 to-pink-500';
+        progressTextColor = 'text-rose-600';
+    }
+    
+    // Déterminer le statut
+    if (status === 'PENDING') {
+        statusText = 'Pending';
+        statusIcon = '⏳';
+        statusBg = 'bg-gradient-to-r from-amber-500 to-yellow-500';
+    } else if (status === 'completed') {
+        statusText = 'Completed';
+        statusIcon = '✅';
+        statusBg = 'bg-gradient-to-r from-emerald-500 to-green-500';
+    } else if (status === 'in progress') {
+        statusText = 'In Progress';
+        statusIcon = '🚀';
+        statusBg = 'bg-gradient-to-r from-blue-500 to-cyan-500';
+    }
+    
+    // Créer le contenu moderne du modal
+    modalContent.innerHTML = `
+        <!-- Modal Header -->
+        <div class="bg-gray-50 border-b border-gray-200 p-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 ${statusBg} rounded-2xl shadow-lg">
+                        <span class="text-2xl text-white">${statusIcon}</span>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900">Goal Details</h3>
+                        <p class="text-gray-600 mt-1">Complete overview of your goal</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" 
+                        class="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-8 overflow-y-auto max-h-[calc(90vh-180px)]">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div class="space-y-6">
+                    <!-- Title Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="p-2 bg-blue-100 rounded-lg">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-900">Goal Information</h4>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-sm text-gray-500">Title</label>
+                                <p class="text-lg font-medium text-gray-900">${title}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-500">Status</label>
+                                <div class="inline-flex items-center px-4 py-2 ${statusBg} text-white rounded-full text-sm font-semibold mt-1">
+                                    ${statusIcon} ${statusText}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-green-100 rounded-lg">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-900">Progress Tracking</h4>
+                            </div>
+                            <span class="text-2xl font-bold ${progressTextColor}">${progress}%</span>
+                        </div>
+                        
+                        <!-- Barre de progression dans le modal -->
+                        <div class="h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-4">
+                            <div class="h-full bg-gradient-to-r ${progressColor} rounded-full transition-all duration-1000" style="width: ${progress}%"></div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-gray-50 rounded-xl">
+                                <div class="text-sm text-gray-500">Current Progress</div>
+                                <div class="text-xl font-bold ${progressTextColor}">${progress}%</div>
+                            </div>
+                            <div class="text-center p-3 bg-gray-50 rounded-xl">
+                                <div class="text-sm text-gray-500">Target</div>
+                                <div class="text-xl font-bold text-gray-900">100%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- Description Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="p-2 bg-purple-100 rounded-lg">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-900">Description</h4>
+                        </div>
+                        <div class="prose prose-blue max-w-none">
+                            <p class="text-gray-700 leading-relaxed">${description}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Card -->
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="p-2 bg-orange-100 rounded-lg">
+                                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-900">Timeline</h4>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 bg-blue-100 rounded-lg">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-500">End Date</div>
+                                        <div class="font-medium text-gray-900">${endDate}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 bg-purple-100 rounded-lg">
+                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-500">Time Remaining</div>
+                                        <div class="font-medium text-gray-900">${daysLeft} days</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="bg-gray-50 border-t border-gray-200 p-8">
+            <div class="flex justify-end gap-4">
+                <button onclick="closeModal()" 
+                        class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-all duration-300 hover:shadow-lg">
+                    Close
+                </button>
+                <a href="/goals/${goalId}/edit"
+                   class="px-6 py-3 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit Goal
+                </a>
+            </div>
+        </div>
+    `;
+    
+    // Afficher avec animation
+    modal.classList.remove('hidden');
+    modal.style.opacity = '0';
+    modalContent.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        modal.style.transition = 'opacity 0.3s ease';
+        modalContent.style.transition = 'transform 0.3s ease';
+        modal.style.opacity = '1';
+        modalContent.style.transform = 'scale(1)';
+    }, 10);
+}
+
+// Fonction pour fermer le modal
+function closeModal() {
+    const modal = document.getElementById('goalDetailsModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    modal.style.opacity = '0';
+    modalContent.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+// Fermer le modal avec ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Fermer en cliquant à l'extérieur
+document.getElementById('goalDetailsModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeModal();
+    }
+});
+</script>
+
+<style>
+/* Custom animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Apply animations */
+.goal-item {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shimmer {
+    animation: shimmer 2s infinite;
+}
+
+.progress-bar-animate {
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #6366f1, #8b5cf6);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #4f46e5, #7c3aed);
+}
+
+/* Smooth transitions */
+* {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Barre de progression avec indicateur */
+.progress-indicator {
+    transition: left 0.5s ease-out;
+}
+
+/* Animation de la barre de progression */
+@keyframes progress-fill {
+    from {
+        width: 0%;
+    }
+    to {
+        width: var(--progress-width);
+    }
+}
+
+.progress-fill-animation {
+    animation: progress-fill 1s ease-out forwards;
+}
+</style>
+{% endblock %}

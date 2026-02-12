@@ -1,0 +1,1003 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Create New Exercise{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    :root {
+        --primary-color: #00b894;      /* vert principal (comme le bouton) */
+--primary-hover: #00997a;      /* hover plus foncé */
+--secondary-color: #00d1a0;    /* accent clair */
+
+--success-color: #00c896;
+
+--light-bg: #f0fdfa;           /* fond très léger mint */
+--border-color: #ccfbf1;
+
+--text-primary: #0f172a;
+--text-secondary: #64748b;
+
+--shadow: 0 4px 6px rgba(0, 184, 148, 0.15);
+--shadow-hover: 0 10px 15px rgba(0, 184, 148, 0.25);
+
+    }
+    
+    .exercise-form-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem;
+        border-radius: 12px 12px 0 0;
+        margin-bottom: 0;
+    }
+    
+    .form-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 0 0 12px 12px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+    
+    .form-body {
+        padding: 2rem;
+    }
+    
+    .form-section {
+        margin-bottom: 2.5rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .section-title {
+        color: var(--text-primary);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .section-title i {
+        color: var(--primary-color);
+        font-size: 1.5rem;
+    }
+    
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .form-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 768px) {
+        .form-grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .form-control:hover, .form-select:hover {
+        border-color: #cbd5e0;
+    }
+    
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .form-help {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        line-height: 1.4;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--light-bg);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        cursor: pointer;
+    }
+    
+    .form-check-label {
+        color: var(--text-primary);
+        font-weight: 500;
+        cursor: pointer;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 2rem;
+        background: var(--light-bg);
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .btn {
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--light-bg);
+        border-color: #cbd5e0;
+    }
+    
+    .btn-icon {
+        font-size: 1.25rem;
+    }
+    
+    .error-message {
+        color: #e53e3e;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .datetime-wrapper {
+        position: relative;
+    }
+    
+    .datetime-wrapper .form-control {
+        padding-right: 3rem;
+    }
+    
+    .datetime-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        pointer-events: none;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: var(--light-bg);
+        color: var(--text-secondary);
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-left: 0.5rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    /* Styles pour VichUploader */
+    .vich-file {
+        display: block;
+        width: 100%;
+    }
+    
+    .vich-file .form-control[type="file"] {
+        padding: 0.75rem;
+        border: 2px dashed var(--border-color);
+        background: var(--light-bg);
+        cursor: pointer;
+    }
+    
+    .vich-file .form-control[type="file"]:hover {
+        border-color: var(--primary-color);
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .vich-file .form-check {
+        margin-top: 1rem;
+        padding: 0.75rem;
+    }
+    
+    .video-preview {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+    
+    .video-player-container {
+        position: relative;
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+    }
+    
+    .video-player-container video {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+        display: block;
+    }
+    
+    .youtube-thumbnail {
+        width: 100%;
+        height: 200px;
+        border-radius: 8px;
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        background-color: #f0f0f0;
+    }
+    
+    .youtube-thumbnail::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 8px;
+    }
+    
+    .youtube-thumbnail i {
+        position: relative;
+        z-index: 2;
+        font-size: 3rem;
+        color: white;
+    }
+    
+    @media (max-width: 768px) {
+        .exercise-form-container {
+            margin: 1rem auto;
+        }
+        
+        .form-header {
+            padding: 1.5rem;
+        }
+        
+        .form-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .form-body {
+            padding: 1.5rem;
+        }
+        
+        .form-grid-2,
+        .form-grid-3,
+        .form-grid-4 {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .video-player-container video {
+            max-height: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+
+<div class="exercise-form-container">
+    {{ form_start(form, {'attr': {'class': 'exercise-form', 'enctype': 'multipart/form-data'}}) }}
+    
+    <div class="form-header">
+        <h1>Create New Exercise</h1>
+        <p>Add a new exercise to your fitness library. Fill in all required fields marked with <span style="color: #e53e3e">*</span></p>
+    </div>
+    
+    <div class="form-card">
+        <div class="form-body">
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Basic Information
+                    <span class="badge">Required</span>
+                </h2>
+                
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        {{ form_label(form.name, 'Exercise Name', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+                        <span class="form-help">Enter a clear, descriptive name for the exercise</span>
+                        {{ form_errors(form.name) }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form_label(form.category, 'Category', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.category, {'attr': {'class': 'form-select'}}) }}
+                        <span class="form-help">Select the primary category for this exercise</span>
+                        {{ form_errors(form.category) }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form_label(form.createdAt, 'Created Date', {'label_attr': {'class': 'form-label'}}) }}
+                        <div class="datetime-wrapper">
+                            {{ form_widget(form.createdAt, {'attr': {'class': 'form-control datetimepicker'}}) }}
+                            <i class="fas fa-calendar-alt datetime-icon"></i>
+                        </div>
+                        <span class="form-help">When was this exercise created?</span>
+                        {{ form_errors(form.createdAt) }}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form_label(form.description, 'Description', {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.description, {'attr': {'class': 'form-control', 'rows': 4}}) }}
+                    <span class="form-help">Describe how to perform the exercise and its benefits</span>
+                    {{ form_errors(form.description) }}
+                </div>
+            </div>
+            
+            <!-- Exercise Details Section -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-cogs"></i>
+                    Exercise Settings
+                </h2>
+                
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        {{ form_label(form.difficulty_level, 'Difficulty Level', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.difficulty_level, {'attr': {'class': 'form-select'}}) }}
+                        <span class="form-help">Choose the appropriate difficulty level</span>
+                        {{ form_errors(form.difficulty_level) }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form_label(form.defaultUnit, 'Default Unit', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.defaultUnit, {'attr': {'class': 'form-select'}}) }}
+                        <span class="form-help">Select how this exercise is typically measured</span>
+                        {{ form_errors(form.defaultUnit) }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Metrics Section -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Performance Metrics
+                    <span class="badge">Optional</span>
+                </h2>
+                
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        {{ form_label(form.duration, 'Duration (min)', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.duration, {'attr': {'class': 'form-control', 'placeholder': 'e.g., 30'}}) }}
+                        <span class="form-help">Average duration</span>
+                        {{ form_errors(form.duration) }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form_label(form.calories, 'Calories/min', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.calories, {'attr': {'class': 'form-control', 'placeholder': 'e.g., 10'}}) }}
+                        <span class="form-help">Calories burned per minute</span>
+                        {{ form_errors(form.calories) }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form_label(form.sets, 'Sets', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.sets, {'attr': {'class': 'form-control', 'placeholder': 'e.g., 3'}}) }}
+                        <span class="form-help">Recommended sets</span>
+                        {{ form_errors(form.sets) }}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form_label(form.reps, 'Reps', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_widget(form.reps, {'attr': {'class': 'form-control', 'placeholder': 'e.g., 12'}}) }}
+                        <span class="form-help">Repetitions per set</span>
+                        {{ form_errors(form.reps) }}
+                    </div>
+                </div>
+                
+                <!-- Calculated Stats Preview -->
+                <div class="stats-grid" id="stats-preview" style="display: none;">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-calories">0</span>
+                        <span class="stat-label">Total Calories</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-reps">0</span>
+                        <span class="stat-label">Total Repetitions</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Media & Settings Section -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-photo-video"></i>
+                    Media & Settings
+                </h2>
+                
+                <!-- Video Upload Option (VichUploader) -->
+                <div class="form-group">
+                    <label class="form-label">Video Upload</label>
+                    <div class="vich-file">
+                        {{ form_widget(form.videoFile, {'attr': {
+    'class': 'form-control',
+    'accept': 'video/*',
+    'onchange': 'handleVideoUpload(this)'
+}}) }}
+
+                        {% if form.videoFile.delete is defined %}
+                        <div class="form-check">
+                            {{ form_widget(form.videoFile.delete, {'attr': {'class': 'form-check-input'}}) }}
+                            {{ form_label(form.videoFile.delete, 'Remove current video', {'label_attr': {'class': 'form-check-label'}}) }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {{ form_errors(form.videoFile) }}
+                    <span class="form-help">Max 100MB. Supported formats: MP4, AVI, MOV, WMV, WebM</span>
+                    
+                    <!-- Video Preview -->
+                    <div class="video-preview" id="videoPreview" style="display: none;">
+                        <div class="video-player-container">
+                            <video id="videoPlayer" controls>
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <button type="button" onclick="removeUploadedVideo()" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times"></i> Remove Video
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- YouTube URL Option -->
+                <div class="form-group">
+                    {{ form_label(form.videoUrl, 'OR: YouTube/Vimeo URL', {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(form.videoUrl, {'attr': {
+                        'class': 'form-control',
+                        'placeholder': 'https://youtube.com/watch?v=...',
+                        'id': 'videoUrlInput',
+                        'oninput': 'previewYouTubeUrl(this.value)'
+                    }}) }}
+                    <span class="form-help">Paste a YouTube or Vimeo link</span>
+                    {{ form_errors(form.videoUrl) }}
+                    
+                    <!-- YouTube Preview -->
+                    <div class="video-preview" id="youtubePreview" style="display: none;">
+                        <div class="youtube-thumbnail" id="youtubeThumbnail">
+                            <i class="fab fa-youtube"></i>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <button type="button" onclick="removeYouTubeUrl()" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-times"></i> Remove URL
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check">
+                    {{ form_widget(form.isActive, {'attr': {'class': 'form-check-input'}}) }}
+                    {{ form_label(form.isActive, 'Make this exercise available in the library', {'label_attr': {'class': 'form-check-label'}}) }}
+                </div>
+                {{ form_errors(form.isActive) }}
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="{{ path('exercises_show') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left btn-icon"></i>
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus-circle btn-icon"></i>
+                Create Exercise
+            </button>
+        </div>
+    </div>
+    
+    {{ form_end(form) }}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+
+<script>
+// =================== DEBUG SUR SUBMIT ===================
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.exercise-form');
+    
+    if (!form) {
+        console.error('Form not found!');
+        return;
+    }
+    
+    console.log('=== FORM DEBUG INITIALIZED ===');
+    console.log('Form found:', form);
+    console.log('Form enctype:', form.enctype);
+    console.log('Form method:', form.method);
+    console.log('Form action:', form.action);
+    
+    // Intercepter le submit
+    form.addEventListener('submit', function(e) {
+        console.log('=== FORM SUBMIT INTERCEPTED ===');
+        console.log('Event triggered at:', new Date().toISOString());
+        
+        // 1. Vérifier tous les champs du formulaire
+        console.log('\n--- 1. Tous les champs ---');
+        const allInputs = form.querySelectorAll('input, select, textarea');
+        allInputs.forEach(input => {
+            console.log(`${input.name || input.id}:`, 
+                input.type === 'file' ? 
+                (input.files.length ? `${input.files[0].name} (${input.files[0].size} bytes)` : 'NO FILE') :
+                input.value
+            );
+        });
+        
+        // 2. Vérifier spécifiquement les fichiers
+        console.log('\n--- 2. Fichiers dans le formulaire ---');
+        const fileInputs = form.querySelectorAll('input[type="file"]');
+        fileInputs.forEach((input, i) => {
+            console.log(`File input ${i}:`, {
+                id: input.id,
+                name: input.name,
+                filesCount: input.files.length,
+                files: Array.from(input.files).map(f => ({
+                    name: f.name,
+                    size: f.size,
+                    type: f.type,
+                    lastModified: f.lastModified
+                }))
+            });
+            
+            // Vérifier si le fichier est vide
+            if (input.files.length > 0 && input.files[0].size === 0) {
+                console.error('⚠️ FILE IS EMPTY!', input.name);
+            }
+        });
+        
+        // 3. Créer un FormData pour voir exactement ce qui sera envoyé
+        console.log('\n--- 3. FormData content ---');
+        const formData = new FormData(form);
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`📁 ${key}:`, value.name, `(${value.size} bytes, ${value.type})`);
+            } else {
+                console.log(`📝 ${key}:`, value);
+            }
+        }
+        
+        // 4. Vérifier la validation HTML5
+        console.log('\n--- 4. Validation HTML5 ---');
+        if (!form.checkValidity()) {
+            console.error('❌ Form is NOT valid (HTML5 validation)');
+            const invalidElements = form.querySelectorAll(':invalid');
+            invalidElements.forEach(el => {
+                console.error(`Invalid: ${el.name || el.id} - ${el.validationMessage}`);
+            });
+        } else {
+            console.log('✅ Form is valid (HTML5 validation)');
+        }
+        
+        // 5. Vérifier les contraintes spécifiques
+        console.log('\n--- 5. Contraintes de fichiers ---');
+        fileInputs.forEach(input => {
+            if (input.hasAttribute('accept')) {
+                console.log(`Accept attribute: ${input.getAttribute('accept')}`);
+            }
+            if (input.hasAttribute('max')) {
+                console.log(`Max attribute: ${input.getAttribute('max')}`);
+            }
+        });
+        
+        // 6. Afficher un message visuel
+        const debugDiv = document.createElement('div');
+        debugDiv.id = 'submit-debug-info';
+        debugDiv.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 9999;
+            max-width: 400px;
+            font-family: monospace;
+            font-size: 12px;
+        `;
+        
+        debugDiv.innerHTML = `
+            <strong>Submit Debug Info</strong><br>
+            Files: ${formData.getAll('exercise_type[videoFile][file]').length}<br>
+            FormData entries: ${Array.from(formData.entries()).length}<br>
+            <button onclick="this.parentElement.remove()" style="margin-top:5px">Close</button>
+        `;
+        
+        document.body.appendChild(debugDiv);
+        
+        // 7. NE PAS empêcher le submit - laisser aller au serveur
+        console.log('\n=== Allowing form submission... ===');
+        
+        // Optionnel: Attendre 2 secondes pour voir les logs
+        // e.preventDefault();
+        // setTimeout(() => form.submit(), 2000);
+    });
+    
+    // Debug supplémentaire: Vérifier le changement de fichiers
+    form.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function() {
+            console.log('📤 File changed:', this.name);
+            console.log('File:', this.files[0] ? {
+                name: this.files[0].name,
+                size: this.files[0].size,
+                type: this.files[0].type
+            } : 'No file');
+        });
+    });
+});
+</script>
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize datetime picker
+        const datetimeInput = document.querySelector('.datetimepicker');
+        if (datetimeInput && !datetimeInput.value) {
+            const now = new Date();
+            datetimeInput.value = now.toISOString().slice(0, 16);
+        }
+        
+        // Setup event listeners for stats calculation
+        const durationField = document.getElementById('{{ form.duration.vars.id }}');
+        const caloriesField = document.getElementById('{{ form.calories.vars.id }}');
+        const setsField = document.getElementById('{{ form.sets.vars.id }}');
+        const repsField = document.getElementById('{{ form.reps.vars.id }}');
+        
+        if (durationField) durationField.addEventListener('input', updateStatsPreview);
+        if (caloriesField) caloriesField.addEventListener('input', updateStatsPreview);
+        if (setsField) setsField.addEventListener('input', updateStatsPreview);
+        if (repsField) repsField.addEventListener('input', updateStatsPreview);
+        
+        // Initialize stats preview
+        updateStatsPreview();
+        
+        // Check for existing video URL
+        const videoUrlInput = document.getElementById('videoUrlInput');
+        if (videoUrlInput && videoUrlInput.value) {
+            previewYouTubeUrl(videoUrlInput.value);
+        }
+    });
+
+    // Function to calculate and update stats
+    function updateStatsPreview() {
+        const durationField = document.getElementById('{{ form.duration.vars.id }}');
+        const caloriesField = document.getElementById('{{ form.calories.vars.id }}');
+        const setsField = document.getElementById('{{ form.sets.vars.id }}');
+        const repsField = document.getElementById('{{ form.reps.vars.id }}');
+        
+        if (!durationField || !caloriesField || !setsField || !repsField) return;
+        
+        // Calculate total calories (duration * calories per minute)
+        const duration = parseFloat(durationField.value) || 0;
+        const caloriesPerMin = parseFloat(caloriesField.value) || 0;
+        const totalCalories = duration * caloriesPerMin;
+        
+        // Calculate total reps (sets * reps)
+        const sets = parseInt(setsField.value) || 0;
+        const reps = parseInt(repsField.value) || 0;
+        const totalReps = sets * reps;
+        
+        // Update display
+        const totalCaloriesEl = document.getElementById('total-calories');
+        const totalRepsEl = document.getElementById('total-reps');
+        const statsPreview = document.getElementById('stats-preview');
+        
+        if (totalCaloriesEl) totalCaloriesEl.textContent = totalCalories.toFixed(0);
+        if (totalRepsEl) totalRepsEl.textContent = totalReps;
+        
+        if (statsPreview) {
+            if (duration > 0 || caloriesPerMin > 0 || sets > 0 || reps > 0) {
+                statsPreview.style.display = 'grid';
+            } else {
+                statsPreview.style.display = 'none';
+            }
+        }
+    }
+
+    // Handle video file upload
+    function handleVideoUpload(input) {
+        if (!input || !input.files || !input.files[0]) {
+            // Hide preview if no file
+            document.getElementById('videoPreview').style.display = 'none';
+            return;
+        }
+        
+        const file = input.files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('video/')) {
+            alert('Please select a video file (MP4, AVI, MOV, WebM, etc.)');
+            input.value = '';
+            return;
+        }
+        
+        // Validate file size (max 100MB)
+        if (file.size > 100 * 1024 * 1024) {
+            alert('File size must be less than 100MB');
+            input.value = '';
+            return;
+        }
+        
+        // Show preview
+        const videoPreview = document.getElementById('videoPreview');
+        const videoPlayer = document.getElementById('videoPlayer');
+        
+        if (videoPlayer) {
+            const videoURL = URL.createObjectURL(file);
+            videoPlayer.src = videoURL;
+        }
+        
+        videoPreview.style.display = 'block';
+        
+        // Clear YouTube URL if exists
+        const youtubeInput = document.getElementById('videoUrlInput');
+        if (youtubeInput) {
+            youtubeInput.value = '';
+        }
+        const youtubePreview = document.getElementById('youtubePreview');
+        if (youtubePreview) {
+            youtubePreview.style.display = 'none';
+        }
+    }
+
+    // Remove uploaded video
+    function removeUploadedVideo() {
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        const videoPreview = document.getElementById('videoPreview');
+        const videoPlayer = document.getElementById('videoPlayer');
+        
+        if (videoPreview) videoPreview.style.display = 'none';
+        if (videoPlayer) {
+            videoPlayer.src = '';
+            videoPlayer.pause();
+        }
+        
+        // Also uncheck delete checkbox if exists
+        const deleteCheckbox = document.querySelector('input[name$="[delete]"]');
+        if (deleteCheckbox) {
+            deleteCheckbox.checked = false;
+        }
+    }
+
+    // YouTube URL preview
+    function previewYouTubeUrl(url) {
+        if (!url) {
+            const youtubePreview = document.getElementById('youtubePreview');
+            if (youtubePreview) youtubePreview.style.display = 'none';
+            return;
+        }
+        
+        // Extract YouTube video ID
+        let videoId = null;
+        if (url.includes('youtube.com/watch?v=')) {
+            videoId = url.split('v=')[1]?.split('&')[0];
+        } else if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1]?.split('?')[0];
+        } else if (url.includes('vimeo.com/')) {
+            videoId = url.split('vimeo.com/')[1]?.split('/')[0];
+        }
+        
+        if (videoId) {
+            const previewDiv = document.getElementById('youtubePreview');
+            const thumbnailDiv = document.getElementById('youtubeThumbnail');
+            
+            if (previewDiv) previewDiv.style.display = 'block';
+            
+            if (thumbnailDiv) {
+                if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    thumbnailDiv.style.backgroundImage = `url(https://img.youtube.com/vi/${videoId}/hqdefault.jpg)`;
+                    thumbnailDiv.innerHTML = '<i class="fab fa-youtube"></i>';
+                } else if (url.includes('vimeo.com')) {
+                    thumbnailDiv.style.backgroundImage = 'linear-gradient(135deg, #00adef, #00a3ff)';
+                    thumbnailDiv.innerHTML = '<i class="fab fa-vimeo-v"></i>';
+                }
+            }
+            
+            // Clear file input
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            removeUploadedVideo();
+        } else {
+            const youtubePreview = document.getElementById('youtubePreview');
+            if (youtubePreview) youtubePreview.style.display = 'none';
+        }
+    }
+
+    function removeYouTubeUrl() {
+        const youtubeInput = document.getElementById('videoUrlInput');
+        const youtubePreview = document.getElementById('youtubePreview');
+        
+        if (youtubeInput) youtubeInput.value = '';
+        if (youtubePreview) youtubePreview.style.display = 'none';
+    }
+
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.exercise-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const fileInput = document.querySelector('input[type="file"]');
+                const youtubeInput = document.getElementById('videoUrlInput');
+                
+                // Check if both video file and URL are filled (conflict)
+                const hasVideoFile = fileInput && fileInput.files && fileInput.files.length > 0;
+                const hasYouTubeUrl = youtubeInput && youtubeInput.value.trim();
+                
+                if (hasVideoFile && hasYouTubeUrl) {
+                    e.preventDefault();
+                    showErrorMessage('Please choose either video upload OR video URL, not both.');
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+    });
+
+    function showErrorMessage(message) {
+        // Create error message element
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.style.cssText = 'margin-top: 1rem; padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 8px;';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+        
+        // Insert before form actions
+        const formActions = document.querySelector('.form-actions');
+        if (formActions) {
+            formActions.parentNode.insertBefore(errorDiv, formActions);
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+</script>
+{% endblock %}

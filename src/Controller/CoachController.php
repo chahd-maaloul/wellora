@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Repository\GoalRepository;
+use App\Repository\DailyPlanRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -11,60 +13,70 @@ class CoachController extends AbstractController
 {
     // Coach Dashboard - Main entry point
     #[Route('/dashboard', name: 'coach_dashboard')]
-    public function dashboard(): Response
+    public function dashboard(GoalRepository $goalRepository, DailyPlanRepository $dailyPlanRepository): Response
     {
+        // Fetch real goals data
+        $goals = $goalRepository->findAll();
+        $totalGoals = count($goals);
+
+        // Calculate stats from real data
+        $activeGoals = count(array_filter($goals, function($goal) {
+            return $goal->getStatus() === 'in progress';
+        }));
+        $completedGoals = count(array_filter($goals, function($goal) {
+            return $goal->getStatus() === 'completed';
+        }));
+        $pendingGoals = count(array_filter($goals, function($goal) {
+            return $goal->getStatus() === 'PENDING';
+        }));
+
+        // Calculate average progress
+        $totalProgress = array_reduce($goals, function($sum, $goal) {
+            return $sum + ($goal->getProgress() ?? 0);
+        }, 0);
+        $avgProgress = $totalGoals > 0 ? round($totalProgress / $totalGoals) : 0;
+
         $stats = [
-            'totalClients' => 24,
-            'activePrograms' => 18,
-            'pendingReviews' => 7,
-            'sessionsThisWeek' => 32,
-            'avgAdherenceRate' => 87,
-            'newClientsThisMonth' => 5,
+            'totalClients' => $totalGoals, // Using goals as proxy for clients
+            'activePrograms' => $activeGoals,
+            'pendingReviews' => $pendingGoals,
+            'sessionsThisWeek' => 32, // Keep hardcoded for now
+            'avgAdherenceRate' => $avgProgress,
+            'newClientsThisMonth' => 5, // Keep hardcoded for now
         ];
 
-        $recentActivity = [
-            [
-                'type' => 'workout_completed',
-                'client' => 'John Doe',
-                'message' => 'Completed "Upper Body Strength" workout',
-                'time' => '2 hours ago',
-                'icon' => 'fa-dumbbell',
-                'color' => 'text-green-500',
-            ],
-            [
-                'type' => 'message_received',
-                'client' => 'Sarah Wilson',
-                'message' => 'Sent a message about knee pain concerns',
-                'time' => '3 hours ago',
-                'icon' => 'fa-comment-alt',
-                'color' => 'text-blue-500',
-            ],
-            [
-                'type' => 'goal_achieved',
-                'client' => 'Mike Johnson',
-                'message' => 'Achieved "Run 5K in under 25 min" goal',
-                'time' => '5 hours ago',
-                'icon' => 'fa-trophy',
-                'color' => 'text-yellow-500',
-            ],
-            [
-                'type' => 'video_submitted',
-                'client' => 'Emily Brown',
-                'message' => 'Submitted squat form video for review',
-                'time' => '6 hours ago',
-                'icon' => 'fa-video',
-                'color' => 'text-purple-500',
-            ],
-            [
-                'type' => 'program_assigned',
-                'client' => 'David Lee',
-                'message' => 'Assigned "12-Week Weight Loss Program"',
-                'time' => '1 day ago',
-                'icon' => 'fa-clipboard-list',
-                'color' => 'text-wellcare-500',
-            ],
-        ];
+        // Generate recent activity from goals
+        $recentActivity = [];
+        foreach (array_slice($goals, 0, 5) as $goal) {
+            $activityType = match($goal->getStatus()) {
+                'completed' => 'goal_achieved',
+                'in progress' => 'workout_completed',
+                default => 'program_assigned'
+            };
 
+            $icon = match($goal->getStatus()) {
+                'completed' => 'fa-trophy',
+                'in progress' => 'fa-dumbbell',
+                default => 'fa-clipboard-list'
+            };
+
+            $color = match($goal->getStatus()) {
+                'completed' => 'text-yellow-500',
+                'in progress' => 'text-green-500',
+                default => 'text-wellcare-500'
+            };
+
+            $recentActivity[] = [
+                'type' => $activityType,
+                'client' => 'Client ' . $goal->getId(), // Placeholder
+                'message' => $goal->getTitle(),
+                'time' => $goal->getDate()?->format('M j, Y') ?? 'Recently',
+                'icon' => $icon,
+                'color' => $color,
+            ];
+        }
+
+        // Keep upcoming sessions hardcoded for now
         $upcomingSessions = [
             [
                 'client' => 'Sarah Wilson',
@@ -86,29 +98,24 @@ class CoachController extends AbstractController
             ],
         ];
 
-        $clientProgress = [
-            [
-                'name' => 'John Doe',
-                'avatar' => 'J',
-                'progress' => 75,
-                'goal' => 'Marathon Training',
-                'status' => 'on_track',
-            ],
-            [
-                'name' => 'Sarah Wilson',
-                'avatar' => 'S',
-                'progress' => 45,
-                'goal' => 'Weight Loss',
-                'status' => 'needs_attention',
-            ],
-            [
-                'name' => 'Mike Johnson',
-                'avatar' => 'M',
-                'progress' => 90,
-                'goal' => 'Strength Building',
-                'status' => 'excellent',
-            ],
-        ];
+        // Generate client progress from goals
+        $clientProgress = [];
+        foreach (array_slice($goals, 0, 3) as $goal) {
+            $progress = $goal->getProgress() ?? 0;
+            $status = match(true) {
+                $progress >= 80 => 'excellent',
+                $progress >= 50 => 'on_track',
+                default => 'needs_attention'
+            };
+
+            $clientProgress[] = [
+                'name' => 'Client ' . $goal->getId(), // Placeholder
+                'avatar' => strtoupper(substr($goal->getTitle(), 0, 1)),
+                'progress' => $progress,
+                'goal' => $goal->getTitle(),
+                'status' => $status,
+            ];
+        }
 
         return $this->render('coach/dashboard.html.twig', [
             'pageTitle' => 'Coach Dashboard - WellCare Connect',

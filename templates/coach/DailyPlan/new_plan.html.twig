@@ -1,0 +1,1202 @@
+{% extends 'layouts/app.html.twig' %}
+{% block title %}Create Daily Plan | Coach{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+             --primary-color: #00b894;      /* vert principal (comme le bouton) */
+--primary-hover: #00997a;      /* hover plus foncé */
+--secondary-color: #00d1a0;    /* accent clair */
+
+--success-color: #00c896;
+
+--light-bg: #f0fdfa;           /* fond très léger mint */
+--border-color: #ccfbf1;
+
+--text-primary: #0f172a;
+--text-secondary: #64748b;
+
+--shadow: 0 4px 6px rgba(0, 184, 148, 0.15);
+--shadow-hover: 0 10px 15px rgba(0, 184, 148, 0.25);
+        }
+
+        body {
+            background: linear-gradient(135deg, #fbfbfb 0%, rgb(253, 254, 255) 100%);
+            min-height: 100vh;
+        }
+
+        .pro-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .pro-header {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .pro-header h1 {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .pro-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* Stepper */
+        .pro-stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .pro-stepper:before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+
+        .pro-step {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+
+        .pro-step-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #94a3b8;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .pro-step.active .pro-step-circle {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transform: scale(1.05);
+        }
+
+        .pro-step.completed .pro-step-circle {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        .pro-step-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pro-step.active .pro-step-label {
+            color: var(--primary-color);
+        }
+
+        /* Form Steps */
+        .form-step {
+            display: none;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        /* Form Cards */
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #f1f5f9;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .form-card-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .form-card-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #1e293b;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .form-card-header h3 i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        /* User Cards */
+        .user-select-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .user-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .user-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .user-card:hover:before {
+            background: var(--primary-color);
+        }
+
+        .user-card.selected {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, #f6f6f6 0%, #ffffff 100%);
+        }
+
+        .user-card.selected:before {
+            background: var(--primary-color);
+        }
+
+        .user-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .user-info h5 {
+            margin: 0 0 4px 0;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin: 0 0 8px 0;
+        }
+
+        .user-stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .user-stat {
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Form Controls */
+        .form-control, .form-select, .select2-container--default .select2-selection--multiple {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 8px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        /* Exercises List */
+        .exercises-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .exercise-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exercise-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        .exercise-card.selected {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, #f5f7ff 0%, #f0f4ff 100%);
+        }
+
+        .exercise-card.selected:before {
+            background: var(--primary-color);
+        }
+
+        .exercise-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--info-color), var(--primary-color));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+        }
+
+        .exercise-info h5 {
+            margin: 0 0 8px 0;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .exercise-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .exercise-tag {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+
+        .exercise-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .exercise-stat {
+            text-align: center;
+        }
+
+        .exercise-stat-value {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .exercise-stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        /* Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .summary-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .summary-section h4 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+            font-weight: 600;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .summary-value {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* Buttons */
+        .btn-pro {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .btn-pro-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-pro-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+            color: white;
+        }
+
+        .btn-pro-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-pro-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+            color: #475569;
+        }
+
+        .btn-pro-success {
+            background: linear-gradient(135deg, var(--success-color), #34d399);
+            color: white;
+        }
+
+        .btn-pro-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+
+        /* Navigation */
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pro-stepper {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .pro-stepper:before {
+                display: none;
+            }
+            
+            .user-select-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .exercises-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-card {
+                padding: 24px 16px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="pro-container">
+    <!-- Header -->
+    <div class="pro-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h1>Create Daily Workout Plan</h1>
+                <p>Design a personalized daily training program for your clients</p>
+            </div>
+            <a href="{{ path('coach_daily_plans') }}" class="btn btn-pro btn-pro-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="pro-stepper">
+        <div class="pro-step active" data-step="1">
+            <div class="pro-step-circle">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="pro-step-label">Client</div>
+        </div>
+        <div class="pro-step" data-step="2">
+            <div class="pro-step-circle">
+                <i class="fas fa-clipboard"></i>
+            </div>
+            <div class="pro-step-label">Plan</div>
+        </div>
+        <div class="pro-step" data-step="3">
+            <div class="pro-step-circle">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+            <div class="pro-step-label">Exercises</div>
+        </div>
+        <div class="pro-step" data-step="4">
+            <div class="pro-step-circle">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="pro-step-label">Review</div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'daily-plan-form'}}) }}
+    
+    <!-- Step 1: Client Selection -->
+    <div class="form-step active" id="step-1-content">
+        <div class="form-card">
+            <div class="form-card-header">
+                <h3><i class="fas fa-user-circle"></i> Select Client</h3>
+                <p class="text-muted mb-0 mt-2">Choose the client for whom you're creating this plan</p>
+            </div>
+            
+            <div class="user-select-grid">
+                {% for i in 1..3 %}
+                <div class="user-card" data-user-id="{{ i }}">
+                    <div class="user-avatar">
+                        {{ ['J', 'M', 'P'][i-1] }}
+                    </div>
+                    <div class="user-info">
+                        <h5>{{ ['John Doe', 'Mary Smith', 'Peter Johnson'][i-1] }}</h5>
+                        <p>{{ ['john@email.com', 'mary@email.com', 'peter@email.com'][i-1] }}</p>
+                        <div class="user-stats">
+                            <span class="user-stat">
+                                <i class="fas fa-calendar"></i> 3 active plans
+                            </span>
+                            <span class="user-stat bg-success text-white">
+                                <i class="fas fa-check"></i> Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <input type="hidden" name="selected_user" id="selected-user">
+            
+            <div class="alert alert-info border-0 bg-blue-50">
+                <i class="fas fa-info-circle"></i>
+                <strong>Note:</strong> The client will receive a notification when the plan is created.
+            </div>
+        </div>
+        
+        <div class="form-navigation">
+            <div></div>
+            <button type="button" class="btn btn-pro btn-pro-primary next-step-btn" data-next="2">
+                Next Step
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 2: Plan Details -->
+    <div class="form-step" id="step-2-content">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h3><i class="fas fa-clipboard-list"></i> Plan Details</h3>
+                        <p class="text-muted mb-0 mt-2">Define the general information for the daily plan</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold">Plan Title *</label>
+                            {{ form_widget(form.titre, {'attr': {
+                                'class': 'form-control',
+                                'placeholder': 'Ex: Monday Morning Cardio Program'
+                            }}) }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Date *</label>
+                            {{ form_widget(form.date, {'attr': {
+                                'class': 'form-control'
+                            }}) }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Status</label>
+                            {{ form_widget(form.status, {'attr': {
+                                'class': 'form-select'
+                            }}) }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Associated Goal</label>
+                            {{ form_widget(form.goal, {'attr': {
+                                'class': 'form-select'
+                            }}) }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Notes & Instructions</label>
+                        {{ form_widget(form.notes, {'attr': {
+                            'class': 'form-control',
+                            'rows': '3',
+                            'placeholder': 'Specific instructions, tips, client preferences...'
+                        }}) }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h3><i class="fas fa-chart-bar"></i> Summary</h3>
+                    </div>
+                    
+                    <div class="summary-section">
+                        <div class="summary-item">
+                            <span class="summary-label">Client</span>
+                            <span class="summary-value" id="summary-client">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Date</span>
+                            <span class="summary-value" id="summary-date">{{ "now"|date('m/d/Y') }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Exercises</span>
+                            <span class="summary-value" id="summary-exercises-count">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Duration</span>
+                            <span class="summary-value" id="summary-duration">0 min</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Calories</span>
+                            <span class="summary-value" id="summary-calories">0 cal</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning border-0 bg-yellow-50 mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <small>Fields marked with * are required</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-navigation">
+            <button type="button" class="btn btn-pro btn-pro-secondary prev-step-btn" data-prev="1">
+                <i class="fas fa-arrow-left"></i>
+                Previous
+            </button>
+            <button type="button" class="btn btn-pro btn-pro-primary next-step-btn" data-next="3">
+                Next Step
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 3: Exercises Selection -->
+    <div class="form-step" id="step-3-content">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h3><i class="fas fa-dumbbell"></i> Select Exercises</h3>
+                        <p class="text-muted mb-0 mt-2">Choose exercises to include in the plan</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Search Exercises</label>
+                        {{ form_widget(form.exercices, {'attr': {
+                            'class': 'form-select exercises-select'
+                        }}) }}
+                        <small class="text-muted">Select one or more exercises using the search</small>
+                    </div>
+                    
+                    <div class="exercises-grid" id="exercises-preview">
+                        <!-- Exercises will be dynamically added here -->
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No exercises selected</h5>
+                            <p class="text-muted">Start typing in the field above to search for exercises</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h3><i class="fas fa-calculator"></i> Statistics</h3>
+                    </div>
+                    
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-value" id="total-duration">0</div>
+                            <div class="stat-label">Total Minutes</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="stat-value" id="total-calories">0</div>
+                            <div class="stat-label">Total Calories</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Total Duration (min)</label>
+                            {{ form_widget(form.duree_min, {'attr': {
+                                'class': 'form-control total-duration-field',
+                                'readonly': 'readonly'
+                            }}) }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Total Calories</label>
+                            {{ form_widget(form.calories, {'attr': {
+                                'class': 'form-control total-calories-field',
+                                'readonly': 'readonly'
+                            }}) }}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success border-0 bg-green-50 mt-3">
+                        <i class="fas fa-lightbulb"></i>
+                        <small>Totals are automatically calculated from selected exercises</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-navigation">
+            <button type="button" class="btn btn-pro btn-pro-secondary prev-step-btn" data-prev="2">
+                <i class="fas fa-arrow-left"></i>
+                Previous
+            </button>
+            <button type="button" class="btn btn-pro btn-pro-primary next-step-btn" data-next="4">
+                Next Step
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 4: Review & Validation -->
+    <div class="form-step" id="step-4-content">
+        <div class="form-card">
+            <div class="form-card-header">
+                <h3><i class="fas fa-check-circle"></i> Review Plan</h3>
+                <p class="text-muted mb-0 mt-2">Review all information before creating the plan</p>
+            </div>
+            
+            <div class="alert alert-success border-0 bg-green-50 mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="mb-1">All information is complete!</h5>
+                        <p class="mb-0">Your daily plan is ready to be created. Review the summary below.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="summary-grid">
+                <div class="summary-section">
+                    <h4><i class="fas fa-user me-2"></i> Client Information</h4>
+                    <div class="summary-item">
+                        <span class="summary-label">Name</span>
+                        <span class="summary-value" id="final-client-name">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Email</span>
+                        <span class="summary-value" id="final-client-email">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Status</span>
+                        <span class="badge bg-success">Active</span>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <h4><i class="fas fa-clipboard me-2"></i> Plan Details</h4>
+                    <div class="summary-item">
+                        <span class="summary-label">Title</span>
+                        <span class="summary-value" id="final-plan-title">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Date</span>
+                        <span class="summary-value" id="final-plan-date">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Status</span>
+                        <span class="summary-value" id="final-plan-status">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="summary-section mt-4">
+                <h4><i class="fas fa-dumbbell me-2"></i> Exercise Summary</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="summary-item">
+                            <span class="summary-label">Number of Exercises</span>
+                            <span class="summary-value" id="final-total-exercises">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Duration</span>
+                            <span class="summary-value" id="final-total-duration">0 min</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Calories</span>
+                            <span class="summary-value" id="final-total-calories">0 cal</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Average Intensity</span>
+                            <span class="summary-value">Medium</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="final-exercises-list" class="mt-3">
+                    <!-- Exercises list will be added here -->
+                </div>
+            </div>
+            
+            <div class="alert alert-info border-0 bg-blue-50 mt-4">
+                <i class="fas fa-bell"></i>
+                <strong>Notification:</strong> A notification will be sent to the client when the plan is created.
+            </div>
+        </div>
+        
+        <div class="form-navigation">
+            <button type="button" class="btn btn-pro btn-pro-secondary prev-step-btn" data-prev="3">
+                <i class="fas fa-edit"></i>
+                Edit
+            </button>
+            <button type="submit" class="btn btn-pro btn-pro-success">
+                <i class="fas fa-check"></i>
+                Create Plan
+            </button>
+        </div>
+    </div>
+    
+    {{ form_end(form) }}
+</div>
+
+
+       
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('.exercises-select').select2({
+                theme: 'default',
+                placeholder: 'Search for exercises...',
+                width: '100%',
+                allowClear: true,
+                language: {
+                    noResults: function() {
+                        return "No exercises found";
+                    }
+                }
+            });
+            
+            // Data
+            const exercisesData = {
+                {% for exercise in form.exercices.vars.choices %}
+                {{ exercise.value }}: {
+                    name: "{{ exercise.label|split(' - ')[0]|e('js') }}",
+                    duration: {{ exercise.data.duration ?? 0 }},
+                    calories: {{ exercise.data.calories ?? 0 }},
+                    category: "{{ exercise.data.category ?? 'General' }}",
+                    difficulty: "{{ exercise.data.difficultyLevel ?? 'Medium' }}"
+                },
+                {% endfor %}
+            };
+            
+            const usersData = {
+                1: { name: 'John Doe', email: 'john@email.com' },
+                2: { name: 'Mary Smith', email: 'mary@email.com' },
+                3: { name: 'Peter Johnson', email: 'peter@email.com' }
+            };
+            
+            let selectedUser = null;
+            let selectedExercises = [];
+            
+            // Step Management
+            $('.pro-step').on('click', function() {
+                const step = $(this).data('step');
+                goToStep(step);
+            });
+            
+            $('.next-step-btn').on('click', function() {
+                const nextStep = $(this).data('next');
+                goToStep(nextStep);
+            });
+            
+            $('.prev-step-btn').on('click', function() {
+                const prevStep = $(this).data('prev');
+                goToStep(prevStep);
+            });
+            
+            function goToStep(step) {
+                // Update stepper
+                $('.pro-step').removeClass('active completed');
+                $(`.pro-step[data-step="${step}"]`).addClass('active');
+                
+                for (let i = 1; i < step; i++) {
+                    $(`.pro-step[data-step="${i}"]`).addClass('completed');
+                }
+                
+                // Show content
+                $('.form-step').removeClass('active');
+                $(`#step-${step}-content`).addClass('active');
+                
+                // Update summaries
+                if (step === 2) {
+                    updateSummary();
+                } else if (step === 4) {
+                    updateFinalSummary();
+                }
+            }
+            
+            // Client selection
+            $('.user-card').on('click', function() {
+                const userId = $(this).data('user-id');
+                $('.user-card').removeClass('selected');
+                $(this).addClass('selected');
+                
+                selectedUser = userId;
+                const user = usersData[userId];
+                $('#selected-user').val(user.name);
+                $('#summary-client').text(user.name);
+                $('#final-client-name').text(user.name);
+                $('#final-client-email').text(user.email);
+            });
+            
+            // Calculate totals
+            function calculateTotals() {
+                selectedExercises = $('.exercises-select').val() || [];
+                let totalDuration = 0;
+                let totalCalories = 0;
+                let exercisesHTML = '';
+                
+                selectedExercises.forEach(function(id) {
+                    const exercise = exercisesData[id];
+                    if (exercise) {
+                        const duration = parseInt(exercise.duration) || 0;
+                        const caloriesPerMin = parseInt(exercise.calories) || 0;
+                        const exerciseCalories = Math.round(duration * caloriesPerMin);
+                        
+                        totalDuration += duration;
+                        totalCalories += exerciseCalories;
+                        
+                        exercisesHTML += `
+                            <div class="exercise-card" data-exercise-id="${id}">
+                                <div class="exercise-icon">
+                                    <i class="fas fa-dumbbell"></i>
+                                </div>
+                                <div class="exercise-info">
+                                    <h5>${exercise.name}</h5>
+                                    <div class="exercise-meta">
+                                        <span class="exercise-tag">${exercise.category}</span>
+                                        <span class="exercise-tag">${exercise.difficulty}</span>
+                                    </div>
+                                    <div class="exercise-stats">
+                                        <div class="exercise-stat">
+                                            <div class="exercise-stat-value">${duration}</div>
+                                            <div class="exercise-stat-label">minutes</div>
+                                        </div>
+                                        <div class="exercise-stat">
+                                            <div class="exercise-stat-value">${exerciseCalories}</div>
+                                            <div class="exercise-stat-label">calories</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                // Update statistics
+                $('#total-duration').text(totalDuration);
+                $('#total-calories').text(Math.round(totalCalories));
+                $('#summary-exercises-count').text(selectedExercises.length);
+                $('#summary-duration').text(totalDuration + ' min');
+                $('#summary-calories').text(Math.round(totalCalories) + ' cal');
+                
+                // Update form fields
+                $('.total-duration-field').val(totalDuration);
+                $('.total-calories-field').val(Math.round(totalCalories));
+                
+                // Update preview
+                $('#exercises-preview').html(
+                    exercisesHTML || 
+                    `<div class="col-12 text-center py-5">
+                        <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No exercises selected</h5>
+                        <p class="text-muted">Start typing in the field above to search for exercises</p>
+                    </div>`
+                );
+            }
+            
+            // Update summary
+            function updateSummary() {
+                $('#summary-date').text($('#{{ form.date.vars.id }}').val());
+            }
+            
+            // Update final summary
+            function updateFinalSummary() {
+                // Client info
+                if (selectedUser) {
+                    const user = usersData[selectedUser];
+                    $('#final-client-name').text(user.name);
+                    $('#final-client-email').text(user.email);
+                }
+                
+                // Plan info
+                $('#final-plan-title').text($('#{{ form.titre.vars.id }}').val() || '-');
+                $('#final-plan-date').text($('#{{ form.date.vars.id }}').val() || '-');
+                $('#final-plan-status').text($('#{{ form.status.vars.id }} option:selected').text() || '-');
+                
+                // Statistics
+                $('#final-total-exercises').text(selectedExercises.length);
+                $('#final-total-duration').text($('#total-duration').text() + ' min');
+                $('#final-total-calories').text($('#total-calories').text() + ' cal');
+                
+                // Exercises list
+                let finalListHTML = '';
+                selectedExercises.forEach(function(id) {
+                    const exercise = exercisesData[id];
+                    if (exercise) {
+                        const duration = parseInt(exercise.duration) || 0;
+                        const caloriesPerMin = parseInt(exercise.calories) || 0;
+                        const exerciseCalories = Math.round(duration * caloriesPerMin);
+                        
+                        finalListHTML += `
+                            <div class="summary-item">
+                                <span class="summary-label">${exercise.name}</span>
+                                <span class="summary-value">${duration} min • ${exerciseCalories} cal</span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                $('#final-exercises-list').html(
+                    finalListHTML || 
+                    '<div class="text-center py-3"><p class="text-muted">No exercises selected</p></div>'
+                );
+            }
+            
+            // Event listeners
+            $('.exercises-select').on('change', calculateTotals);
+            
+            $('#{{ form.date.vars.id }}').on('change', function() {
+                const date = $(this).val();
+                if (date) {
+                    $('#summary-date').text(date);
+                }
+            });
+            
+            // Form submission
+            $('#daily-plan-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Validation
+                if (!selectedUser) {
+                    alert('Please select a client');
+                    goToStep(1);
+                    return;
+                }
+                
+                if (!$('#{{ form.titre.vars.id }}').val()) {
+                    alert('Please enter a plan title');
+                    goToStep(2);
+                    return;
+                }
+                
+                if (selectedExercises.length === 0) {
+                    alert('Please select at least one exercise');
+                    goToStep(3);
+                    return;
+                }
+                
+                // Submit form
+                this.submit();
+            });
+            
+            // Initialize
+            calculateTotals();
+        });
+    </script>
+{% endblock %}
