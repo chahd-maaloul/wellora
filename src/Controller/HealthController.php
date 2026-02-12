@@ -2,7 +2,12 @@
 
 namespace App\Controller;
 
+use App\Entity\Consultation;
+use App\Entity\Examens;
+use App\Entity\Ordonnance;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -719,37 +724,25 @@ class HealthController extends AbstractController
      * Prescriptions - Affiche les ordonnances du patient
      */
     #[Route('/prescriptions', name: 'health_prescriptions', methods: ['GET'])]
-    public function prescriptions(): Response
+    public function prescriptions(EntityManagerInterface $em): Response
     {
-        $prescriptions = [
-            [
-                'id' => 1,
-                'medication' => 'Doliprane 500mg',
-                'dosage' => '1 comprimé 3 fois par jour',
-                'duration' => '7 jours',
-                'doctor' => 'Dr. Sophie Martin',
-                'date' => new \DateTime('-30 days'),
-                'status' => 'active',
-            ],
-            [
-                'id' => 2,
-                'medication' => 'Vitamine D 1000UI',
-                'dosage' => '1 gélule par jour',
-                'duration' => '90 jours',
-                'doctor' => 'Dr. Sophie Martin',
-                'date' => new \DateTime('-60 days'),
-                'status' => 'active',
-            ],
-            [
-                'id' => 3,
-                'medication' => 'Ibuprofen 400mg',
-                'dosage' => '1 comprimé si nécessaire',
-                'duration' => '14 jours',
-                'doctor' => 'Dr. Ahmed Ben Ali',
-                'date' => new \DateTime('-90 days'),
-                'status' => 'completed',
-            ],
-        ];
+        $rows = $em->getRepository(Ordonnance::class)->findBy([], ['date_ordonnance' => 'DESC']);
+        $prescriptions = [];
+        foreach ($rows as $ordonnance) {
+            $consultation = $ordonnance->getIdConsultation();
+            $consultationStatus = $consultation ? strtolower((string) $consultation->getStatus()) : '';
+            $status = in_array($consultationStatus, ['termine', 'completed', 'done'], true) ? 'completed' : 'active';
+
+            $prescriptions[] = [
+                'id' => $ordonnance->getId(),
+                'medication' => $ordonnance->getMedicament(),
+                'dosage' => $ordonnance->getDosage(),
+                'duration' => $ordonnance->getDureeTraitement(),
+                'doctor' => '-',
+                'date' => $ordonnance->getDateOrdonnance(),
+                'status' => $status,
+            ];
+        }
 
         return $this->render('health/prescriptions.html.twig', [
             'prescriptions' => $prescriptions,
@@ -760,43 +753,103 @@ class HealthController extends AbstractController
      * Lab Results - Affiche les résultats de laboratoire
      */
     #[Route('/lab-results', name: 'health_lab_results', methods: ['GET'])]
-    public function labResults(): Response
+    public function labResults(EntityManagerInterface $em): Response
     {
-        $labResults = [
-            [
-                'id' => 1,
-                'name' => 'Analyse de sang complète',
-                'date' => new \DateTime('-15 days'),
-                'status' => 'completed',
-                'results' => [
-                    ['test' => 'Hémoglobine', 'value' => '14.5', 'unit' => 'g/dL', 'normal' => '12-16'],
-                    ['test' => 'Globules blancs', 'value' => '7500', 'unit' => '/mm³', 'normal' => '4000-10000'],
-                    ['test' => 'Plaquettes', 'value' => '250000', 'unit' => '/mm³', 'normal' => '150000-400000'],
-                ],
-            ],
-            [
-                'id' => 2,
-                'name' => 'Profil lipidique',
-                'date' => new \DateTime('-60 days'),
-                'status' => 'completed',
-                'results' => [
-                    ['test' => 'Cholestérol total', 'value' => '5.2', 'unit' => 'mmol/L', 'normal' => '<5.2'],
-                    ['test' => 'LDL', 'value' => '3.1', 'unit' => 'mmol/L', 'normal' => '<3.4'],
-                    ['test' => 'HDL', 'value' => '1.5', 'unit' => 'mmol/L', 'normal' => '>1.0'],
-                ],
-            ],
-        ];
+        $exams = $em->getRepository(Examens::class)->findBy([], ['date_examen' => 'DESC']);
+
+        $labResults = [];
+        foreach ($exams as $exam) {
+            $labResults[] = [
+                'id' => $exam->getId(),
+                'name' => $exam->getNomExamen() ?: ($exam->getTypeExamen() ?: 'Examen'),
+                'date' => $exam->getDateExamen(),
+                'status' => $exam->getStatus() ?: 'prescrit',
+                'result' => $exam->getResultat() ?: '',
+                'resultFile' => $exam->getResultFile(),
+            ];
+        }
 
         return $this->render('health/lab-results.html.twig', [
             'labResults' => $labResults,
         ]);
     }
 
-    /**
-     * Body Map - Affiche la carte corporelle pour le suivi des symptômes
-     */
-    #[Route('/body-map', name: 'health_body_map', methods: ['GET'])]
-    public function bodyMap(): Response
+    #[Route('/lab-results/{id}/upload', name: 'health_lab_results_upload', methods: ['POST'])]
+    public function uploadLabResult(int $id, Request $request, EntityManagerInterface $em): Response
+    {
+        $exam = $em->getRepository(Examens::class)->find($id);
+        if (!$exam) {
+            $this->addFlash('error', 'Examen introuvable');
+            return $this->redirectToRoute('health_lab_results');
+        }
+
+        /** @var UploadedFile|null $file */
+        $file = $request->files->get('result_pdf');
+        if (!$file) {
+            $this->addFlash('error', 'Veuillez choisir un fichier PDF.');
+            return $this->redirectToRoute('health_lab_results');
+        }
+
+        if ($file->getClientOriginalExtension() != 'pdf') {
+            $this->addFlash('error', 'Seuls les fichiers PDF sont autoris?s.');
+            return $this->redirectToRoute('health_lab_results');
+        }
+
+        $uploadsDir = $this->getParameter('kernel.project_dir') . '/public/uploads/lab-results';
+        if (!is_dir($uploadsDir)) {
+            @mkdir($uploadsDir, 0775, true);
+        }
+
+        // Remove old file if exists
+        $existingFile = $exam->getResultFile();
+        if ($existingFile) {
+            $existingPath = $this->getParameter('kernel.project_dir') . '/public/' . ltrim($existingFile, '/');
+            if (is_file($existingPath)) {
+                @unlink($existingPath);
+            }
+        }
+
+        $filename = 'exam_' . $exam->getId() . '_' . uniqid() . '.pdf';
+        $file->move($uploadsDir, $filename);
+
+        $exam->setResultFile('uploads/lab-results/' . $filename);
+        if (!$exam->getResultat()) {
+            $exam->setResultat('Résultat disponible (PDF).');
+        }
+        $exam->setStatus('termine');
+        $exam->setDateRealisation(new \DateTime());
+        $em->flush();
+
+        $this->addFlash('success', 'Résultat PDF enregistré.');
+        return $this->redirectToRoute('health_lab_results');
+    }
+
+    #[Route('/lab-results/{id}/delete-file', name: 'health_lab_results_delete_file', methods: ['POST'])]
+    public function deleteLabResultFile(int $id, EntityManagerInterface $em): Response
+    {
+        $exam = $em->getRepository(Examens::class)->find($id);
+        if (!$exam) {
+            $this->addFlash('error', 'Examen introuvable');
+            return $this->redirectToRoute('health_lab_results');
+        }
+
+        $existingFile = $exam->getResultFile();
+        if ($existingFile) {
+            $existingPath = $this->getParameter('kernel.project_dir') . '/public/' . ltrim($existingFile, '/');
+            if (is_file($existingPath)) {
+                @unlink($existingPath);
+            }
+        }
+
+        $exam->setResultFile(null);
+        $exam->setStatus('prescrit');
+        $em->flush();
+
+        $this->addFlash('success', 'Fichier supprimé.');
+        return $this->redirectToRoute('health_lab_results');
+    }
+
+public function bodyMap(): Response
     {
         // Récupérer les symptômes enregistrés (simulés)
         $recordedSymptoms = [
@@ -1299,22 +1352,321 @@ class HealthController extends AbstractController
 
     /**
      * Doctor Interface - Patient Chart
-     * Affiche le dossier médical complet d'un patient
+     * Affiche le dossier médical complet d'une consultation avec ses symptômes et traitements
      */
     #[Route('/doctor/patient/{id}/chart', name: 'doctor_patient_chart', methods: ['GET'])]
-    public function doctorPatientChart(string $id): Response
+    public function doctorPatientChart(int $id, EntityManagerInterface $em): Response
     {
+        // Récupérer la consultation par ID
+        $consultation = $em->getRepository(Consultation::class)->find($id);
+        
+        if (!$consultation) {
+            return $this->render('doctor/patient-chart.html.twig', [
+                'page_title' => 'Dossier Médical',
+                'consultation' => null,
+            ]);
+        }
+        
+        // Récupérer les ordonnances et examens liés à la consultation
+        $ordonnances = $em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+        $examens = $em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+        
+        // Préparer les données de la consultation pour Twig
+        $consultationData = [
+            'id' => $consultation->getId(),
+            'reason_for_visit' => $consultation->getReasonForVisit(),
+            'symptoms_description' => $consultation->getSymptomsDescription(),
+            'assessment' => $consultation->getAssessment(),
+            'plan' => $consultation->getPlan(),
+            'date_consultation' => $consultation->getDateConsultation() ? $consultation->getDateConsultation()->format('d/m/Y') : null,
+            'status' => $consultation->getStatus(),
+            'notes' => $consultation->getNotes(),
+            'vitals' => $consultation->getVitals(),
+        ];
+        
+        // Préparer les données des ordonnances
+        $ordonnancesData = [];
+        foreach ($ordonnances as $ord) {
+            $ordonnancesData[] = [
+                'id' => $ord->getId(),
+                'medicament' => $ord->getMedicament(),
+                'dosage' => $ord->getDosage(),
+                'forme' => $ord->getForme(),
+                'instructions' => $ord->getInstructions(),
+                'date_ordonnance' => $ord->getDateOrdonnance() ? $ord->getDateOrdonnance()->format('d/m/Y') : null,
+                'frequency' => $ord->getFrequency(),
+            ];
+        }
+        
+        // Préparer les données des examens
+        $examensData = [];
+        foreach ($examens as $exam) {
+            $examensData[] = [
+                'id' => $exam->getId(),
+                'nom_examen' => $exam->getNomExamen(),
+                'type_examen' => $exam->getTypeExamen(),
+                'resultat' => $exam->getResultat(),
+                'date_examen' => $exam->getDateExamen() ? $exam->getDateExamen()->format('d/m/Y') : null,
+            ];
+        }
+        
         return $this->render('doctor/patient-chart.html.twig', [
             'page_title' => 'Dossier Médical',
-            'patient_id' => $id,
+            'consultation_id' => $id,
+            'consultation' => $consultationData,
+            'ordonnances' => $ordonnancesData,
+            'examens' => $examensData,
         ]);
+    }
+
+    /**
+     * API - Patient chart data (based on consultation)
+     */
+    #[Route('/doctor/api/patient-chart/{id}', name: 'health_doctor_patient_chart_api', methods: ['GET'])]
+    public function getPatientChartData(int $id, EntityManagerInterface $em): JsonResponse
+    {
+        $consultation = $em->getRepository(Consultation::class)->find($id);
+        
+        if (!$consultation) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Consultation non trouvee',
+            ], 404);
+        }
+        
+        $ordonnances = $em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+        $examens = $em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+        
+        $chartData = $this->buildPatientChartData($consultation, $ordonnances, $examens);
+        
+        return $this->json([
+            'success' => true,
+            'data' => $chartData,
+        ]);
+    }
+
+    /**
+     * Helper - Build patient chart data from consultation
+     */
+    private function buildPatientChartData(Consultation $consultation, array $ordonnances, array $examens): array
+    {
+        $patientName = $consultation->getReasonForVisit() ?: 'Patient';
+        $diagnoses = $consultation->getDiagnoses();
+        $conditions = is_array($diagnoses) ? array_values($diagnoses) : [];
+        
+        $vitals = $consultation->getVitals();
+        $vitals = is_array($vitals) ? $vitals : [];
+        
+        $vitalSigns = [];
+        if (!empty($vitals)) {
+            $bpS = $vitals['bloodPressureSystolic'] ?? null;
+            $bpD = $vitals['bloodPressureDiastolic'] ?? null;
+            $bloodPressure = null;
+            if ($bpS && $bpD) {
+                $bloodPressure = $bpS . '/' . $bpD;
+            } elseif (!empty($vitals['bloodPressure'])) {
+                $bloodPressure = $vitals['bloodPressure'];
+            }
+            
+            $vitalSigns[] = [
+                'date' => $consultation->getDateConsultation() ? $consultation->getDateConsultation()->format('d/m/Y') : 'N/A',
+                'time' => $consultation->getTimeConsultation() ? $consultation->getTimeConsultation()->format('H:i') : '',
+                'bloodPressure' => $bloodPressure ?? '--',
+                'heartRate' => $vitals['heartRate'] ?? $vitals['pulse'] ?? null,
+                'temperature' => $vitals['temperature'] ?? null,
+                'weight' => $vitals['weight'] ?? null,
+                'height' => $vitals['height'] ?? null,
+                'spo2' => $vitals['oxygenSaturation'] ?? $vitals['spo2'] ?? null,
+            ];
+        }
+        
+        $height = isset($vitals['height']) ? (float) $vitals['height'] : 0;
+        $weight = isset($vitals['weight']) ? (float) $vitals['weight'] : 0;
+        $bmi = 0;
+        if ($height > 0 && $weight > 0) {
+            $heightM = $height / 100;
+            $bmi = round($weight / ($heightM * $heightM), 1);
+        }
+        
+        $patientStatus = 'stable';
+        if ($consultation->getStatus() === 'completed') {
+            $patientStatus = 'active';
+        } elseif ($consultation->getStatus() === 'emergency') {
+            $patientStatus = 'critical';
+        }
+        
+        $patient = [
+            'id' => $consultation->getId(),
+            'name' => $patientName,
+            'age' => '--',
+            'gender' => 'M',
+            'birthDate' => '--',
+            'fileNumber' => 'CONS-' . str_pad((string) $consultation->getId(), 4, '0', STR_PAD_LEFT),
+            'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($patientName) . '&background=00A790&color=fff',
+            'status' => $patientStatus,
+            'healthScore' => $this->calculateHealthScoreFromVitals($vitals),
+            'conditions' => array_slice($conditions, 0, 5),
+            'lastVisitDate' => $consultation->getDateConsultation() ? $consultation->getDateConsultation()->format('d/m/Y') : '--',
+            'nextAppointment' => null,
+            'bloodType' => '--',
+            'height' => $height,
+            'weight' => $weight,
+            'bmi' => $bmi,
+            'phone' => '--',
+            'email' => '--',
+            'address' => '--',
+            'emergencyContact' => [
+                'name' => '--',
+                'relation' => '--',
+                'phone' => '--',
+            ],
+            'allergies' => [],
+            'medications' => [],
+        ];
+        
+        $timeline = [
+            [
+                'id' => $consultation->getId(),
+                'type' => 'symptom',
+                'typeLabel' => 'Consultation',
+                'title' => $consultation->getReasonForVisit() ?? 'Consultation',
+                'description' => $consultation->getSymptomsDescription() ?? $consultation->getNotes() ?? 'Pas de description',
+                'date' => $consultation->getDateConsultation() ? $consultation->getDateConsultation()->format('d/m/Y') : 'N/A',
+                'severity' => $consultation->getStatus() === 'emergency' ? 5 : 2,
+            ],
+        ];
+        
+        $symptoms = [];
+        if ($consultation->getSymptomsDescription()) {
+            $symptoms[] = [
+                'id' => 1,
+                'name' => $consultation->getReasonForVisit() ?? 'Symptome',
+                'date' => $consultation->getDateConsultation() ? $consultation->getDateConsultation()->format('d/m/Y') : 'N/A',
+                'intensity' => 5,
+                'status' => $consultation->getStatus() === 'completed' ? 'resolved' : 'active',
+                'description' => $consultation->getSymptomsDescription(),
+            ];
+        }
+        
+        $medications = [];
+        foreach ($ordonnances as $ord) {
+            $medications[] = [
+                'id' => $ord->getId(),
+                'name' => $ord->getMedicament() ?? 'Medicament',
+                'dosage' => $ord->getDosage() ?? '--',
+                'frequency' => $ord->getFrequency() ?? '--',
+                'active' => true,
+            ];
+            
+            $timeline[] = [
+                'id' => 'MED-' . $ord->getId(),
+                'type' => 'medication',
+                'typeLabel' => 'Traitement',
+                'title' => 'Prescription: ' . ($ord->getMedicament() ?? 'Medicament'),
+                'description' => ($ord->getDosage() ?? '') . ' - ' . ($ord->getInstructions() ?? ''),
+                'date' => $ord->getDateOrdonnance() ? $ord->getDateOrdonnance()->format('d/m/Y') : 'N/A',
+            ];
+        }
+        
+        foreach ($examens as $exam) {
+            $timeline[] = [
+                'id' => 'EXAM-' . $exam->getId(),
+                'type' => 'lab',
+                'typeLabel' => 'Examen',
+                'title' => $exam->getNomExamen() ?? $exam->getTypeExamen() ?? 'Examen',
+                'description' => $exam->getResultat() ?? 'En attente',
+                'date' => $exam->getDateExamen() ? $exam->getDateExamen()->format('d/m/Y') : 'N/A',
+            ];
+        }
+        
+        usort($timeline, function ($a, $b) {
+            $dateA = ($a['date'] ?? 'N/A') === 'N/A' ? '1970-01-01' : $a['date'];
+            $dateB = ($b['date'] ?? 'N/A') === 'N/A' ? '1970-01-01' : $b['date'];
+            return $dateB <=> $dateA;
+        });
+        
+        $followUp = $consultation->getFollowUp();
+        $followUp = is_array($followUp) ? $followUp : [];
+        $treatmentGoals = $followUp['goals'] ?? [];
+        $treatmentFollowUps = $followUp['followUps'] ?? [];
+        
+        if (empty($treatmentGoals) && !empty($medications)) {
+            $treatmentGoals = array_map(function ($med, $index) {
+                $label = trim(($med['name'] ?? 'Médicament') . ' ' . ($med['dosage'] ?? ''));
+                return [
+                    'id' => $med['id'] ?? ($index + 1),
+                    'description' => 'Traitement: ' . $label,
+                    'completed' => false,
+                    'deadline' => 'En cours',
+                ];
+            }, $medications, array_keys($medications));
+        }
+        
+        $treatment = [
+            'adherence' => (int) ($followUp['adherence'] ?? (!empty($medications) ? 80 : 0)),
+            'goals' => $treatmentGoals,
+            'followUps' => $treatmentFollowUps,
+        ];
+        
+        $patient['medications'] = $medications;
+        
+        return [
+            'patient' => $patient,
+            'timeline' => $timeline,
+            'symptoms' => $symptoms,
+            'medications' => $medications,
+            'treatment' => $treatment,
+            'vitalSigns' => $vitalSigns,
+        ];
+    }
+
+    /**
+     * Helper - Health score from vitals
+     */
+    private function calculateHealthScoreFromVitals(array $vitals): int
+    {
+        $score = 85;
+        
+        if (isset($vitals['bloodPressureSystolic']) && isset($vitals['bloodPressureDiastolic'])) {
+            $systolic = (int) $vitals['bloodPressureSystolic'];
+            $diastolic = (int) $vitals['bloodPressureDiastolic'];
+            
+            if ($systolic > 140 || $diastolic > 90) {
+                $score -= 15;
+            } elseif ($systolic < 90 || $diastolic < 60) {
+                $score -= 10;
+            }
+        }
+        
+        if (isset($vitals['temperature'])) {
+            $temp = (float) $vitals['temperature'];
+            if ($temp > 38 || $temp < 36) {
+                $score -= 10;
+            }
+        }
+        
+        if (isset($vitals['heartRate'])) {
+            $heartRate = (int) $vitals['heartRate'];
+            if ($heartRate > 100 || $heartRate < 60) {
+                $score -= 5;
+            }
+        }
+        
+        if (isset($vitals['oxygenSaturation'])) {
+            $o2 = (int) $vitals['oxygenSaturation'];
+            if ($o2 < 95) {
+                $score -= 15;
+            }
+        }
+        
+        return max(0, min(100, $score));
     }
 
     /**
      * Doctor Interface - Clinical Notes
      * Interface pour les notes cliniques SOAP
      */
-    #[Route('/doctor/patient/{id}/notes', name: 'doctor_clinical_notes', methods: ['GET'])]
+    #[Route('/doctor/patient/{id}/notes', name: 'doctor_patient_notes', methods: ['GET'])]
     public function doctorClinicalNotes(string $id): Response
     {
         return $this->render('doctor/clinical-notes.html.twig', [

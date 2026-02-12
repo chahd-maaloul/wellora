@@ -3,15 +3,115 @@
 
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}{{ 'Dossier Médical'|trans }} - <span x-text="patient.name"></span> - WellCare Connect{% endblock %}
+{% block title %}{{ 'Dossier Médical'|trans }} - {{ consultation.reason_for_visit|default('Patient') }} - WellCare Connect{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <style>[x-cloak] { display: none !important; }</style>
 {% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="patientChart()" x-init="init()">
+{% set consultation = consultation|default(null) %}
+{% set ordonnances = ordonnances|default([]) %}
+{% set examens = examens|default([]) %}
+
+{% set vitals = consultation.vitals|default({}) %}
+
+{% set patient_data = patient_data|default({
+    id: consultation.id|default('P001'),
+    name: consultation.reason_for_visit|default('Patient'),
+    fileNumber: 'CONS-' ~ (consultation.id|default('--')),
+    avatar: 'https://ui-avatars.com/api/?name=' ~ (consultation.reason_for_visit|default('Patient')|url_encode) ~ '&background=00A790&color=fff',
+    status: 'stable',
+    healthScore: 85,
+    lastVisitDate: '--',
+    conditions: [],
+    birthDate: '--',
+    bloodType: '--',
+    height: 0,
+    weight: 0,
+    phone: '--',
+    email: '--',
+    address: '--',
+    allergies: [],
+    medications: []
+}) %}
+
+{% set treatment = treatment|default({
+    adherence: 0,
+    goals: [],
+    followUps: []
+}) %}
+
+{% set vitalSigns = vitalSigns|default([
+    { date: '10/02/2026', time: '09:00', bloodPressure: '120/80', heartRate: 72, temperature: 36.6, weight: 75, height: 175, spo2: 98 },
+    { date: '09/02/2026', time: '08:30', bloodPressure: '118/78', heartRate: 70, temperature: 36.5, weight: 75, height: 175, spo2: 98 },
+    { date: '08/02/2026', time: '09:15', bloodPressure: '122/82', heartRate: 75, temperature: 36.7, weight: 76, height: 175, spo2: 97 }
+]) %}
+
+{% set timeline_data = [] %}
+{# Add consultation to timeline #}
+{% if consultation %}
+    {% set timeline_data = timeline_data|merge([{
+        id: consultation.id,
+        type: 'symptom',
+        typeLabel: 'Consultation',
+        title: consultation.reason_for_visit|default('Consultation'),
+        description: consultation.symptoms_description|default(consultation.notes|default('Pas de description')),
+        date: consultation.date_consultation|default('N/A'),
+        severity: consultation.status == 'emergency' ? 5 : 2
+    }]) %}
+{% endif %}
+
+{% set symptoms_data = [] %}
+{% if consultation and consultation.symptoms_description %}
+    {% set symptoms_data = symptoms_data|merge([{
+        id: 1,
+        name: consultation.reason_for_visit|default('Symptôme'),
+        date: consultation.date_consultation|default('N/A'),
+        intensity: 5,
+        status: consultation.status == 'completed' ? 'resolved' : 'active',
+        description: consultation.symptoms_description
+    }]) %}
+{% endif %}
+
+{% set medications_data = [] %}
+{% for ord in ordonnances %}
+    {% set medications_data = medications_data|merge([{
+        id: ord.id,
+        name: ord.medicament|default('Médicament'),
+        dosage: ord.dosage|default('--'),
+        frequency: ord.frequency|default('--'),
+        active: true
+    }]) %}
+    {% set timeline_data = timeline_data|merge([{
+        id: 'MED-' ~ ord.id,
+        type: 'medication',
+        typeLabel: 'Traitement',
+        title: 'Prescription: ' ~ (ord.medicament|default('Médicament')),
+        description: ord.dosage ~ ' - ' ~ (ord.instructions|default('')),
+        date: ord.date_ordonnance|default('N/A')
+    }]) %}
+{% endfor %}
+
+{% for exam in examens %}
+    {% set timeline_data = timeline_data|merge([{
+        id: 'EXAM-' ~ exam.id,
+        type: 'lab',
+        typeLabel: 'Examen',
+        title: exam.nom_examen|default(exam.type_examen|default('Examen')),
+        description: exam.resultat|default('En attente'),
+        date: exam.date_examen|default('N/A')
+    }]) %}
+{% endfor %}
+
+{# Sort timeline by date descending #}
+{% set timeline_data = timeline_data|sort((a, b) => (b.date == 'N/A' ? '1970-01-01' : b.date) <=> (a.date == 'N/A' ? '1970-01-01' : a.date)) %}
+
+<div class="min-h-full bg-gray-50 dark:bg-gray-950"
+     x-data="patientChart()"
+     x-cloak>
     {# Patient Header #}
     <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -329,7 +429,7 @@
                             </div>
                             
                             <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-                                <template x-for="vital in vitalSigns" :key="vital.type">
+                                <template x-for="vital in vitalsCards" :key="vital.type">
                                     <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700" :class="vital.alert ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800' : 'bg-white dark:bg-gray-800'">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="text-sm text-gray-500 dark:text-gray-400" x-text="vital.label"></span>
@@ -357,9 +457,7 @@
                         <div x-show="activeTab === 'symptoms'" x-transition style="display: none;">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Suivi des symptômes'|trans }}</h3>
-                                <button @click="openAddSymptomModal()" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600">
-                                    <i class="mr-2 fa-solid fa-plus"></i>{{ 'Ajouter'|trans }}
-                                </button>
+                                {# bouton supprimé #}
                             </div>
                             <div class="mb-6 h-80">
                                 <canvas id="symptomsChart"></canvas>
@@ -405,9 +503,7 @@
                         <div x-show="activeTab === 'treatment'" x-transition style="display: none;">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Plan de traitement'|trans }}</h3>
-                                <button @click="openAddTreatmentModal()" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600">
-                                    <i class="mr-2 fa-solid fa-plus"></i>{{ 'Modifier'|trans }}
-                                </button>
+                                {# bouton supprimé #}
                             </div>
                             
                             <div class="space-y-6">
@@ -421,7 +517,7 @@
                                                 <span class="font-medium text-gray-900 dark:text-white" x-text="treatment.adherence + '%'"></span>
                                             </div>
                                             <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                                                <div class="h-2 transition-all duration-500 rounded-full bg-wellcare-500" :style="`width: ${treatment.adherence}%`"></div>
+                                                <div class="h-2 transition-all duration-500 rounded-full bg-wellcare-500" :style="{ width: treatment.adherence + '%' }"></div>
                                             </div>
                                         </div>
                                     </div>

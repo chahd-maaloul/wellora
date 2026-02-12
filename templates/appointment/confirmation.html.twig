@@ -232,7 +232,7 @@
                     <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
                         You can reschedule or cancel your appointment up to 24 hours before the scheduled time at no cost.
                     </p>
-                    <a href="/appointment/dashboard" class="text-sm font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
+                    <a href="{{ path('appointment_patient_dashboard') }}" class="text-sm font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
                         Manage Appointment <i class="ml-1 fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -255,7 +255,7 @@
         
         {# Action Buttons #}
         <div class="flex flex-col gap-4 sm:flex-row">
-            <a href="/appointment/dashboard" class="flex-1 text-center btn-primary">
+            <a href="{{ path('appointment_patient_dashboard') }}" class="flex-1 text-center btn-primary">
                 <i class="mr-2 fas fa-calendar-alt"></i>View My Appointments
             </a>
             <a href="/doctors" class="flex-1 text-center btn-outline">

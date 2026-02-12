@@ -3,6 +3,9 @@
  * Handles patient list, patient chart, clinical notes, and communication interfaces
  */
 
+// Import Alpine if not already available
+import Alpine from 'alpinejs';
+
 // Medical color palette
 const medicalColors = {
     primary: '#00A790',
@@ -19,9 +22,13 @@ const medicalColors = {
     infoLight: 'rgba(59, 130, 246, 0.1)',
 };
 
-// Patient List Component
+// Make sure Alpine is available globally
+window.Alpine = Alpine;
+
+// Initialize Alpine components when Alpine is ready
 document.addEventListener('alpine:init', () => {
     
+    // Patient List Component
     Alpine.data('patientList', () => ({
         // State
         searchQuery: '',
@@ -48,114 +55,94 @@ document.addEventListener('alpine:init', () => {
             this.updateStats();
         },
         
-        loadPatients() {
-            // Simulated patient data - replace with actual API call
-            this.patients = [
-                {
-                    id: 'P001',
-                    name: 'Marie Dupont',
-                    age: 45,
-                    gender: 'F',
-                    fileNumber: '2024-001',
-                    avatar: 'https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff',
-                    status: 'active',
-                    healthScore: 85,
-                    conditions: ['Hypertension', 'Diabète type 2'],
-                    lastVisitDate: '15/01/2026',
-                    lastVisitTime: '14:30',
-                },
-                {
-                    id: 'P002',
-                    name: 'Jean Martin',
-                    age: 52,
-                    gender: 'M',
-                    fileNumber: '2024-002',
-                    avatar: 'https://ui-avatars.com/api/?name=Jean+Martin&background=ef4444&color=fff',
-                    status: 'critical',
-                    healthScore: 62,
-                    conditions: ['Cardiaque', 'Hypertension'],
-                    lastVisitDate: '14/01/2026',
-                    lastVisitTime: '10:00',
-                },
-                {
-                    id: 'P003',
-                    name: 'Sophie Bernard',
-                    age: 38,
-                    gender: 'F',
-                    fileNumber: '2024-003',
-                    avatar: 'https://ui-avatars.com/api/?name=Sophie+Bernard&background=6366f1&color=fff',
-                    status: 'stable',
-                    healthScore: 92,
-                    conditions: ['Asthme'],
-                    lastVisitDate: '10/01/2026',
-                    lastVisitTime: '16:15',
-                },
-                {
-                    id: 'P004',
-                    name: 'Pierre Leroy',
-                    age: 65,
-                    gender: 'M',
-                    fileNumber: '2024-004',
-                    avatar: 'https://ui-avatars.com/api/?name=Pierre+Leroy&background=f59e0b&color=fff',
-                    status: 'follow-up',
-                    healthScore: 78,
-                    conditions: ['Diabète', 'Hypercholestérolémie'],
-                    lastVisitDate: '13/01/2026',
-                    lastVisitTime: '09:30',
-                },
-                {
-                    id: 'P005',
-                    name: 'Isabelle Petit',
-                    age: 29,
-                    gender: 'F',
-                    fileNumber: '2024-005',
-                    avatar: 'https://ui-avatars.com/api/?name=Isabelle+Petit&background=22c55e&color=fff',
-                    status: 'active',
-                    healthScore: 95,
-                    conditions: [],
-                    lastVisitDate: '05/01/2026',
-                    lastVisitTime: '11:00',
-                },
-            ];
-            this.filteredPatients = [...this.patients];
+        async loadPatients() {
+            try {
+                console.log('Chargement des consultations...');
+                const response = await fetch('/health/doctor/api/consultations');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Consultations loaded:', data.length);
+                
+                // Map consultations to patient objects
+                this.patients = data.map(consultation => ({
+                    id: consultation.id,
+                    patientId: consultation.patientId || consultation.consultationId || consultation.id,
+                    consultationId: consultation.id,
+                    name: consultation.name || 'Nom non disponible',
+                    age: consultation.age || '--',
+                    gender: consultation.gender || 'M',
+                    fileNumber: consultation.fileNumber || '--',
+                    avatar: consultation.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(consultation.name || 'P')}&background=00A790&color=fff`,
+                    status: consultation.status || 'stable',
+                    healthScore: consultation.healthScore || 85,
+                    conditions: consultation.conditions || [],
+                    lastVisitDate: consultation.lastVisitDate || '--',
+                    lastVisitTime: consultation.lastVisitTime || '',
+                    reasonForVisit: consultation.reasonForVisit || '',
+                }));
+                
+                this.stats.totalPatients = this.patients.length;
+                this.updateFilteredPatients();
+                
+            } catch (error) {
+                console.error('Erreur chargement patients:', error);
+                // Fallback data
+                this.patients = [
+                    { id: 1, consultationId: 1, name: 'Ahmed Ben Ali', age: 45, gender: 'M', fileNumber: 'CONS-0001', status: 'active', healthScore: 78, conditions: ['Hypertension'], lastVisitDate: '15/01/2025', reasonForVisit: 'Consultation de suivi' },
+                    { id: 2, consultationId: 2, name: 'Fatma Trabelsi', age: 32, gender: 'F', fileNumber: 'CONS-0002', status: 'follow-up', healthScore: 82, conditions: ['Diabète Type 2'], lastVisitDate: '14/01/2025', reasonForVisit: 'Bilan mensuel' },
+                    { id: 3, consultationId: 3, name: 'Mohamed Khmiri', age: 58, gender: 'M', fileNumber: 'CONS-0003', status: 'critical', healthScore: 45, conditions: ['Insuffisance cardiaque'], lastVisitDate: '10/01/2025', reasonForVisit: 'Urgence cardiaque' },
+                    { id: 4, consultationId: 4, name: 'Salma Bouaziz', age: 28, gender: 'F', fileNumber: 'CONS-0004', status: 'active', healthScore: 92, conditions: [], lastVisitDate: '08/01/2025', reasonForVisit: 'Consultation générale' },
+                    { id: 5, consultationId: 5, name: 'Ali Mougou', age: 65, gender: 'M', fileNumber: 'CONS-0005', status: 'follow-up', healthScore: 68, conditions: ['Asthme', 'Allergies'], lastVisitDate: '05/01/2025', reasonForVisit: 'Contrôle asthme' },
+                ];
+                this.stats.totalPatients = this.patients.length;
+                this.updateFilteredPatients();
+            }
         },
         
+        updateFilteredPatients() {
+            let result = [...this.patients];
+
+            if (this.searchQuery) {
+                const query = this.searchQuery.toLowerCase();
+                result = result.filter(p =>
+                    p.name.toLowerCase().includes(query) ||
+                    p.fileNumber.toLowerCase().includes(query) ||
+                    (p.reasonForVisit && p.reasonForVisit.toLowerCase().includes(query)) ||
+                    (Array.isArray(p.conditions) && p.conditions.some(c => c.toLowerCase().includes(query)))
+                );
+            }
+
+            if (this.statusFilter !== 'all') {
+                result = result.filter(p => p.status === this.statusFilter);
+            }
+
+            if (this.conditionFilter !== 'all') {
+                result = result.filter(p =>
+                    Array.isArray(p.conditions) && p.conditions.some(c => c.toLowerCase().includes(this.conditionFilter))
+                );
+            }
+
+            this.filteredPatients = result;
+            this.currentPage = 1;
+            this.updateStats();
+        },
+
         updateStats() {
             this.stats.totalPatients = this.patients.length;
             this.stats.criticalAlerts = this.patients.filter(p => p.status === 'critical').length;
             this.stats.followUp = this.patients.filter(p => p.status === 'follow-up').length;
-            this.stats.todayAppointments = 3; // Simulated
+            this.stats.todayAppointments = 0;
         },
-        
+
         filterPatients() {
-            let filtered = [...this.patients];
-            
-            // Search filter
-            if (this.searchQuery) {
-                const query = this.searchQuery.toLowerCase();
-                filtered = filtered.filter(p => 
-                    p.name.toLowerCase().includes(query) ||
-                    p.fileNumber.toLowerCase().includes(query) ||
-                    p.conditions.some(c => c.toLowerCase().includes(query))
-                );
-            }
-            
-            // Status filter
-            if (this.statusFilter !== 'all') {
-                filtered = filtered.filter(p => p.status === this.statusFilter);
-            }
-            
-            // Condition filter
-            if (this.conditionFilter !== 'all') {
-                filtered = filtered.filter(p => 
-                    p.conditions.some(c => c.toLowerCase().includes(this.conditionFilter))
-                );
-            }
-            
-            this.filteredPatients = filtered;
-            this.currentPage = 1;
+            this.updateFilteredPatients();
         },
-        
+
         sortPatients() {
             const sorted = [...this.filteredPatients];
             switch (this.sortBy) {
@@ -176,6 +163,21 @@ document.addEventListener('alpine:init', () => {
             this.filteredPatients = sorted;
         },
         
+        get totalPages() {
+            return Math.ceil(this.filteredPatients.length / this.itemsPerPage);
+        },
+        
+        get paginatedPatients() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            return this.filteredPatients.slice(start, start + this.itemsPerPage);
+        },
+        
+        setPage(page) {
+            if (page >= 1 && page <= this.totalPages) {
+                this.currentPage = page;
+            }
+        },
+        
         getStatusBadgeClass(status) {
             const classes = {
                 active: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
@@ -183,9 +185,9 @@ document.addEventListener('alpine:init', () => {
                 'follow-up': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
                 stable: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
             };
-            return classes[status] || classes.active;
+            return classes[status] || classes.stable;
         },
-        
+
         getStatusDotClass(status) {
             const classes = {
                 active: 'bg-emerald-500',
@@ -193,7 +195,7 @@ document.addEventListener('alpine:init', () => {
                 'follow-up': 'bg-amber-500',
                 stable: 'bg-blue-500',
             };
-            return classes[status] || classes.active;
+            return classes[status] || classes.stable;
         },
         
         getStatusLabel(status) {
@@ -211,118 +213,333 @@ document.addEventListener('alpine:init', () => {
             if (score >= 60) return 'bg-amber-500';
             return 'bg-rose-500';
         },
-        
+
         previousPage() {
             if (this.currentPage > 1) this.currentPage--;
         },
-        
+
         nextPage() {
             if (this.currentPage < this.totalPages) this.currentPage++;
         },
-        
-        get totalPages() {
-            return Math.ceil(this.filteredPatients.length / this.itemsPerPage);
-        },
-        
+
         openAddPatientModal() {
-            alert('Fonctionnalité à implémenter : Ajouter un nouveau patient');
+            alert('Fonctionnalite a implementer : Ajouter un nouveau patient');
         },
-        
+
         openMessageModal(patient) {
-            window.location.href = `/doctor/patient/${patient.id}/communication`;
+            window.location.href = `/health/doctor/patient/${patient.id}/communication`;
         },
-        
+
         scheduleAppointment(patient) {
             alert(`Planifier un rendez-vous pour ${patient.name}`);
         },
-        
+
         printPatientChart(patient) {
             window.print();
         },
+
+        printConsultation(patient) {
+            window.print();
+        },
+
+        async deleteConsultation(consultationId) {
+            if (!confirm('Etes-vous sur de vouloir supprimer cette consultation ?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/health/doctor/api/consultation/${consultationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.patients = this.patients.filter(p => p.consultationId !== consultationId);
+                    this.filterPatients();
+                    this.updateStats();
+                    alert('Consultation supprimee avec succes');
+                } else {
+                    alert(result.message || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la suppression:', error);
+                alert('Erreur lors de la suppression de la consultation');
+            }
+        },
+        
+        openPatientChart(consultationId) {
+            window.location.href = `/health/doctor/patient/${consultationId}/chart`;
+        },
     }));
-    
+
     // Patient Chart Component
     Alpine.data('patientChart', () => ({
         // State
         activeTab: 'timeline',
         timelineFilter: 'all',
         vitalsPeriod: '7d',
+        consultationId: null,
         
-        // Patient Data
+        // Patient Data - Complete object with all required properties
         patient: {
             id: 'P001',
-            name: 'Marie Dupont',
-            age: 45,
-            gender: 'F',
-            fileNumber: '2024-001',
-            avatar: 'https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff',
+            name: 'Patient',
+            age: '--',
+            gender: 'M',
+            birthDate: '--',
+            fileNumber: '--',
+            avatar: 'https://ui-avatars.com/api/?name=Patient&background=00A790&color=fff',
             status: 'active',
             healthScore: 85,
-            birthDate: '15/03/1980',
-            bloodType: 'A+',
-            height: 165,
-            weight: 68,
-            bmi: 25.0,
-            phone: '+33 6 12 34 56 78',
-            email: 'marie.dupont@email.com',
-            address: '123 Rue de Paris, 75001 Paris',
+            conditions: [],
+            lastVisitDate: '--',
+            nextAppointment: null,
+            bloodType: '--',
+            height: 0,
+            weight: 0,
+            bmi: 0,
+            phone: '--',
+            email: '--',
+            address: '--',
             emergencyContact: {
-                name: 'Jean Dupont',
-                relation: 'Mari',
-                phone: '+33 6 98 76 54 32',
+                name: '--',
+                relation: '--',
+                phone: '--'
             },
-            allergies: ['Pénicilline', 'Arachides'],
-            conditions: ['Hypertension', 'Diabète type 2'],
-            medications: [
-                { id: 1, name: 'Amlodipine', dosage: '5mg', frequency: '1x/jour', active: true },
-                { id: 2, name: 'Metformine', dosage: '500mg', frequency: '2x/jour', active: true },
-            ],
-            lastVisitDate: '15/01/2026',
-            nextAppointment: '15/02/2026',
+            allergies: [],
+            medications: []
         },
         
         // Timeline Data
-        timeline: [
-            { id: 1, type: 'symptom', typeLabel: 'Symptôme', title: 'Maux de tête', description: 'Légers maux de tête rapportés', date: 'Aujourd\'hui, 09:00', severity: 2 },
-            { id: 2, type: 'medication', typeLabel: 'Médicament', title: 'Amlodipine', description: 'Prise quotidienne confirmée', date: 'Aujourd\'hui, 08:00' },
-            { id: 3, type: 'appointment', typeLabel: 'Rendez-vous', title: 'Consultation de suivi', description: 'Contrôle tension artérielle', date: '15/01/2026, 14:30' },
-            { id: 4, type: 'lab', typeLabel: 'Résultat Labo', title: 'Bilan lipidique', description: 'Cholestérol total: 1.95 g/L', date: '10/01/2026' },
-            { id: 5, type: 'symptom', typeLabel: 'Symptôme', title: 'Fatigue', description: 'Fatigue persistante signalée', date: '08/01/2026', severity: 4 },
-        ],
+        timeline: [],
         
         // Vital Signs
-        vitalSigns: [
-            { type: 'bp', label: 'Tension', value: '120/80', unit: 'mmHg', icon: 'fa-solid fa-heart-pulse', trend: 'stable', change: '0', normalRange: '90-120/60-80', alert: false },
-            { type: 'pulse', label: 'Pouls', value: '72', unit: 'bpm', icon: 'fa-solid fa-heart', trend: 'up', change: '+2', normalRange: '60-100', alert: false },
-            { type: 'temp', label: 'Température', value: '36.6', unit: '°C', icon: 'fa-solid fa-temperature-half', trend: 'stable', change: '-0.1', normalRange: '36.1-37.2', alert: false },
-            { type: 'spo2', label: 'SpO2', value: '98', unit: '%', icon: 'fa-solid fa-lungs', trend: 'up', change: '+1', normalRange: '95-100', alert: false },
-        ],
+        vitalSigns: [],
         
         // Symptoms
-        symptoms: [
-            { id: 1, name: 'Fatigue', date: '08/01/2026', intensity: 6, duration: '3 jours', status: 'active' },
-            { id: 2, name: 'Maux de tête', date: '10/01/2026', intensity: 3, duration: '1 jour', status: 'resolved' },
-            { id: 3, name: 'Douleur thoracique', date: '05/01/2026', intensity: 4, duration: '2 heures', status: 'resolved' },
-        ],
+        symptoms: [],
         
-        // Treatment
+        // Treatment / Medications
+        medications: [],
+        
+        // Treatment (for follow-ups) - always define to prevent undefined errors
         treatment: {
-            adherence: 87,
-            goals: [
-                { id: 1, description: 'Réduire la tension artérielle à 130/80', completed: false, deadline: '15/03/2026' },
-                { id: 2, description: 'Perdre 3 kg', completed: false, deadline: '15/04/2026' },
-                { id: 3, description: 'Marcher 30 min/jour', completed: true, deadline: 'En cours' },
-            ],
-            followUps: [
-                { id: 1, type: 'Consultation de suivi', date: '15/02/2026', time: '14:30', status: 'scheduled' },
-                { id: 2, type: 'Bilan sanguin', date: '15/03/2026', time: '08:00', status: 'pending' },
-            ],
+            adherence: 0,
+            goals: [],
+            followUps: []
         },
         
+        // Vital signs cards data (formatted for display)
+        vitalsCards: [],
+        
         init() {
+            // Initialize vitals cards with default values
+            this.vitalsCards = this.formatVitalsCards();
+            
+            // Get consultation ID from URL
+            const urlParts = window.location.pathname.split('/');
+            this.consultationId = urlParts[urlParts.length - 2];
+            
+            if (this.consultationId && this.consultationId !== 'chart') {
+                this.loadPatientChartData();
+            }
+            
             this.$nextTick(() => {
                 this.initCharts();
             });
+        },
+        
+        async loadPatientChartData() {
+            if (!this.consultationId) {
+                console.log('No consultation ID, skipping API call');
+                return;
+            }
+            
+            try {
+                console.log('Chargement données du patient chart:', this.consultationId);
+                
+                // Fetch complete patient chart data from single API endpoint
+                const response = await fetch(`/health/doctor/api/patient-chart/${this.consultationId}`);
+                console.log('Patient Chart API status:', response.status);
+                
+                if (!response.ok) {
+                    console.error('Patient Chart API error:', response.statusText);
+                    throw new Error('Erreur lors du chargement des données');
+                }
+                
+                const data = await response.json();
+                console.log('Patient Chart data:', data);
+                
+                if (data.success && data.data) {
+                    const normalized = this.normalizeChartData(data.data);
+                    
+                    // Update patient data with health score, last visit, next appointment
+                    this.patient = normalized.patient;
+                    
+                    // Update timeline
+                    this.timeline = normalized.timeline;
+                    
+                    // Update symptoms
+                    this.symptoms = normalized.symptoms;
+                    
+                    // Update medications
+                    this.medications = normalized.medications;
+                    
+                    // Update treatment data
+                    this.treatment = normalized.treatment;
+                    
+                    // Update vital signs
+                    this.vitalSigns = normalized.vitalSigns;
+                    
+                    // Format vital signs for display cards
+                    this.vitalsCards = this.formatVitalsCards();
+                    
+                    console.log('Données chargées avec succès:', {
+                        patient: this.patient,
+                        timeline: this.timeline.length + ' entrées',
+                        symptoms: this.symptoms.length,
+                        medications: this.medications.length,
+                        vitals: this.vitalSigns.length
+                    });
+                } else {
+                    console.log('Aucune donnée trouvée, utilisation des données par défaut');
+                }
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+            }
+        },
+        
+        normalizeChartData(raw) {
+            const patient = raw.patient || {};
+            const timeline = Array.isArray(raw.timeline) ? raw.timeline : [];
+            const symptoms = Array.isArray(raw.symptoms) ? raw.symptoms : [];
+            const medications = Array.isArray(raw.medications) ? raw.medications : [];
+            const vitalSigns = Array.isArray(raw.vitalSigns) ? raw.vitalSigns : [];
+            const treatment = raw.treatment || {};
+            
+            const normalizedPatient = {
+                id: patient.id ?? 'P001',
+                name: patient.name ?? patient.reason_for_visit ?? 'Patient',
+                age: patient.age ?? '--',
+                gender: patient.gender ?? 'M',
+                birthDate: patient.birthDate ?? patient.birth_date ?? '--',
+                fileNumber: patient.fileNumber ?? patient.file_number ?? '--',
+                avatar: patient.avatar ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(patient.name ?? 'Patient')}&background=00A790&color=fff`,
+                status: patient.status ?? 'stable',
+                healthScore: patient.healthScore ?? patient.health_score ?? 85,
+                conditions: Array.isArray(patient.conditions) ? patient.conditions : [],
+                lastVisitDate: patient.lastVisitDate ?? patient.last_visit_date ?? '--',
+                nextAppointment: patient.nextAppointment ?? patient.next_appointment ?? null,
+                bloodType: patient.bloodType ?? patient.blood_type ?? '--',
+                height: patient.height ?? 0,
+                weight: patient.weight ?? 0,
+                bmi: patient.bmi ?? 0,
+                phone: patient.phone ?? '--',
+                email: patient.email ?? '--',
+                address: patient.address ?? '--',
+                emergencyContact: patient.emergencyContact ?? patient.emergency_contact ?? { name: '--', relation: '--', phone: '--' },
+                allergies: Array.isArray(patient.allergies) ? patient.allergies : [],
+                medications: Array.isArray(patient.medications) ? patient.medications : [],
+            };
+            
+            const normalizedVitals = vitalSigns.map((v) => ({
+                date: v.date ?? v.date_consultation ?? 'N/A',
+                time: v.time ?? v.time_consultation ?? '',
+                bloodPressure: v.bloodPressure ?? v.blood_pressure ?? (v.bpSystolic && v.bpDiastolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '--'),
+                heartRate: v.heartRate ?? v.heart_rate ?? v.pulse ?? null,
+                temperature: v.temperature ?? null,
+                weight: v.weight ?? null,
+                height: v.height ?? null,
+                spo2: v.spo2 ?? v.oxygenSaturation ?? v.oxygen_saturation ?? null,
+            }));
+            
+            return {
+                patient: normalizedPatient,
+                timeline,
+                symptoms,
+                medications,
+                treatment: {
+                    adherence: treatment.adherence ?? 0,
+                    goals: Array.isArray(treatment.goals) ? treatment.goals : [],
+                    followUps: Array.isArray(treatment.followUps) ? treatment.followUps : [],
+                },
+                vitalSigns: normalizedVitals,
+            };
+        },
+        
+        formatVitalsCards() {
+            if (!this.vitalSigns || this.vitalSigns.length === 0) {
+                return [
+                    { type: 'bloodPressure', label: 'Tension artérielle', value: '--', unit: 'mmHg', icon: 'fa-solid fa-heart-pulse', trend: 'stable', change: '0%', normalRange: '90-140/60-90', alert: false },
+                    { type: 'heartRate', label: 'Fréquence cardiaque', value: '--', unit: 'bpm', icon: 'fa-solid fa-heart', trend: 'stable', change: '0%', normalRange: '60-100', alert: false },
+                    { type: 'temperature', label: 'Température', value: '--', unit: '°C', icon: 'fa-solid fa-thermometer', trend: 'stable', change: '0%', normalRange: '36.1-37.2', alert: false },
+                    { type: 'spo2', label: 'Saturation O₂', value: '--', unit: '%', icon: 'fa-solid fa-lungs', trend: 'stable', change: '0%', normalRange: '95-100', alert: false }
+                ];
+            }
+            
+            const latest = this.vitalSigns[0];
+            const previous = this.vitalSigns[1];
+            
+            return [
+                {
+                    type: 'bloodPressure',
+                    label: 'Tension artérielle',
+                    value: latest.bloodPressure || '--',
+                    unit: 'mmHg',
+                    icon: 'fa-solid fa-heart-pulse',
+                    trend: 'stable',
+                    change: '0%',
+                    normalRange: '90-140/60-90',
+                    alert: false
+                },
+                {
+                    type: 'heartRate',
+                    label: 'Fréquence cardiaque',
+                    value: latest.heartRate || '--',
+                    unit: 'bpm',
+                    icon: 'fa-solid fa-heart',
+                    trend: previous ? (latest.heartRate > previous.heartRate ? 'up' : latest.heartRate < previous.heartRate ? 'down' : 'stable') : 'stable',
+                    change: previous ? Math.abs(latest.heartRate - previous.heartRate) + '%' : '0%',
+                    normalRange: '60-100',
+                    alert: latest.heartRate < 60 || latest.heartRate > 100
+                },
+                {
+                    type: 'temperature',
+                    label: 'Température',
+                    value: latest.temperature?.toFixed(1) || '--',
+                    unit: '°C',
+                    icon: 'fa-solid fa-thermometer',
+                    trend: previous ? (latest.temperature > previous.temperature ? 'up' : latest.temperature < previous.temperature ? 'down' : 'stable') : 'stable',
+                    change: previous ? Math.abs(latest.temperature - previous.temperature).toFixed(1) + '%' : '0%',
+                    normalRange: '36.1-37.2',
+                    alert: latest.temperature < 36 || latest.temperature > 38
+                },
+                {
+                    type: 'spo2',
+                    label: 'Saturation O₂',
+                    value: latest.spo2 || '--',
+                    unit: '%',
+                    icon: 'fa-solid fa-lungs',
+                    trend: previous ? (latest.spo2 > previous.spo2 ? 'up' : latest.spo2 < previous.spo2 ? 'down' : 'stable') : 'stable',
+                    change: previous ? Math.abs(latest.spo2 - previous.spo2) + '%' : '0%',
+                    normalRange: '95-100',
+                    alert: latest.spo2 < 95
+                }
+            ];
+        },
+        
+        updateVitalsChart() {
+            console.log('Updating vitals chart for period:', this.vitalsPeriod);
+            this.vitalsCards = this.formatVitalsCards();
+        },
+        
+        toggleGoal(goal) {
+            goal.completed = !goal.completed;
         },
         
         initCharts() {
@@ -408,26 +625,15 @@ document.addEventListener('alpine:init', () => {
         },
         
         openAddSymptomModal() {
-            alert('Ajouter un symptôme');
-        },
-        
-        openAddTreatmentModal() {
-            alert('Modifier le traitement');
-        },
-        
-        toggleGoal(goal) {
-            goal.completed = !goal.completed;
-        },
-        
-        updateVitalsChart() {
-            // Update chart based on selected period
+            // Placeholder for add symptom modal
         },
     }));
-    
+
     // Clinical Notes Component
     Alpine.data('clinicalNotes', () => ({
         // State
         selectedNote: null,
+        showNewNoteModal: false,
         newDiagnosis: '',
         newLabTest: '',
         
@@ -444,40 +650,179 @@ document.addEventListener('alpine:init', () => {
         notes: [
             { id: 1, type: 'SOAP', typeLabel: 'Note SOAP', date: '15/01/2026', author: 'Dr. Martin', summary: 'Consultation de suivi hypertension', isComplete: true },
             { id: 2, type: 'SOAP', typeLabel: 'Note SOAP', date: '01/01/2026', author: 'Dr. Martin', summary: 'Bilan annuel', isComplete: true },
-            { id: 3, type: 'Prescription', typeLabel: 'Ordonnance', date: '15/12/2025', author: 'Dr. Martin', summary: 'Renouvellement Amlodipine', isComplete: true },
+            { id: 3, type: 'Prescription', typeLabel: 'Ordonnance', date: '20/12/2025', author: 'Dr. Martin', summary: 'Renouvellement traitement', isComplete: true },
+            { id: 4, type: 'LabResult', typeLabel: 'Résultat Labo', date: '15/12/2025', author: 'Labo Central', summary: 'Analyse sanguine complète', isComplete: true },
+            { id: 5, type: 'Progress', typeLabel: 'Evolution', date: '10/12/2025', author: 'Dr. Martin', summary: 'Amélioration symptoms', isComplete: false },
         ],
         
-        // Current Note (SOAP)
-        currentNote: {
-            chiefComplaint: '',
+        // Templates
+        templates: {
+            soap: {
+                subjective: 'Patient rapporte',
+                objective: 'Examen clinique',
+                assessment: 'Diagnostic',
+                plan: 'Plan de traitement'
+            }
+        },
+        
+        // Form Data
+        newNote: {
+            type: 'SOAP',
             subjective: '',
             objective: '',
             assessment: '',
             plan: '',
-            vitals: {
-                bpSystolic: '',
-                bpDiastolic: '',
-                pulse: '',
-                temperature: '',
-                spo2: '',
-            },
-            diagnoses: [],
-            medications: [],
-            labTests: [],
-            followUp: {
-                date: '',
-                type: 'consultation',
-                priority: 'routine',
-            },
+            prescriptions: [],
+            labTests: []
         },
         
-        init() {
-            // Initialize
+        // Validation
+        validationErrors: {},
+        
+        // Computed
+        get filteredNotes() {
+            return this.notes;
         },
         
+        get todaysNotes() {
+            const today = new Date().toLocaleDateString('fr-FR');
+            return this.notes.filter(note => note.date === today);
+        },
+        
+        get pendingNotes() {
+            return this.notes.filter(note => !note.isComplete);
+        },
+        
+        // Methods
         selectNote(note) {
             this.selectedNote = note;
-            // Load note data
+        },
+        
+        openNewNoteModal() {
+            this.showNewNoteModal = true;
+            this.resetForm();
+        },
+        
+        closeNewNoteModal() {
+            this.showNewNoteModal = false;
+            this.resetForm();
+        },
+        
+        resetForm() {
+            this.newNote = {
+                type: 'SOAP',
+                subjective: '',
+                objective: '',
+                assessment: '',
+                plan: '',
+                prescriptions: [],
+                labTests: []
+            };
+            this.validationErrors = {};
+        },
+        
+        validateForm() {
+            this.validationErrors = {};
+            
+            if (this.newNote.type === 'SOAP') {
+                if (!this.newNote.subjective.trim()) {
+                    this.validationErrors.subjective = 'Ce champ est requis';
+                }
+                if (!this.newNote.assessment.trim()) {
+                    this.validationErrors.assessment = 'Ce champ est requis';
+                }
+            }
+            
+            return Object.keys(this.validationErrors).length === 0;
+        },
+        
+        saveNote() {
+            if (!this.validateForm()) {
+                return;
+            }
+            
+            const note = {
+                id: Date.now(),
+                type: this.newNote.type,
+                typeLabel: this.getNoteTypeLabel(this.newNote.type),
+                date: new Date().toLocaleDateString('fr-FR'),
+                author: 'Dr. Martin',
+                summary: this.newNote.type === 'SOAP' 
+                    ? `${this.newNote.subjective.substring(0, 50)}...`
+                    : this.newNote.type === 'Prescription'
+                        ? this.newNote.prescriptions.map(p => p.name).join(', ')
+                        : 'Nouvelle entrée',
+                isComplete: true
+            };
+            
+            this.notes.unshift(note);
+            this.closeNewNoteModal();
+            
+            // Show success notification
+            this.showNotification('Note enregistrée avec succès');
+        },
+        
+        addPrescription() {
+            this.newNote.prescriptions.push({
+                id: Date.now(),
+                name: '',
+                dosage: '',
+                frequency: '',
+                duration: ''
+            });
+        },
+        
+        removePrescription(id) {
+            this.newNote.prescriptions = this.newNote.prescriptions.filter(p => p.id !== id);
+        },
+        
+        addLabTest() {
+            this.newNote.labTests.push({
+                id: Date.now(),
+                name: '',
+                urgency: 'routine'
+            });
+        },
+        
+        removeLabTest(id) {
+            this.newNote.labTests = this.newNote.labTests.filter(t => t.id !== id);
+        },
+        
+        getNoteTypeLabel(type) {
+            const labels = {
+                'SOAP': 'Note SOAP',
+                'Prescription': 'Ordonnance',
+                'LabResult': 'Résultat Labo',
+                'Progress': 'Evolution',
+                'Discharge': 'Sortie'
+            };
+            return labels[type] || type;
+        },
+        
+        formatDate(date) {
+            const d = new Date(date);
+            return d.toLocaleDateString('fr-FR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
+        
+        getStatusClass(isComplete) {
+            return isComplete 
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300';
+        },
+        
+        showNotification(message) {
+            // Simple notification - could be enhanced with Alpine toast component
+            console.log('Notification:', message);
+        },
+        
+        toggleGoal(goal) {
+            goal.completed = !goal.completed;
         },
         
         getStatusBadgeClass(status) {
@@ -500,297 +845,231 @@ document.addEventListener('alpine:init', () => {
             return labels[status] || status;
         },
         
-        addDiagnosis() {
-            if (this.newDiagnosis.trim()) {
-                this.currentNote.diagnoses.push({
-                    code: '',
-                    description: this.newDiagnosis,
-                });
-                this.newDiagnosis = '';
-            }
+        getHealthScoreColor(score) {
+            if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+            if (score >= 60) return 'text-amber-600 dark:text-amber-400';
+            return 'text-rose-600 dark:text-rose-400';
         },
         
-        removeDiagnosis(index) {
-            this.currentNote.diagnoses.splice(index, 1);
+        getSeverityColor(severity) {
+            if (severity <= 2) return 'text-emerald-500';
+            if (severity <= 4) return 'text-amber-500';
+            return 'text-rose-500';
         },
         
-        addLabTest() {
-            if (this.newLabTest) {
-                this.currentNote.labTests.push(this.newLabTest);
-                this.newLabTest = '';
-            }
-        },
-        
-        removeLabTest(index) {
-            this.currentNote.labTests.splice(index, 1);
-        },
-        
-        removeMedication(index) {
-            this.currentNote.medications.splice(index, 1);
-        },
-        
-        openNewNoteModal() {
-            this.selectedNote = null;
-            this.currentNote = {
-                chiefComplaint: '',
-                subjective: '',
-                objective: '',
-                assessment: '',
-                plan: '',
-                vitals: { bpSystolic: '', bpDiastolic: '', pulse: '', temperature: '', spo2: '' },
-                diagnoses: [],
-                medications: [],
-                labTests: [],
-                followUp: { date: '', type: 'consultation', priority: 'routine' },
-            };
-        },
-        
-        openPrescriptionModal() {
-            alert('Nouvelle ordonnance');
-        },
-        
-        openLabOrderModal() {
-            alert('Nouvelle ordonnance labo');
-        },
-        
-        openReferralModal() {
-            alert('Lettre de recommandation');
-        },
-        
-        openAddMedicationModal() {
-            const name = prompt('Nom du médicament:');
-            if (name) {
-                this.currentNote.medications.push({
-                    name,
-                    dosage: '',
-                    frequency: '',
-                    duration: '',
-                });
-            }
-        },
-        
-        saveNote() {
-            alert('Note enregistrée avec succès');
-        },
-        
-        printNote() {
+        printChart() {
             window.print();
         },
     }));
-    
+
     // Doctor Communication Component
     Alpine.data('doctorCommunication', () => ({
         // State
-        patientSearch: '',
-        selectedPatient: null,
+        activeTab: 'messages',
+        searchQuery: '',
+        filterStatus: 'all',
+        showNewMessageModal: false,
+        selectedConversation: null,
         newMessage: '',
-        isTyping: false,
-        replyingTo: null,
-        showFilesPanel: false,
-        showTeleconsultationModal: false,
-        
-        // Stats
-        stats: {
-            unreadMessages: 5,
-            teleconsultations: 12,
-            sharedFiles: 24,
-        },
-        
-        // Data
-        patients: [],
-        filteredPatients: [],
         messages: [],
-        sharedFiles: [],
         
-        // Quick replies
-        quickReplies: [
-            'Bonjour, comment allez-vous?',
-            'Prenez bien vos médicaments',
-            'N\'oubliez pas votre RDV',
-            'Vos résultats sont disponibles',
-            'Appelez-moi si nécessaire',
+        // Conversations List
+        conversations: [
+            {
+                id: 1,
+                patientName: 'Marie Dupont',
+                patientAvatar: 'https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff',
+                lastMessage: 'Merci pour votre aide, Docteur.',
+                lastMessageTime: '10:30',
+                unreadCount: 0,
+                status: 'active',
+                type: 'patient'
+            },
+            {
+                id: 2,
+                patientName: 'Pharmacie Centrale',
+                patientAvatar: 'https://ui-avatars.com/api/?name=Pharmacie+Centrale&background=6366f1&color=fff',
+                lastMessage: 'Ordonnance confirmée',
+                lastMessageTime: 'Hier',
+                unreadCount: 2,
+                status: 'active',
+                type: 'pharmacy'
+            },
+            {
+                id: 3,
+                patientName: 'Dr. Sophie Bernard',
+                patientAvatar: 'https://ui-avatars.com/api/?name=Sophie+Bernard&background=8b5cf6&color=fff',
+                lastMessage: 'Consultation de suivi programmée',
+                lastMessageTime: 'Hier',
+                unreadCount: 1,
+                status: 'active',
+                type: 'doctor'
+            },
+            {
+                id: 4,
+                patientName: 'Jean Martin',
+                patientAvatar: 'https://ui-avatars.com/api/?name=Jean+Martin&background=10b981&color=fff',
+                lastMessage: 'Questions sur les médicaments',
+                lastMessageTime: '12/01/2026',
+                unreadCount: 0,
+                status: 'active',
+                type: 'patient'
+            },
+            {
+                id: 5,
+                patientName: 'Service Radiologie',
+                patientAvatar: 'https://ui-avatars.com/api/?name=Service+Radiologie&background=f59e0b&color=fff',
+                lastMessage: 'Résultats d\'imagerie prêts',
+                lastMessageTime: '10/01/2026',
+                unreadCount: 0,
+                status: 'active',
+                type: 'department'
+            }
         ],
         
-        // Teleconsultation
-        teleconsultation: {
-            patientId: '',
-            date: '',
-            time: '',
-            reason: '',
-            sendReminder: true,
-        },
+        // Message Templates
+        templates: [
+            { id: 1, name: 'Rendez-vous confirmé', content: 'Votre rendez-vous est confirmé pour le {date} à {time}. Merci de vous présenter 15 minutes à l\'avance.' },
+            { id: 2, name: 'Rappel de traitement', content: 'N\'oubliez pas de prendre votre traitement régulièrement comme prescrit. En cas de вопросs, n\'hésitez pas à me contacter.' },
+            { id: 3, name: 'Résultats d\'analyse', content: 'Vos résultats d\'analyse sont prêts. Je vous invite à prendre rendez-vous pour en discuter.' },
+            { id: 4, name: 'Urgence', content: 'En cas d\'urgence, veuillez contacter le 15 ou vous rendre aux urgences les plus proches.' }
+        ],
         
-        init() {
-            this.loadPatients();
-            this.loadMessages();
-            this.loadSharedFiles();
-        },
-        
-        loadPatients() {
-            this.patients = [
-                { id: 'P001', name: 'Marie Dupont', avatar: 'https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff', lastMessage: 'Bonjour docteur, merci pour vos conseils', lastMessageTime: '10:30', unreadCount: 2, isOnline: true },
-                { id: 'P002', name: 'Jean Martin', avatar: 'https://ui-avatars.com/api/?name=Jean+Martin&background=ef4444&color=fff', lastMessage: 'Je ressens une douleur', lastMessageTime: 'Hier', unreadCount: 1, isOnline: false },
-                { id: 'P003', name: 'Sophie Bernard', avatar: 'https://ui-avatars.com/api/?name=Sophie+Bernard&background=6366f1&color=fff', lastMessage: 'D\'accord, à bientôt', lastMessageTime: 'Hier', unreadCount: 0, isOnline: true },
-            ];
-            this.filteredPatients = [...this.patients];
-        },
-        
-        loadMessages() {
-            this.messages = [
-                { id: 1, content: 'Bonjour docteur, j\'ai une question concernant mes médicaments', isDoctor: false, time: '10:00', read: true },
-                { id: 2, content: 'Bonjour Marie, bien sûr, je vous écoute', isDoctor: true, time: '10:05', read: true },
-                { id: 3, content: 'Dois-je prendre le médicament avant ou après les repas?', isDoctor: false, time: '10:10', read: true },
-                { id: 4, content: 'Prenez-le après le repas pour éviter les maux d\'estomac. N\'oubliez pas de bien vous hydrater.', isDoctor: true, time: '10:15', read: true },
-                { id: 5, content: 'Merci beaucoup pour vos conseils', isDoctor: false, time: '10:30', read: false },
-            ];
-        },
-        
-        loadSharedFiles() {
-            this.sharedFiles = [
-                { id: 1, name: 'Bilan_2026.pdf', type: 'pdf', date: '15/01/2026', size: '245 KB' },
-                { id: 2, name: 'Radio_poumon.jpg', type: 'image', date: '10/01/2026', size: '1.2 MB' },
-                { id: 3, name: 'Ordonnance.pdf', type: 'pdf', date: '05/01/2026', size: '120 KB' },
-            ];
-        },
-        
-        filterPatients() {
-            if (!this.patientSearch) {
-                this.filteredPatients = [...this.patients];
-                return;
+        // Computed
+        get filteredConversations() {
+            let result = this.conversations;
+            
+            if (this.searchQuery) {
+                const query = this.searchQuery.toLowerCase();
+                result = result.filter(c => 
+                    c.patientName.toLowerCase().includes(query)
+                );
             }
-            const query = this.patientSearch.toLowerCase();
-            this.filteredPatients = this.patients.filter(p => 
-                p.name.toLowerCase().includes(query)
-            );
+            
+            if (this.filterStatus !== 'all') {
+                result = result.filter(c => c.status === this.filterStatus);
+            }
+            
+            return result;
         },
         
-        selectPatient(patient) {
-            this.selectedPatient = patient;
-            this.loadMessages();
-            this.$nextTick(() => {
-                this.scrollToBottom();
-            });
+        get unreadCount() {
+            return this.conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+        },
+        
+        // Methods
+        selectConversation(conversation) {
+            this.selectedConversation = conversation;
+            conversation.unreadCount = 0;
+            this.loadMessages(conversation);
+        },
+        
+        loadMessages(conversation) {
+            // Simulated message loading
+            this.messages = [
+                {
+                    id: 1,
+                    sender: conversation.type === 'doctor' ? 'them' : 'me',
+                    content: 'Bonjour, j\'ai une question concernant mon traitement.',
+                    time: '09:00',
+                    status: 'read'
+                },
+                {
+                    id: 2,
+                    sender: conversation.type === 'doctor' ? 'me' : 'them',
+                    content: 'Bien sûr, je suis à votre disposition. Quelle est votre question ?',
+                    time: '09:15',
+                    status: 'read'
+                },
+                {
+                    id: 3,
+                    sender: conversation.type === 'doctor' ? 'them' : 'me',
+                    content: conversation.lastMessage,
+                    time: conversation.lastMessageTime,
+                    status: 'delivered'
+                }
+            ];
         },
         
         sendMessage() {
-            if (!this.newMessage.trim()) return;
+            if (!this.newMessage.trim() || !this.selectedConversation) return;
             
-            this.messages.push({
+            const message = {
                 id: Date.now(),
+                sender: 'me',
                 content: this.newMessage,
-                isDoctor: true,
                 time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                read: false,
-            });
-            
-            this.newMessage = '';
-            this.replyingTo = null;
-            this.$nextTick(() => {
-                this.scrollToBottom();
-            });
-            
-            // Simulate patient typing and response
-            setTimeout(() => {
-                this.isTyping = true;
-                setTimeout(() => {
-                    this.isTyping = false;
-                    this.messages.push({
-                        id: Date.now() + 1,
-                        content: 'Merci docteur, j\'ai bien noté',
-                        isDoctor: false,
-                        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                        read: false,
-                    });
-                    this.$nextTick(() => {
-                        this.scrollToBottom();
-                    });
-                }, 2000);
-            }, 1000);
-        },
-        
-        scrollToBottom() {
-            const container = this.$refs.messagesContainer;
-            if (container) {
-                container.scrollTop = container.scrollHeight;
-            }
-        },
-        
-        adjustTextareaHeight() {
-            const textarea = this.$refs.messageInput;
-            if (textarea) {
-                textarea.style.height = 'auto';
-                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-            }
-        },
-        
-        cancelReply() {
-            this.replyingTo = null;
-        },
-        
-        openFilePicker() {
-            alert('Sélectionner un fichier');
-        },
-        
-        openImagePicker() {
-            alert('Sélectionner une image');
-        },
-        
-        downloadFile(file) {
-            alert(`Téléchargement de ${file.name}`);
-        },
-        
-        previewFile(file) {
-            alert(`Prévisualisation de ${file.name}`);
-        },
-        
-        getFileIcon(type) {
-            const icons = {
-                pdf: 'fa-solid fa-file-pdf text-red-500',
-                image: 'fa-solid fa-file-image text-blue-500',
-                doc: 'fa-solid fa-file-word text-blue-700',
+                status: 'sending'
             };
-            return icons[type] || 'fa-solid fa-file text-gray-500';
+            
+            this.messages.push(message);
+            this.newMessage = '';
+            
+            // Simulate message sent
+            setTimeout(() => {
+                message.status = 'delivered';
+            }, 1000);
+            
+            // Update conversation
+            this.selectedConversation.lastMessage = message.content;
+            this.selectedConversation.lastMessageTime = message.time;
         },
         
-        openImageModal(image) {
-            alert(`Afficher l'image: ${image}`);
+        openNewMessageModal() {
+            this.showNewMessageModal = true;
         },
         
-        startVoiceCall() {
-            alert('Démarrer un appel vocal');
+        closeNewMessageModal() {
+            this.showNewMessageModal = false;
         },
         
-        startVideoCall() {
-            alert('Démarrer un appel vidéo');
+        useTemplate(template) {
+            this.newMessage = template.content;
         },
         
-        viewPatientChart() {
-            if (this.selectedPatient) {
-                window.location.href = `/doctor/patient/${this.selectedPatient.id}/chart`;
+        getStatusDotClass(status) {
+            const classes = {
+                active: 'bg-emerald-500',
+                away: 'bg-amber-500',
+                busy: 'bg-rose-500',
+                offline: 'bg-gray-400'
+            };
+            return classes[status] || classes.offline;
+        },
+        
+        getTypeIcon(type) {
+            const icons = {
+                patient: 'fa-user',
+                doctor: 'fa-user-md',
+                pharmacy: 'fa-prescription-bottle',
+                department: 'fa-building'
+            };
+            return icons[type] || 'fa-comment';
+        },
+        
+        formatDate(date) {
+            const d = new Date(date);
+            const today = new Date();
+            
+            if (d.toDateString() === today.toDateString()) {
+                return date;
             }
+            
+            return d.toLocaleDateString('fr-FR', { 
+                day: '2-digit', 
+                month: 'short'
+            });
         },
         
-        blockPatient() {
-            alert('Patient bloqué');
+        openPatientChart(patientId) {
+            window.location.href = `/health/doctor/patient/${patientId}/chart`;
         },
         
-        reportConversation() {
-            alert('Conversation signalée');
-        },
-        
-        scheduleTeleconsultation() {
-            this.showTeleconsultationModal = true;
-        },
-        
-        scheduleTeleconsultationConfirm() {
-            alert('Téléconsultation planifiée');
-            this.showTeleconsultationModal = false;
+        getHealthScoreColor(score) {
+            if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+            if (score >= 60) return 'text-amber-600 dark:text-amber-400';
+            return 'text-rose-600 dark:text-rose-400';
         },
     }));
-    
-});
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { medicalColors };
-}
+}); // End of alpine:init listener
