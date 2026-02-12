@@ -66,7 +66,73 @@ class DoctorController extends AbstractController
     }
 
     /**
-     * Patient List - Affiche la liste des consultations
+
+     * Doctor Dashboard - Main entry point for physicians
+     */
+    #[Route('/dashboard', name: 'doctor_dashboard')]
+    public function dashboard(): Response
+    {
+        $stats = [
+            'totalPatients' => 156,
+            'appointmentsToday' => 8,
+            'pendingPrescriptions' => 5,
+            'unreadMessages' => 12,
+        ];
+
+        $todayAppointments = [
+            [
+                'id' => 1,
+                'time' => '09:00',
+                'patientName' => 'Ahmed Ben Ali',
+                'type' => 'Consultation',
+                'status' => 'waiting',
+                'avatar' => 'A',
+            ],
+            [
+                'id' => 2,
+                'time' => '09:30',
+                'patientName' => 'Fatma Trabelsi',
+                'type' => 'Follow-up',
+                'status' => 'in_progress',
+                'avatar' => 'F',
+            ],
+            [
+                'id' => 3,
+                'time' => '10:00',
+                'patientName' => 'Mohamed Kouki',
+                'type' => 'New Patient',
+                'status' => 'confirmed',
+                'avatar' => 'M',
+            ],
+        ];
+
+        $recentPatients = [
+            [
+                'id' => 1,
+                'name' => 'Ahmed Ben Ali',
+                'lastVisit' => '5 days ago',
+                'condition' => 'Diabetes Type 2',
+                'status' => 'active',
+            ],
+            [
+                'id' => 2,
+                'name' => 'Fatma Trabelsi',
+                'lastVisit' => '2 weeks ago',
+                'condition' => 'Asthma',
+                'status' => 'active',
+            ],
+        ];
+
+        return $this->render('doctor/dashboard.html.twig', [
+            'pageTitle' => 'Doctor Dashboard - WellCare Connect',
+            'stats' => $stats,
+            'todayAppointments' => $todayAppointments,
+            'recentPatients' => $recentPatients,
+        ]);
+    }
+
+    /**
+     * Patient List - Affiche la liste des patients du médecin
      */
     #[Route('/patients', name: 'doctor_patients', methods: ['GET'])]
     public function patientList(): Response
