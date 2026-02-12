@@ -68,7 +68,6 @@ class DoctorController extends AbstractController
     /**
 
      * Doctor Dashboard - Main entry point for physicians
-     */
     #[Route('/dashboard', name: 'doctor_dashboard')]
     public function dashboard(): Response
     {
@@ -129,7 +128,7 @@ class DoctorController extends AbstractController
             'todayAppointments' => $todayAppointments,
             'recentPatients' => $recentPatients,
         ]);
-    }
+    }*/
 
     /**
      * Patient List - Affiche la liste des patients du médecin
