@@ -38,6 +38,7 @@ security:
     # Access Control - Role-Based Authorization
     # Note: Only the *first* access control that matches will be used
     access_control:
+
         # Public routes (no authentication required)
         - { path: ^/auth/, roles: PUBLIC_ACCESS }
         - { path: ^/verify-email, roles: PUBLIC_ACCESS }
