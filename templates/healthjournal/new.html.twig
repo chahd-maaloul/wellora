@@ -1,10 +1,22 @@
-{% extends 'base.html.twig' %}
+{% extends 'layouts/app.html.twig' %}
 
 {% block title %}Create New Health Journal{% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950 py-8">
-    <div class="px-4 mx-auto max-w-4xl sm:px-6 lg:px-8">
+<div class="page-content">
+    <div class="container mx-auto px-4 py-8">
+        {# Flash Messages #}
+        {% for flash_success in app.flashes('success') %}
+            <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                <span class="font-medium">Succès!</span> {{ flash_success }}
+            </div>
+        {% endfor %}
+        {% for flash_error in app.flashes('error') %}
+            <div class="mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                <span class="font-medium">Erreur!</span> {{ flash_error }}
+            </div>
+        {% endfor %}
+
         {# Header Section #}
         <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
             <div>
@@ -57,11 +69,15 @@
             <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
+                    <span>Give your journal a meaningful name to easily identify it</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
                     <span>Set a realistic start and end date for your journal period</span>
                 </li>
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
-                    <span>Choose an open-ended journal if you plan to track indefinitely</span>
+                    <span>Leave the end date empty for an open-ended journal</span>
                 </li>
                 <li class="flex items-start gap-2">
                     <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>

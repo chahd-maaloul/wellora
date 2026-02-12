@@ -12,6 +12,7 @@ class HealthjournalType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('name')
             ->add('datedebut')
             ->add('datefin')
         ;

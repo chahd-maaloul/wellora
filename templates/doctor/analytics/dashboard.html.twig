@@ -1,0 +1,162 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Health Analytics Dashboard{% endblock %}
+
+{% block body %}
+<div class="page-content">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ 'Health Analytics Dashboard'|trans }}</h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">{{ 'Overview of patient health journals and entries'|trans }}</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="{{ path('app_doctor_analytics_compare') }}" 
+                   class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                    {{ 'Compare Journals'|trans }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Total Journals'|trans }}</p>
+                        <p class="text-3xl font-bold text-wellcare-600 dark:text-wellcare-400">{{ stats.totalJournals }}</p>
+                    </div>
+                    <div class="bg-wellcare-100 dark:bg-wellcare-900/30 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-wellcare-600 dark:text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Total Entries'|trans }}</p>
+                        <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ stats.totalEntries }}</p>
+                    </div>
+                    <div class="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Average Weight'|trans }}</p>
+                        <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ stats.avgWeight }} kg</p>
+                    </div>
+                    <div class="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Average Blood Sugar'|trans }}</p>
+                        <p class="text-3xl font-bold text-red-600 dark:text-red-400">{{ stats.avgGlycemie }} g/l</p>
+cemie }} g                    </div>
+                    <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Recent Entries -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Recent Entries (Last 30 Days)'|trans }}</h2>
+                {% if recentEntries and recentEntries|length > 0 %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Date'|trans }}</th>
+                                    <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Weight'|trans }}</th>
+                                    <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Blood Sugar'|trans }}</th>
+                                    <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Sleep'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in recentEntries %}
+                                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="px-4 py-2 text-gray-900 dark:text-white">{{ entry.date|date('d/m/Y') }}</td>
+                                        <td class="px-4 py-2 text-gray-900 dark:text-white">{{ entry.poids|default('-') }} kg</td>
+                                        <td class="px-4 py-2 text-gray-900 dark:text-white">{{ entry.glycemie|default('-') }} g/l</td>
+                                        <td class="px-4 py-2 text-gray-900 dark:text-white">{{ entry.sommeil|default('-') }} h</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-4">{{ 'No recent entries found.'|trans }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Common Symptoms -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Most Common Symptoms'|trans }}</h2>
+                {% if commonSymptoms and commonSymptoms|length > 0 %}
+                    <div class="space-y-3">
+                        {% for symptom in commonSymptoms %}
+                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <span class="font-medium text-gray-700 dark:text-gray-300">{{ symptom.symptomName|default('-') }}</span>
+                                <span class="bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-800 dark:text-wellcare-300 px-3 py-1 rounded-full text-sm">
+                                    {{ symptom.symptomCount|default(0) }} {{ 'occurrences'|trans }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-4">{{ 'No symptoms recorded yet.'|trans }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Journals List -->
+        <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Health Journals'|trans }}</h2>
+            {% if journals and journals|length > 0 %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for journal in journals %}
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                            <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">{{ journal.name|default('-') }}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                {{ journal.datedebut ? journal.datedebut|date('d/m/Y') : '-' }} - 
+                                {{ journal.datefin ? journal.datefin|date('d/m/Y') : ('Ongoing'|trans) }}
+                            </p>
+                            <div class="flex items-center justify-between mt-4">
+                                <span class="text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded">
+                                    {{ journalCounts[journal.id]|default(0) }} {{ 'entries'|trans }}
+                                </span>
+                                <a href="{{ path('app_doctor_analytics_journal_detail', {'id': journal.id}) }}" 
+                                   class="text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-800 dark:hover:text-wellcare-300 text-sm font-medium">
+                                    {{ 'View Details'|trans }} →
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 dark:text-gray-400 text-center py-4">{{ 'No journals found.'|trans }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

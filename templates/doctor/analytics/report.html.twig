@@ -1,0 +1,160 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Health Report - {{ journal.name }}{% endblock %}
+
+{% block body %}
+<div class="page-content">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-6 flex items-center justify-between">
+            <a href="{{ path('app_doctor_analytics_journal_detail', {'id': journal.id}) }}" class="text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-800 dark:hover:text-wellcare-300 font-medium">
+                <svg class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                {{ 'Back to Journal'|trans }}
+            </a>
+            <a href="{{ path('app_doctor_analytics_export', {'id': journal.id}) }}" 
+               class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                {{ 'Export JSON'|trans }}
+            </a>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <!-- Report Header -->
+            <div class="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ 'Health Analysis Report'|trans }}</h1>
+                <h2 class="text-xl text-wellcare-600 dark:text-wellcare-400">{{ journal.name }}</h2>
+                <div class="flex items-center gap-6 mt-4 text-gray-600 dark:text-gray-400">
+                    <span>{{ 'Period'|trans }}: {{ report.period.start }} - {{ report.period.end }}</span>
+                    <span>{{ 'Duration'|trans }}: {{ report.period.days }} {{ 'days'|trans }}</span>
+                    <span>{{ 'Generated'|trans }}: {{ report.generatedAt|date('d/m/Y H:i') }}</span>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Statistics Overview'|trans }}</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Total Entries'|trans }}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ report.statistics.totalEntries }}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Average Weight'|trans }}</p>
+                        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ report.statistics.avgWeight }} kg</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Average Blood Sugar'|trans }}</p>
+                        <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ report.statistics.avgGlycemie }} g/l</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Average Sleep'|trans }}</p>
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ report.statistics.avgSleep }} {{ 'hours'|trans }}</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Weight Range'|trans }}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ report.statistics.minWeight }} - {{ report.statistics.maxWeight }} kg</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Weight Change'|trans }}</p>
+                        <p class="text-2xl font-bold {{ report.statistics.weightChange >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                            {{ report.statistics.weightChange > 0 ? '+' }}{{ report.statistics.weightChange }} kg
+                        </p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Average Blood Pressure'|trans }}</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ report.statistics.avgTension }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Assessments -->
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Health Assessments'|trans }}</h3>
+                <div class="space-y-4">
+                    {% for assessment in report.assessments %}
+                        <div class="flex items-start gap-4 p-4 rounded-lg {{ assessment.status == 'good' ? 'bg-green-50 dark:bg-green-900/20' : (assessment.status == 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-red-50 dark:bg-red-900/20') }}">
+                            <div class="flex-shrink-0 mt-1">
+                                {% if assessment.status == 'good' %}
+                                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                {% elseif assessment.status == 'warning' %}
+                                    <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <p class="font-bold {{ assessment.status == 'good' ? 'text-green-800 dark:text-green-300' : (assessment.status == 'warning' ? 'text-yellow-800 dark:text-yellow-300' : 'text-red-800 dark:text-red-300') }}">
+                                    {{ assessment.metric }}
+                                </p>
+                                <p class="text-gray-700 dark:text-gray-300">{{ assessment.message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Symptom Analysis -->
+            {% if report.symptoms is defined and report.symptoms|length > 0 %}
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Symptom Analysis'|trans }}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for symptom in report.symptoms %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">{{ symptom.type|default('-') }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-600 dark:text-gray-400">{{ symptom.count|default(0) }} {{ 'occurrences'|trans }}</span>
+                                {% if symptom.severity is defined %}
+                                    <span class="px-2 py-1 text-xs rounded-full {{ symptom.severity == 'severe' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' : (symptom.severity == 'moderate' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300') }}">
+                                        {{ symptom.severity }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Monthly Trend -->
+            {% if report.monthlyTrend is defined and report.monthlyTrend|length > 0 %}
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Monthly Trend'|trans }}</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700">
+                                <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Month'|trans }}</th>
+                                <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Average Weight'|trans }}</th>
+                                <th class="px-4 py-2 text-left text-gray-700 dark:text-gray-300">{{ 'Average Blood Sugar'|trans }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trend in report.monthlyTrend %}
+                                <tr class="border-b dark:border-gray-700">
+                                    <td class="px-4 py-2 text-gray-900 dark:text-white">{{ trend.month|default('-') }}</td>
+                                    <td class="px-4 py-2 font-medium text-gray-900 dark:text-white">{{ trend.avgWeight|default('-') }} kg</td>
+                                    <td class="px-4 py-2 text-gray-900 dark:text-white">{{ trend.avgGlycemie|default('-') }} g/l</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Print Button -->
+            <div class="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button onclick="window.print()" class="bg-gray-800 dark:bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-900 dark:hover:bg-gray-600 transition-colors font-medium">
+                    {{ 'Print Report'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

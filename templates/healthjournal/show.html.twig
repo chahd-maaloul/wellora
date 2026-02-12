@@ -1,30 +1,241 @@
-{% extends 'base.html.twig' %}
+{% extends 'layouts/app.html.twig' %}
 
-{% block title %}Healthjournal{% endblock %}
+{% block title %}{{ healthjournal.name|default('Health Journal') }}{% endblock %}
 
 {% block body %}
-    <h1>Healthjournal</h1>
+<div class="page-content">
+    <div class="px-4 mx-auto max-w-6xl sm:px-6 lg:px-8">
+        {# Header Section #}
+        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <a href="{{ path('app_healthjournal_index') }}" 
+                       class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Back
+                    </a>
+                    <span class="text-gray-300 dark:text-gray-600">|</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
+                        <i class="fa-regular fa-calendar mr-1"></i>
+                        Journal Details
+                    </span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-3 fa-solid fa-journal-whills text-wellcare-500"></i>
+                    {{ healthjournal.name|default('Health Journal #' ~ healthjournal.id) }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {% if healthjournal.datedebut and healthjournal.datefin %}
+                        {{ healthjournal.datedebut|date('M d, Y') }} - {{ healthjournal.datefin|date('M d, Y') }}
+                    {% elseif healthjournal.datedebut %}
+                        Started {{ healthjournal.datedebut|date('M d, Y') }} (Ongoing)
+                    {% else %}
+                        No dates set
+                    {% endif %}
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('app_healthjournal_edit', {'id': healthjournal.id}) }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fa-solid fa-pen"></i>
+                    Edit
+                </a>
+                <a href="{{ path('app_healthjournal_dashboard', {'id': healthjournal.id}) }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 focus:ring-4 focus:ring-wellcare-300 dark:focus:ring-wellcare-800 transition-colors">
+                    <i class="fa-solid fa-chart-line"></i>
+                    View Dashboard
+                </a>
+            </div>
+        </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ healthjournal.id }}</td>
-            </tr>
-            <tr>
-                <th>Datedebut</th>
-                <td>{{ healthjournal.datedebut ? healthjournal.datedebut|date('Y-m-d') : '' }}</td>
-            </tr>
-            <tr>
-                <th>Datefin</th>
-                <td>{{ healthjournal.datefin ? healthjournal.datefin|date('Y-m-d') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
+        {# Stats Cards #}
+        <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-4">
+            {# Total Entries #}
+            <div class="bg-white border border-gray-100 shadow-sm rounded-xl p-6 dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Entries</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ healthEntries|length }}</p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                        <i class="fa-solid fa-clipboard-list text-xl"></i>
+                    </div>
+                </div>
+            </div>
 
-    <a href="{{ path('app_healthjournal_index') }}">back to list</a>
+            {# Total Symptoms #}
+            <div class="bg-white border border-gray-100 shadow-sm rounded-xl p-6 dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Symptoms Tracked</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ symptoms|length }}</p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                        <i class="fa-solid fa-heart-pulse text-xl"></i>
+                    </div>
+                </div>
+            </div>
 
-    <a href="{{ path('app_healthjournal_edit', {'id': healthjournal.id}) }}">edit</a>
+            {# Date Range #}
+            <div class="bg-white border border-gray-100 shadow-sm rounded-xl p-6 dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Duration</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                            {% if healthjournal.datedebut and healthjournal.datefin %}
+                                {{ healthjournal.datedebut|date('M d') }} - {{ healthjournal.datefin|date('M d') }}
+                            {% elseif healthjournal.datedebut %}
+                                {{ healthjournal.datedebut|date('M d, Y') }}+
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                        <i class="fa-solid fa-calendar-days text-xl"></i>
+                    </div>
+                </div>
+            </div>
 
-    {{ include('healthjournal/_delete_form.html.twig') }}
+            {# Status #}
+            <div class="bg-white border border-gray-100 shadow-sm rounded-xl p-6 dark:bg-gray-900 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                            {% if healthjournal.datefin and healthjournal.datefin < date() %}
+                                <span class="text-green-600">Completed</span>
+                            {% elseif healthjournal.datedebut and healthjournal.datedebut <= date() %}
+                                <span class="text-blue-600">Active</span>
+                            {% else %}
+                                <span class="text-gray-500">Pending</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                        <i class="fa-solid fa-flag text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Journal Info Card #}
+        <div class="bg-white border border-gray-100 shadow-sm rounded-xl mb-8 dark:bg-gray-900 dark:border-gray-800">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-circle-info text-wellcare-500"></i>
+                    Journal Information
+                </h2>
+            </div>
+            <div class="p-6">
+                <dl class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Journal Name</dt>
+                        <dd class="mt-1 text-lg text-gray-900 dark:text-white">{{ healthjournal.name|default('Unnamed Journal') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Start Date</dt>
+                        <dd class="mt-1 text-lg text-gray-900 dark:text-white">
+                            {% if healthjournal.datedebut %}
+                                {{ healthjournal.datedebut|date('l, F d, Y') }}
+                            {% else %}
+                                <span class="text-gray-400">Not set</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">End Date</dt>
+                        <dd class="mt-1 text-lg text-gray-900 dark:text-white">
+                            {% if healthjournal.datefin %}
+                                {{ healthjournal.datefin|date('l, F d, Y') }}
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                    Ongoing
+                                </span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        {# Entries Section #}
+        <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-list-check text-wellcare-500"></i>
+                    Health Entries ({{ healthEntries|length }})
+                </h2>
+                <a href="{{ path('app_healthentry_new', {'journal_id': healthjournal.id}) }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 focus:ring-4 focus:ring-wellcare-300 dark:focus:ring-wellcare-800 transition-colors">
+                    <i class="fa-solid fa-plus"></i>
+                    Add Entry
+                </a>
+            </div>
+            
+            {% if healthEntries|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Glucose</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Blood Pressure</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sleep</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+                            {% for entry in healthEntries %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        {% if entry.date %}
+                                            {{ entry.date|date('M d, Y') }}
+                                        {% else %}
+                                            <span class="text-gray-400">No date</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ entry.poids|default('-') }} kg
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ entry.glycemie|default('-') }} mg/dL
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ entry.tension|default('-') }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ entry.sommeil|default('-') }} hrs
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <a href="{{ path('app_healthentry_show', {'id': entry.id}) }}" class="text-wellcare-600 hover:text-wellcare-900 dark:text-wellcare-400 dark:hover:text-wellcare-300">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-12 text-center">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800">
+                        <i class="fa-solid fa-clipboard-list text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No entries yet</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">Start tracking your health by adding your first entry.</p>
+                    <a href="{{ path('app_healthentry_new', {'journal_id': healthjournal.id}) }}" 
+                       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 focus:ring-4 focus:ring-wellcare-300 dark:focus:ring-wellcare-800 transition-colors">
+                        <i class="fa-solid fa-plus"></i>
+                        Add First Entry
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        {# Delete Form #}
+        <div class="mt-8 flex justify-end">
+            {{ include('healthjournal/_delete_form.html.twig') }}
+        </div>
+    </div>
+</div>
 {% endblock %}

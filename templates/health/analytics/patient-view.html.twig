@@ -28,7 +28,7 @@
                     {% if start_date and end_date %}
                     <p class="mt-2 text-sm text-wellcare-600 dark:text-wellcare-400">
                         <i class="fa-solid fa-calendar-range mr-1"></i>
-                        {{ 'Période:'|trans }} {{ start_date|date('d/m/Y') }} - {{ end_date|date('d/m/Y') }}
+                        {{ 'Période:'|trans }} {{ start_date }} - {{ end_date }}
                     </p>
                     {% endif %}
                 </div>
@@ -41,12 +41,14 @@
                         <select x-model="selectedJournalId" @change="updateJournal" class="w-full input">
                             <option value="">{{ 'Tous les journaux'|trans }}</option>
                             {% for journal in journals %}
-                            <option value="{{ journal.id }}">{{ journal.datedebut|date('d/m/Y') }} - {{ journal.datefin|date('d/m/Y') }}</option>
+                            <option value="{{ journal.id }}">
+                                {% if journal.name %}{{ journal.name }}{% else %}Journal #{{ journal.id }}{% endif %}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
                     {% endif %}
-            </div>
+                </div>
         </div>
     </div>
 
@@ -441,8 +443,8 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('healthAnalytics', () => ({
         selectedJournalId: '{{ selected_journal_id|default('')|e('js') }}',
-        startDate: '{{ start_date|default('')|e('js') }}',
-        endDate: '{{ end_date|default('')|e('js') }}',
+        startDate: '{{ start_date_js|default('')|e('js') }}',
+        endDate: '{{ end_date_js|default('')|e('js') }}',
         
         // Real data from controller
         glycemicData: {{ glycemic_data|default([0.95, 1.02, 0.88, 1.08, 0.92, 1.15, 0.98])|json_encode|raw }},
@@ -468,13 +470,13 @@ document.addEventListener('alpine:init', () => {
         avgIntensity: {{ avg_intensity|default(3.6) }},
         totalSymptoms: {{ total_symptoms|default(7) }},
         
-        // Scores (0-100)
-        glycemicScore: 85,
-        bpScore: 78,
-        sleepScore: 72,
-        symptomScore: 80,
-        weightScore: 88,
-        globalScore: 80,
+        // Scores (0-100) - These will be recalculated by calculateMetrics()
+        glycemicScore: {{ glycemic_score|default(80) }},
+        bpScore: {{ bp_score|default(78) }},
+        sleepScore: {{ sleep_score|default(72) }},
+        symptomScore: {{ symptom_score|default(80) }},
+        weightScore: {{ weight_score|default(88) }},
+        globalScore: {{ global_score|default(80) }},
         
         // Charts
         charts: {},
@@ -482,6 +484,16 @@ document.addEventListener('alpine:init', () => {
         init() {
             this.calculateMetrics();
             this.initCharts();
+        },
+        
+        updateJournal() {
+            const url = new URL(window.location.href);
+            if (this.selectedJournalId) {
+                url.searchParams.set('journal_id', this.selectedJournalId);
+            } else {
+                url.searchParams.delete('journal_id');
+            }
+            window.location.href = url.toString();
         },
         
         calculateMetrics() {

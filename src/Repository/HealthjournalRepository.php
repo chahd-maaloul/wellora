@@ -8,6 +8,11 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Healthjournal>
+ *
+ * @method Healthjournal|null find($id, $lockMode = null, $lockVersion = null)
+ * @method Healthjournal|null findOneBy(array $criteria, array $orderBy = null)
+ * @method Healthjournal[] findAll()
+ * @method Healthjournal[] findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class HealthjournalRepository extends ServiceEntityRepository
 {

@@ -41,7 +41,7 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <a href="/health/accessible/journal-entry" class="btn-primary">
+                <a href="{{ path('app_health_journal_accessible') }}" class="btn-primary">
                     <i class="fa-solid fa-plus mr-2"></i>
                     {{ 'Nouvelle Entrée'|trans }}
                 </a>
@@ -49,10 +49,54 @@
         </div>
     </div>
 
+    {# Filter & Sort Section #}
+    <div class="mb-6 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+        <form method="POST" action="{{ path('app_healthentry_index') }}" class="flex flex-wrap gap-3 items-center">
+            
+            {# Search #}
+            <input type="text" name="search" id="search" value="{{ search|default('') }}" 
+                   placeholder="{{ 'Rechercher par poids...'|trans }}"
+                   class="flex-1 min-w-[200px] px-4 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+            
+            {# Filter by Date #}
+            <div class="flex items-center gap-2">
+                <i class="fa-regular fa-calendar text-gray-400"></i>
+                <input type="date" name="filterDate" id="filterDate" value="{{ filterDate|default('') }}" 
+                       class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+            </div>
+            
+            {# Sort #}
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-sort text-gray-400"></i>
+                <select name="sortBy" id="sortBy" 
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="date" {% if sortBy|default('date') == 'date' %}selected{% endif %}>{{ 'Date'|trans }}</option>
+                    <option value="poids" {% if sortBy|default('date') == 'poids' %}selected{% endif %}>{{ 'Poids'|trans }}</option>
+                    <option value="glycemie" {% if sortBy|default('date') == 'glycemie' %}selected{% endif %}>{{ 'Glycémie'|trans }}</option>
+                </select>
+                <select name="sortOrder" id="sortOrder" 
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="ASC" {% if sortOrder|default('ASC') == 'ASC' %}selected{% endif %}>↑ Asc</option>
+                    <option value="DESC" {% if sortOrder|default('ASC') == 'DESC' %}selected{% endif %}>↓ Desc</option>
+                </select>
+            </div>
+            
+            {# Apply Button #}
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white rounded-lg" style="background-color: #16a34a;">
+                <i class="fa-solid fa-check mr-1"></i>{{ 'Appliquer'|trans }}
+            </button>
+            
+            {# Reset Button #}
+            <a href="{{ path('app_healthentry_index') }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-rotate-left mr-1"></i>{{ 'Reset'|trans }}
+            </a>
+        </form>
+    </div>
+
     {# Entries Grid #}
     {% if healthentries|length > 0 %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for entry in healthentries %}
+                {% for entry in healthentries %}
                 <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
                     {# Header #}
                     <div class="flex items-center justify-between mb-4">
@@ -152,7 +196,7 @@
             <p class="text-gray-500 dark:text-gray-400 mb-6">
                 {{ 'Commencez à suivre votre santé en créant votre première entrée'|trans }}
             </p>
-            <a href="/health/accessible/journal-entry" class="btn-primary">
+            <a href="/health/journal/accessible" class="btn-primary">
                 <i class="fa-solid fa-plus mr-2"></i>
                 {{ 'Créer ma première entrée'|trans }}
             </a>

@@ -11,7 +11,6 @@ use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 
 class HealthentryType extends AbstractType
 {
@@ -42,8 +41,16 @@ class HealthentryType extends AbstractType
                     'step' => 0.1,
                 ],
             ])
-            ->add('tension', HiddenType::class, [
-                'label' => 'Tension (mmHg)',
+            ->add('tension', NumberType::class, [
+                'label' => 'Tension diastolique (mmHg)',
+                'required' => false,
+                'scale' => 0,
+                'attr' => [
+                    'min' => 40,
+                    'max' => 120,
+                    'step' => 1,
+                    'placeholder' => '80',
+                ],
             ])
             ->add('sommeil', NumberType::class, [
                 'label' => 'Heures de sommeil',

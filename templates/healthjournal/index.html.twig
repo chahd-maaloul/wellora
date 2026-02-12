@@ -1,187 +1,237 @@
-{% extends 'base.html.twig' %}
+{#
+    Health Journal Index - Lists all health journals with AJAX search, filter, sort functionality
+#}
 
-{% block title %}Health Journals{% endblock %}
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Mes Journaux de Santé'|trans }} - WellCare Connect{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Mes Journaux'|trans }}</span>
+    </li>
+{% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950 py-8">
-    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        {# Header Section #}
-        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-                    <i class="mr-3 fa-solid fa-book-medical text-wellcare-500"></i>
-                    Health Journals
-                </h1>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Track and manage your health journals over time
-                </p>
+<div class="page-content">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fa-solid fa-book-medical text-wellcare-600 dark:text-wellcare-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Mes Journaux de Santé'|trans }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Gérez vos journaux de santé'|trans }}
+                    </p>
+                </div>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ path('health_analytics_patient_view') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors bg-purple-600 rounded-lg hover:bg-purple-700">
-                    <i class="fa-solid fa-chart-line"></i>
-                    Analytics Dashboard
-                </a>
-                <a href="{{ path('app_healthjournal_new') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600 hover:bg-wellcare-700">
-                    <i class="fa-solid fa-plus"></i>
-                    Create New Journal
+            
+            <div class="flex items-center gap-2">
+                <a href="{{ path('app_healthjournal_new') }}" class="btn-primary">
+                    <i class="fa-solid fa-plus mr-2"></i>
+                    {{ 'Nouveau Journal'|trans }}
                 </a>
             </div>
         </div>
+    </div>
 
-        {# Stats Cards #}
-        <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-4">
-            <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
-                        <i class="fa-solid fa-book-open"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Total Journals</p>
-                        <p class="text-xl font-bold text-gray-900 dark:text-white">{{ healthjournals|length }}</p>
-                    </div>
-                </div>
+    {# Search, Filter & Sort Section #}
+    <div class="mb-6 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+        <form id="searchForm" class="flex flex-wrap gap-3 items-center">
+            {# Search #}
+            <div class="relative flex-1 min-w-[200px]">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" name="search" id="search" value="{{ search|default('') }}" 
+                       placeholder="Rechercher..."
+                       class="w-full pl-10 pr-4 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
             </div>
-            <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                        <i class="fa-solid fa-calendar-check"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Active Periods</p>
-                        <p class="text-xl font-bold text-gray-900 dark:text-white">{{ healthjournals|length }}</p>
-                    </div>
-                </div>
+            
+            {# Filter by Date #}
+            <div class="flex items-center gap-2">
+                <i class="fa-regular fa-calendar text-gray-400"></i>
+                <input type="date" name="filterDate" id="filterDate" value="{{ filterDate|default('') }}" 
+                       class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
             </div>
-            <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <i class="fa-solid fa-check-circle"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Completed</p>
-                        <p class="text-xl font-bold text-gray-900 dark:text-white">
-                            {% set completed = 0 %}
-                            {% for journal in healthjournals %}
-                                {% if journal.datefin and journal.datefin|date('Y-m-d') < 'now'|date('Y-m-d') %}
-                                    {% set completed = completed + 1 %}
-                                {% endif %}
-                            {% endfor %}
-                            {{ completed }}
-                        </p>
-                    </div>
-                </div>
+            
+            {# Sort #}
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-sort text-gray-400"></i>
+                <select name="sortBy" id="sortBy" 
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="datedebut" {% if sortBy|default('datedebut') == 'datedebut' %}selected{% endif %}>Date début</option>
+                    <option value="datefin" {% if sortBy|default('datedebut') == 'datefin' %}selected{% endif %}>Date fin</option>
+                    <option value="name" {% if sortBy|default('datedebut') == 'name' %}selected{% endif %}>Nom</option>
+                </select>
+                <select name="sortOrder" id="sortOrder" 
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="ASC" {% if sortOrder|default('ASC') == 'ASC' %}selected{% endif %}>↑</option>
+                    <option value="DESC" {% if sortOrder|default('ASC') == 'DESC' %}selected{% endif %}>↓</option>
+                </select>
             </div>
-            <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                        <i class="fa-solid fa-clock"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Ongoing</p>
-                        <p class="text-xl font-bold text-gray-900 dark:text-white">
-                            {% set ongoing = 0 %}
-                            {% for journal in healthjournals %}
-                                {% if not journal.datefin or journal.datefin|date('Y-m-d') >= 'now'|date('Y-m-d') %}
-                                    {% set ongoing = ongoing + 1 %}
-                                {% endif %}
-                            {% endfor %}
-                            {{ ongoing }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+            
+            {# Apply Button #}
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 transition-colors">
+                <i class="fa-solid fa-check mr-1"></i>Appliquer
+            </button>
+            
+            {# Reset Button #}
+            <a href="{{ path('app_healthjournal_index') }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 transition-colors">
+                <i class="fa-solid fa-rotate-left mr-1"></i>Reset
+            </a>
+        </form>
+    </div>
 
-        {# Journals Grid #}
+    {# Loading Indicator #}
+    <div id="loadingIndicator" class="hidden flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-wellcare-600"></div>
+        <span class="ml-3 text-gray-500">{{ 'Recherche en cours...'|trans }}</span>
+    </div>
+
+    {# Results Summary #}
+    <div id="resultsSummary" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
         {% if healthjournals|length > 0 %}
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {% for journal in healthjournals %}
-                    <div class="p-6 bg-white border border-gray-100 shadow-sm transition-all hover:shadow-md rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                <div class="flex items-center justify-center w-12 h-12 rounded-xl {% if journal.datefin and journal.datefin|date('Y-m-d') < 'now'|date('Y-m-d') %}bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400{% else %}bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400{% endif %}">
-                                    <i class="fa-solid fa-journal-whills"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Journal #{{ journal.id }}</p>
-                                    <p class="font-semibold text-gray-900 dark:text-white">
-                                        {% if journal.datefin and journal.datefin|date('Y-m-d') < 'now'|date('Y-m-d') %}
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
-                                                Completed
-                                            </span>
-                                        {% else %}
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-wellcare-100 text-wellcare-800 dark:bg-wellcare-900/30 dark:text-wellcare-400">
-                                                Active
-                                            </span>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-3 mb-4">
-                            <div class="flex items-center gap-2 text-sm">
-                                <i class="fa-regular fa-calendar text-gray-400"></i>
-                                <span class="text-gray-600 dark:text-gray-400">Start:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">{{ journal.datedebut|date('M d, Y') }}</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-sm">
-                                <i class="fa-regular fa-calendar-check text-gray-400"></i>
-                                <span class="text-gray-600 dark:text-gray-400">End:</span>
-                                <span class="font-medium text-gray-900 dark:text-white">
-                                    {% if journal.datefin %}
-                                        {{ journal.datefin|date('M d, Y') }}
-                                    {% else %}
-                                        <span class="text-wellcare-600 dark:text-wellcare-400">Ongoing</span>
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-                            <a href="{{ path('health_analytics_patient') }}?journal_id={{ journal.id }}" 
-                               class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-wellcare-700 bg-wellcare-50 rounded-lg hover:bg-wellcare-100 dark:bg-wellcare-900/30 dark:text-wellcare-400 dark:hover:bg-wellcare-900/50 transition-colors">
-                                <i class="fa-solid fa-chart-line"></i>
-                                View Analytics
-                            </a>
-                            <a href="{{ path('app_healthjournal_edit', {'id': journal.id}) }}" 
-                               class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50 transition-colors">
-                                <i class="fa-solid fa-pen"></i>
-                                Edit
-                            </a>
-                            <form method="post" action="{{ path('app_healthjournal_delete', {'id': journal.id}) }}" 
-                                  onsubmit="return confirm('Are you sure you want to delete this journal?');" 
-                                  class="flex-1">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ journal.id) }}">
-                                <button type="submit" 
-                                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-rose-700 bg-rose-50 rounded-lg hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50 transition-colors">
-                                    <i class="fa-solid fa-trash"></i>
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
+            <span class="results-count">{{ healthjournals|length }}</span> résultat(s) trouvé(s)
+            {% if search|default('') or filterDate|default('') %}
+                <span class="text-xs text-wellcare-600">(filtré)</span>
+            {% endif %}
         {% else %}
-            {# Empty State #}
-            <div class="p-12 text-center bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800">
-                    <i class="text-2xl fa-solid fa-book-open text-gray-400"></i>
-                </div>
-                <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">No Journals Yet</h3>
-                <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-                    Start tracking your health by creating your first journal entry.
-                </p>
-                <a href="{{ path('app_healthjournal_new') }}" 
-                   class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600 hover:bg-wellcare-700">
-                    <i class="fa-solid fa-plus"></i>
-                    Create Your First Journal
-                </a>
-            </div>
+            <span class="results-count">0</span> résultat(s)
         {% endif %}
     </div>
+
+    {# Journals Container (updated via AJAX) #}
+    <div id="journalsContainer" class="fade-in">
+        {{ include('healthjournal/_journals_list.html.twig') }}
+    </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<style>
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const journalsContainer = document.getElementById('journalsContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsSummary = document.getElementById('resultsSummary');
+    
+    // Debounce function for search input
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Update results summary with count
+    function updateResultsSummary(count, isFiltered) {
+        const countSpan = resultsSummary.querySelector('.results-count');
+        const filterSpan = resultsSummary.querySelector('span:last-child');
+        if (countSpan) {
+            countSpan.textContent = count;
+        }
+        if (filterSpan && isFiltered) {
+            filterSpan.classList.add('text-wellcare-600');
+            filterSpan.textContent = '(filtré)';
+        }
+    }
+    
+    // Perform AJAX search - returns HTML fragment
+    function performSearch(event) {
+        if (event) {
+            event.preventDefault();
+        }
+        
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams(formData);
+        
+        loadingIndicator.classList.remove('hidden');
+        journalsContainer.classList.add('opacity-50');
+        
+        fetch('{{ path('app_healthjournal_search') }}?' + params.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(html => {
+            // Parse the returned HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromHTML(html, 'text/html');
+            
+            // Update journals container with animation
+            const newContainer = doc.querySelector('#journalsContainer');
+            if (newContainer) {
+                journalsContainer.innerHTML = newContainer.innerHTML;
+                journalsContainer.classList.remove('fade-in');
+                void journalsContainer.offsetWidth; // Trigger reflow
+                journalsContainer.classList.add('fade-in');
+            }
+            
+            // Update results summary count
+            const newCount = doc.querySelector('#totalJournals');
+            if (newCount) {
+                updateResultsSummary(newCount.textContent, params.toString().length > 0);
+            }
+            
+            journalsContainer.classList.remove('opacity-50');
+            loadingIndicator.classList.add('hidden');
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            loadingIndicator.classList.add('hidden');
+            journalsContainer.classList.remove('opacity-50');
+        });
+    }
+    
+    // Form submit handler
+    searchForm.addEventListener('submit', performSearch);
+    
+    // Debounced live search for text input
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', debounce(performSearch, 300));
+    
+    // Live filter for date and sort changes
+    const filterDate = document.getElementById('filterDate');
+    const sortBy = document.getElementById('sortBy');
+    const sortOrder = document.getElementById('sortOrder');
+    
+    filterDate.addEventListener('change', debounce(performSearch, 300));
+    sortBy.addEventListener('change', performSearch);
+    sortOrder.addEventListener('change', performSearch);
+});
+</script>
 {% endblock %}
