@@ -1,0 +1,343 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'admin.users.show.title'|trans({'%email%': user.email}) }}{% endblock %}
+
+{% block body %}
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    {{ 'admin.users.show.title'|trans({'%email%': user.email}) }}
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">
+                    {{ 'admin.users.show.description'|trans }}
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ path('admin_users_index') }}" class="px-4 py-2 text-gray-700 transition-colors bg-gray-300 rounded-lg dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-500">
+                    {{ 'admin.users.show.back'|trans }}
+                </a>
+                <a href="{{ path('admin_users_edit', {'uuid': user.uuid}) }}" class="px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    {{ 'admin.users.show.edit'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- User Info Card -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow dark:bg-gray-800">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        {{ 'admin.users.show.info'|trans }}
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                        <!-- Email -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.email'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.email }}</dd>
+                        </div>
+
+                        <!-- Role -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.role'|trans }}</dt>
+                            <dd class="mt-1">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if user.roles[0] == 'ROLE_PATIENT' %}bg-blue-100 text-blue-800
+                                    {% elseif user.roles[0] == 'ROLE_MEDECIN' %}bg-green-100 text-green-800
+                                    {% elseif user.roles[0] == 'ROLE_COACH' %}bg-purple-100 text-purple-800
+                                    {% elseif user.roles[0] == 'ROLE_NUTRITIONIST' %}bg-orange-100 text-orange-800
+                                    {% elseif user.roles[0] == 'ROLE_ADMIN' %}bg-red-100 text-red-800{% endif %}">
+                                    {{ ('admin.users.roles.' ~ user.roles[0]|lower)|trans }}
+                                </span>
+                            </dd>
+                        </div>
+
+                        <!-- First Name -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.first_name'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.firstName }}</dd>
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.last_name'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.lastName }}</dd>
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.phone'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.phone|default('-') }}</dd>
+                        </div>
+
+                        <!-- Birthdate -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.birthdate'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.birthdate ? user.birthdate|date('d/m/Y') : '-' }}</dd>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="sm:col-span-2">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.form.address'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.address|default('-') }}</dd>
+                        </div>
+
+                        <!-- Created At -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.table.created_at'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.createdAt|date('d/m/Y H:i') }}</dd>
+                        </div>
+
+                        <!-- Last Login -->
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ 'admin.users.show.last_login'|trans }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : '-' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="lg:col-span-1">
+            <!-- Account Status -->
+            <div class="mb-6 bg-white rounded-lg shadow dark:bg-gray-800">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        {{ 'admin.users.show.status'|trans }}
+                    </h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <!-- Active Status -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'admin.users.form.is_active'|trans }}</span>
+                        {% if user.isActive %}
+                            <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                                {{ 'admin.users.status.active'|trans }}
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
+                                {{ 'admin.users.status.inactive'|trans }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email Verified -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'admin.users.form.is_email_verified'|trans }}</span>
+                        {% if user.isEmailVerified %}
+                            <span class="text-green-500">✓</span>
+                        {% else %}
+                            <span class="text-gray-400">✗</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Locked Status -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'admin.users.show.locked'|trans }}</span>
+                        {% if user.isLocked() %}
+                            <span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">
+                                {{ 'admin.users.status.locked'|trans }}
+                            </span>
+                        {% else %}
+                            <span class="text-sm text-gray-500 dark:text-gray-400">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="mb-6 bg-white rounded-lg shadow dark:bg-gray-800">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        {{ 'admin.users.show.actions'|trans }}
+                    </h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <!-- Toggle Active -->
+                    {% if user.userIdentifier != app.user.userIdentifier %}
+                    <form method="post" action="{{ path('admin_users_toggle_active', {'uuid': user.uuid}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('toggle-active-' ~ user.uuid) }}">
+                        <button type="submit" class="w-full px-4 py-2 text-white transition-colors rounded-lg {% if user.isActive %}bg-red-500 hover:bg-red-600{% else %}bg-green-500 hover:bg-green-600{% endif %}">
+                            {{ user.isActive ? 'admin.users.show.deactivate'|trans : 'admin.users.show.activate'|trans }}
+                        </button>
+                    </form>
+                    {% else %}
+                        <button disabled class="w-full px-4 py-2 text-gray-400 bg-gray-300 rounded-lg cursor-not-allowed">
+                            {{ 'admin.users.show.cannot_deactivate_self'|trans }}
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Professional Verification Card (for professionals only) -->
+            {% if user.getDiscriminatorValue() in ['ROLE_MEDECIN', 'ROLE_COACH', 'ROLE_NUTRITIONIST'] %}
+            <div class="overflow-hidden bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
+                <!-- Card Header -->
+                <div class="px-6 py-4 bg-gradient-to-r from-wellcare-500 to-wellcare-600">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        <h2 class="text-lg font-semibold text-white">
+                            {{ 'admin.users.show.professional_verification'|trans }}
+                        </h2>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-5">
+                    <!-- Professional Badge -->
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full 
+                            {% if user.getDiscriminatorValue() == 'ROLE_MEDECIN' %}bg-green-100 text-green-700
+                            {% elseif user.getDiscriminatorValue() == 'ROLE_COACH' %}bg-purple-100 text-purple-700
+                            {% else %}bg-orange-100 text-orange-700{% endif %}">
+                            {{ ('admin.users.roles.' ~ user.getDiscriminatorValue()|lower)|trans }}
+                        </span>
+                        {% if user.specialite %}
+                        <span class="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                            {{ user.specialite|replace({'_': ' '}) }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- License Number -->
+                    <div class="p-4 bg-gray-50 rounded-lg dark:bg-gray-700/50">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                            </svg>
+                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ 'admin.users.show.license_number'|trans }}</span>
+                        </div>
+                        <p class="text-sm font-mono font-semibold text-gray-900 dark:text-white break-all">
+                            {{ user.licenseNumber|default('-') }}
+                        </p>
+                    </div>
+
+                    <!-- Diploma URL -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ 'admin.users.show.diploma'|trans }}</span>
+                        </div>
+                        {% if user.diplomaUrl %}
+                            <a href="{{ user.diplomaUrl }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-wellcare-600 bg-wellcare-50 rounded-lg hover:bg-wellcare-100 transition-colors dark:bg-wellcare-900/20 dark:text-wellcare-400 dark:hover:bg-wellcare-900/30">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                                {{ 'admin.users.show.view_diploma'|trans }}
+                            </a>
+                        {% else %}
+                            <span class="text-sm text-gray-400 dark:text-gray-500">-</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Experience -->
+                    {% if user.yearsOfExperience is defined and user.yearsOfExperience > 0 %}
+                    <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>{{ user.yearsOfExperience }} {{ 'admin.users.show.years_experience'|trans }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Verification Status -->
+                    <div class="p-4 rounded-lg {% if user.isVerifiedByAdmin %}bg-green-50 border border-green-200 dark:bg-green-900/20 dark:border-green-800{% else %}bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800{% endif %}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                {% if user.isVerifiedByAdmin %}
+                                    <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full dark:bg-green-900/50">
+                                        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-green-800 dark:text-green-300">{{ 'admin.users.status.verified'|trans }}</p>
+                                        {% if user.verificationDate %}
+                                        <p class="text-xs text-green-600 dark:text-green-400">{{ user.verificationDate|date('d/m/Y') }}</p>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full dark:bg-amber-900/50">
+                                        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-amber-800 dark:text-amber-300">{{ 'admin.users.status.pending'|trans }}</p>
+                                        <p class="text-xs text-amber-600 dark:text-amber-400">{{ 'admin.users.verification.awaiting'|trans }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blocking Warning -->
+                    {% if not user.isVerifiedByAdmin %}
+                    <div class="flex items-start gap-3 p-3 text-amber-700 bg-amber-50 rounded-lg border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300">
+                        <svg class="flex-shrink-0 w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-sm">{{ 'admin.users.verification.blocking_message'|trans }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Verify/Unverify Buttons -->
+                    <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                        {% if not user.isVerifiedByAdmin %}
+                        <form method="post" action="{{ path('admin_users_verify', {'uuid': user.uuid}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('verify-' ~ user.uuid) }}">
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 bg-gradient-to-r from-green-500 to-green-600 rounded-lg hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 shadow-lg shadow-green-500/25">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                {{ 'admin.users.show.verify'|trans }}
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{{ path('admin_users_unverify', {'uuid': user.uuid}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('unverify-' ~ user.uuid) }}">
+                            <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-amber-700 transition-all duration-200 bg-amber-100 rounded-lg hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                {{ 'admin.users.show.unverify'|trans }}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Delete Card -->
+            {% if user.userIdentifier != app.user.userIdentifier and user.roles[0] != 'ROLE_ADMIN' %}
+            <div class="mt-6 bg-white rounded-lg shadow dark:bg-gray-800">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-red-600">
+                        {{ 'admin.users.show.danger_zone'|trans }}
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <form method="post" action="{{ path('admin_users_delete', {'uuid': user.uuid}) }}" onsubmit="return confirm('{{ 'admin.users.delete.confirm'|trans({'%email%': user.email}) }}');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete-' ~ user.uuid) }}">
+                        <button type="submit" class="w-full px-4 py-2 text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600">
+                            {{ 'admin.users.show.delete'|trans }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

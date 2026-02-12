@@ -102,7 +102,7 @@
                 <i class="mr-1 fa-solid fa-arrow-left"></i>
                 Back to login
             </a>
-            <form action="/register-patient" method="GET">
+            <form action="{{ path('app_register_patient') }}" method="GET">
                 <input type="hidden" name="accept_terms" value="1">
                 <button type="submit" class="btn-primary">
                     I Accept and Continue

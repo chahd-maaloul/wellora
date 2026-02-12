@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="WellCare Connect - Plateforme de santé et téléconsultation">
     <meta name="theme-color" content="#00A790">
+    {# Security headers to prevent caching of authenticated pages #}
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{% block title %}WellCare Connect{% endblock %}</title>
     
     {# Preconnect for performance #}
@@ -20,11 +24,11 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    {% block scripts %}
-        {{ encore_entry_script_tags('app') }}
-    {% endblock %}
+    {% block scripts %}{% endblock %}
 </head>
-<body class="h-full antialiased text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
+<body class="h-full antialiased text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-100 {% if app.user %}
+    {% if is_granted('ROLE_ADMIN') %}role-admin{% elseif is_granted('ROLE_MEDECIN') %}role-medecin{% elseif is_granted('ROLE_COACH') %}role-coach{% elseif is_granted('ROLE_NUTRITIONIST') %}role-nutritionist{% elseif is_granted('ROLE_PATIENT') %}role-patient{% endif %}
+{% endif %}">
     {# Skip to main content link for keyboard users #}
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-wellcare-600 focus:text-white focus:rounded-lg">
         {{ 'Aller au contenu principal'|trans }}
@@ -96,7 +100,8 @@
             {# Navigation Menu #}
             <nav class="flex-1 px-3 py-4 overflow-y-auto" :class="collapsed ? 'px-2' : 'px-3'" aria-label="Menu">
                 
-                {# Patient Section #}
+                {# Patient Section - Only for Patients #}
+                {% if is_granted('ROLE_PATIENT') %}
                 <div class="mb-6">
                     <div x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex items-center gap-2 px-3 mb-2">
                         <h3 class="text-xs font-semibold tracking-wider uppercase text-wellcare-600 dark:text-wellcare-400">
@@ -107,9 +112,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
                         </span>
-                    </div>
-                    <div x-show="collapsed" class="flex justify-center mb-2">
-                        <span class="w-8 h-0.5 bg-wellcare-300 dark:bg-wellcare-700 rounded-full"></span>
                     </div>
                     <ul class="space-y-1" role="menubar">
                         
@@ -131,7 +133,7 @@
                             </a>
                         </li>
 
-                        {# Patient Appointments #}
+                        {# Patient Appointments Dropdown #}
                         <li role="none" x-data="{ open: !collapsed && isGroupActive(['/appointment']) }" x-show="!collapsed || isGroupActive(['/appointment'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
@@ -168,27 +170,26 @@
                                     <a href="/appointment/confirmation" role="menuitem" class="sidebar-sublink" :class="isActive('/appointment/confirmation') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Confirmation</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/appointment/consultation-room" role="menuitem" class="sidebar-sublink" :class="isActive('/appointment/consultation-room') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Salle de Consultation</a>
                                 </li>
                             </ul>
                         </li>
 
-                        {# Patient Medical Records #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/health/records', '/health/prescriptions', '/health/lab-results', '/health/billing']) }" x-show="!collapsed || isGroupActive(['/health/records', '/health/prescriptions', '/health/lab-results', '/health/billing'])">
+                        {# Patient Health Dropdown #}
+                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/health']) }" x-show="!collapsed || isGroupActive(['/health'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
                                 class="w-full sidebar-link sidebar-link-inactive"
                                 :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
                                 aria-haspopup="true"
                                 :aria-expanded="open"
-                                :title="collapsed ? 'Dossier médical' : ''"
+                                :title="collapsed ? 'Santé' : ''"
                             >
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Santé & Journal</span>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Santé</span>
                                 <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                 </svg>
@@ -198,18 +199,26 @@
                                     <a href="/health/records" role="menuitem" class="sidebar-sublink" :class="isActive('/health/records') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Historique Médical</a>
                                 </li>
                                 <li role="none">
+                                    <a href="/health/lab-results" role="menuitem" class="sidebar-sublink" :class="isActive('/health/lab-results') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Résultats Labo</a>
+                                </li>
+                                <li role="none">
                                     <a href="/health/prescriptions" role="menuitem" class="sidebar-sublink" :class="isActive('/health/prescriptions') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Ordonnances</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/health/lab-results" role="menuitem" class="sidebar-sublink" :class="isActive('/health/lab-results') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Résultats Laboratoire</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/health/billing" role="menuitem" class="sidebar-sublink" :class="isActive('/health/billing') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Facturation</a>
+                                    <a href="/health/analytics" role="menuitem" class="sidebar-sublink" :class="isActive('/health/analytics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Analyses</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/health/journal" role="menuitem" class="sidebar-sublink" :class="isActive('/health/journal') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/health/symptoms" role="menuitem" class="sidebar-sublink" :class="isActive('/health/symptoms') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Symptômes</a>
                                 </li>
                             </ul>
                         </li>
 
-                        {# Patient Nutrition Module #}
+                        {# Patient Nutrition Dropdown #}
                         <li role="none" x-data="{ open: !collapsed && isGroupActive(['/nutrition']) }" x-show="!collapsed || isGroupActive(['/nutrition'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
@@ -240,22 +249,22 @@
                                     <a href="/nutrition/quick-log" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/quick-log') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Enregistrement Rapide</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/nutrition/planner" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/planner') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Planificateur Repas</a>
+                                    <a href="/nutrition/planner" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/planner') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Planificateur</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/nutrition/recipes" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/recipes') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Bibliothèque Recettes</a>
+                                    <a href="/nutrition/recipes" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/recipes') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Recettes</a>
                                 </li>
                                 <li role="none">
                                     <a href="/nutrition/goals" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/goals') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Objectifs</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/nutrition/progress" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/progress') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Suivi Progrès</a>
+                                    <a href="/nutrition/progress" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/progress') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Progrès</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/nutrition/analysis" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/analysis') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Analyse Nutritionnelle</a>
+                                    <a href="/nutrition/analysis" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/analysis') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Analyse</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/nutrition/consultation" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/consultation') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Consultation Nutritionniste</a>
+                                    <a href="/nutrition/consultation" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/consultation') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Consultation</a>
                                 </li>
                                 <li role="none">
                                     <a href="/nutrition/messages/1" role="menuitem" class="sidebar-sublink" :class="isActive('/nutrition/messages') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Messages</a>
@@ -263,7 +272,25 @@
                             </ul>
                         </li>
 
-                        {# Patient Fitness Module #}
+                        {# Patient Teleconsultation #}
+                        <li role="none">
+                            <a href="/teleconsultation/waiting-room" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/teleconsultation/waiting-room') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/teleconsultation/waiting-room')"
+                               :title="collapsed ? 'Téléconsultation' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Téléconsultation</span>
+                            </a>
+                        </li>
+
+                        {# Patient Fitness Dropdown #}
                         <li role="none" x-data="{ open: !collapsed && isGroupActive(['/fitness']) }" x-show="!collapsed || isGroupActive(['/fitness'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
@@ -276,7 +303,6 @@
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
                                     </svg>
                                 </span>
                                 <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Fitness</span>
@@ -292,11 +318,11 @@
                                     <a href="/fitness/planner" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/planner') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Planificateur</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/fitness/library" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/library') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Bibliothèque Exercices</a>
+                                    <a href="/fitness/library" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/library') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Bibliothèque</a>
                                 </li>
                                 {#
                                 <li role="none">
-                                    <a href="/fitness/log" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/log') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal d'Entraînement</a>
+                                    <a href="/fitness/log" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/log') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal</a>
                                 </li>
                                 #}
                                  {#
@@ -341,6 +367,7 @@
                                         </li>
 
                                     </ul>
+
                                 </li>
                                 <li role="none">
                                     <a href="/fitness/progression" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/progression') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Progression</a>
@@ -348,13 +375,13 @@
                                 #} 
                                 {#
                                 <li role="none">
-                                    <a href="/fitness/adaptive" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/adaptive') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Entraînements Adaptatifs</a>
+                                    <a href="/fitness/adaptive" role="menuitem" class="sidebar-sublink" :class="isActive('/fitness/adaptive') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Entraînements Adaptés</a>
                                 </li>
                                 #}
                             </ul>
                         </li>
 
-                        {# Health Trail Module #}
+                        {# Patient Health Trail Dropdown #}
                         <li role="none" x-data="{ open: !collapsed && isGroupActive(['/trail']) }" x-show="!collapsed || isGroupActive(['/trail'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
@@ -379,97 +406,37 @@
                                     <a href="/trail/dashboard" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/dashboard') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Dashboard</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/trail/discover" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/discover') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Découvrir Trails</a>
+                                    <a href="/trail/discover" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/discover') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Découvrir</a>
                                 </li>
                                 <li role="none">
                                     <a href="/trail/my-trails" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/my-trails') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mes Trails</a>
                                 </li>
-                                <li role="none">
-                                    <a href="/trail/create" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/create') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Créer Trail</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/trail/publications/feed" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/publications/feed') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Publications</a>
-                                </li>
-                                {# Map Sub-menu #}
-                                <li role="none" x-data="{ mapOpen: false }" class="mt-2">
-                                    <button 
-                                        @click="mapOpen = !mapOpen"
-                                        class="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-wellcare-600 dark:text-wellcare-400 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20"
-                                    >
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                                        </svg>
-                                        <span class="flex-1 text-left">Cartographie</span>
-                                        <svg class="w-4 h-4 transition-transform" :class="mapOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                        </svg>
-                                    </button>
-                                    <ul x-show="mapOpen" x-collapse class="pl-4 mt-1 space-y-1">
-                                        <li role="none">
-                                            <a href="/trail/map/interactive" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/map/interactive') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Carte Interactive</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/map/planning" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/map/planning') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Outils de Planification</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/map/offline" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/map/offline') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Cartes Hors Ligne</a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                {# Community Sub-menu #}
-                                <li role="none" x-data="{ communityOpen: false }" class="mt-2">
-                                    <button 
-                                        @click="communityOpen = !communityOpen"
-                                        class="flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg text-wellcare-600 dark:text-wellcare-400 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20"
-                                    >
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                        <span class="flex-1 text-left">Communauté</span>
-                                        <svg class="w-4 h-4 transition-transform" :class="communityOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                        </svg>
-                                    </button>
-                                    <ul x-show="communityOpen" x-collapse class="pl-4 mt-1 space-y-1">
-                                        <li role="none">
-                                            <a href="/trail/community/reviews" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/reviews') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Avis & Notes</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/community/write-review" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/write-review') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Écrire un Avis</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/community/discussions" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/discussions') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Discussions</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/community/groups" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/groups') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Groupes</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/community/profile" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/profile') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mon Profil</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/community/feed" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/feed') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Fil d'Activité</a>
-                                        </li>
-                                        <li role="none">
-                                            <a href="/trail/community/safety" role="menuitem" class="sidebar-sublink" :class="isActive('/trail/community/safety') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Outils Sécurité</a>
-                                        </li>
-                                    </ul>
-                                </li>
                             </ul>
                         </li>
+                    </ul>
+                </div>
+                {% endif %}
 
-                        {# Coach Module #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/coach']) }" x-show="!collapsed || isGroupActive(['/coach'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive"
-                                :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Coach' : ''"
+                {# Coach Module - Only for Coaches #}
+                {% if is_granted('ROLE_COACH') %}
+                <div class="mb-6">
+                    <div x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex items-center gap-2 px-3 mb-2">
+                        <h3 class="text-xs font-semibold tracking-wider uppercase text-wellcare-600 dark:text-wellcare-400">
+                            Coach
+                        </h3>
+                    </div>
+                    <ul class="space-y-1" role="menubar">
+                        <li role="none">
+                            <a href="/coach/dashboard" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/coach/dashboard') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/coach/dashboard')"
+                               :title="collapsed ? 'Dashboard' : ''"
                             >
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                                     </svg>
                                 </span>
                                 <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Coach</span>
@@ -501,78 +468,68 @@
                                 </li>
                                 #}
                             </ul>
+
                         </li>
 
-                        {# Patient Teleconsultation Module #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/teleconsultation']) }" x-show="!collapsed || isGroupActive(['/teleconsultation'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive"
-                                :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Téléconsultation' : ''"
+                        <li role="none">
+                            <a href="/coach/clients" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/coach/clients') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/coach/clients')"
+                               :title="collapsed ? 'Clients' : ''"
                             >
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Téléconsultation</span>
-                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
-                                    <a href="/teleconsultation/waiting-room" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/waiting-room') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Salle d'Attente</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/consultation-room" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/consultation-room') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Salle de Consultation</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/soap-notes" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/soap-notes') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Notes SOAP</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/medical-tools" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/medical-tools') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Outils Médicaux</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/prescription-writer" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/prescription-writer') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Éditeur Ordonnances</a>
-                                </li>
-                            </ul>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Mes Clients</span>
+                            </a>
                         </li>
-
-                        {# Patient Health Analytics #}
                         <li role="none">
-                            <a href="/health/analytics" 
+                            <a href="/coach/programs" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/health/analytics') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/health/analytics')"
-                               :title="collapsed ? 'Ma santé' : ''"
+                               :class="[isActive('/coach/programs') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/coach/programs')"
+                               :title="collapsed ? 'Programmes' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Programmes</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/coach/progress" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/coach/progress') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/coach/progress')"
+                               :title="collapsed ? 'Suivi' : ''"
                             >
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Ma santé</span>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Suivi Progrès</span>
                             </a>
                         </li>
-
-                        {# Patient Accessibility #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/health/accessible']) }" x-show="!collapsed || isGroupActive(['/health/accessible'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive"
-                                :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Accessibilité' : ''"
+                        <li role="none">
+                            <a href="/coach/messages" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/coach/messages') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/coach/messages')"
+                               :title="collapsed ? 'Messages' : ''"
                             >
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                                     </svg>
                                 </span>
                                 <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Accessibilité</span>
@@ -589,145 +546,150 @@
                                     <a href="/health/accessible/journal-entry" role="menuitem" class="sidebar-sublink" :class="isActive('/health/accessible/journal-entry') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal d'Entrée</a>
                                 </li>
                             </ul>
-                        </li>
 
-                        {# Analytics Dropdown #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/analytics']) }" x-show="!collapsed || isGroupActive(['/analytics'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive"
-                                :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Analytiques' : ''"
+                        </li>
+                        <li role="none">
+                            <a href="/coach/reports" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/coach/reports') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/coach/reports')"
+                               :title="collapsed ? 'Rapports' : ''"
                             >
                                 <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Analytiques</span>
-                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
-                                    <a href="/analytics/patient-appointments" role="menuitem" class="sidebar-sublink" :class="isActive('/analytics/patient-appointments') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Rendez-vous</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/analytics/clinic-performance" role="menuitem" class="sidebar-sublink" :class="isActive('/analytics/clinic-performance') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Performance</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/analytics/financial-reports" role="menuitem" class="sidebar-sublink" :class="isActive('/analytics/financial-reports') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Financier</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/analytics/quality-metrics" role="menuitem" class="sidebar-sublink" :class="isActive('/analytics/quality-metrics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Qualité</a>
-                                </li>
-                            </ul>
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Rapports</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
+                {% endif %}
 
-                {# Professional Section - Visual Separator #}
-                <div class="my-4 border-t border-gray-200 dark:border-gray-800"></div>
-
-                {# Professional/Doctor Section #}
+                {# Medecin Module - Only for Medecins #}
+                {% if is_granted('ROLE_MEDECIN') %}
                 <div class="mb-6">
                     <div x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex items-center gap-2 px-3 mb-2">
                         <h3 class="text-xs font-semibold tracking-wider uppercase text-wellcare-dark-600 dark:text-wellcare-dark-400">
-                            Espace Pro
+                            Médecin
                         </h3>
-                        <span class="px-1.5 py-0.5 text-[10px] font-medium text-wellcare-dark-700 bg-wellcare-dark-100 rounded dark:bg-wellcare-dark-900/30 dark:text-wellcare-dark-300">
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-                            </svg>
-                        </span>
-                    </div>
-                    <div x-show="collapsed" class="flex justify-center mb-2">
-                        <span class="w-8 h-0.5 bg-wellcare-dark-300 dark:bg-wellcare-dark-700 rounded-full"></span>
                     </div>
                     <ul class="space-y-1" role="menubar">
-                        
-                        {# Doctor Patient Management #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/health/doctor/patients', '/health/doctor/patient']) }" x-show="!collapsed || isGroupActive(['/health/doctor/patients', '/health/doctor/patient'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive-admin"
-                                :class="[open ? 'bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Gestion patients' : ''"
+                        <li role="none">
+                            <a href="/doctor/dashboard" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/dashboard') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/dashboard')"
+                               :title="collapsed ? 'Dashboard' : ''"
                             >
-                                <span class="sidebar-icon text-wellcare-dark-500 dark:text-wellcare-dark-400" :class="collapsed ? 'w-6 h-6' : ''">
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Gestion patients</span>
-                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
-                                    <a href="/health/doctor/patients" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/health/doctor/patients') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">Liste des patients</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/health/doctor/patient/1/chart" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/health/doctor/patient') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">Dossiers médicaux</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/health/doctor/patient/1/notes" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/health/doctor/patient') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">Notes cliniques</a>
-                                </li>
-                            </ul>
+                                <span x-show="!collapsed" class="sidebar-text">Dashboard</span>
+                            </a>
                         </li>
-
-                        {# Doctor Scheduling #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/doctor/schedule', '/doctor/schedule/day', '/doctor/schedule/week', '/doctor/schedule/month', '/doctor/queue', '/doctor/availability', '/doctor/appointments']) }" x-show="!collapsed || isGroupActive(['/doctor/schedule', '/doctor/schedule/day', '/doctor/schedule/week', '/doctor/schedule/month', '/doctor/queue', '/doctor/availability', '/doctor/appointments'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive-admin"
-                                :class="[open ? 'bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Planning' : ''"
+                        <li role="none">
+                            <a href="/doctor/schedule/day-view" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/schedule') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/schedule')"
+                               :title="collapsed ? 'Planning' : ''"
                             >
-                                <span class="sidebar-icon text-wellcare-dark-500 dark:text-wellcare-dark-400" :class="collapsed ? 'w-6 h-6' : ''">
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Planning</span>
-                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
-                                    <a href="/doctor/schedule" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Planning'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/schedule/day" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule/day') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Jour'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/schedule/week" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule/week') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Semaine'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/schedule/month" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule/month') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Mois'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/queue" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/queue') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'File d\'attente'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/availability" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/availability') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Disponibilité'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/appointments" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/appointments') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Rendez-vous'|trans }}</a>
-                                </li>
-                            </ul>
-                        </li>
 
-                        {# Doctor Analytics #}
+                                <span x-show="!collapsed" class="sidebar-text">Planning</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/doctor/patients" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/patients') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/patients')"
+                               :title="collapsed ? 'Patients' : ''"
+                            >
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Patients</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/doctor/patient-queue" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/patient-queue') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/patient-queue')"
+                               :title="collapsed ? 'File d\'attente' : ''"
+                            >
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">File d'attente</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/doctor/patient-chart" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/patient-chart') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/patient-chart')"
+                               :title="collapsed ? 'Dossier Patient' : ''"
+                            >
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Dossier Patient</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/doctor/clinical-notes" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/clinical-notes') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/clinical-notes')"
+                               :title="collapsed ? 'Notes Cliniques' : ''"
+                            >
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Notes Cliniques</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/doctor/availability-settings" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/doctor/availability-settings') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/doctor/availability-settings')"
+                               :title="collapsed ? 'Disponibilité' : ''"
+                            >
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Disponibilité</span>
+                            </a>
+                        </li>
                         <li role="none">
                             <a href="/health/analytics/doctor" 
                                role="menuitem"
@@ -736,76 +698,273 @@
                                @click="setActive('/health/analytics/doctor')"
                                :title="collapsed ? 'Analyses' : ''"
                             >
-                                <span class="sidebar-icon text-wellcare-dark-500 dark:text-wellcare-dark-400" :class="collapsed ? 'w-6 h-6' : ''">
+                                <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Analyses</span>
+                                <span x-show="!collapsed" class="sidebar-text">Analyses</span>
                             </a>
                         </li>
+                    </ul>
+                </div>
+                {% endif %}
 
-                        {# Doctor Communications #}
+                {# Nutritionist Module - Only for Nutritionists #}
+                {% if is_granted('ROLE_NUTRITIONIST') %}
+                <div class="mb-6">
+                    <div x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex items-center gap-2 px-3 mb-2">
+                        <h3 class="text-xs font-semibold tracking-wider uppercase text-wellcare-600 dark:text-wellcare-400">
+                            Nutritionniste
+                        </h3>
+                    </div>
+                    <ul class="space-y-1" role="menubar">
                         <li role="none">
-                            <a href="/health/doctor/patient/1/communication" 
+                            <a href="/nutrition/nutritionniste/dashboard" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/health/doctor/patient') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/health/doctor/patient')"
-                               :title="collapsed ? 'Communications' : ''"
+                               :class="[isActive('/nutrition/nutritionniste/dashboard') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/nutritionniste/dashboard')"
+                               :title="collapsed ? 'Dashboard' : ''"
                             >
-                                <span class="sidebar-icon text-wellcare-dark-500 dark:text-wellcare-dark-400" :class="collapsed ? 'w-6 h-6' : ''">
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Dashboard</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/nutrition/nutritionniste/patients" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/nutritionniste/patients') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/nutritionniste/patients')"
+                               :title="collapsed ? 'Patients' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Patients</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/nutrition/consultation" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/consultation') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/consultation')"
+                               :title="collapsed ? 'Consultations' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Communications</span>
+                                <span x-show="!collapsed" class="sidebar-text">Consultations</span>
                             </a>
                         </li>
-
-                        {# Doctor Settings/Practice #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/doctor/settings', '/practice', '/profile']) }" x-show="!collapsed || isGroupActive(['/doctor/settings', '/practice', '/profile'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive-admin"
-                                :class="[open ? 'bg-wellcare-dark-50 dark:bg-wellcare-dark-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Paramètres' : ''"
+                        <li role="none">
+                            <a href="/nutrition/nutritionniste/meal-plan/new" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/nutritionniste/meal-plan') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/nutritionniste/meal-plan')"
+                               :title="collapsed ? 'Plans Alimentaires' : ''"
                             >
-                                <span class="sidebar-icon text-wellcare-dark-500 dark:text-wellcare-dark-400" :class="collapsed ? 'w-6 h-6' : ''">
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Plans Alimentaires</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/nutrition/nutritionniste/messages" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/nutritionniste/messages') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/nutritionniste/messages')"
+                               :title="collapsed ? 'Messages' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Messages</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/nutrition/nutritionniste/reports" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/nutritionniste/reports') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/nutritionniste/reports')"
+                               :title="collapsed ? 'Rapports' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Rapports</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/nutrition/goals" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/goals') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/goals')"
+                               :title="collapsed ? 'Objectifs' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Objectifs</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/nutrition/diary" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/nutrition/diary') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/nutrition/diary')"
+                               :title="collapsed ? 'Journal' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Journal Alimentaire</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Admin Module - Only for Admins #}
+                {% if is_granted('ROLE_ADMIN') %}
+                <div class="mb-6">
+                    <div x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex items-center gap-2 px-3 mb-2">
+                        <h3 class="text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                            Administration
+                        </h3>
+                    </div>
+                    <ul class="space-y-1" role="menubar">
+                        <li role="none">
+                            <a href="/admin/dashboard" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/dashboard') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/dashboard')"
+                               :title="collapsed ? 'Dashboard' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Dashboard</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/admin/users" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/users') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/users')"
+                               :title="collapsed ? 'Utilisateurs' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Utilisateurs</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="{{ path('admin_users_pending_verification') }}" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/pending-verification') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/pending-verification')"
+                               :title="collapsed ? 'Vérifications' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Vérifications</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/admin/analytics" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/analytics') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/analytics')"
+                               :title="collapsed ? 'Analytiques' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Analytiques</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/admin/settings" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/settings') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/settings')"
+                               :title="collapsed ? 'Paramètres' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
                                 </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Paramètres</span>
-                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
-                                    <a href="/profile" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/profile') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">Mon profil</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/practice" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/practice') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">Cabinet</a>
-                                </li>
-                            </ul>
+                                <span x-show="!collapsed" class="sidebar-text">Paramètres</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="/admin/trail-analytics" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/trail-analytics') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/trail-analytics')"
+                               :title="collapsed ? 'Analytiques Trail' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Analytiques Trail</span>
+                            </a>
                         </li>
                     </ul>
                 </div>
+                {% endif %}
             </nav>
 
-            {# Sidebar Footer - Collapse Toggle & Logout #}
+            {# Sidebar Footer #}
             <div class="p-4 border-t border-gray-200 dark:border-gray-800" :class="collapsed ? 'px-2' : 'px-4'">
-                {# Collapse Toggle Button #}
-                <button 
-                    @click="toggleCollapsed()"
-                    class="w-full mb-2 sidebar-link sidebar-link-inactive"
-                    :class="collapsed ? 'justify-center px-2' : ''"
-                    :title="collapsed ? 'Développer' : 'Réduire'"
-                >
+                <button @click="toggleCollapsed()" class="w-full mb-2 sidebar-link sidebar-link-inactive" :class="collapsed ? 'justify-center px-2' : ''">
                     <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                         <svg x-show="!collapsed" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
@@ -814,48 +973,41 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
                         </svg>
                     </span>
-                    <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Réduire</span>
+                    <span x-show="!collapsed" class="sidebar-text">Réduire</span>
                 </button>
-
-                {# Logout Link #}
-                <a href="/logout" class="sidebar-logout" :class="collapsed ? 'justify-center px-2' : ''" :title="collapsed ? 'Déconnexion' : ''">
+                
+                {# Profile Link #}
+                <a href="{{ path('app_profile') }}" class="mb-2 sidebar-link sidebar-link-inactive" :class="[isActive('/profile') ? 'sidebar-link-active' : 'sidebar-link-inactive', collapsed ? 'justify-center px-2' : '']">
+                    <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </span>
+                    <span x-show="!collapsed" class="sidebar-text">Mon Profil</span>
+                </a>
+                
+                <a href="{{ path('app_logout') }}" class="sidebar-logout" :class="collapsed ? 'justify-center px-2' : ''">
                     <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                         </svg>
                     </span>
-                    <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Déconnexion</span>
+                    <span x-show="!collapsed" class="sidebar-text">Déconnexion</span>
                 </a>
             </div>
         </aside>
 
         {# Main Content Area #}
         <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
-            
-            {# Top Bar #}
             <header class="sticky top-0 z-30 border-b border-gray-200 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md dark:border-gray-800">
                 <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-                    
-                    {# Left: Mobile Menu Button + Breadcrumb + Sidebar Toggle (Desktop) #}
                     <div class="flex items-center gap-4">
-                        {# Mobile Menu Button #}
-                        <button 
-                            @click="mobileOpen = true" 
-                            class="p-2 -ml-2 text-gray-500 transition-colors rounded-lg lg:hidden hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                            aria-label="Ouvrir le menu"
-                        >
+                        <button @click="mobileOpen = true" class="p-2 -ml-2 text-gray-500 rounded-lg lg:hidden hover:bg-gray-100">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                             </svg>
                         </button>
-
-                        {# Desktop Sidebar Toggle #}
-                        <button 
-                            @click="toggleCollapsed()" 
-                            class="hidden p-2 text-gray-500 transition-colors rounded-lg lg:block hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                            :title="collapsed ? 'Développer le menu' : 'Réduire le menu'"
-                            aria-label="Toggle sidebar"
-                        >
+                        <button @click="toggleCollapsed()" class="hidden p-2 text-gray-500 rounded-lg lg:block hover:bg-gray-100">
                             <svg x-show="!collapsed" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
                             </svg>
@@ -863,63 +1015,24 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
                             </svg>
                         </button>
-
-                        {# Breadcrumb #}
-                        <nav class="hidden sm:flex" aria-label="Breadcrumb">
-                            <ol class="flex items-center space-x-2">
-                                <li>
-                                    <a href="/dashboard" class="breadcrumb-link">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                                        </svg>
-                                    </a>
-                                </li>
-                                {% block breadcrumb %}
-                                <li class="flex items-center">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                    <span class="breadcrumb-current">{{ block('title') }}</span>
-                                </li>
-                                {% endblock %}
-                            </ol>
-                        </nav>
                     </div>
-
-                    {# Right: Actions #}
                     <div class="flex items-center gap-3">
-                        {# Theme Toggle #}
-                        <button
-                            type="button"
-                            class="inline-flex items-center justify-center p-2 text-gray-700 transition-all duration-300 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md hover:-translate-y-0.5 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200 dark:hover:bg-gray-900"
-                            x-data
-                            @click="$store.theme.toggle()"
-                            aria-label="Toggle theme"
-                        >
+                        <button @click="$store.theme.toggle()" class="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                             <span x-show="!$store.theme.isDark">
-                                <svg class="w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
                             </span>
                             <span x-show="$store.theme.isDark" style="display: none;">
-                                <svg class="w-4 h-4 text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-5 h-5 text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                                 </svg>
                             </span>
-                        </button>
-
-                        {# Notifications #}
-                        <button class="relative p-2 text-gray-500 transition-all duration-300 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md hover:-translate-y-0.5 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-400 dark:hover:bg-gray-900">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                            </svg>
-                            <span class="absolute w-2 h-2 bg-red-500 rounded-full top-1 right-1"></span>
                         </button>
                     </div>
                 </div>
             </header>
 
-            {# Page Content #}
             <main id="main-content" class="flex-1 p-4 overflow-y-auto sm:p-6 lg:p-8 page-content" tabindex="-1">
                 {% block body %}
                 {% endblock %}
@@ -936,22 +1049,15 @@
                 activePath: window.location.pathname,
                 
                 init() {
-                    // Load collapsed state from localStorage
                     const savedState = localStorage.getItem('sidebarCollapsed');
                     if (savedState !== null) {
                         this.collapsed = savedState === 'true';
                     }
-                    
-                    // Close mobile menu on escape key
                     document.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape') this.mobileOpen = false;
                     });
-                    
-                    // Watch for window resize to handle mobile/desktop transitions
                     window.addEventListener('resize', () => {
-                        if (window.innerWidth >= 1024) {
-                            this.mobileOpen = false;
-                        }
+                        if (window.innerWidth >= 1024) this.mobileOpen = false;
                     });
                 },
                 

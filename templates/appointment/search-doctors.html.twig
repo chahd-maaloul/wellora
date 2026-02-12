@@ -140,7 +140,7 @@
                             </div>
                         </div>
                         
-                        {# Consultation Type #}
+                        {# Consultation Type - MODIFIÉ : Supprimé Video Call #}
                         <div class="mb-6">
                             <h3 class="mb-3 text-sm font-medium text-gray-900 dark:text-white">Consultation Type</h3>
                             <div class="space-y-2">
@@ -148,12 +148,6 @@
                                     <input type="checkbox" x-model="filters.consultationTypes" value="in-person" @change="applyFilters()" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
                                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
                                         <i class="mr-1 fas fa-hospital text-wellcare-500"></i> In-Person
-                                    </span>
-                                </label>
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="checkbox" x-model="filters.consultationTypes" value="video" @change="applyFilters()" class="w-4 h-4 border-gray-300 rounded text-wellcare-600 focus:ring-wellcare-500">
-                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                                        <i class="mr-1 fas fa-video text-wellcare-500"></i> Video Call
                                     </span>
                                 </label>
                                 <label class="flex items-center cursor-pointer">
@@ -352,8 +346,9 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                             <div>
+                                                {# CORRIGÉ : Lien vers doctor-profile #}
                                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                                                    <a :href="'/appointment/doctor/' + doctor.id" x-text="'Dr. ' + doctor.name" class="hover:text-wellcare-600 dark:hover:text-wellcare-400"></a>
+                                                    <a :href="'{{ path('appointment_doctor_profile') }}/' + doctor.id" x-text="'Dr. ' + doctor.name" class="hover:text-wellcare-600 dark:hover:text-wellcare-400"></a>
                                                 </h3>
                                                 <p class="font-medium text-wellcare-600 dark:text-wellcare-400" x-text="doctor.specialty"></p>
                                                 
@@ -400,7 +395,8 @@
                                                         x-text="slot.time"
                                                     ></button>
                                                 </template>
-                                                <a :href="'/appointment/doctor/' + doctor.id" class="px-3 py-1.5 text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
+                                                {# CORRIGÉ : Lien vers doctor-profile #}
+                                                <a :href="'{{ path('appointment_doctor_profile') }}/' + doctor.id" class="px-3 py-1.5 text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
                                                     More slots <i class="ml-1 fas fa-arrow-right"></i>
                                                 </a>
                                             </div>
@@ -408,12 +404,16 @@
                                         
                                         {# Action Buttons #}
                                         <div class="flex flex-wrap gap-3 mt-4">
-                                            <a :href="'/appointment/doctor/' + doctor.id" class="text-sm btn-outline">
+                                            {# CORRIGÉ : View Profile vers doctor-profile #}
+                                            <a :href="'{{ path('appointment_doctor_profile') }}/' + doctor.id" class="text-sm btn-outline">
                                                 <i class="mr-2 fas fa-user"></i>View Profile
                                             </a>
-                                            <a :href="'/appointment/book/' + doctor.id" class="text-sm btn-primary">
+                                            
+                                            {# CORRIGÉ : Book Appointment vers booking-flow #}
+                                            <a :href="'{{ path('appointment_booking_flow') }}?doctorId=' + doctor.id" class="text-sm btn-primary">
                                                 <i class="mr-2 fas fa-calendar-check"></i>Book Appointment
                                             </a>
+                                            
                                             <button @click="toggleFavorite(doctor.id)" class="text-sm btn-ghost" :class="isFavorite(doctor.id) ? 'text-red-500' : ''">
                                                 <i :class="isFavorite(doctor.id) ? 'fas fa-heart' : 'far fa-heart'"></i>
                                             </button>
@@ -544,10 +544,10 @@ function doctorSearch() {
                 nextAvailable: ['Today', 'Tomorrow', 'In 2 days'][Math.floor(Math.random() * 3)],
                 availableSlots: [
                     { time: '09:00 AM', type: 'in-person' },
-                    { time: '10:30 AM', type: 'video' },
+                    { time: '10:30 AM', type: 'in-person' },
                     { time: '02:00 PM', type: 'in-person' },
                     { time: '04:30 PM', type: 'phone' },
-                    { time: '06:00 PM', type: 'video' }
+                    { time: '06:00 PM', type: 'phone' }
                 ],
                 gender: Math.random() > 0.5 ? 'male' : 'female'
             }));
@@ -642,7 +642,8 @@ function doctorSearch() {
         },
         
         bookSlot(doctor, slot) {
-            window.location.href = `/appointment/book/${doctor.id}?time=${encodeURIComponent(slot.time)}&type=${slot.type}`;
+            // CORRIGÉ : Redirige vers booking-flow
+            window.location.href = `{{ path('appointment_booking_flow') }}`;
         },
         
         toggleFavorite(doctorId) {

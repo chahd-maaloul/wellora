@@ -4,7 +4,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    {{ encore_entry_link_tags('appointment') }}
+    {{ encore_entry_link_tags('appointment') }} 
 {% endblock %}
 
 {% block scripts %}
@@ -149,7 +149,7 @@
                     </div>
                 </div>
                 
-                {# Services & Fees #}
+                {# Services & Fees - MODIFIÉ : Supprimé Video Consultation #}
                 <div class="card">
                     <div class="p-6">
                         <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
@@ -167,19 +167,6 @@
                                     </div>
                                 </div>
                                 <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">120 TND</span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                                <div class="flex items-center gap-3">
-                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
-                                        <i class="fas fa-video text-wellcare-600"></i>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-medium text-gray-900 dark:text-white">Video Consultation</h4>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">30 minutes online</p>
-                                    </div>
-                                </div>
-                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">90 TND</span>
                             </div>
                             
                             <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
@@ -210,127 +197,6 @@
                         </div>
                     </div>
                 </div>
-                
-                {# Reviews Section #}
-                <div class="card">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-                                <i class="mr-2 fas fa-comments text-wellcare-500"></i>Patient Reviews
-                            </h2>
-                            <a href="#" class="text-sm font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">View all 127 reviews</a>
-                        </div>
-                        
-                        {# Rating Summary #}
-                        <div class="flex flex-col gap-6 p-4 mb-6 sm:flex-row bg-gray-50 dark:bg-gray-800 rounded-xl">
-                            <div class="text-center sm:text-left">
-                                <div class="text-4xl font-bold text-gray-900 dark:text-white">4.8</div>
-                                <div class="flex items-center justify-center gap-1 my-2 sm:justify-start">
-                                    <i class="text-yellow-400 fas fa-star"></i>
-                                    <i class="text-yellow-400 fas fa-star"></i>
-                                    <i class="text-yellow-400 fas fa-star"></i>
-                                    <i class="text-yellow-400 fas fa-star"></i>
-                                    <i class="text-yellow-400 fas fa-star-half-alt"></i>
-                                </div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">127 reviews</p>
-                            </div>
-                            <div class="flex-1 space-y-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-8 text-sm text-gray-600 dark:text-gray-400">5★</span>
-                                    <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                                        <div class="h-full rounded-full bg-wellcare-500" style="width: 85%"></div>
-                                    </div>
-                                    <span class="w-10 text-sm text-gray-600 dark:text-gray-400">108</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="w-8 text-sm text-gray-600 dark:text-gray-400">4★</span>
-                                    <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                                        <div class="h-full rounded-full bg-wellcare-500" style="width: 12%"></div>
-                                    </div>
-                                    <span class="w-10 text-sm text-gray-600 dark:text-gray-400">15</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="w-8 text-sm text-gray-600 dark:text-gray-400">3★</span>
-                                    <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                                        <div class="h-full rounded-full bg-wellcare-500" style="width: 2%"></div>
-                                    </div>
-                                    <span class="w-10 text-sm text-gray-600 dark:text-gray-400">3</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="w-8 text-sm text-gray-600 dark:text-gray-400">2★</span>
-                                    <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                                        <div class="h-full rounded-full bg-wellcare-500" style="width: 1%"></div>
-                                    </div>
-                                    <span class="w-10 text-sm text-gray-600 dark:text-gray-400">1</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="w-8 text-sm text-gray-600 dark:text-gray-400">1★</span>
-                                    <div class="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                                        <div class="h-full rounded-full bg-wellcare-500" style="width: 0%"></div>
-                                    </div>
-                                    <span class="w-10 text-sm text-gray-600 dark:text-gray-400">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {# Review Cards #}
-                        <div class="space-y-4">
-                            <div class="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                            <span class="font-semibold text-wellcare-600">SM</span>
-                                        </div>
-                                        <div>
-                                            <h4 class="font-medium text-gray-900 dark:text-white">Sami M.</h4>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">2 weeks ago</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <i class="text-sm text-yellow-400 fas fa-star"></i>
-                                        <span class="font-medium text-gray-900 dark:text-white">5.0</span>
-                                    </div>
-                                </div>
-                                <p class="text-gray-600 dark:text-gray-300">Excellent doctor! Very thorough and took the time to explain everything. The clinic is modern and clean. Highly recommended for anyone looking for a cardiologist.</p>
-                                <div class="flex items-center gap-4 mt-3">
-                                    <button class="text-sm text-gray-500 hover:text-wellcare-600 dark:text-gray-400">
-                                        <i class="mr-1 far fa-thumbs-up"></i> Helpful (12)
-                                    </button>
-                                    <button class="text-sm text-gray-500 hover:text-wellcare-600 dark:text-gray-400">
-                                        <i class="mr-1 far fa-comment"></i> Reply
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                            <span class="font-semibold text-wellcare-600">LB</span>
-                                        </div>
-                                        <div>
-                                            <h4 class="font-medium text-gray-900 dark:text-white">Leila B.</h4>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">1 month ago</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <i class="text-sm text-yellow-400 fas fa-star"></i>
-                                        <span class="font-medium text-gray-900 dark:text-white">5.0</span>
-                                    </div>
-                                </div>
-                                <p class="text-gray-600 dark:text-gray-300">Dr. Ben Ali is very professional and caring. He diagnosed my condition accurately and the treatment plan worked perfectly. Staff is also very friendly.</p>
-                                <div class="flex items-center gap-4 mt-3">
-                                    <button class="text-sm text-gray-500 hover:text-wellcare-600 dark:text-gray-400">
-                                        <i class="mr-1 far fa-thumbs-up"></i> Helpful (8)
-                                    </button>
-                                    <button class="text-sm text-gray-500 hover:text-wellcare-600 dark:text-gray-400">
-                                        <i class="mr-1 far fa-comment"></i> Reply
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
             
             {# Right Column - Booking #}
@@ -342,10 +208,10 @@
                         <div class="p-6">
                             <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Book Appointment</h3>
                             
-                            {# Consultation Type #}
+                            {# Consultation Type - MODIFIÉ : Supprimé Video #}
                             <div class="mb-4">
                                 <label class="label">Consultation Type</label>
-                                <div class="grid grid-cols-3 gap-2">
+                                <div class="grid grid-cols-2 gap-2">
                                     <button 
                                         @click="selectedType = 'in-person'"
                                         :class="selectedType === 'in-person' ? 'bg-wellcare-100 border-wellcare-500 text-wellcare-700 dark:bg-wellcare-900 dark:border-wellcare-500 dark:text-wellcare-300' : 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'"
@@ -353,14 +219,6 @@
                                     >
                                         <i class="block mb-1 fas fa-hospital"></i>
                                         <span class="text-xs">In-Person</span>
-                                    </button>
-                                    <button 
-                                        @click="selectedType = 'video'"
-                                        :class="selectedType === 'video' ? 'bg-wellcare-100 border-wellcare-500 text-wellcare-700 dark:bg-wellcare-900 dark:border-wellcare-500 dark:text-wellcare-300' : 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'"
-                                        class="p-3 text-center transition-colors border rounded-xl"
-                                    >
-                                        <i class="block mb-1 fas fa-video"></i>
-                                        <span class="text-xs">Video</span>
                                     </button>
                                     <button 
                                         @click="selectedType = 'phone'"
@@ -421,7 +279,8 @@
                                 </div>
                             </div>
                             
-                            <a href="/appointment/book/1" class="block w-full text-center btn-primary">
+                            {# CORRIGÉ : Lien vers booking-flow #}
+                            <a href="{{ path('appointment_booking_flow') }}?doctorId=1" class="block w-full text-center btn-primary">
                                 <i class="mr-2 fas fa-calendar-check"></i>Book Now
                             </a>
                             
@@ -529,7 +388,6 @@ function doctorProfile() {
         getPrice() {
             const prices = {
                 'in-person': 120,
-                'video': 90,
                 'phone': 70
             };
             return prices[this.selectedType] || 120;
