@@ -312,12 +312,19 @@
 {% block scripts %}
 {{ parent() }}
 <script>
+{% set tension_value = healthentry.tension|default('') %}
+{% if tension_value and '/' in tension_value %}
+{% set tension_parts = tension_value|split('/') %}
+{% else %}
+{% set tension_parts = [120, 80] %}
+{% endif %}
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('journalEntryEdit', () => ({
         poids: {{ form.poids.vars.value|default(70) }},
         glycemie: {{ form.glycemie.vars.value|default(1) }},
-        tensionSys: {{ healthentry.tension ? healthentry.tension|split('/')[0] : 120 }},
-        tensionDia: {{ healthentry.tension ? healthentry.tension|split('/')[1] : 80 }},
+        tensionSys: {{ tension_parts[0] }},
+        tensionDia: {{ tension_parts[1] }},
         sleep: {{ form.sommeil.vars.value|default(7) }},
         symptoms: [],
 

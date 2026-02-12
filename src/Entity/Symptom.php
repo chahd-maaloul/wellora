@@ -21,6 +21,9 @@ class Symptom
     #[ORM\Column]
     private ?int $intensite = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $zone = null;
+
     #[ORM\ManyToOne(targetEntity: Healthentry::class, inversedBy: "symptoms")]
     #[ORM\JoinColumn(nullable: false)]
     private ?Healthentry $entry = null;
@@ -55,6 +58,18 @@ class Symptom
     public function setIntensite(int $intensite): static
     {
         $this->intensite = $intensite;
+
+        return $this;
+    }
+
+    public function getZone(): ?string
+    {
+        return $this->zone;
+    }
+
+    public function setZone(?string $zone): static
+    {
+        $this->zone = $zone;
 
         return $this;
     }
