@@ -1,212 +1,118 @@
 {# templates/doctor/schedule/week-view.html.twig #}
-{# Week View for Doctor Schedule Management #}
+{# Week View - Style WellCare Connect Template #}
 
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}{{ 'Agenda Hebdomadaire'|trans }} - WellCare Connect{% endblock %}
-
-{% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('build/doctor-schedule.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
-{% endblock %}
+{% block title %}{{ 'Agenda médecin'|trans }} - WellCare Connect{% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-950">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-950" x-data="doctorSchedule" x-init="init()">
     
-    {# Header #}
-    <div class="px-6 py-4 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
+    {# === HEADER === #}
+    <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                    <i class="mr-2 fa-solid fa-calendar-week text-wellcare-500"></i>
-                    {{ "Agenda Hebdomadaire"|trans }}
+            <div class="flex items-center gap-6">
+                <h1 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-wellcare-500 to-wellcare-light-500 shadow-lg shadow-wellcare-500/25">
+                        <i class="fa-solid fa-calendar-days text-white"></i>
+                    </div>
+                    {{ 'Agenda'|trans }}
                 </h1>
                 <div class="flex items-center gap-2">
-                    <button 
-                        @click="changeWeek(-1)"
-                        class="p-2 text-gray-500 transition-colors rounded-lg hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    >
+                    <button @click="changeWeek(-1)" class="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
-                    <span class="text-lg font-medium text-gray-900 dark:text-white whitespace-nowrap" x-text="weekRange"></span>
-                    <button 
-                        @click="changeWeek(1)"
-                        class="p-2 text-gray-500 transition-colors rounded-lg hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    >
+                    <span class="text-sm font-medium text-gray-900 dark:text-white px-3" x-text="weekRange"></span>
+                    <button @click="changeWeek(1)" class="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <i class="fa-solid fa-chevron-right"></i>
                     </button>
-                    <button 
-                        @click="goToCurrentWeek()"
-                        class="px-3 py-2 text-sm font-medium transition-colors border rounded-lg text-wellcare-600 dark:text-wellcare-400 border-wellcare-200 dark:border-wellcare-800 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20"
-                    >
-                        {{ "Cette semaine"|trans }}
+                    <button @click="goToCurrentWeek()" class="ml-3 px-4 py-2 rounded-lg border border-wellcare-500 text-wellcare-600 dark:text-wellcare-400 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20 transition-colors text-sm font-medium">
+                        {{ "Aujourd'hui"|trans }}
                     </button>
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
-                {# Location Filter #}
-                <select 
-                    x-model="selectedLocation"
-                    @change="loadWeekView()"
-                    class="px-3 py-2 text-sm border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                >
-                    <option value="all">{{ "Tous les lieux"|trans }}</option>
-                    <option value="clinic">{{ "Clinique"|trans }}</option>
-                    <option value="hospital">{{ "Hôpital"|trans }}</option>
-                    <option value="telemedicine">{{ "Téléconsultation"|trans }}
-                    </option>
-                </select>
-                
-                {# View Switcher #}
-                <div class="flex items-center p-1 bg-gray-100 rounded-lg dark:bg-gray-800">
-                    <button 
-                        @click="switchView('day')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-                        :class="currentView === 'day' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
-                    >
-                        {{ "Jour"|trans }}
-                    </button>
-                    <button 
-                        @click="switchView('week')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-                        :class="currentView === 'week' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
-                    >
-                        {{ "Semaine"|trans }}
-                    </button>
-                    <button 
-                        @click="switchView('month')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors"
-                        :class="currentView === 'month' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
-                    >
-                        {{ "Mois"|trans }}
-                    </button>
-                </div>
-                
-                <button 
-                    @click="openNewAppointment()"
-                    class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600"
-                >
-                    <i class="mr-2 fa-solid fa-plus"></i>
-                    {{ "Nouvel RDV"|trans }}
-                </button>
-            </div>
+            {# === BADGE DEMANDES EN ATTENTE === #}
+            <a href="{{ path('appointment_doctor_pending') }}" class="relative inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+                <i class="fa-regular fa-clock"></i>
+                {{ 'Demandes en attente'|trans }}
+                <span x-show="pendingCount > 0" 
+                      x-text="pendingCount"
+                      class="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 border-2 border-white dark:border-gray-900 rounded-full">
+                </span>
+            </a>
         </div>
-        
-        {# Week Statistics #}
-        <div class="flex items-center gap-6 pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-medium text-gray-900 dark:text-white" x-text="weekStats.completed"></span> {{ "patients"|trans }}
-                </span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-medium text-gray-900 dark:text-white" x-text="weekStats.scheduled"></span> {{ "programmés"|trans }}
-                </span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 bg-purple-500 rounded-full"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-medium text-gray-900 dark:text-white" x-text="weekStats.newPatients"></span> {{ "nouveaux"|trans }}
-                </span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-medium text-gray-900 dark:text-white" x-text="weekStats.teleconsultations"></span> {{ "téléconsultations"|trans }}
-                </span>
-            </div>
-            <div class="flex items-center gap-4 ml-auto">
-                <div class="text-sm">
-                    <span class="text-gray-500 dark:text-gray-400">{{ "Heures de travail:"|trans }}</span>
-                    <span class="ml-1 font-medium text-gray-900 dark:text-white" x-text="weekStats.workingHours + 'h'"></span>
-                </div>
-                <div class="text-sm">
-                    <span class="text-gray-500 dark:text-gray-400">{{ "Taux de présence:"|trans }}</span>
-                    <span class="ml-1 font-medium text-emerald-600 dark:text-emerald-400" x-text="weekStats.attendanceRate + '%'"></span>
-                </div>
-            </div>
-        </div>
-    </div>
+    </header>
     
-    {# Main Content - Week Grid #}
-    <div class="flex h-[calc(100vh-200px)]">
+    {# === WEEK GRID === #}
+    <div class="flex h-[calc(100vh-180px)] overflow-hidden">
         
-        {# Time Column #}
-        <div class="flex-shrink-0 w-16 overflow-y-auto bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-gray-800">
-            <div class="h-16 border-b border-gray-100 dark:border-gray-800"></div>
+        {# === TIME COLUMN === #}
+        <div class="w-16 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
+            <div class="h-20 border-b border-gray-200 dark:border-gray-800"></div>
             <template x-for="hour in hours" :key="hour">
-                <div class="flex items-start justify-center h-16 pt-1 border-b border-gray-100 dark:border-gray-800">
-                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400" x-text="hour + 'h'"></span>
+                <div class="h-[60px] flex items-start justify-center pt-2 border-b border-gray-100 dark:border-gray-800">
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400" x-text="hour.toString().padStart(2, '0') + ':00'"></span>
                 </div>
             </template>
         </div>
         
-        {# Days Columns #}
-        <div class="flex flex-1 overflow-x-auto">
+        {# === DAYS COLUMNS === #}
+        <div class="flex-1 flex overflow-x-auto">
             <template x-for="(day, index) in weekDays" :key="day.date">
-                <div 
-                    class="flex-1 min-w-[140px] border-r border-gray-200 dark:border-gray-800"
-                    :class="{ 'bg-gray-50 dark:bg-gray-900/50': day.isToday }"
-                >
-                    {# Day Header #}
-                    <div class="sticky top-0 z-10 h-16 p-2 text-center bg-white border-b border-gray-200 dark:border-gray-800 dark:bg-gray-900">
-                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400" x-text="day.dayName"></p>
-                        <div 
-                            class="flex items-center justify-center w-8 h-8 mx-auto mt-1 text-sm font-semibold rounded-full"
-                            :class="day.isToday ? 'bg-wellcare-500 text-white' : 'text-gray-900 dark:text-white'"
-                            x-text="day.dayNumber"
-                        ></div>
+                <div class="flex-1 min-w-[160px] border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-gray-900">
+                    
+                    {# === DAY HEADER === #}
+                    <div class="h-20 py-4 px-2 border-b border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center sticky top-0 z-10 bg-white dark:bg-gray-900">
+                        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider" x-text="day.dayName.toUpperCase()"></span>
+                        <span class="text-2xl font-medium mt-1" 
+                              :class="day.isToday ? 'text-wellcare-600 dark:text-wellcare-400 font-semibold' : 'text-gray-900 dark:text-white'" 
+                              x-text="day.dayNumber"></span>
+                        <div x-show="day.isToday" class="w-6 h-1 bg-wellcare-500 rounded-full mt-2"></div>
                     </div>
                     
-                    {# Time Slots #}
-                    <div class="relative overflow-y-auto h-[calc(100vh-256px)]">
-                        <template x-for="hour in hours" :key="hour">
-                            <div 
-                                class="h-16 transition-colors border-b border-gray-100 cursor-pointer dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/30"
-                                @click="openNewAppointmentAtTime(day.date, hour)"
-                            >
-                                <template x-for="appointment in getAppointmentsForDayAndHour(day.date, hour)" :key="appointment.id">
-                                    <div 
-                                        class="mx-1 mb-1 appointment-card-week"
-                                        :class="appointment.type"
-                                        :style="{ height: (appointment.duration / 15) * 4 + 'px' }"
-                                        @click.stop="openAppointmentDetails(appointment)"
-                                    >
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-xs font-medium truncate" x-text="appointment.time"></span>
-                                            <span 
-                                                class="flex-shrink-0 w-2 h-2 rounded-full"
-                                                :class="{
-                                                    'bg-emerald-500': appointment.status === 'completed',
-                                                    'bg-blue-500': appointment.status === 'scheduled',
-                                                    'bg-amber-500': appointment.status === 'waiting',
-                                                    'bg-red-500': appointment.status === 'urgent'
-                                                }"
-                                            ></span>
+                    {# === APPOINTMENTS LIST === #}
+                    <div class="flex-1 p-3 overflow-y-auto">
+                        <template x-if="getAppointmentsForDay(day.date).length > 0">
+                            <div class="space-y-2">
+                                <template x-for="appointment in getAppointmentsForDay(day.date)" :key="appointment.id">
+                                    <div @click="openAppointmentDetails(appointment)" 
+                                         class="p-3 rounded-xl border hover:shadow-md cursor-pointer transition-all group"
+                                         :class="[
+                                            appointment.type === 'consultation' ? 'bg-wellcare-50 border-wellcare-200 dark:bg-wellcare-900/20 dark:border-wellcare-800' : '',
+                                            appointment.type === 'follow-up' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : '',
+                                            appointment.type === 'new-patient' ? 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800' : '',
+                                            appointment.type === 'procedure' ? 'bg-gray-100 border-gray-300 dark:bg-gray-800 dark:border-gray-700' : ''
+                                         ]">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-xs font-semibold uppercase tracking-wide"
+                                                  :class="[
+                                                    appointment.type === 'consultation' ? 'text-wellcare-600 dark:text-wellcare-400' : '',
+                                                    appointment.type === 'follow-up' ? 'text-blue-600 dark:text-blue-400' : '',
+                                                    appointment.type === 'new-patient' ? 'text-purple-600 dark:text-purple-400' : '',
+                                                    appointment.type === 'procedure' ? 'text-gray-600 dark:text-gray-400' : ''
+                                                  ]"
+                                                  x-text="appointment.time"></span>
                                         </div>
-                                        <p class="text-xs truncate" x-text="appointment.patientName"></p>
-                                        <template x-if="appointment.type === 'telemedicine'">
-                                            <i class="text-xs fa-solid fa-video text-wellcare-500"></i>
-                                        </template>
+                                        <p class="text-sm font-medium truncate transition-colors"
+                                           :class="[
+                                            appointment.type === 'consultation' ? 'text-wellcare-900 dark:text-wellcare-100' : '',
+                                            appointment.type === 'follow-up' ? 'text-blue-900 dark:text-blue-100' : '',
+                                            appointment.type === 'new-patient' ? 'text-purple-900 dark:text-purple-100' : '',
+                                            appointment.type === 'procedure' ? 'text-gray-900 dark:text-gray-100' : ''
+                                           ]"
+                                           x-text="appointment.patientName"></p>
+                                        <p class="text-xs truncate opacity-75" x-text="appointment.reason || 'Consultation'"></p>
                                     </div>
                                 </template>
                             </div>
                         </template>
-                        
-                        {# Block Schedules #}
-                        <template x-for="block in getBlockSchedulesForDay(day.date)" :key="block.id">
-                            <div 
-                                class="mx-1 my-2 block-schedule"
-                                :class="block.type"
-                                :style="{ top: (block.startHour * 4) + 'rem', height: ((block.endHour - block.startHour) * 4) + 'rem' }"
-                            >
-                                <i :class="block.icon + ' mr-1'"></i>
-                                <span class="text-xs font-medium truncate" x-text="block.title"></span>
+                        <template x-if="getAppointmentsForDay(day.date).length === 0">
+                            <div class="py-8 text-center">
+                                <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                                    <i class="fa-regular fa-calendar-check text-emerald-500 dark:text-emerald-400"></i>
+                                </div>
+                                <p class="text-xs font-medium text-emerald-600 dark:text-emerald-400">{{ 'Libre'|trans }}</p>
                             </div>
                         </template>
                     </div>
@@ -214,107 +120,443 @@
             </template>
         </div>
         
-        {# Sidebar - Quick Actions #}
-        <div class="flex-shrink-0 w-64 p-4 bg-white border-l border-gray-200 dark:bg-gray-900 dark:border-gray-800">
-            <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                <i class="mr-2 fa-solid fa-bolt text-wellcare-500"></i>
-                {{ "Actions Rapides"|trans }}
-            </h3>
+        {# === SIDEBAR === #}
+        <aside class="w-72 flex-shrink-0 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 p-5 overflow-y-auto">
             
-            <div class="space-y-3">
-                <button 
-                    @click="openNewAppointment()"
-                    class="w-full px-4 py-3 text-sm font-medium text-left text-gray-700 transition-colors rounded-lg dark:text-gray-300 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                    <i class="mr-2 fa-solid fa-plus text-wellcare-500"></i>
-                    {{ "Nouveau Rendez-vous"|trans }}
-                </button>
-                
-                <button 
-                    @click="openBulkScheduling()"
-                    class="w-full px-4 py-3 text-sm font-medium text-left text-gray-700 transition-colors rounded-lg dark:text-gray-300 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                    <i class="mr-2 text-blue-500 fa-solid fa-calendar-plus"></i>
-                    {{ "Planification de Masse"|trans }}
-                </button>
-                
-                <button 
-                    @click="openLeaveRequest()"
-                    class="w-full px-4 py-3 text-sm font-medium text-left text-gray-700 transition-colors rounded-lg dark:text-gray-300 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                    <i class="mr-2 fa-solid fa-plane text-amber-500"></i>
-                    {{ "Demander un Congé"|trans }}
-                </button>
-                
-                <button 
-                    @click="openAvailabilitySettings()"
-                    class="w-full px-4 py-3 text-sm font-medium text-left text-gray-700 transition-colors rounded-lg dark:text-gray-300 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                    <i class="mr-2 text-purple-500 fa-solid fa-clock"></i>
-                    {{ "Configurer Disponibilités"|trans }}
-                </button>
+            {# === CALENDARS LEGEND === #}
+            <div class="mb-6">
+                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{{ 'Légende'|trans }}</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                        <span class="w-3 h-3 rounded bg-wellcare-500"></span>
+                        {{ 'Consultations'|trans }}
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                        <span class="w-3 h-3 rounded bg-blue-500"></span>
+                        {{ 'Suivis'|trans }}
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                        <span class="w-3 h-3 rounded bg-purple-500"></span>
+                        {{ 'Nouveaux patients'|trans }}
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                        <span class="w-3 h-3 rounded bg-gray-400"></span>
+                        {{ 'Procédures'|trans }}
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-emerald-600 dark:text-emerald-400">
+                        <span class="w-3 h-3 rounded bg-emerald-200 dark:bg-emerald-800"></span>
+                        {{ 'Temps libre'|trans }}
+                    </li>
+                </ul>
             </div>
             
-            {# Today's Summary #}
-            <div class="p-4 mt-6 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
-                <h4 class="mb-3 text-sm font-semibold text-wellcare-700 dark:text-wellcare-400">
-                    <i class="mr-1 fa-solid fa-today"></i>
-                    {{ "Aujourd'hui"|trans }}
-                </h4>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600 dark:text-gray-400">{{ "RDV terminés"|trans }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white" x-text="todayStats.completed"></span>
+            {# === TODAY SECTION === #}
+            <div class="mb-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-sm font-semibold text-gray-900 dark:text-white capitalize mb-3" x-text="todayFullDate"></div>
+                
+                <template x-if="getAppointmentsForDay(todayDate).length > 0">
+                    <div class="space-y-2">
+                        <template x-for="appointment in getAppointmentsForDay(todayDate)" :key="appointment.id">
+                            <div class="flex items-baseline gap-3 py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                                <span class="text-xs font-semibold text-wellcare-600 dark:text-wellcare-400 min-w-[45px]" x-text="appointment.time"></span>
+                                <span class="text-sm text-gray-700 dark:text-gray-300 truncate" x-text="appointment.patientName"></span>
+                            </div>
+                        </template>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600 dark:text-gray-400">{{ "RDV restants"|trans }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white" x-text="todayStats.remaining"></span>
+                </template>
+                
+                <template x-if="getAppointmentsForDay(todayDate).length === 0">
+                    <div class="py-4 text-center">
+                        <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                            <i class="fa-regular fa-calendar-check text-emerald-500"></i>
+                        </div>
+                        <p class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{{ 'Aucune disponibilité'|trans }}</p>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600 dark:text-gray-400">{{ "Patients en salle"|trans }}</span>
-                        <span class="font-medium text-gray-900 dark:text-white" x-text="todayStats.inWaitingRoom"></span>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600 dark:text-gray-400">{{ "Prochain RDV"|trans }}</span>
-                        <span class="font-medium text-wellcare-600 dark:text-wellcare-400" x-text="todayStats.nextAppointment"></span>
-                    </div>
-                </div>
+                </template>
             </div>
             
-            {# Upcoming Appointments #}
-            <div class="mt-4">
-                <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <i class="mr-1 fa-solid fa-arrow-right"></i>
-                    {{ "À Venir"|trans }}
-                </h4>
+            {# === UPCOMING SECTION === #}
+            <div class="mb-6">
+                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{{ 'À venir'|trans }}</h3>
                 <div class="space-y-2">
-                    <template x-for="apt in upcomingAppointments.slice(0, 3)" :key="apt.id">
-                        <div class="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <div 
-                                class="w-2 h-2 rounded-full"
-                                :class="{
-                                    'bg-blue-500': apt.type === 'follow-up',
-                                    'bg-purple-500': apt.type === 'new',
-                                    'bg-cyan-500': apt.type === 'procedure',
-                                    'bg-wellcare-500': apt.type === 'telemedicine'
-                                }"
-                            ></div>
+                    <template x-for="apt in upcomingAppointments" :key="apt.id">
+                        <div @click="openAppointmentDetails(apt)" class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors">
+                            <span class="text-xs font-semibold text-wellcare-600 dark:text-wellcare-400 min-w-[45px] mt-0.5" x-text="apt.time"></span>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900 truncate dark:text-white" x-text="apt.patientName"></p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="apt.time"></p>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white truncate" x-text="apt.patientName"></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="formatDisplayDate(apt.date) + ' · ' + (apt.reason || 'Consultation')"></p>
                             </div>
                         </div>
                     </template>
+                    
+                    <template x-if="upcomingAppointments.length === 0">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 italic py-4 text-center">
+                            {{ 'Aucun rendez-vous à venir'|trans }}
+                        </p>
+                    </template>
+                </div>
+            </div>
+            
+            {# === QUICK ACTIONS === #}
+            <div>
+                <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{{ 'Actions'|trans }}</h3>
+                <div class="space-y-2">
+                    <button @click="openLeaveRequest()" class="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left">
+                        <i class="fa-regular fa-calendar-plus text-wellcare-500"></i>
+                        {{ 'Demander un congé'|trans }}
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    {# === MODAL DÉTAILS DU RENDEZ-VOUS === #}
+    <div id="appointment-modal" class="fixed inset-0 z-50 hidden" x-show="false">
+        <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-lg w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Détails du rendez-vous'|trans }}
+                        </h3>
+                        <button @click="closeAppointmentModal()" class="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="appointment-modal-content" class="space-y-4"></div>
+                    <div id="appointment-modal-actions" class="mt-6 flex justify-end gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# === MODAL TOUS LES RENDEZ-VOUS DU JOUR === #}
+    <div id="day-appointments-modal" class="fixed inset-0 z-50 hidden" x-show="false">
+        <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            {{ 'Rendez-vous du'|trans }} <span id="selected-date-display" class="text-wellcare-600 dark:text-wellcare-400"></span>
+                        </h3>
+                        <button @click="closeDayAppointmentsModal()" class="p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="day-appointments-modal-content" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<div id="toast-container" class="fixed top-4 right-4 z-50"></div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-    <script src="{{ asset('build/doctor-schedule.js') }}"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('doctorSchedule', () => ({
+                currentDate: new Date(),
+                weekRange: '',
+                hours: [],
+                weekDays: [],
+                appointments: [],
+                pendingCount: 0,
+                upcomingAppointments: [],
+                
+                init() {
+                    this.generateHours();
+                    this.loadWeekView();
+                    this.updateWeekRange();
+                    this.loadAcceptedAppointments();
+                    this.loadPendingCount();
+                    
+                    setInterval(() => {
+                        this.loadAcceptedAppointments();
+                        this.loadPendingCount();
+                    }, 30000);
+                },
+                
+                generateHours() {
+                    for (let i = 8; i <= 18; i++) {
+                        this.hours.push(i);
+                    }
+                },
+                
+                loadAcceptedAppointments() {
+                    fetch('/appointment/api/doctor/accepted')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.appointments = data.appointments.map(apt => ({
+                                    id: apt.id,
+                                    patientName: apt.patientName || 'Patient',
+                                    date: apt.date,
+                                    time: apt.time ? apt.time.substring(0, 5) : '09:00',
+                                    duration: apt.duration || 30,
+                                    type: apt.type || 'consultation',
+                                    reason: apt.reason || apt.consultationType || 'Consultation',
+                                    mode: apt.mode
+                                }));
+                                this.loadUpcomingAppointments();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erreur:', error);
+                            this.appointments = [];
+                        });
+                },
+                
+                loadPendingCount() {
+                    fetch('/appointment/api/doctor/pending')
+                        .then(response => response.json())
+                        .then(data => {
+                            this.pendingCount = data.count || 0;
+                        })
+                        .catch(() => this.pendingCount = 0);
+                },
+                
+                getAppointmentsForDay(date) {
+                    return this.appointments
+                        .filter(apt => apt.date === date)
+                        .sort((a, b) => a.time.localeCompare(b.time));
+                },
+                
+                get todayDate() {
+                    return this.formatDate(new Date());
+                },
+                
+                get todayFullDate() {
+                    const date = new Date();
+                    return date.toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long' 
+                    }).replace(/^\w/, c => c.toUpperCase());
+                },
+                
+                loadUpcomingAppointments() {
+                    const now = new Date();
+                    const today = this.formatDate(now);
+                    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
+                                      now.getMinutes().toString().padStart(2, '0');
+                    
+                    this.upcomingAppointments = this.appointments
+                        .filter(apt => {
+                            if (apt.date < today) return false;
+                            if (apt.date === today && apt.time < currentTime) return false;
+                            return true;
+                        })
+                        .sort((a, b) => {
+                            if (a.date !== b.date) return a.date.localeCompare(b.date);
+                            return a.time.localeCompare(b.time);
+                        });
+                },
+                
+                showAllAppointmentsForDay(date) {
+                    const appointments = this.getAppointmentsForDay(date);
+                    const dateObj = new Date(date + 'T12:00:00');
+                    const formattedDate = dateObj.toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long' 
+                    });
+                    
+                    document.getElementById('selected-date-display').textContent = formattedDate;
+                    
+                    let html = '';
+                    appointments.forEach(apt => {
+                        html += `
+                            <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-all"
+                                 onclick="Alpine.store('doctorSchedule').openAppointmentDetails(${JSON.stringify(apt).replace(/"/g, '"')})">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-wellcare-500"></div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">${apt.patientName}</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">${apt.reason || 'Consultation'}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-wellcare-600 dark:text-wellcare-400">${apt.time}</p>
+                                    <p class="text-xs text-gray-500">${apt.duration} min</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('day-appointments-modal-content').innerHTML = html;
+                    document.getElementById('day-appointments-modal').classList.remove('hidden');
+                },
+                
+                closeDayAppointmentsModal() {
+                    document.getElementById('day-appointments-modal').classList.add('hidden');
+                },
+                
+                openAppointmentDetails(appointment) {
+                    const modalContent = document.getElementById('appointment-modal-content');
+                    const modalActions = document.getElementById('appointment-modal-actions');
+                    
+                    const date = new Date(appointment.date + 'T' + appointment.time);
+                    const formattedDate = date.toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                    });
+                    
+                    modalContent.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-wellcare-100 text-wellcare-700 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                                    {{ 'Confirmé'|trans }}
+                                </span>
+                                <span class="text-xs text-gray-500">#${appointment.id}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Patient'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white">${appointment.patientName}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Date'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white">${formattedDate}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Heure'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white">${appointment.time}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Durée'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white">${appointment.duration} min</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Motif'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white">${appointment.reason || 'Non spécifié'}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Type'|trans }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-white capitalize">${appointment.type}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    modalActions.innerHTML = `
+                        <button @click="closeAppointmentModal()" 
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                            {{ 'Fermer'|trans }}
+                        </button>
+                    `;
+                    
+                    document.getElementById('appointment-modal').classList.remove('hidden');
+                },
+                
+                closeAppointmentModal() {
+                    document.getElementById('appointment-modal').classList.add('hidden');
+                },
+                
+                formatDate(date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                },
+                
+                formatDisplayDate(dateString) {
+                    const date = new Date(dateString + 'T12:00:00');
+                    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                },
+                
+                loadWeekView() {
+                    const startOfWeek = this.getStartOfWeek(this.currentDate);
+                    this.weekDays = [];
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const day = new Date(startOfWeek);
+                        day.setDate(day.getDate() + i);
+                        
+                        this.weekDays.push({
+                            date: this.formatDate(day),
+                            dayName: this.getDayName(day),
+                            dayNumber: day.getDate(),
+                            isToday: this.isSameDay(day, new Date())
+                        });
+                    }
+                    
+                    this.updateWeekRange();
+                },
+                
+                getStartOfWeek(date) {
+                    const d = new Date(date);
+                    const day = d.getDay();
+                    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                    return new Date(d.setDate(diff));
+                },
+                
+                isSameDay(date1, date2) {
+                    return date1.getFullYear() === date2.getFullYear() &&
+                           date1.getMonth() === date2.getMonth() &&
+                           date1.getDate() === date2.getDate();
+                },
+                
+                getDayName(date) {
+                    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+                    return days[date.getDay()];
+                },
+                
+                updateWeekRange() {
+                    if (this.weekDays.length === 0) return;
+                    
+                    const firstDay = this.weekDays[0];
+                    const lastDay = this.weekDays[6];
+                    
+                    const startDate = new Date(firstDay.date + 'T12:00:00');
+                    const endDate = new Date(lastDay.date + 'T12:00:00');
+                    
+                    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 
+                                  'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+                    
+                    if (startDate.getMonth() === endDate.getMonth()) {
+                        this.weekRange = `${startDate.getDate()} - ${endDate.getDate()} ${months[startDate.getMonth()]} ${startDate.getFullYear()}`;
+                    } else {
+                        this.weekRange = `${startDate.getDate()} ${months[startDate.getMonth()]} - ${endDate.getDate()} ${months[endDate.getMonth()]} ${endDate.getFullYear()}`;
+                    }
+                },
+                
+                changeWeek(offset) {
+                    const newDate = new Date(this.currentDate);
+                    newDate.setDate(newDate.getDate() + (offset * 7));
+                    this.currentDate = newDate;
+                    this.loadWeekView();
+                    this.loadAcceptedAppointments();
+                },
+                
+                goToCurrentWeek() {
+                    this.currentDate = new Date();
+                    this.loadWeekView();
+                    this.loadAcceptedAppointments();
+                },
+                
+                openLeaveRequest() {
+                    this.showToast('Demande de congé', 'info');
+                },
+                
+                showToast(message, type = 'info') {
+                    const container = document.getElementById('toast-container');
+                    if (!container) return;
+                    
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-4 right-4 px-4 py-2 bg-wellcare-500 text-white rounded-lg shadow-lg z-50';
+                    toast.innerHTML = message;
+                    container.appendChild(toast);
+                    
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            }));
+        });
+    </script>
 {% endblock %}

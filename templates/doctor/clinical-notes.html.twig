@@ -1,6 +1,4 @@
 {# templates/doctor/clinical-notes.html.twig #}
-{# Clinical Notes Interface - SOAP Notes, Prescriptions, and Lab Orders #}
-
 {% extends 'layouts/app.html.twig' %}
 
 {% block title %}{{ 'Notes Cliniques'|trans }} - WellCare Connect{% endblock %}
@@ -8,388 +6,715 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-light: #dbeafe;
+            --secondary: #059669;
+            --secondary-light: #d1fae5;
+            --accent: #7c3aed;
+            --accent-light: #ede9fe;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --soap-s: #3b82f6;
+            --soap-o: #10b981;
+            --soap-a: #f59e0b;
+            --soap-p: #ef4444;
+            --soap-s-bg: #eff6ff;
+            --soap-o-bg: #ecfdf5;
+            --soap-a-bg: #fffbeb;
+            --soap-p-bg: #fef2f2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: var(--gray-800);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+
+        .left-column { display: flex; flex-direction: column; gap: 24px; }
+
+        .patient-card {
+            background: white; border-radius: 16px; padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--gray-200);
+        }
+
+        .patient-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .patient-avatar {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 24px; font-weight: 600;
+        }
+
+        .patient-info h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+        .patient-id { color: var(--gray-500); font-size: 14px; margin-bottom: 8px; }
+        .status-badge {
+            display: inline-flex; align-items: center; padding: 6px 12px;
+            background: var(--secondary-light); color: var(--secondary);
+            border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+
+        .notes-history {
+            background: white; border-radius: 16px; padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--gray-200);
+            max-height: 400px; overflow-y: auto;
+        }
+
+        .notes-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 18px; font-weight: 600; color: var(--gray-800); padding-bottom: 8px; }
+        
+        .clear-history-btn {
+            background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger);
+            border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        }
+        .clear-history-btn:hover { background: var(--danger); color: white; }
+
+        .notes-list { display: flex; flex-direction: column; gap: 12px; }
+        .note-item {
+            padding: 16px; background: var(--gray-50); border-radius: 12px;
+            border: 1px solid var(--gray-200); cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        .note-item:hover { background: var(--gray-100); border-color: var(--gray-300); }
+        .note-item.active { background: var(--primary-light); border-color: var(--primary); }
+        .note-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .note-date { font-size: 12px; color: var(--gray-500); }
+        
+        /* Style de la croix de suppression */
+        .note-delete-btn {
+            background: none; border: none; color: var(--danger); cursor: pointer;
+            padding: 4px; width: 24px; height: 24px; display: flex; align-items: center;
+            justify-content: center; border-radius: 4px; opacity: 0; transition: all 0.2s;
+        }
+        .note-item:hover .note-delete-btn { opacity: 1; }
+        .note-delete-btn:hover { background: var(--danger-light); }
+        
+        .note-title { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+        .note-summary { font-size: 12px; color: var(--gray-600); line-height: 1.4; }
+
+        .quick-actions {
+            background: white; border-radius: 16px; padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--gray-200);
+        }
+        .quick-actions-list { display: flex; flex-direction: column; gap: 12px; }
+        .quick-action-btn {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            background: var(--gray-50); border-radius: 12px; text-decoration: none;
+            color: var(--gray-700); font-weight: 500; transition: all 0.2s;
+            cursor: pointer; border: none; width: 100%; font-size: 14px;
+        }
+        .quick-action-btn:hover { background: var(--gray-100); transform: translateY(-1px); }
+        .quick-action-btn i { color: var(--primary); font-size: 18px; }
+
+        .right-column {
+            background: white; border-radius: 16px; padding: 32px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); border: 1px solid var(--gray-200);
+            max-height: calc(100vh - 100px); overflow-y: auto; scroll-behavior: smooth;
+        }
+
+        .editor-header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--gray-200); }
+        .editor-title { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+        .editor-meta { color: var(--gray-500); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .editor-meta::before { content: "•"; color: var(--gray-400); }
+
+        .soap-section { margin-bottom: 32px; }
+        .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .section-badge {
+            width: 36px; height: 36px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-weight: 700;
+            font-size: 16px; color: white; flex-shrink: 0;
+        }
+        .badge-s { background: var(--soap-s); }
+        .badge-o { background: var(--soap-o); }
+        .badge-a { background: var(--soap-a); }
+        .badge-p { background: var(--soap-p); }
+        .section-label { font-size: 18px; font-weight: 600; color: var(--gray-900); }
+
+        .form-group { margin-bottom: 24px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700); font-size: 14px; }
+        .form-control {
+            width: 100%; padding: 14px 16px; border: 2px solid var(--gray-300);
+            border-radius: 12px; font-size: 15px; transition: all 0.2s; background: var(--gray-50);
+        }
+        .form-control:focus { outline: none; border-color: var(--primary); background: white; }
+        textarea.form-control { min-height: 120px; resize: vertical; line-height: 1.6; }
+
+        .chief-complaint-section .form-control { border-color: var(--gray-400); background: var(--gray-100); font-size: 16px; padding: 16px; }
+
+        .vitals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        .vital-input label { display: block; font-size: 12px; color: var(--gray-600); margin-bottom: 6px; font-weight: 500; }
+        .bp-input-group { display: flex; align-items: center; gap: 8px; }
+        .bp-input { flex: 1; }
+        .bp-separator { color: var(--gray-400); font-weight: 500; }
+
+        .diagnoses-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .diagnosis-tag {
+            display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+            background: var(--soap-a-bg); color: var(--soap-a); border-radius: 20px;
+            font-size: 13px; font-weight: 500; border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .diagnosis-tag button { background: none; border: none; color: var(--danger); cursor: pointer; padding: 0; }
+        .diagnosis-input-group { display: flex; gap: 12px; }
+        .diagnosis-input { flex: 1; }
+        .btn-add { background: var(--soap-a); color: white; border: none; border-radius: 12px; padding: 0 20px; font-weight: 600; cursor: pointer; }
+
+        .section-title-large { font-size: 20px; font-weight: 700; color: var(--gray-900); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .btn-add-large {
+            background: var(--soap-p); color: white; border: none; border-radius: 12px;
+            padding: 12px 24px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+        }
+
+        .medication-card, .exam-card {
+            background: var(--soap-p-bg); border: 2px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px; padding: 24px; margin-bottom: 20px;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; color: var(--soap-p); }
+        .btn-delete { background: var(--danger); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .form-grid-full { grid-column: span 2; }
+        .example-text { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+        .followup-section { background: var(--gray-50); border: 2px solid var(--gray-300); border-radius: 16px; padding: 24px; margin-bottom: 32px; }
+        .followup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+        .empty-state { text-align: center; padding: 40px 20px; background: var(--gray-100); border: 2px dashed var(--gray-300); border-radius: 16px; color: var(--gray-500); }
+        
+        .action-buttons { display: flex; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200); }
+        .btn { padding: 14px 28px; border-radius: 12px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+        
+        .notification {
+            position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px;
+            color: white; font-weight: 500; z-index: 1000; display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); animation: slideIn 0.3s ease;
+        }
+        .notification-success { background: var(--secondary); }
+        .notification-error { background: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+        .highlight-section { animation: highlight 1.5s ease; border-color: var(--primary) !important; }
+        @keyframes highlight { 0% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0.4); } 100% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0); } }
+
+        .confirmation-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .confirmation-content { background: white; border-radius: 16px; padding: 32px; max-width: 400px; width: 90%; }
+    </style>
 {% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="clinicalNotes()" x-init="init()">
-    {# Header #}
-    <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
-        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div class="flex items-center gap-4">
-                    <a href="/doctor/patients" class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </a>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                            <i class="mr-2 fa-solid fa-notes-medical text-wellcare-500"></i>
-                            {{ 'Notes Cliniques'|trans }}
-                        </h1>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {{ 'SOAP notes, prescriptions et ordonnances de laboratoire'|trans }}
-                        </p>
-                    </div>
+<div class="container">
+    <!-- Left Column -->
+    <div class="left-column">
+        <div class="patient-card">
+            <div class="patient-header">
+                <div class="patient-avatar">JD</div>
+                <div class="patient-info">
+                    <h2>Jean Dupont</h2>
+                    <p class="patient-id">PAT-2024-001</p>
+                    <span class="status-badge">Actif</span>
                 </div>
-                
-                <div class="flex items-center gap-3">
-                    <button 
-                        @click="openNewNoteModal()"
-                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
-                    >
-                        <i class="fa-solid fa-plus"></i>
-                        {{ 'Nouvelle Note'|trans }}
-                    </button>
-                </div>
+            </div>
+            <div class="form-group chief-complaint-section">
+                <label class="form-label">Motif de consultation</label>
+                <input type="text" class="form-control" id="chiefComplaint" placeholder="Motif principal...">
+            </div>
+        </div>
+
+        <div class="notes-history">
+            <div class="notes-history-header">
+                <h3 class="section-title">Historique des notes</h3>
+                <button class="clear-history-btn" onclick="clearAllHistory()"><i class="fas fa-trash"></i> Tout effacer</button>
+            </div>
+            <div class="notes-list" id="notesList">
+                <!-- Les notes seront injectées ici par le script -->
+            </div>
+            <div id="emptyNotes" class="empty-state" style="display: none;">
+                <i class="fas fa-notes-medical"></i>
+                <p>Aucune note dans l'historique</p>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <h3 class="section-title">Actions rapides</h3>
+            <div class="quick-actions-list">
+                <button class="quick-action-btn" onclick="resetForm()">
+                    <i class="fas fa-plus"></i><span>Nouvelle note</span>
+                </button>
+                <button class="quick-action-btn" onclick="scrollToMedications()">
+                    <i class="fas fa-prescription"></i><span>Nouvelle ordonnance</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
-            {# Sidebar - Patient Info & Note List #}
-            <div class="space-y-6 lg:col-span-1">
-                {# Patient Quick Info #}
-                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                    <div class="flex items-center gap-4">
-                        <img 
-                            :src="patient.avatar" 
-                            :alt="patient.name"
-                            class="object-cover w-16 h-16 border-2 rounded-full border-wellcare-100 dark:border-wellcare-900"
-                        >
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="patient.name"></h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="patient.fileNumber"></p>
-                            <span 
-                                :class="getStatusBadgeClass(patient.status)"
-                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1"
-                            >
-                                <span x-text="getStatusLabel(patient.status)"></span>
-                            </span>
-                        </div>
+    <!-- Right Column - Editor -->
+    <div class="right-column" id="editorContainer">
+        <div class="editor-header">
+            <h1 class="editor-title" id="mainEditorTitle">Nouvelle Note SOAP</h1>
+            <div class="editor-meta">
+                <span>{{ "now"|date("d/m/Y") }}</span>
+                <span>• Dr. Martin</span>
+            </div>
+        </div>
+
+        <!-- Subjective (S) -->
+        <div class="soap-section">
+            <div class="section-header">
+                <div class="section-badge badge-s">S</div>
+                <h2 class="section-label">Subjectif</h2>
+            </div>
+            <textarea class="form-control" id="subjective" placeholder="Symptômes rapportés..."></textarea>
+        </div>
+
+        <!-- Objective (O) -->
+        <div class="soap-section">
+            <div class="section-header">
+                <div class="section-badge badge-o">O</div>
+                <h2 class="section-label">Objectif</h2>
+            </div>
+            <div class="vitals-grid">
+                <div class="vital-input">
+                    <label>Tension (mmHg)</label>
+                    <div class="bp-input-group">
+                        <input type="text" class="form-control bp-input" id="bpSystolic" value="120">
+                        <span class="bp-separator">/</span>
+                        <input type="text" class="form-control bp-input" id="bpDiastolic" value="80">
                     </div>
                 </div>
+                <div class="vital-input"><label>Pouls (bpm)</label><input type="text" class="form-control" id="pulse" value="72"></div>
+                <div class="vital-input"><label>Température (°C)</label><input type="text" class="form-control" id="temperature" value="37"></div>
+                <div class="vital-input"><label>SpO2 (%)</label><input type="text" class="form-control" id="spo2" value="99"></div>
+            </div>
+            <textarea class="form-control" id="objective" placeholder="Examen physique..."></textarea>
+        </div>
 
-                {# Notes List #}
-                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Historique des notes'|trans }}</h3>
-                    </div>
-                    <div class="overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700 max-h-96">
-                        <template x-for="note in notes" :key="note.id">
-                            <div 
-                                @click="selectNote(note)"
-                                class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                                :class="selectedNote?.id === note.id ? 'bg-wellcare-50 dark:bg-wellcare-900/20 border-l-4 border-wellcare-500' : ''"
-                            >
-                                <div class="flex items-start justify-between">
-                                    <div>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="note.date"></span>
-                                        <h4 class="mt-1 text-sm font-medium text-gray-900 dark:text-white" x-text="note.typeLabel"></h4>
-                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 line-clamp-2" x-text="note.summary"></p>
-                                    </div>
-                                    <span 
-                                        class="w-2 h-2 rounded-full"
-                                        :class="note.isComplete ? 'bg-emerald-500' : 'bg-amber-500'"
-                                    ></span>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
+        <!-- Assessment (A) -->
+        <div class="soap-section">
+            <div class="section-header">
+                <div class="section-badge badge-a">A</div>
+                <h2 class="section-label">Évaluation</h2>
+            </div>
+            <div class="diagnoses-section">
+                <label class="form-label">Diagnostics (CIM-10)</label>
+                <div class="diagnoses-tags" id="diagnosesTags"></div>
+                <div class="diagnosis-input-group">
+                    <input type="text" class="form-control diagnosis-input" id="newDiagnosis" placeholder="Code CIM-10...">
+                    <button class="btn-add" onclick="addDiagnosis()">Ajouter</button>
                 </div>
+            </div>
+            <textarea class="form-control" id="assessment" placeholder="Interprétation..."></textarea>
+        </div>
 
-                {# Quick Actions #}
-                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Actions rapides'|trans }}</h3>
-                    <div class="space-y-2">
-                        <button @click="openPrescriptionModal()" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                            <i class="fa-solid fa-prescription text-wellcare-500"></i>
-                            {{ 'Nouvelle ordonnance'|trans }}
-                        </button>
-                        <button @click="openLabOrderModal()" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                            <i class="fa-solid fa-flask text-wellcare-500"></i>
-                            {{ 'Ordonnance labo'|trans }}
-                        </button>
-                        <button @click="openReferralModal()" class="flex items-center w-full gap-3 px-4 py-2 text-sm text-gray-700 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                            <i class="fa-solid fa-user-doctor text-wellcare-500"></i>
-                            {{ 'Lettre de recommandation'|trans }}
-                        </button>
-                    </div>
+        <!-- Plan (P) -->
+        <div class="soap-section">
+            <div class="section-header">
+                <div class="section-badge badge-p">P</div>
+                <h2 class="section-label">Plan</h2>
+            </div>
+
+            <!-- Medications -->
+            <div class="medications-section" id="medicationsSection">
+                <h3 class="section-title-large"><i class="fas fa-prescription"></i> Ordonnance Médicamenteuse</h3>
+                <button class="btn-add-large" onclick="addMedicationCard(true)"><i class="fas fa-plus"></i> Ajouter un médicament</button>
+                <div id="medicationsContainer"></div>
+                <div id="emptyMedications" class="empty-state" style="display: block;">
+                    <i class="fas fa-prescription-bottle-alt"></i><p>Aucun médicament prescrit</p>
                 </div>
             </div>
 
-            {# Main Content - SOAP Note Editor #}
-            <div class="lg:col-span-3">
-                <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                    {# Note Header #}
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h2 class="text-xl font-bold text-gray-900 dark:text-white" x-text="selectedNote ? selectedNote.typeLabel : 'Nouvelle Note SOAP'"></h2>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    <span x-text="selectedNote ? selectedNote.date : new Date().toLocaleDateString('fr-FR')"></span>
-                                    <span x-show="selectedNote?.author" x-text="' • ' + selectedNote?.author"></span>
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button 
-                                    @click="saveNote()"
-                                    class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600"
-                                >
-                                    <i class="mr-2 fa-solid fa-save"></i>{{ 'Enregistrer'|trans }}
-                                </button>
-                                <button 
-                                    x-show="selectedNote"
-                                    @click="printNote()"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
-                                >
-                                    <i class="fa-solid fa-print"></i>
-                                </button>
-                            </div>
-                        </div>
+            <!-- Lab Tests -->
+            <div class="lab-tests-section" id="examsSection">
+                <h3 class="section-title-large"><i class="fas fa-flask"></i> Examens Complémentaires</h3>
+                <button class="btn-add-large" onclick="addExamCard(true)"><i class="fas fa-plus"></i> Ajouter un examen</button>
+                <div id="examsContainer"></div>
+                <div id="emptyExams" class="empty-state" style="display: block;">
+                    <i class="fas fa-flask"></i><p>Aucun examen demandé</p>
+                </div>
+            </div>
+
+            <div class="treatment-plan-section">
+                <label class="form-label">Plan de traitement général</label>
+                <textarea class="form-control" id="plan" placeholder="Recommandations..."></textarea>
+            </div>
+
+            <div class="followup-section">
+                <h3>Prochain rendez-vous</h3>
+                <div class="followup-grid">
+                    <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-control" id="followUpDate"></div>
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <select class="form-control" id="followUpType">
+                            <option value="consultation">Consultation</option>
+                            <option value="control" selected>Contrôle</option>
+                        </select>
                     </div>
-
-                    {# SOAP Form #}
-                    <div class="p-6 space-y-6">
-                        {# Chief Complaint #}
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {{ 'Motif de consultation'|trans }}
-                            </label>
-                            <input 
-                                type="text" 
-                                x-model="currentNote.chiefComplaint"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                                placeholder="{{ 'Décrivez le motif principal de la consultation...'|trans }}"
-                            >
-                        </div>
-
-                        {# Subjective #}
-                        <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                            <div class="flex items-center gap-2 mb-3">
-                                <span class="px-2 py-1 text-xs font-bold text-white bg-blue-500 rounded">S</span>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Subjectif'|trans }}</h3>
-                            </div>
-                            <textarea 
-                                x-model="currentNote.subjective"
-                                rows="4"
-                                class="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-blue-800 dark:text-white"
-                                placeholder="{{ 'Symptômes rapportés par le patient, antécédents, histoire de la maladie...'|trans }}"
-                            ></textarea>
-                        </div>
-
-                        {# Objective #}
-                        <div class="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                            <div class="flex items-center gap-2 mb-3">
-                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-emerald-500">O</span>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Objectif'|trans }}</h3>
-                            </div>
-                            
-                            {# Vital Signs in Objective #}
-                            <div class="grid grid-cols-2 gap-4 mb-4 md:grid-cols-4">
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Tension (mmHg)'|trans }}</label>
-                                    <div class="flex gap-2">
-                                        <input 
-                                            type="text" 
-                                            x-model="currentNote.vitals.bpSystolic"
-                                            class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
-                                            placeholder="120"
-                                        >
-                                        <span class="text-gray-400">/</span>
-                                        <input 
-                                            type="text" 
-                                            x-model="currentNote.vitals.bpDiastolic"
-                                            class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
-                                            placeholder="80"
-                                        >
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Pouls (bpm)'|trans }}</label>
-                                    <input 
-                                        type="text" 
-                                        x-model="currentNote.vitals.pulse"
-                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
-                                        placeholder="72"
-                                    >
-                                </div>
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Température (°C)'|trans }}</label>
-                                    <input 
-                                        type="text" 
-                                        x-model="currentNote.vitals.temperature"
-                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
-                                        placeholder="36.6"
-                                    >
-                                </div>
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'SpO2 (%)'|trans }}</label>
-                                    <input 
-                                        type="text" 
-                                        x-model="currentNote.vitals.spo2"
-                                        class="w-full px-2 py-1 text-sm border rounded border-emerald-200 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
-                                        placeholder="98"
-                                    >
-                                </div>
-                            </div>
-
-                            <textarea 
-                                x-model="currentNote.objective"
-                                rows="4"
-                                class="w-full px-4 py-2 border rounded-lg border-emerald-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-800 dark:border-emerald-800 dark:text-white"
-                                placeholder="{{ 'Examen physique, signes vitaux, résultats d\'examens observables...'|trans }}"
-                            ></textarea>
-                        </div>
-
-                        {# Assessment #}
-                        <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-                            <div class="flex items-center gap-2 mb-3">
-                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-amber-500">A</span>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Évaluation'|trans }}</h3>
-                            </div>
-                            
-                            {# Diagnoses #}
-                            <div class="mb-4">
-                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Diagnostics (CIM-10)'|trans }}</label>
-                                <div class="flex flex-wrap gap-2 mb-2">
-                                    <template x-for="(dx, index) in currentNote.diagnoses" :key="index">
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                                            <span x-text="dx.code + ' - ' + dx.description"></span>
-                                            <button @click="removeDiagnosis(index)" class="ml-1 text-amber-600 hover:text-amber-800">
-                                                <i class="fa-solid fa-times"></i>
-                                            </button>
-                                        </span>
-                                    </template>
-                                </div>
-                                <div class="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        x-model="newDiagnosis"
-                                        @keydown.enter.prevent="addDiagnosis()"
-                                        class="flex-1 px-3 py-1.5 text-sm border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-800 dark:border-amber-800 dark:text-white"
-                                        placeholder="{{ 'Code CIM-10 ou description...'|trans }}"
-                                    >
-                                    <button @click="addDiagnosis()" class="px-3 py-1.5 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <textarea 
-                                x-model="currentNote.assessment"
-                                rows="3"
-                                class="w-full px-4 py-2 border rounded-lg border-amber-200 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-800 dark:border-amber-800 dark:text-white"
-                                placeholder="{{ 'Interprétation des données, diagnostic différentiel, gravité...'|trans }}"
-                            ></textarea>
-                        </div>
-
-                        {# Plan #}
-                        <div class="p-4 rounded-lg bg-rose-50 dark:bg-rose-900/20">
-                            <div class="flex items-center gap-2 mb-3">
-                                <span class="px-2 py-1 text-xs font-bold text-white rounded bg-rose-500">P</span>
-                                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ 'Plan'|trans }}</h3>
-                            </div>
-                            
-                            {# Medications in Plan #}
-                            <div class="mb-4">
-                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Médicaments prescrits'|trans }}</label>
-                                <div class="mb-2 space-y-2">
-                                    <template x-for="(med, index) in currentNote.medications" :key="index">
-                                        <div class="flex items-center justify-between p-2 bg-white border rounded border-rose-200 dark:bg-gray-800 dark:border-rose-800">
-                                            <div class="text-sm">
-                                                <span class="font-medium text-gray-900 dark:text-white" x-text="med.name"></span>
-                                                <span class="text-gray-500 dark:text-gray-400" x-text="med.dosage + ' - ' + med.frequency"></span>
-                                                <span x-show="med.duration" class="text-xs text-gray-400" x-text="'(' + med.duration + ')'"></span>
-                                            </div>
-                                            <button @click="removeMedication(index)" class="text-rose-500 hover:text-rose-700">
-                                                <i class="fa-solid fa-times"></i>
-                                            </button>
-                                        </div>
-                                    </template>
-                                </div>
-                                <button @click="openAddMedicationModal()" class="text-sm text-rose-600 hover:text-rose-700 dark:text-rose-400">
-                                    <i class="mr-1 fa-solid fa-plus"></i>{{ 'Ajouter un médicament'|trans }}
-                                </button>
-                            </div>
-
-                            {# Lab Tests in Plan #}
-                            <div class="mb-4">
-                                <label class="block mb-2 text-xs text-gray-600 dark:text-gray-400">{{ 'Examens demandés'|trans }}</label>
-                                <div class="flex flex-wrap gap-2 mb-2">
-                                    <template x-for="(test, index) in currentNote.labTests" :key="index">
-                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">
-                                            <span x-text="test"></span>
-                                            <button @click="removeLabTest(index)" class="ml-1 text-rose-600 hover:text-rose-800">
-                                                <i class="fa-solid fa-times"></i>
-                                            </button>
-                                        </span>
-                                    </template>
-                                </div>
-                                <div class="flex gap-2">
-                                    <select x-model="newLabTest" class="flex-1 px-3 py-1.5 text-sm border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:border-rose-800 dark:text-white">
-                                        <option value="">{{ 'Sélectionner un examen...'|trans }}</option>
-                                        <option value="NFS">{{ 'NFS'|trans }}</option>
-                                        <option value="Bilan lipidique">{{ 'Bilan lipidique'|trans }}</option>
-                                        <option value="Glycémie">{{ 'Glycémie'|trans }}</option>
-                                        <option value="HbA1c">{{ 'HbA1c'|trans }}</option>
-                                        <option value="Créatinine">{{ 'Créatinine'|trans }}</option>
-                                        <option value="TSH">{{ 'TSH'|trans }}</option>
-                                        <option value="Radiographie">{{ 'Radiographie'|trans }}</option>
-                                        <option value="Échographie">{{ 'Échographie'|trans }}</option>
-                                    </select>
-                                    <button @click="addLabTest()" class="px-3 py-1.5 text-sm text-white bg-rose-500 rounded-lg hover:bg-rose-600">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <textarea 
-                                x-model="currentNote.plan"
-                                rows="4"
-                                class="w-full px-4 py-2 border rounded-lg border-rose-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:border-rose-800 dark:text-white"
-                                placeholder="{{ 'Traitement, recommandations, suivi, référencement...'|trans }}"
-                            ></textarea>
-                        </div>
-
-                        {# Follow-up #}
-                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">{{ 'Prochain rendez-vous'|trans }}</h3>
-                            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Date'|trans }}</label>
-                                    <input 
-                                        type="date" 
-                                        x-model="currentNote.followUp.date"
-                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    >
-                                </div>
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Type'|trans }}</label>
-                                    <select x-model="currentNote.followUp.type" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                        <option value="consultation">{{ 'Consultation'|trans }}</option>
-                                        <option value="control">{{ 'Contrôle'|trans }}</option>
-                                        <option value="results">{{ 'Résultats'|trans }}</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block mb-1 text-xs text-gray-600 dark:text-gray-400">{{ 'Priorité'|trans }}</label>
-                                    <select x-model="currentNote.followUp.priority" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                        <option value="routine">{{ 'Routine'|trans }}</option>
-                                        <option value="urgent">{{ 'Urgent'|trans }}</option>
-                                        <option value="asap">{{ 'Dès que possible'|trans }}</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Priorité</label>
+                        <select class="form-control" id="followUpPriority">
+                            <option value="routine">Routine</option>
+                            <option value="urgent" selected>Urgent</option>
+                        </select>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="saveNoteToServer()">
+                <i class="fas fa-save"></i> <span id="saveBtnText">Enregistrer</span>
+            </button>
+            <button class="btn btn-secondary" onclick="resetForm()">
+                <i class="fas fa-redo"></i> Réinitialiser
+            </button>
         </div>
     </div>
 </div>
 
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('build/doctor-dashboard.js') }}"></script>
+<script>
+    // ÉTAT GLOBAL
+    let currentEditingId = null; 
+    let medCounter = 0;
+    let examCounter = 0;
+    
+    // Historique depuis la base
+    let notesData = {{ historyData|default([])|json_encode|raw }};
+
+    const currentNote = {{ currentNoteData|default(null)|json_encode|raw }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderHistory();
+        updateDiagnosisSelects();
+        if (currentNote && currentNote.id) {
+            currentEditingId = currentNote.id;
+            document.getElementById('mainEditorTitle').textContent = `Modifier la Note #${currentNote.id}`;
+            document.getElementById('saveBtnText').textContent = "Mettre ? jour";
+            fillFormWithData({
+                consultation: currentNote,
+                diagnoses: currentNote.diagnoses || [],
+                medications: currentNote.medications || [],
+                labTests: currentNote.labTests || [],
+                followUp: currentNote.followUp || {}
+            });
+        }
+    });
+
+    // --- MISE À JOUR (UPDATE) ---
+    function selectNote(id) {
+        const note = notesData.find(n => n.id === id);
+        if (!note) return;
+
+        currentEditingId = id;
+        
+        document.querySelectorAll('.note-item').forEach(item => item.classList.remove('active'));
+        const activeItem = document.querySelector(`[data-note-id="${id}"]`);
+        if(activeItem) activeItem.classList.add('active');
+        
+        document.getElementById('mainEditorTitle').textContent = `Modifier la Note #${id}`;
+        document.getElementById('saveBtnText').textContent = "Mettre à jour";
+
+        fillFormWithData(note.data);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function fillFormWithData(data) {
+        document.getElementById('diagnosesTags').innerHTML = '';
+        document.getElementById('medicationsContainer').innerHTML = '';
+        document.getElementById('examsContainer').innerHTML = '';
+
+        document.getElementById('chiefComplaint').value = data.consultation.chiefComplaint || '';
+        document.getElementById('subjective').value = data.consultation.subjective || '';
+        document.getElementById('objective').value = data.consultation.objective || '';
+        document.getElementById('assessment').value = data.consultation.assessment || '';
+        document.getElementById('plan').value = data.consultation.plan || '';
+
+        const vitals = data.consultation.vitals || {};
+        const bp = vitals.bloodPressure || {};
+        document.getElementById('bpSystolic').value = bp.systolic ?? vitals.bloodPressureSystolic ?? '';
+        document.getElementById('bpDiastolic').value = bp.diastolic ?? vitals.bloodPressureDiastolic ?? '';
+        document.getElementById('pulse').value = vitals.pulse ?? vitals.heartRate ?? '';
+        document.getElementById('temperature').value = vitals.temperature ?? '';
+        document.getElementById('spo2').value = vitals.spo2 ?? vitals.oxygenSaturation ?? '';
+
+        if (data.diagnoses) data.diagnoses.forEach(dx => addDiagnosis(dx));
+
+        if (data.medications && data.medications.length > 0) {
+            document.getElementById('emptyMedications').style.display = 'none';
+            data.medications.forEach(m => {
+                addMedicationCard();
+                const last = document.querySelector('#medicationsContainer .medication-card:last-child');
+                last.querySelector('.medication-name').value = m.name;
+                last.querySelector('.medication-dosage').value = m.dosage;
+                last.querySelector('.medication-form').value = m.form;
+                last.querySelector('.medication-frequency').value = m.frequency;
+                last.querySelector('.medication-duration').value = m.duration;
+                last.querySelector('.medication-instructions').value = m.instructions;
+                last.querySelector('.medication-diagnosis').value = m.associatedDiagnosis || '';
+            });
+        } else { document.getElementById('emptyMedications').style.display = 'block'; }
+
+        if (data.labTests && data.labTests.length > 0) {
+            document.getElementById('emptyExams').style.display = 'none';
+            data.labTests.forEach(e => {
+                addExamCard();
+                const last = document.querySelector('#examsContainer .exam-card:last-child');
+                last.querySelector('.exam-type').value = e.type;
+                last.querySelector('.exam-name').value = e.name;
+                last.querySelector('.exam-requested-date').value = e.requestedDate || '';
+                last.querySelector('.exam-status').value = e.status;
+                last.querySelector('.exam-notes').value = e.notes || '';
+            });
+        } else { document.getElementById('emptyExams').style.display = 'block'; }
+
+        if (data.followUp) {
+            document.getElementById('followUpDate').value = data.followUp.date;
+            document.getElementById('followUpType').value = data.followUp.type;
+            document.getElementById('followUpPriority').value = data.followUp.priority;
+        }
+        updateDiagnosisSelects();
+    }
+
+    // --- ENREGISTREMENT ---
+    async function saveNoteToServer() {
+        const data = generateJSON();
+        data.patientId = 1; // Remplacer par l'ID dynamique du patient
+
+        if (currentEditingId) data.noteId = currentEditingId;
+
+        try {
+            showNotification('Sauvegarde...', 'info');
+            // On utilise l'URL en dur ou une variable globale si path() échoue dynamiquement en JS
+            const url = currentEditingId ? '{{ path("doctor_update_clinical_note") }}' : '{{ path("doctor_save_clinical_note") }}';
+            const method = currentEditingId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showNotification('Succès !', 'success');
+                if (!currentEditingId) {
+                    notesData.unshift({ id: result.consultationId, date: new Date().toLocaleDateString(), title: "Note SOAP", summary: data.consultation.chiefComplaint, data: data });
+                } else {
+                    const idx = notesData.findIndex(n => n.id === currentEditingId);
+                    if(idx !== -1) notesData[idx].data = data;
+                }
+                renderHistory();
+                resetForm();
+            } else {
+                showNotification('Erreur: ' + result.message, 'error');
+            }
+        } catch (e) {
+            showNotification('Erreur de connexion', 'error');
+        }
+    }
+
+    // --- SUPPRESSION ---
+    async function deleteNote(event, id) {
+        event.stopPropagation(); // Évite de sélectionner la note en cliquant sur le X
+        if (!confirm('Supprimer cette note de la base de données ?')) return;
+
+        try {
+            const deleteUrlBase = '{{ path('api_clinical_note_delete', {'id': 0}) }}';
+            const response = await fetch(deleteUrlBase.replace('0', id), { method: 'DELETE' });
+            const result = await response.json();
+
+            if (result.success) {
+                showNotification('Note supprimée', 'success');
+                notesData = notesData.filter(n => n.id !== id);
+                if (currentEditingId === id) resetForm();
+                renderHistory();
+            } else {
+                showNotification('Erreur: ' + result.message, 'error');
+            }
+        } catch (e) {
+            showNotification('Erreur serveur', 'error');
+        }
+    }
+
+    // --- STRUCTURES DYNAMIQUES ---
+    function renderHistory() {
+        const list = document.getElementById('notesList');
+        list.innerHTML = '';
+        if (notesData.length === 0) {
+            document.getElementById('emptyNotes').style.display = 'block';
+            return;
+        }
+        document.getElementById('emptyNotes').style.display = 'none';
+        notesData.forEach(note => {
+            const item = document.createElement('div');
+            item.className = `note-item ${currentEditingId === note.id ? 'active' : ''}`;
+            item.setAttribute('data-note-id', note.id);
+            item.innerHTML = `
+                <div class="note-header">
+                    <div class="note-date">${note.date}</div>
+                    <button class="note-delete-btn" onclick="deleteNote(event, ${note.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="note-title">${note.title}</div>
+                <div class="note-summary">${note.summary}</div>
+            `;
+            item.onclick = () => selectNote(note.id);
+            list.appendChild(item);
+        });
+    }
+
+    function addMedicationCard(scroll = false) {
+        document.getElementById('emptyMedications').style.display = 'none';
+        medCounter++;
+        const card = document.createElement('div');
+        card.className = 'medication-card';
+        card.innerHTML = `
+            <div class="card-header"><h4 class="card-title">Médicament</h4><button class="btn-delete" onclick="removeMedication(this)"><i class="fas fa-trash"></i> Supprimer</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label class="form-label">Diagnostic associé</label><select class="form-control medication-diagnosis"><option value="">Sélectionner</option></select></div>
+                <div class="form-group"><label class="form-label">Nom du médicament</label><input type="text" class="form-control medication-name"></div>
+                <div class="form-group"><label class="form-label">Dosage</label><input type="text" class="form-control medication-dosage"></div>
+                <div class="form-group"><label class="form-label">Forme</label><select class="form-control medication-form"><option value="comprimé">Comprimé</option><option value="gélule">Gélule</option></select></div>
+                <div class="form-group"><label class="form-label">Fréquence</label><select class="form-control medication-frequency"><option value="1x/jour">1x/jour</option><option value="2x/jour">2x/jour</option></select></div>
+                <div class="form-group"><label class="form-label">Durée</label><input type="text" class="form-control medication-duration"></div>
+                <div class="form-group form-grid-full"><label class="form-label">Instructions</label><textarea class="form-control medication-instructions"></textarea></div>
+            </div>`;
+        document.getElementById('medicationsContainer').appendChild(card);
+        updateDiagnosisSelects();
+        if(scroll) card.scrollIntoView({behavior:'smooth'});
+    }
+
+    function addExamCard(scroll = false) {
+        document.getElementById('emptyExams').style.display = 'none';
+        examCounter++;
+        const card = document.createElement('div');
+        card.className = 'exam-card';
+        card.innerHTML = `
+            <div class="card-header"><h4 class="card-title">Examen</h4><button class="btn-delete" onclick="removeExam(this)"><i class="fas fa-trash"></i> Supprimer</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label class="form-label">Type</label><select class="form-control exam-type"><option value="scanner">Scanner</option><option value="radio">Radio</option></select></div>
+                <div class="form-group"><label class="form-label">Nom</label><input type="text" class="form-control exam-name"></div>
+                <div class="form-group"><label class="form-label">Date demandée</label><input type="date" class="form-control exam-requested-date"></div>
+                <div class="form-group"><label class="form-label">Statut</label><select class="form-control exam-status"><option value="prescrit">Prescrit</option><option value="realise">Réalisé</option></select></div>
+                <div class="form-group form-grid-full"><label class="form-label">Notes</label><textarea class="form-control exam-notes"></textarea></div>
+            </div>`;
+        document.getElementById('examsContainer').appendChild(card);
+        if(scroll) card.scrollIntoView({behavior:'smooth'});
+    }
+
+    function removeMedication(btn) { btn.closest('.medication-card').remove(); if(!document.querySelector('.medication-card')) document.getElementById('emptyMedications').style.display='block'; }
+    function removeExam(btn) { btn.closest('.exam-card').remove(); if(!document.querySelector('.exam-card')) document.getElementById('emptyExams').style.display='block'; }
+
+    function addDiagnosis(val = null) {
+        const input = document.getElementById('newDiagnosis');
+        const text = val || input.value.trim();
+        if (!text) return;
+        const tag = document.createElement('div');
+        tag.className = 'diagnosis-tag';
+        tag.innerHTML = `${text} <button onclick="this.parentElement.remove(); updateDiagnosisSelects();">×</button>`;
+        document.getElementById('diagnosesTags').appendChild(tag);
+        input.value = '';
+        updateDiagnosisSelects();
+    }
+
+    function updateDiagnosisSelects() {
+        const dxs = Array.from(document.querySelectorAll('.diagnosis-tag')).map(t => t.innerText.replace('×','').trim());
+        document.querySelectorAll('.medication-diagnosis').forEach(sel => {
+            const current = sel.value;
+            sel.innerHTML = '<option value="">Sélectionner</option>' + dxs.map(d => `<option value="${d}">${d}</option>`).join('');
+            sel.value = current;
+        });
+    }
+
+    function resetForm() {
+        currentEditingId = null;
+        document.getElementById('mainEditorTitle').textContent = "Nouvelle Note SOAP";
+        document.getElementById('saveBtnText').textContent = "Enregistrer";
+        document.querySelectorAll('input:not(.bp-input), textarea').forEach(i => i.value = '');
+        document.getElementById('bpSystolic').value = '120';
+        document.getElementById('bpDiastolic').value = '80';
+        document.getElementById('pulse').value = '72';
+        document.getElementById('temperature').value = '37';
+        document.getElementById('spo2').value = '99';
+        document.getElementById('diagnosesTags').innerHTML = '';
+        document.getElementById('medicationsContainer').innerHTML = '';
+        document.getElementById('examsContainer').innerHTML = '';
+        document.getElementById('emptyMedications').style.display = 'block';
+        document.getElementById('emptyExams').style.display = 'block';
+        document.querySelectorAll('.note-item').forEach(n => n.classList.remove('active'));
+    }
+
+    function generateJSON() {
+        return {
+            consultation: {
+                chiefComplaint: document.getElementById('chiefComplaint').value,
+                subjective: document.getElementById('subjective').value,
+                objective: document.getElementById('objective').value,
+                assessment: document.getElementById('assessment').value,
+                plan: document.getElementById('plan').value,
+                vitals: {
+                    bloodPressure: { systolic: document.getElementById('bpSystolic').value, diastolic: document.getElementById('bpDiastolic').value },
+                    pulse: document.getElementById('pulse').value, temperature: document.getElementById('temperature').value, spo2: document.getElementById('spo2').value
+                }
+            },
+            diagnoses: Array.from(document.querySelectorAll('.diagnosis-tag')).map(t => t.innerText.replace('×','').trim()),
+            medications: Array.from(document.querySelectorAll('.medication-card')).map(c => ({
+                associatedDiagnosis: c.querySelector('.medication-diagnosis').value,
+                name: c.querySelector('.medication-name').value,
+                dosage: c.querySelector('.medication-dosage').value,
+                form: c.querySelector('.medication-form').value,
+                frequency: c.querySelector('.medication-frequency').value,
+                duration: c.querySelector('.medication-duration').value,
+                instructions: c.querySelector('.medication-instructions').value
+            })),
+            labTests: Array.from(document.querySelectorAll('.exam-card')).map(c => ({
+                type: c.querySelector('.exam-type').value, name: c.querySelector('.exam-name').value,
+                requestedDate: c.querySelector('.exam-requested-date').value, status: c.querySelector('.exam-status').value, notes: c.querySelector('.exam-notes').value
+            })),
+            followUp: {
+                date: document.getElementById('followUpDate').value,
+                type: document.getElementById('followUpType').value,
+                priority: document.getElementById('followUpPriority').value
+            }
+        };
+    }
+
+    function showNotification(m, t) {
+        const n = document.createElement('div'); n.className = `notification notification-${t}`;
+        n.innerHTML = `<i class="fas fa-info-circle"></i> ${m}`; document.body.appendChild(n);
+        setTimeout(() => n.remove(), 3000);
+    }
+    function scrollToMedications() { document.getElementById('medicationsSection').scrollIntoView({behavior:'smooth'}); }
+</script>
 {% endblock %}
-{% endblock %}
+

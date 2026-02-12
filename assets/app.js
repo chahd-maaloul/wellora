@@ -8,6 +8,8 @@ import Chart from 'chart.js/auto';
 
 // Import health analytics components
 import './js/health-analytics.js';
+// Import doctor dashboard components (patient chart, etc.)
+import './js/doctor-dashboard.js';
 
 // Import accessibility module
 import './js/accessibility.js';

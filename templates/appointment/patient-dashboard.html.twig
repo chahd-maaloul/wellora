@@ -22,7 +22,7 @@
                 <h1 class="text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white">My Appointments</h1>
                 <p class="mt-1 text-gray-600 dark:text-gray-400">Manage your upcoming and past appointments</p>
             </div>
-            <a href="/doctors" class="btn-primary">
+            <a href="{{ path('appointment_search_doctors') }}" class="btn-primary">
                 <i class="mr-2 fas fa-plus"></i>Book New Appointment
             </a>
         </div>
@@ -88,11 +88,12 @@
                         <span class="ml-2 px-2 py-0.5 bg-wellcare-100 dark:bg-wellcare-900 text-wellcare-700 dark:text-wellcare-300 rounded-full text-xs" x-text="upcomingCount"></span>
                     </button>
                     <button 
-                        @click="activeTab = 'past'"
-                        :class="activeTab === 'past' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+                        @click="activeTab = 'pending'"
+                        :class="activeTab === 'pending' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
                         class="px-6 py-4 text-sm font-medium transition-colors border-b-2"
                     >
-                        Past
+                        Pending
+                        <span class="ml-2 px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-full text-xs" x-text="pendingCount"></span>
                     </button>
                     <button 
                         @click="activeTab = 'cancelled'"
@@ -113,7 +114,7 @@
                         </div>
                         <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">No upcoming appointments</h3>
                         <p class="mb-4 text-gray-500 dark:text-gray-400">You don't have any upcoming appointments scheduled.</p>
-                        <a href="/doctors" class="btn-primary">Book an Appointment</a>
+                        <a href="{{ path('appointment_search_doctors') }}" class="btn-primary">Book an Appointment</a>
                     </div>
                     
                     <div class="space-y-4">
@@ -158,13 +159,6 @@
                                             {# Actions #}
                                             <div class="flex flex-wrap gap-2">
                                                 <button 
-                                                    x-show="appointment.canJoin"
-                                                    @click="joinConsultation(appointment)"
-                                                    class="text-sm btn-primary"
-                                                >
-                                                    <i class="mr-1 fas fa-video"></i> Join
-                                                </button>
-                                                <button 
                                                     @click="viewDetails(appointment)"
                                                     class="text-sm btn-outline"
                                                 >
@@ -182,6 +176,12 @@
                                                 >
                                                     <i class="mr-1 fas fa-times"></i> Cancel
                                                 </button>
+                                                <button 
+                                                    @click="deleteAppointment(appointment)"
+                                                    class="text-sm text-rose-600 btn-ghost hover:text-rose-700"
+                                                >
+                                                    <i class="mr-1 fas fa-trash"></i> Supprimer
+                                                </button>
                                             </div>
                                         </div>
                                         
@@ -193,6 +193,76 @@
                                                     <p class="text-sm font-medium text-yellow-900 dark:text-yellow-300">Coming up soon!</p>
                                                     <p class="text-xs text-yellow-700 dark:text-yellow-400">Don't forget to bring your ID and insurance card.</p>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                {# Pending Appointments #}
+                <div x-show="activeTab === 'pending'" style="display: none;">
+                    <div x-show="pendingAppointments.length === 0" class="py-12 text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-yellow-100 rounded-full dark:bg-gray-800">
+                            <i class="text-2xl text-yellow-400 fas fa-clock"></i>
+                        </div>
+                        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">No pending appointments</h3>
+                        <p class="mb-4 text-gray-500 dark:text-gray-400">You don't have any appointments waiting for confirmation.</p>
+                        <a href="{{ path('appointment_search_doctors') }}" class="btn-primary">Book an Appointment</a>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <template x-for="appointment in pendingAppointments" :key="appointment.id">
+                            <div class="p-4 transition-shadow border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl hover:shadow-md">
+                                <div class="flex flex-col gap-4 lg:flex-row">
+                                    {# Date Column #}
+                                    <div class="flex-shrink-0 w-20 text-center">
+                                        <div class="p-3 bg-yellow-100 dark:bg-yellow-900/40 rounded-xl">
+                                            <p class="text-sm font-medium text-yellow-600 dark:text-yellow-400" x-text="appointment.month"></p>
+                                            <p class="text-2xl font-bold text-gray-900 dark:text-white" x-text="appointment.day"></p>
+                                            <p class="text-xs text-yellow-500 dark:text-yellow-500" x-text="appointment.weekday"></p>
+                                        </div>
+                                    </div>
+                                    
+                                    {# Info Column #}
+                                    <div class="flex-1">
+                                        <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                                            <div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <h3 class="font-semibold text-gray-900 dark:text-white" x-text="'Dr. ' + appointment.doctorName"></h3>
+                                                    <span 
+                                                        class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                                                    >
+                                                        Pending
+                                                    </span>
+                                                </div>
+                                                <p class="text-sm text-wellcare-600 dark:text-wellcare-400" x-text="appointment.specialty"></p>
+                                                <div class="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    <span><i class="mr-1 fas fa-clock"></i> <span x-text="appointment.time"></span></span>
+                                                    <span><i class="mr-1 fas fa-hourglass-half"></i> <span x-text="appointment.duration"></span> min</span>
+                                                    <span :class="appointment.type === 'video' ? 'text-wellcare-600' : ''">
+                                                        <i class="mr-1 fas" :class="getTypeIcon(appointment.type)"></i>
+                                                        <span class="capitalize" x-text="appointment.type"></span>
+                                                    </span>
+                                                </div>
+                                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400" x-show="appointment.location">
+                                                    <i class="mr-1 fas fa-map-marker-alt"></i> <span x-text="appointment.location"></span>
+                                                </p>
+                                                <p class="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+                                                    <i class="mr-1 fas fa-info-circle"></i> Waiting for doctor confirmation
+                                                </p>
+                                            </div>
+                                            
+                                            {# Actions #}
+                                            <div class="flex flex-wrap gap-2">
+                                                <button 
+                                                    @click="viewDetails(appointment)"
+                                                    class="text-sm btn-outline"
+                                                >
+                                                    <i class="mr-1 fas fa-eye"></i> Details
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -334,36 +404,10 @@
             </div>
         </div>
         
-        {# Teleconsultation Widget #}
-        <div x-show="hasUpcomingVideoCall" class="mb-6 border-2 card border-wellcare-500">
-            <div class="p-6">
-                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center justify-center w-14 h-14 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30 animate-pulse">
-                            <i class="text-2xl fas fa-video text-wellcare-600"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white">Upcoming Video Consultation</h3>
-                            <p class="text-wellcare-600 dark:text-wellcare-400">Dr. Ahmed Ben Ali - Today at 2:00 PM</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">You can join 15 minutes before the appointment</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-right">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Starts in</p>
-                            <p class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">45 min</p>
-                        </div>
-                        <button class="btn-primary">
-                            <i class="mr-2 fas fa-video"></i>Join Call
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         {# Quick Actions #}
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <a href="/doctors" class="p-6 transition-shadow card hover:shadow-lg group">
+            {# Find a Doctor - Redirige vers search-doctors.html.twig #}
+            <a href="{{ path('appointment_search_doctors') }}" class="p-6 transition-shadow card hover:shadow-lg group">
                 <div class="flex items-center gap-4">
                     <div class="flex items-center justify-center w-12 h-12 transition-colors rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30 group-hover:bg-wellcare-200">
                         <i class="text-2xl fas fa-user-md text-wellcare-600"></i>
@@ -375,7 +419,8 @@
                 </div>
             </a>
             
-            <a href="#" class="p-6 transition-shadow card hover:shadow-lg group">
+            {# Medical Records - Redirige vers health/records.html.twig #}
+            <a href="{{ path('health_records') }}" class="p-6 transition-shadow card hover:shadow-lg group">
                 <div class="flex items-center gap-4">
                     <div class="flex items-center justify-center w-12 h-12 transition-colors bg-green-100 rounded-xl dark:bg-green-900/30 group-hover:bg-green-200">
                         <i class="text-2xl text-green-600 fas fa-file-medical"></i>
@@ -387,6 +432,7 @@
                 </div>
             </a>
             
+            {# Support #}
             <a href="#" class="p-6 transition-shadow card hover:shadow-lg group">
                 <div class="flex items-center gap-4">
                     <div class="flex items-center justify-center w-12 h-12 transition-colors bg-blue-100 rounded-xl dark:bg-blue-900/30 group-hover:bg-blue-200">
@@ -497,82 +543,10 @@ function patientDashboard() {
         selectedAppointment: null,
         hasUpcomingVideoCall: true,
         
-        upcomingAppointments: [
-            {
-                id: 1,
-                doctorName: 'Ahmed Ben Ali',
-                specialty: 'Cardiologist',
-                month: 'Feb',
-                day: '03',
-                weekday: 'Mon',
-                time: '10:00 AM',
-                duration: '45 min',
-                type: 'in-person',
-                location: '123 Avenue Habib Bourguiba, Tunis',
-                status: 'confirmed',
-                canJoin: false,
-                isSoon: false
-            },
-            {
-                id: 2,
-                doctorName: 'Fatima Trabelsi',
-                specialty: 'Dermatologist',
-                month: 'Feb',
-                day: '05',
-                weekday: 'Wed',
-                time: '2:00 PM',
-                duration: '30 min',
-                type: 'video',
-                location: null,
-                status: 'confirmed',
-                canJoin: true,
-                isSoon: true
-            }
-        ],
-        
-        pastAppointments: [
-            {
-                id: 3,
-                doctorName: 'Sami Guesmi',
-                specialty: 'General Medicine',
-                month: 'Jan',
-                day: '15',
-                weekday: 'Wed',
-                time: '9:30 AM',
-                duration: '30 min',
-                type: 'in-person',
-                hasReview: false,
-                notes: 'Patient showing good improvement. Continue current medication.',
-                rating: 0
-            },
-            {
-                id: 4,
-                doctorName: 'Amel Chaabane',
-                specialty: 'Pediatrics',
-                month: 'Jan',
-                day: '08',
-                weekday: 'Mon',
-                time: '11:00 AM',
-                duration: '45 min',
-                type: 'in-person',
-                hasReview: true,
-                notes: null,
-                rating: 5
-            }
-        ],
-        
-        cancelledAppointments: [
-            {
-                id: 5,
-                doctorName: 'Karim Mansouri',
-                specialty: 'Orthopedics',
-                month: 'Dec',
-                day: '20',
-                weekday: 'Fri',
-                cancelledDate: 'Dec 19, 2024',
-                cancellationReason: 'Schedule conflict'
-            }
-        ],
+        upcomingAppointments: [],
+        pendingAppointments: [],
+        pastAppointments: [],
+        cancelledAppointments: [],
         
         get upcomingCount() {
             return this.upcomingAppointments.length;
@@ -583,7 +557,7 @@ function patientDashboard() {
         },
         
         get pendingCount() {
-            return this.upcomingAppointments.filter(a => a.status === 'pending').length;
+            return this.pendingAppointments.length;
         },
         
         get cancelledCount() {
@@ -591,7 +565,27 @@ function patientDashboard() {
         },
         
         init() {
-            // Initialization
+            this.loadAppointments();
+        },
+
+        async loadAppointments() {
+            try {
+                const response = await fetch('/appointment/api/appointments');
+                if (!response.ok) {
+                    throw new Error('Failed to load appointments');
+                }
+                const data = await response.json();
+                this.upcomingAppointments = Array.isArray(data.upcoming) ? data.upcoming : [];
+                this.pendingAppointments = Array.isArray(data.pending) ? data.pending : [];
+                this.pastAppointments = Array.isArray(data.past) ? data.past : [];
+                this.cancelledAppointments = Array.isArray(data.cancelled) ? data.cancelled : [];
+            } catch (e) {
+                console.error(e);
+                this.upcomingAppointments = [];
+                this.pendingAppointments = [];
+                this.pastAppointments = [];
+                this.cancelledAppointments = [];
+            }
         },
         
         getStatusClass(status) {
@@ -606,19 +600,14 @@ function patientDashboard() {
         getTypeIcon(type) {
             const icons = {
                 'in-person': 'fa-hospital',
-                'video': 'fa-video',
-                'phone': 'fa-phone'
+                'phone': 'fa-phone' // Gardé pour les appels téléphoniques
             };
             return icons[type] || 'fa-calendar';
         },
         
-        joinConsultation(appointment) {
-            window.open('/consultation/' + appointment.id, '_blank');
-        },
-        
         viewDetails(appointment) {
             // Navigate to appointment details
-            window.location.href = '/appointment/' + appointment.id;
+            window.location.href = '/appointment/doctor-profile/' + appointment.id;
         },
         
         rescheduleAppointment(appointment) {
@@ -636,9 +625,41 @@ function patientDashboard() {
                 alert('Please select a cancellation reason');
                 return;
             }
-            // Perform cancellation
-            this.showCancelModal = false;
-            alert('Appointment cancelled successfully');
+            const appointmentId = this.selectedAppointment?.id;
+            if (!appointmentId) {
+                alert('Appointment not found');
+                return;
+            }
+            fetch(`/appointment/cancel/${appointmentId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: this.cancellationReason })
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        this.showCancelModal = false;
+                        window.location.reload();
+                    } else {
+                        alert(result.message || 'Cancellation failed');
+                    }
+                })
+                .catch(() => alert('Cancellation failed'));
+        },
+
+        deleteAppointment(appointment) {
+            if (!appointment || !appointment.id) return;
+            if (!confirm('Supprimer cette reservation ?')) return;
+            fetch(`/appointment/delete/${appointment.id}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        alert(result.message || 'Deletion failed');
+                    }
+                })
+                .catch(() => alert('Deletion failed'));
         },
         
         openReviewModal(appointment) {

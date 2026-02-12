@@ -20,9 +20,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    {% block scripts %}
-        {{ encore_entry_script_tags('app') }}
-    {% endblock %}
+    {% block scripts %}{% endblock %}
 </head>
 <body class="h-full antialiased text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
     {# Skip to main content link for keyboard users #}
@@ -168,7 +166,6 @@
                                     <a href="/appointment/confirmation" role="menuitem" class="sidebar-sublink" :class="isActive('/appointment/confirmation') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Confirmation</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/appointment/consultation-room" role="menuitem" class="sidebar-sublink" :class="isActive('/appointment/consultation-room') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Salle de Consultation</a>
                                 </li>
                             </ul>
                         </li>
@@ -204,7 +201,6 @@
                                     <a href="/health/lab-results" role="menuitem" class="sidebar-sublink" :class="isActive('/health/lab-results') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Résultats Laboratoire</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/health/billing" role="menuitem" class="sidebar-sublink" :class="isActive('/health/billing') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Facturation</a>
                                 </li>
                             </ul>
                         </li>
@@ -486,45 +482,6 @@
                             </ul>
                         </li>
 
-                        {# Patient Teleconsultation Module #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/teleconsultation']) }" x-show="!collapsed || isGroupActive(['/teleconsultation'])">
-                            <button 
-                                @click="if (!collapsed) open = !open"
-                                class="w-full sidebar-link sidebar-link-inactive"
-                                :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
-                                aria-haspopup="true"
-                                :aria-expanded="open"
-                                :title="collapsed ? 'Téléconsultation' : ''"
-                            >
-                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                    </svg>
-                                </span>
-                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Téléconsultation</span>
-                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
-                                <li role="none">
-                                    <a href="/teleconsultation/waiting-room" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/waiting-room') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Salle d'Attente</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/consultation-room" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/consultation-room') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Salle de Consultation</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/soap-notes" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/soap-notes') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Notes SOAP</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/medical-tools" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/medical-tools') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Outils Médicaux</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/teleconsultation/prescription-writer" role="menuitem" class="sidebar-sublink" :class="isActive('/teleconsultation/prescription-writer') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Éditeur Ordonnances</a>
-                                </li>
-                            </ul>
-                        </li>
-
                         {# Patient Health Analytics #}
                         <li role="none">
                             <a href="/health/analytics" 
@@ -687,24 +644,6 @@
                             <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
                                 <li role="none">
                                     <a href="/doctor/schedule" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Planning'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/schedule/day" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule/day') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Jour'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/schedule/week" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule/week') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Semaine'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/schedule/month" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/schedule/month') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Mois'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/queue" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/queue') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'File d\'attente'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/availability" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/availability') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Disponibilité'|trans }}</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/doctor/appointments" role="menuitem" class="sidebar-sublink-admin" :class="isActive('/doctor/appointments') ? 'sidebar-sublink-active-admin' : 'sidebar-sublink-inactive-admin'">{{ 'Rendez-vous'|trans }}</a>
                                 </li>
                             </ul>
                         </li>
