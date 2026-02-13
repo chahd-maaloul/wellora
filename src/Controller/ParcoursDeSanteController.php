@@ -27,62 +27,26 @@ final class ParcoursDeSanteController extends AbstractController
         $sortByRaw = strtolower(trim((string) $request->query->get('sortBy', 'date')));
         $sortOrderRaw = strtoupper(trim((string) $request->query->get('sortOrder', 'DESC')));
 
-        $minDistance = $minDistanceRaw !== '' && is_numeric($minDistanceRaw) ? (float) $minDistanceRaw : null;
-        $maxDistance = $maxDistanceRaw !== '' && is_numeric($maxDistanceRaw) ? (float) $maxDistanceRaw : null;
-        $minPublicationCount = $minPublicationCountRaw !== '' && is_numeric($minPublicationCountRaw) ? (int) $minPublicationCountRaw : null;
-        $maxPublicationCount = $maxPublicationCountRaw !== '' && is_numeric($maxPublicationCountRaw) ? (int) $maxPublicationCountRaw : null;
+        $distanceFilter = $parcoursDeSanteRepository->distanceRangeFilter(
+            $minDistanceRaw !== '' && is_numeric($minDistanceRaw) ? (float) $minDistanceRaw : null,
+            $maxDistanceRaw !== '' && is_numeric($maxDistanceRaw) ? (float) $maxDistanceRaw : null
+        );
+        $publicationFilter = $parcoursDeSanteRepository->publicationRangeFilter(
+            $minPublicationCountRaw !== '' && is_numeric($minPublicationCountRaw) ? (int) $minPublicationCountRaw : null,
+            $maxPublicationCountRaw !== '' && is_numeric($maxPublicationCountRaw) ? (int) $maxPublicationCountRaw : null
+        );
+        $sort = $parcoursDeSanteRepository->normalizeSort($sortByRaw, $sortOrderRaw);
 
-        if ($minDistance !== null && $minDistance < 0) {
-            $minDistance = 0.0;
-        }
+        $distanceFilterApplied = $minDistanceRaw !== '' || $maxDistanceRaw !== '';
+        $publicationFilterApplied = $minPublicationCountRaw !== '' || $maxPublicationCountRaw !== '';
 
-        if ($maxDistance !== null && $maxDistance < 0) {
-            $maxDistance = 0.0;
-        }
+        $minDistance = $distanceFilterApplied ? $distanceFilter['minValue'] : null;
+        $maxDistance = $distanceFilterApplied ? $distanceFilter['maxValue'] : null;
+        $minPublicationCount = $publicationFilterApplied ? $publicationFilter['minValue'] : null;
+        $maxPublicationCount = $publicationFilterApplied ? $publicationFilter['maxValue'] : null;
 
-        if ($minDistance !== null && $minDistance > 20) {
-            $minDistance = 20.0;
-        }
-
-        if ($maxDistance !== null && $maxDistance > 20) {
-            $maxDistance = 20.0;
-        }
-
-        if ($minDistance !== null && $maxDistance !== null && $minDistance > $maxDistance) {
-            $tempDistance = $minDistance;
-            $minDistance = $maxDistance;
-            $maxDistance = $tempDistance;
-        }
-
-        if ($minPublicationCount !== null && $minPublicationCount < 0) {
-            $minPublicationCount = 0;
-        }
-
-        if ($maxPublicationCount !== null && $maxPublicationCount < 0) {
-            $maxPublicationCount = 0;
-        }
-
-        if ($minPublicationCount !== null && $minPublicationCount > 200) {
-            $minPublicationCount = 200;
-        }
-
-        if ($maxPublicationCount !== null && $maxPublicationCount > 200) {
-            $maxPublicationCount = 200;
-        }
-
-        if (
-            $minPublicationCount !== null
-            && $maxPublicationCount !== null
-            && $minPublicationCount > $maxPublicationCount
-        ) {
-            $tempPublicationCount = $minPublicationCount;
-            $minPublicationCount = $maxPublicationCount;
-            $maxPublicationCount = $tempPublicationCount;
-        }
-
-        $allowedSortBy = ['date', 'name', 'distance'];
-        $sortBy = in_array($sortByRaw, $allowedSortBy, true) ? $sortByRaw : 'date';
-        $sortOrder = $sortOrderRaw === 'ASC' ? 'ASC' : 'DESC';
+        $sortBy = $sort['sortBy'];
+        $sortOrder = $sort['sortOrder'];
 
         return $this->render('parcours_de_sante/index.html.twig', [
             'parcours_de_santes' => $parcoursDeSanteRepository->searchByNameAndLocation(
@@ -101,6 +65,9 @@ final class ParcoursDeSanteController extends AbstractController
             'maxDistance' => $maxDistance,
             'minPublicationCount' => $minPublicationCount,
             'maxPublicationCount' => $maxPublicationCount,
+            'distanceFilter' => $distanceFilter,
+            'publicationFilter' => $publicationFilter,
+            'discoveryConfig' => $parcoursDeSanteRepository->parcoursDiscovery(),
             'sortBy' => $sortBy,
             'sortOrder' => $sortOrder,
         ]);

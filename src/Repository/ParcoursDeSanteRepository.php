@@ -11,9 +11,84 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ParcoursDeSanteRepository extends ServiceEntityRepository
 {
+    private const DISTANCE_MIN_BOUND = 0.0;
+    private const DISTANCE_MAX_BOUND = 20.0;
+    private const PUBLICATION_MIN_BOUND = 0;
+    private const PUBLICATION_MAX_BOUND = 200;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ParcoursDeSante::class);
+    }
+
+    /**
+     * @return array{minBound: float, maxBound: float, minValue: float, maxValue: float}
+     */
+    public function distanceRangeFilter(?float $initialMin, ?float $initialMax): array
+    {
+        $normalizedMin = $initialMin !== null
+            ? max(self::DISTANCE_MIN_BOUND, min($initialMin, self::DISTANCE_MAX_BOUND))
+            : self::DISTANCE_MIN_BOUND;
+        $normalizedMax = $initialMax !== null
+            ? max(self::DISTANCE_MIN_BOUND, min($initialMax, self::DISTANCE_MAX_BOUND))
+            : self::DISTANCE_MAX_BOUND;
+
+        return [
+            'minBound' => self::DISTANCE_MIN_BOUND,
+            'maxBound' => self::DISTANCE_MAX_BOUND,
+            'minValue' => min($normalizedMin, $normalizedMax),
+            'maxValue' => max($normalizedMin, $normalizedMax),
+        ];
+    }
+
+    /**
+     * @return array{minBound: int, maxBound: int, minValue: int, maxValue: int}
+     */
+    public function publicationRangeFilter(?int $initialMin, ?int $initialMax): array
+    {
+        $normalizedMin = $initialMin !== null
+            ? max(self::PUBLICATION_MIN_BOUND, min($initialMin, self::PUBLICATION_MAX_BOUND))
+            : self::PUBLICATION_MIN_BOUND;
+        $normalizedMax = $initialMax !== null
+            ? max(self::PUBLICATION_MIN_BOUND, min($initialMax, self::PUBLICATION_MAX_BOUND))
+            : self::PUBLICATION_MAX_BOUND;
+
+        return [
+            'minBound' => self::PUBLICATION_MIN_BOUND,
+            'maxBound' => self::PUBLICATION_MAX_BOUND,
+            'minValue' => min($normalizedMin, $normalizedMax),
+            'maxValue' => max($normalizedMin, $normalizedMax),
+        ];
+    }
+
+    /**
+     * @return array{viewMode: string, sortBy: string, filters: array{search: string, distance: array{0: float, 1: float}}}
+     */
+    public function parcoursDiscovery(): array
+    {
+        return [
+            'viewMode' => 'grid',
+            'sortBy' => 'recent',
+            'filters' => [
+                'search' => '',
+                'distance' => [self::DISTANCE_MIN_BOUND, self::DISTANCE_MAX_BOUND],
+            ],
+        ];
+    }
+
+    /**
+     * @return array{sortBy: string, sortOrder: string}
+     */
+    public function normalizeSort(string $sortBy, string $sortOrder): array
+    {
+        $allowedSortBy = ['date', 'name', 'distance'];
+        $normalizedSortBy = in_array(strtolower($sortBy), $allowedSortBy, true) ? strtolower($sortBy) : 'date';
+        $normalizedSortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+
+        return [
+            'sortBy' => $normalizedSortBy,
+            'sortOrder' => $normalizedSortOrder,
+        ];
     }
 
     /**

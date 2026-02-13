@@ -55,7 +55,7 @@
 </div>
 
 <!-- Main Content -->
-<div class="px-4 mx-auto" x-data="parcoursDiscovery()">
+<div class="px-4 mx-auto" x-data="{ viewMode: '{{ discoveryConfig.viewMode }}' }">
     <div class="flex flex-col gap-4 lg:flex-row">
         <!-- Filters Sidebar -->
         <div class="flex-shrink-0 lg:w-72">
@@ -91,19 +91,24 @@
 
                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Distance (km)</label>
                         <div
-                            x-data="distanceRangeFilter({{ minDistance is not null ? minDistance : 0 }}, {{ maxDistance is not null ? maxDistance : 20 }})"
+                            x-data="{
+                                minBound: {{ distanceFilter.minBound }},
+                                maxBound: {{ distanceFilter.maxBound }},
+                                minValue: {{ distanceFilter.minValue }},
+                                maxValue: {{ distanceFilter.maxValue }}
+                            }"
                             class="space-y-2"
                         >
                             <div class="flex items-center justify-between text-xs text-gray-500">
-                                <span x-text="displayKm(minValue)"></span>
-                                <span x-text="displayKm(maxValue)"></span>
+                                <span x-text="`${Math.round(minValue)} km`"></span>
+                                <span x-text="`${Math.round(maxValue)} km`"></span>
                             </div>
 
                             <div class="distance-range relative h-8">
                                 <div class="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full border border-[#00A790] bg-transparent"></div>
                                 <div
                                     class="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#00A790]"
-                                    :style="`left: ${minPercent}%; right: ${100 - maxPercent}%;`"
+                                    :style="`left: ${((minValue - minBound) / (maxBound - minBound)) * 100}%; right: ${100 - (((maxValue - minBound) / (maxBound - minBound)) * 100)}%;`"
                                 ></div>
 
                                 <input
@@ -112,7 +117,7 @@
                                     max="20"
                                     step="1"
                                     x-model.number="minValue"
-                                    @input="onMinInput"
+                                    @input="if (minValue > maxValue) { minValue = maxValue; }"
                                     aria-label="Minimum distance"
                                 >
                                 <input
@@ -121,14 +126,14 @@
                                     max="20"
                                     step="1"
                                     x-model.number="maxValue"
-                                    @input="onMaxInput"
+                                    @input="if (maxValue < minValue) { maxValue = minValue; }"
                                     aria-label="Maximum distance"
                                 >
                             </div>
 
                             <div class="flex items-center justify-between text-xs text-gray-400">
-                                <span>0 km</span>
-                                <span>20 km</span>
+                                <span>{{ distanceFilter.minBound }} km</span>
+                                <span>{{ distanceFilter.maxBound }} km</span>
                             </div>
 
                             <input type="hidden" id="minDistance" name="minDistance" :value="minValue">
@@ -137,19 +142,24 @@
 
                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Number of Publications</label>
                         <div
-                            x-data="publicationRangeFilter({{ minPublicationCount is not null ? minPublicationCount : 0 }}, {{ maxPublicationCount is not null ? maxPublicationCount : 200 }})"
+                            x-data="{
+                                minBound: {{ publicationFilter.minBound }},
+                                maxBound: {{ publicationFilter.maxBound }},
+                                minValue: {{ publicationFilter.minValue }},
+                                maxValue: {{ publicationFilter.maxValue }}
+                            }"
                             class="space-y-2"
                         >
                             <div class="flex items-center justify-between text-xs text-gray-500">
-                                <span x-text="displayCount(minValue)"></span>
-                                <span x-text="displayCount(maxValue)"></span>
+                                <span x-text="`${Math.round(minValue)}`"></span>
+                                <span x-text="`${Math.round(maxValue)}`"></span>
                             </div>
 
                             <div class="distance-range relative h-8">
                                 <div class="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full border border-[#00A790] bg-transparent"></div>
                                 <div
                                     class="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#00A790]"
-                                    :style="`left: ${minPercent}%; right: ${100 - maxPercent}%;`"
+                                    :style="`left: ${((minValue - minBound) / (maxBound - minBound)) * 100}%; right: ${100 - (((maxValue - minBound) / (maxBound - minBound)) * 100)}%;`"
                                 ></div>
 
                                 <input
@@ -158,7 +168,7 @@
                                     max="200"
                                     step="1"
                                     x-model.number="minValue"
-                                    @input="onMinInput"
+                                    @input="if (minValue > maxValue) { minValue = maxValue; }"
                                     aria-label="Minimum number of publications"
                                 >
                                 <input
@@ -167,14 +177,14 @@
                                     max="200"
                                     step="1"
                                     x-model.number="maxValue"
-                                    @input="onMaxInput"
+                                    @input="if (maxValue < minValue) { maxValue = minValue; }"
                                     aria-label="Maximum number of publications"
                                 >
                             </div>
 
                             <div class="flex items-center justify-between text-xs text-gray-400">
-                                <span>0</span>
-                                <span>200</span>
+                                <span>{{ publicationFilter.minBound }}</span>
+                                <span>{{ publicationFilter.maxBound }}</span>
                             </div>
 
                             <input type="hidden" id="minPublicationCount" name="minPublicationCount" :value="minValue">
@@ -335,89 +345,6 @@
     </div>
 </div>
 
-<script>
-function distanceRangeFilter(initialMin, initialMax) {
-    const minBound = 0;
-    const maxBound = 20;
-
-    const normalizedMin = Number.isFinite(initialMin) ? Math.max(minBound, Math.min(initialMin, maxBound)) : minBound;
-    const normalizedMax = Number.isFinite(initialMax) ? Math.max(minBound, Math.min(initialMax, maxBound)) : maxBound;
-
-    return {
-        minValue: Math.min(normalizedMin, normalizedMax),
-        maxValue: Math.max(normalizedMin, normalizedMax),
-        get minPercent() {
-            return ((this.minValue - minBound) / (maxBound - minBound)) * 100;
-        },
-        get maxPercent() {
-            return ((this.maxValue - minBound) / (maxBound - minBound)) * 100;
-        },
-        onMinInput() {
-            if (this.minValue > this.maxValue) {
-                this.minValue = this.maxValue;
-            }
-        },
-        onMaxInput() {
-            if (this.maxValue < this.minValue) {
-                this.maxValue = this.minValue;
-            }
-        },
-        displayKm(value) {
-            return `${Math.round(value)} km`;
-        }
-    };
-}
-
-function publicationRangeFilter(initialMin, initialMax) {
-    const minBound = 0;
-    const maxBound = 200;
-
-    const normalizedMin = Number.isFinite(initialMin) ? Math.max(minBound, Math.min(initialMin, maxBound)) : minBound;
-    const normalizedMax = Number.isFinite(initialMax) ? Math.max(minBound, Math.min(initialMax, maxBound)) : maxBound;
-
-    return {
-        minValue: Math.min(normalizedMin, normalizedMax),
-        maxValue: Math.max(normalizedMin, normalizedMax),
-        get minPercent() {
-            return ((this.minValue - minBound) / (maxBound - minBound)) * 100;
-        },
-        get maxPercent() {
-            return ((this.maxValue - minBound) / (maxBound - minBound)) * 100;
-        },
-        onMinInput() {
-            if (this.minValue > this.maxValue) {
-                this.minValue = this.maxValue;
-            }
-        },
-        onMaxInput() {
-            if (this.maxValue < this.minValue) {
-                this.maxValue = this.minValue;
-            }
-        },
-        displayCount(value) {
-            return `${Math.round(value)}`;
-        }
-    };
-}
-
-function parcoursDiscovery() {
-    return {
-        viewMode: 'grid',
-        sortBy: 'recent',
-        filters: {
-            search: '',
-            distance: [0, 20]
-        },
-        resetFilters() {
-            this.filters = {
-                search: '',
-                distance: [0, 20]
-            };
-        }
-    }
-}
-
-</script>
 {% endblock %}
 
 {% block javascripts %}
