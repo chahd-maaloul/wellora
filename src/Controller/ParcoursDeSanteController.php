@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\ParcoursDeSante;
 use App\Form\ParcoursDeSanteType;
 use App\Repository\ParcoursDeSanteRepository;
+use App\Service\WeatherService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -111,10 +112,21 @@ final class ParcoursDeSanteController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_parcours_de_sante_show', methods: ['GET'])]
-    public function show(ParcoursDeSante $parcoursDeSante): Response
+    public function show(ParcoursDeSante $parcoursDeSante, WeatherService $weatherService): Response
     {
+        $weather = $weatherService->getCurrentWeatherForCoordinates(
+            $parcoursDeSante->getLatitudeParcours(),
+            $parcoursDeSante->getLongitudeParcours(),
+            $parcoursDeSante->getLocalisationParcours()
+        );
+
+        if ($weather === null) {
+            $weather = $weatherService->getCurrentWeather($parcoursDeSante->getLocalisationParcours());
+        }
+
         return $this->render('parcours_de_sante/show.html.twig', [
             'parcours_de_sante' => $parcoursDeSante,
+            'weather' => $weather,
         ]);
     }
 

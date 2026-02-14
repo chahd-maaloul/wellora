@@ -15,6 +15,11 @@
         <div class="px-4 mx-auto">
             <h1 class="text-xl font-bold font-display">{{ parcours_de_sante.nomParcours }}</h1>
             <p class="text-sm text-white/80"><i class="mr-1 fa-solid fa-location-dot"></i>{{ parcours_de_sante.localisationParcours }}</p>
+            {% if parcours_de_sante.latitudeParcours is not null and parcours_de_sante.longitudeParcours is not null %}
+                <p class="text-xs text-white/70">
+                    Lat: {{ parcours_de_sante.latitudeParcours|number_format(6) }}, Lng: {{ parcours_de_sante.longitudeParcours|number_format(6) }}
+                </p>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -22,7 +27,7 @@
 <div class="px-4 mx-auto">
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div class="space-y-4 lg:col-span-2">
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div class="p-3 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
                     <i class="mb-1 fa-solid fa-ruler text-wellcare-500"></i>
                     <p class="text-lg font-bold text-gray-900 dark:text-white">{{ parcours_de_sante.distanceParcours }}</p>
@@ -36,7 +41,17 @@
                 <div class="p-3 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
                     <i class="mb-1 fa-solid fa-map-location-dot text-wellcare-500"></i>
                     <p class="text-lg font-bold text-gray-900 dark:text-white">{{ parcours_de_sante.localisationParcours }}</p>
-                    <p class="text-xs text-gray-500">Location</p>
+                    <p class="text-xs text-gray-500">Location Label</p>
+                </div>
+                <div class="p-3 text-center bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                    <i class="mb-1 fa-solid fa-cloud-sun text-wellcare-500"></i>
+                    {% if weather and weather.temperature is not null %}
+                        <p class="text-lg font-bold text-gray-900 dark:text-white">{{ weather.temperature|number_format(1) }}&deg;C</p>
+                        <p class="text-xs text-gray-500">{{ weather.condition }}</p>
+                    {% else %}
+                        <p class="text-lg font-bold text-gray-900 dark:text-white">-</p>
+                        <p class="text-xs text-gray-500">Weather unavailable</p>
+                    {% endif %}
                 </div>
             </div>
 
@@ -45,6 +60,28 @@
                 <p class="text-sm text-gray-600 dark:text-gray-300">
                     Distance: <strong>{{ parcours_de_sante.distanceParcours }}</strong> km - Location: <strong>{{ parcours_de_sante.localisationParcours }}</strong> - Publications: <strong>{{ parcours_de_sante.publicationParcours|length }}</strong>
                 </p>
+            </div>
+
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <h2 class="mb-3 font-semibold text-gray-900 dark:text-white">Current Weather</h2>
+                {% if weather %}
+                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                        {{ weather.location }}{% if weather.country %}, {{ weather.country }}{% endif %}
+                    </p>
+                    <p class="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                        Coordinates:
+                        <strong>{{ weather.latitude|number_format(6) }}, {{ weather.longitude|number_format(6) }}</strong>
+                        <br>
+                        Condition: <strong>{{ weather.condition }}</strong>
+                        {% if weather.wind_speed is not null %}
+                            - Wind: <strong>{{ weather.wind_speed|number_format(1) }} km/h</strong>
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="text-sm text-gray-600 dark:text-gray-300">
+                        Weather data is currently unavailable for this location.
+                    </p>
+                {% endif %}
             </div>
         </div>
 

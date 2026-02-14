@@ -10,7 +10,6 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\Validator\Constraints\Image;
 
 class ParcoursDeSanteType extends AbstractType
@@ -27,10 +26,28 @@ class ParcoursDeSanteType extends AbstractType
             ])
             ->add('localisationParcours', TextType::class, [
                 'label' => 'Location',
-                'required' => false,
+                'required' => true,
                 'attr' => [
-                    'placeholder' => 'Enter location (at least 5 letters only)',
+                    'placeholder' => 'Selected from map',
                 ]
+            ])
+            ->add('latitudeParcours', NumberType::class, [
+                'label' => 'Latitude',
+                'required' => true,
+                'scale' => 6,
+                'attr' => [
+                    'readonly' => true,
+                    'step' => '0.000001',
+                ],
+            ])
+            ->add('longitudeParcours', NumberType::class, [
+                'label' => 'Longitude',
+                'required' => true,
+                'scale' => 6,
+                'attr' => [
+                    'readonly' => true,
+                    'step' => '0.000001',
+                ],
             ])
             ->add('distanceParcours', NumberType::class, [
                 'label' => 'Distance (km)',

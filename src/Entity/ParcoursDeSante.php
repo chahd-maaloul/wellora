@@ -39,11 +39,25 @@ class ParcoursDeSante
         minMessage: 'The location must be at least 5 characters',
         maxMessage: 'The location cannot exceed 255 characters'
     )]
-    #[Assert\Regex(
-        pattern: '/^[a-zA-Z\s]+$/',
-        message: 'The location can only contain letters and spaces'
-    )]
     private ?string $localisationParcours = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Assert\NotBlank(message: 'Latitude is required')]
+    #[Assert\Range(
+        min: -90,
+        max: 90,
+        notInRangeMessage: 'Latitude must be between -90 and 90'
+    )]
+    private ?float $latitudeParcours = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Assert\NotBlank(message: 'Longitude is required')]
+    #[Assert\Range(
+        min: -180,
+        max: 180,
+        notInRangeMessage: 'Longitude must be between -180 and 180'
+    )]
+    private ?float $longitudeParcours = null;
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'The distance is required')]
@@ -114,6 +128,30 @@ class ParcoursDeSante
     public function setDistanceParcours(?float $distanceParcours): static
     {
         $this->distanceParcours = $distanceParcours;
+
+        return $this;
+    }
+
+    public function getLatitudeParcours(): ?float
+    {
+        return $this->latitudeParcours;
+    }
+
+    public function setLatitudeParcours(?float $latitudeParcours): static
+    {
+        $this->latitudeParcours = $latitudeParcours;
+
+        return $this;
+    }
+
+    public function getLongitudeParcours(): ?float
+    {
+        return $this->longitudeParcours;
+    }
+
+    public function setLongitudeParcours(?float $longitudeParcours): static
+    {
+        $this->longitudeParcours = $longitudeParcours;
 
         return $this;
     }
