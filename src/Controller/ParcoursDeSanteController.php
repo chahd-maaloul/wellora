@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\ParcoursDeSante;
 use App\Form\ParcoursDeSanteType;
 use App\Repository\ParcoursDeSanteRepository;
+use App\Service\MapService;
 use App\Service\WeatherService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -112,7 +113,7 @@ final class ParcoursDeSanteController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_parcours_de_sante_show', methods: ['GET'])]
-    public function show(ParcoursDeSante $parcoursDeSante, WeatherService $weatherService): Response
+    public function show(ParcoursDeSante $parcoursDeSante, WeatherService $weatherService, MapService $mapService): Response
     {
         $weather = $weatherService->getCurrentWeatherForCoordinates(
             $parcoursDeSante->getLatitudeParcours(),
@@ -124,9 +125,27 @@ final class ParcoursDeSanteController extends AbstractController
             $weather = $weatherService->getCurrentWeather($parcoursDeSante->getLocalisationParcours());
         }
 
+        $mapData = $mapService->getMapDataForCoordinates(
+            $parcoursDeSante->getLatitudeParcours(),
+            $parcoursDeSante->getLongitudeParcours(),
+            $parcoursDeSante->getLocalisationParcours()
+        );
+
+        if ($mapData === null) {
+            $geoData = $mapService->geocodeLocation($parcoursDeSante->getLocalisationParcours());
+            if ($geoData !== null) {
+                $mapData = $mapService->getMapDataForCoordinates(
+                    isset($geoData['latitude']) ? (float) $geoData['latitude'] : null,
+                    isset($geoData['longitude']) ? (float) $geoData['longitude'] : null,
+                    $parcoursDeSante->getLocalisationParcours()
+                );
+            }
+        }
+
         return $this->render('parcours_de_sante/show.html.twig', [
             'parcours_de_sante' => $parcoursDeSante,
             'weather' => $weather,
+            'map_data' => $mapData,
         ]);
     }
 
