@@ -10,6 +10,7 @@ use App\DTO\Health\HealthStatisticsDTO;
 use App\DTO\Health\HealthTrendDTO;
 use App\DTO\Health\HealthTrendDirection;
 use App\DTO\Health\HealthRiskDTO;
+use App\DTO\Health\HealthPredictionDTO;
 use App\Entity\Healthentry;
 use App\Entity\Healthjournal;
 use App\Entity\Symptom;
@@ -20,6 +21,7 @@ use App\Repository\SymptomRepository;
 use App\Service\Health\HealthAnalyticsService;
 use App\Service\Health\HealthRiskEngineService;
 use App\Service\Health\HealthTrendService;
+use App\Service\Health\HealthPredictionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,7 @@ final class HealthController extends AbstractController
         private readonly HealthAnalyticsService $analyticsService,
         private readonly HealthTrendService $trendService,
         private readonly HealthRiskEngineService $riskEngineService,
+        private readonly HealthPredictionService $predictionService,
     ) {}
 
     #[Route('/', name: 'app_health_index', methods: ['GET'])]
@@ -46,6 +49,24 @@ final class HealthController extends AbstractController
     {
         return $this->render('health/journal.html.twig', [
             'controller_name' => 'HealthController',
+        ]);
+    }
+
+    #[Route('/prediction', name: 'app_health_prediction', methods: ['GET'])]
+    public function prediction(
+        HealthjournalRepository $journalRepository,
+        HealthentryRepository $entryRepository
+    ): Response {
+        // Get prediction using all entries (not limited by journal)
+        $prediction = $this->predictionService->predictGlycemia(null);
+        
+        // Get total entries count
+        $totalEntries = $entryRepository->count([]);
+        
+        return $this->render('health/prediction.html.twig', [
+            'controller_name' => 'HealthController',
+            'prediction' => $prediction,
+            'totalEntries' => $totalEntries,
         ]);
     }
 
