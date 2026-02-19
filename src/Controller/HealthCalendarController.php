@@ -43,9 +43,20 @@ final class HealthCalendarController extends AbstractController
             $selectedJournalId = 0;
         }
 
+        // Determine the initial date for the calendar view
+        // When a specific journal is selected, jump to its start date
+        $initialDate = null;
+        if ($selectedJournalId > 0) {
+            $selectedJournal = $this->journalRepository->find($selectedJournalId);
+            if (null !== $selectedJournal && null !== $selectedJournal->getDatedebut()) {
+                $initialDate = $selectedJournal->getDatedebut()->format('Y-m-d');
+            }
+        }
+
         return $this->render('health/calendar.html.twig', [
             'journals' => $journals,
             'selectedJournalId' => $selectedJournalId,
+            'initialDate' => $initialDate,
         ]);
     }
 

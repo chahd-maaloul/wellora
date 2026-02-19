@@ -77,6 +77,13 @@ class CalendarSubscriber implements EventSubscriberInterface
                     $event->addOption('textColor', $eventData['textColor']);
                 }
 
+                // Add custom CSS classes for styling
+                if (isset($eventData['classNames'])) {
+                    foreach ($eventData['classNames'] as $className) {
+                        $event->addOption('classNames', $className);
+                    }
+                }
+
                 // Add extended properties for event click details
                 if (isset($eventData['extendedProps'])) {
                     $event->addOption('extendedProps', $eventData['extendedProps']);

@@ -202,7 +202,7 @@ final class HealthCalendarService
     }
 
     /**
-     * Format a single event for FullCalendar.
+     * Format a single event for FullCalendar with badge styling.
      * 
      * @param string $dateString The date in Y-m-d format
      * @param HealthScoreDTO $score The health score for this date
@@ -212,16 +212,24 @@ final class HealthCalendarService
     {
         $globalScore = $score->globalScore;
         $color = $this->determineColor($globalScore);
+        
+        // Format grade as a badge (A, B, C, D, E, F)
+        $gradeEmoji = $this->getGradeEmoji($score->globalScoreGrade);
+        
+        // Use badge-style title with emoji and score
+        $title = sprintf('%s %d', $gradeEmoji, (int) $globalScore);
 
         return [
-            'title' => sprintf('Score: %d', (int) $globalScore),
+            'title' => $title,
             'start' => $dateString,
             'backgroundColor' => $color,
             'borderColor' => $color,
             'textColor' => '#ffffff',
+            'classNames' => ['health-score-badge'],
             'extendedProps' => [
                 'score' => $globalScore,
                 'grade' => $score->globalScoreGrade,
+                'gradeEmoji' => $gradeEmoji,
                 'glycemicScore' => $score->glycemicScore,
                 'bloodPressureScore' => $score->bloodPressureScore,
                 'sleepScore' => $score->sleepScore,
@@ -229,6 +237,25 @@ final class HealthCalendarService
                 'weightScore' => $score->weightScore,
             ],
         ];
+    }
+    
+    /**
+     * Get emoji representation of health grade.
+     * 
+     * @param string|null $grade The letter grade (A-F)
+     * @return string Emoji representation
+     */
+    private function getGradeEmoji(?string $grade): string
+    {
+        return match($grade) {
+            'A' => '🟢',
+            'B' => '🔵',
+            'C' => '🟡',
+            'D' => '🟠',
+            'E' => '🔴',
+            'F' => '⚫',
+            default => '⚪',
+        };
     }
 
     /**
