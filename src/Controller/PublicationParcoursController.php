@@ -8,6 +8,7 @@ use App\Form\PublicationParcoursType;
 use App\Repository\CommentairePublicationRepository;
 use App\Repository\ParcoursDeSanteRepository;
 use App\Repository\PublicationParcoursRepository;
+use App\Service\CommentSanitizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,6 +22,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/publication/parcours')]
 final class PublicationParcoursController extends AbstractController
 {
+    public function __construct(private readonly CommentSanitizer $commentSanitizer)
+    {
+    }
+
     private const EXPERIENCE_FILTERS = [
         'bad' => 'Bad',
         'good' => 'good',
@@ -31,6 +36,8 @@ final class PublicationParcoursController extends AbstractController
         'opinion' => 'opinion',
         'event' => 'event',
     ];
+
+    private const SORT_OPTIONS = ['ASC', 'DESC', 'HOT'];
 
     #[Route(name: 'app_publication_parcours_index', methods: ['GET'])]
     public function index(
@@ -48,7 +55,7 @@ final class PublicationParcoursController extends AbstractController
         $typePublicationKey = strtolower($typePublicationQuery);
         $selectedTypePublication = self::TYPE_PUBLICATION_FILTERS[$typePublicationKey] ?? null;
         $sortDateRaw = strtoupper(trim((string) $request->query->get('sortDate', 'DESC')));
-        $selectedSortDate = $sortDateRaw === 'ASC' ? 'ASC' : 'DESC';
+        $selectedSortDate = in_array($sortDateRaw, self::SORT_OPTIONS, true) ? $sortDateRaw : 'DESC';
         $selectedParcours = null;
 
         if ($parcoursId > 0) {
@@ -67,9 +74,14 @@ final class PublicationParcoursController extends AbstractController
             max(1, $request->query->getInt('page', 1)),
             5
         );
+        $publicationHotMetrics = $this->buildPublicationHotMetrics(
+            $publicationPagination->getItems(),
+            $publicationParcoursRepository
+        );
 
         return $this->render('publication_parcours/index.html.twig', [
             'publication_parcours' => $publicationPagination,
+            'publication_hot_metrics' => $publicationHotMetrics,
             'selected_parcours' => $selectedParcours,
             'selected_experience' => $selectedExperience,
             'selected_type_publication' => $selectedTypePublication,
@@ -159,8 +171,14 @@ final class PublicationParcoursController extends AbstractController
         }
 
         $commentText = trim((string) $request->request->get('commentaire', ''));
+        if ($commentText === '') {
+            $this->addFlash('error', 'Comment cannot be empty.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
         $comment = new CommentairePublication();
-        $comment->setCommentaire($commentText);
+        $comment->setCommentaire($this->commentSanitizer->sanitize($commentText));
         $comment->setDateCommentaire(new \DateTime());
         $comment->setPublicationParcours($publicationParcour);
 
@@ -196,7 +214,13 @@ final class PublicationParcoursController extends AbstractController
         }
 
         $commentText = trim((string) $request->request->get('commentaire', ''));
-        $comment->setCommentaire($commentText);
+        if ($commentText === '') {
+            $this->addFlash('error', 'Comment cannot be empty.');
+
+            return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
+        }
+
+        $comment->setCommentaire($this->commentSanitizer->sanitize($commentText));
 
         $entityManager->flush();
 
@@ -363,7 +387,7 @@ final class PublicationParcoursController extends AbstractController
         $experience = trim((string) ($request->request->get('experience', $request->query->get('experience', ''))));
         $typePublication = trim((string) ($request->request->get('typePublication', $request->query->get('typePublication', ''))));
         $sortDateRaw = strtoupper(trim((string) ($request->request->get('sortDate', $request->query->get('sortDate', 'DESC')))));
-        $sortDate = $sortDateRaw === 'ASC' ? 'ASC' : 'DESC';
+        $sortDate = in_array($sortDateRaw, self::SORT_OPTIONS, true) ? $sortDateRaw : 'DESC';
         $page = $request->request->getInt('page');
         if ($page <= 0) {
             $page = $request->query->getInt('page');
@@ -421,5 +445,26 @@ final class PublicationParcoursController extends AbstractController
         }
 
         return $this->redirectToRoute('app_publication_parcours_index', $feedRedirectParams, Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * @param PublicationParcours[] $publications
+     * @return array<int, array{hotScore: int, commentCount: int, ageDays: int}>
+     */
+    private function buildPublicationHotMetrics(array $publications, PublicationParcoursRepository $publicationParcoursRepository): array
+    {
+        $publicationIds = [];
+        foreach ($publications as $publication) {
+            if (!$publication instanceof PublicationParcours) {
+                continue;
+            }
+
+            $publicationId = $publication->getId();
+            if ($publicationId !== null) {
+                $publicationIds[] = $publicationId;
+            }
+        }
+
+        return $publicationParcoursRepository->findHotMetricsForPublicationIds($publicationIds);
     }
 }

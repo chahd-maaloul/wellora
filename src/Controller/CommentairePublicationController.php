@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\CommentairePublication;
 use App\Form\CommentairePublicationType;
 use App\Repository\CommentairePublicationRepository;
+use App\Service\CommentSanitizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +15,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/commentaire/publication')]
 final class CommentairePublicationController extends AbstractController
 {
+    public function __construct(private readonly CommentSanitizer $commentSanitizer)
+    {
+    }
+
     #[Route(name: 'app_commentaire_publication_index', methods: ['GET'])]
     public function index(CommentairePublicationRepository $commentairePublicationRepository): Response
     {
@@ -30,6 +35,9 @@ final class CommentairePublicationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $commentairePublication->setCommentaire(
+                $this->commentSanitizer->sanitize((string) $commentairePublication->getCommentaire())
+            );
             $entityManager->persist($commentairePublication);
             $entityManager->flush();
 
@@ -57,6 +65,9 @@ final class CommentairePublicationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $commentairePublication->setCommentaire(
+                $this->commentSanitizer->sanitize((string) $commentairePublication->getCommentaire())
+            );
             $entityManager->flush();
 
             return $this->redirectToRoute('app_commentaire_publication_index', [], Response::HTTP_SEE_OTHER);

@@ -52,6 +52,7 @@
                             {% endfor %}
                         </select>
                         <select name="sortDate" class="px-3 py-2 text-xs border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <option value="HOT" {{ selected_sort_date == 'HOT' ? 'selected' : '' }}>Hot publications</option>
                             <option value="DESC" {{ selected_sort_date == 'DESC' ? 'selected' : '' }}>Newest pub</option>
                             <option value="ASC" {{ selected_sort_date == 'ASC' ? 'selected' : '' }}>Oldest pub</option>
                         </select>
@@ -79,6 +80,7 @@
                 {% set experience_color = experience_key == 'bad' ? 'text-red-600 dark:text-red-400' : (experience_key == 'excellent' ? 'text-emerald-600 dark:text-emerald-400' : (experience_key == 'good' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400')) %}
                 {% set type_value = publication_parcour.typePublication|default('opinion') %}
                 {% set type_label = type_value == 'event' ? 'Event' : 'Opinion' %}
+                {% set hot_metrics = publication_hot_metrics[publication_parcour.id]|default({'hotScore': 0, 'commentCount': 0, 'ageDays': 0}) %}
                 {% if image %}
                     {% if image starts with 'http://' or image starts with 'https://' %}
                         {% set image_src = image %}
@@ -130,6 +132,9 @@
                                     </span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
                                         {{ type_label }}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" title="{{ hot_metrics.commentCount }} comments, {{ hot_metrics.ageDays }} day(s) old">
+                                        <i class="mr-1 fa-solid fa-fire"></i>{{ hot_metrics.hotScore }}
                                     </span>
                                 </div>
 
@@ -218,6 +223,7 @@
                                                     <input type="hidden" name="page" value="{{ current_page }}">
                                                     <textarea
                                                         name="commentaire"
+                                                        required
                                                         rows="2"
                                                         class="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg resize-none dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
                                                     >{{ commentaire.commentaire }}</textarea>
@@ -257,6 +263,7 @@
 
                                         <textarea
                                             name="commentaire"
+                                            required
                                             rows="2"
                                             placeholder="Write a comment..."
                                             class="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg resize-none dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
