@@ -780,6 +780,12 @@
                 I confirm that I am a licensed healthcare professional and agree to the <a href="/terms" class="text-wellcare-dark-600 hover:text-wellcare-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-dark-600 hover:text-wellcare-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-300 hover:underline">Privacy Policy</a>. I understand that my credentials will be verified before account activation.
               </label>
             </div>
+
+            {# Captcha Verification #}
+            {% include 'components/captcha.html.twig' with {
+              input_name: 'captcha_code',
+              container_class: 'mt-4'
+            } %}
           </div>
 
           {# Navigation Buttons #}

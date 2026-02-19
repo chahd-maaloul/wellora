@@ -1,0 +1,209 @@
+{#
+    Captcha Component - WellCare Connect Theme
+    Usage: {% include 'components/captcha.html.twig' with {'form': registrationForm} %}
+    
+    Features:
+    - Custom captcha image with distortion
+    - AJAX refresh without page reload
+    - Real-time validation
+    - WellCare themed styling
+#}
+
+{# Generate initial captcha on load #}
+{% set captcha_code = generate_captcha() %}
+{% set captcha_image = generate_captcha_image(captcha_code) %}
+
+<div class="captcha-container" 
+     x-data="captchaComponent()"
+     x-init="init()">
+    
+    <label for="captcha_code" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-wellcare-600 dark:text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Vérification de sécurité
+        </span>
+    </label>
+    
+    <div class="flex flex-col items-start gap-4 sm:flex-row">
+        <!-- Captcha Image -->
+        <div class="relative">
+            <div class="overflow-hidden bg-white border-2 border-gray-300 rounded-lg captcha-image-wrapper dark:border-gray-600">
+                <img 
+                    :src="captchaImage" 
+                    alt="Captcha" 
+                    class="w-full h-auto max-w-[200px] block"
+                    id="captcha-image"
+                >
+            </div>
+            
+            <!-- Loading spinner -->
+            <div 
+                x-show="isLoading" 
+                class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80"
+                style="display: none;"
+            >
+                <svg class="w-8 h-8 animate-spin text-wellcare-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Refresh Button -->
+        <button 
+            type="button"
+            @click="refreshCaptcha()"
+            :disabled="isLoading"
+            class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-200 bg-white border border-gray-300 rounded-lg shadow-sm dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-wellcare-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+            <svg 
+                class="w-5 h-5 mr-2" 
+                :class="isLoading ? 'animate-spin' : ''"
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span x-text="isLoading ? 'Chargement...' : 'Nouveau code'"></span>
+        </button>
+    </div>
+    
+    <!-- Captcha Input -->
+    <div class="mt-4">
+        <input 
+            type="text"
+            name="captcha_code"
+            id="captcha_code"
+            x-model="captchaInput"
+            @input="validateCaptcha()"
+            :class="{
+                'border-red-500 focus:ring-red-500 focus:border-red-500': validationError,
+                'border-green-500 focus:ring-green-500 focus:border-green-500': validationSuccess,
+                'border-gray-300 dark:border-gray-600 focus:ring-wellcare-500 focus:border-wellcare-500': !validationError && !validationSuccess
+            }"
+            class="block w-full px-4 py-3 text-gray-900 placeholder-gray-400 transition-colors duration-200 bg-white border rounded-lg dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2"
+            placeholder="Entrez le code ci-dessus (6 caractères)"
+            maxlength="6"
+            required
+            autocomplete="off"
+        >
+        
+        <!-- Validation Message -->
+        <p 
+            x-show="validationMessage" 
+            x-text="validationMessage"
+            class="mt-2 text-sm"
+            :class="validationError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'"
+        ></p>
+    </div>
+    
+    <!-- Hidden field for form submission -->
+    <input type="hidden" name="_captcha_validated" :value="isValidated">
+</div>
+
+<script>
+function captchaComponent() {
+    return {
+        captchaImage: '{{ captcha_image|raw }}',
+        captchaInput: '',
+        isLoading: false,
+        isValidated: false,
+        validationError: false,
+        validationSuccess: false,
+        validationMessage: '',
+        
+        init() {
+            // Set initial state
+            console.log('Captcha initialized');
+        },
+        
+        async refreshCaptcha() {
+            this.isLoading = true;
+            this.validationError = false;
+            this.validationSuccess = false;
+            this.validationMessage = '';
+            this.captchaInput = '';
+            this.isValidated = false;
+            
+            try {
+                const response = await fetch('{{ path("app_captcha_refresh") }}', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.captchaImage = data.captcha_image;
+                } else {
+                    this.validationMessage = 'Erreur lors du chargement du captcha';
+                    this.validationError = true;
+                }
+            } catch (error) {
+                console.error('Captcha refresh error:', error);
+                this.validationMessage = 'Erreur de connexion';
+                this.validationError = true;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        
+        async validateCaptcha() {
+            if (this.captchaInput.length < 6) {
+                this.validationError = false;
+                this.validationSuccess = false;
+                this.validationMessage = '';
+                this.isValidated = false;
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('captcha_code', this.captchaInput);
+                
+                const response = await fetch('{{ path("app_captcha_validate") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.valid) {
+                    this.validationSuccess = true;
+                    this.validationError = false;
+                    this.validationMessage = '✓ Code correct';
+                    this.isValidated = true;
+                } else {
+                    this.validationError = true;
+                    this.validationSuccess = false;
+                    this.validationMessage = '✗ Code incorrect - Veuillez réessayer';
+                    this.isValidated = false;
+                    
+                    // Auto-refresh captcha on wrong code
+                    if (this.captchaInput.length === 6) {
+                        setTimeout(() => {
+                            this.refreshCaptcha();
+                        }, 1500);
+                    }
+                }
+            } catch (error) {
+                console.error('Captcha validation error:', error);
+            }
+        }
+    };
+}
+</script>
+
+<style>
+.captcha-image-wrapper {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+}
+.dark .captcha-image-wrapper {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+</style>

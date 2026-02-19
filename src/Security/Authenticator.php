@@ -3,6 +3,7 @@
 namespace App\Security;
 
 use App\Entity\User;
+use App\Service\CaptchaService;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -26,13 +27,25 @@ class Authenticator extends AbstractLoginFormAuthenticator
 
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private CaptchaService $captchaService
     ) {}
 
     public function authenticate(Request $request): Passport
     {
         $email = $request->request->get('email', '');
         $password = $request->request->get('password', '');
+        $captchaCode = $request->request->get('captcha_code', '');
+
+        // ========== CAPTCHA VALIDATION ==========
+        if (empty($captchaCode)) {
+            throw new CustomUserMessageAuthenticationException('Veuillez entrer le code de vérification.');
+        }
+        
+        if (!$this->captchaService->validate($captchaCode)) {
+            throw new CustomUserMessageAuthenticationException('Le code de vérification est incorrect. Veuillez réessayer.');
+        }
+        // ========== END CAPTCHA VALIDATION ==========
 
         $request->getSession()->set(SecurityRequestAttributes::LAST_USERNAME, $email);
 

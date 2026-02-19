@@ -648,6 +648,12 @@
                 I agree to the <a href="/terms" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Privacy Policy</a>. I understand that my health information will be handled in accordance with HIPAA regulations.
               </label>
             </div>
+
+            {# Captcha Verification #}
+            {% include 'components/captcha.html.twig' with {
+              input_name: 'captcha_code',
+              container_class: 'mt-4'
+            } %}
           </div>
 
           {# Navigation Buttons with enhanced styling #}

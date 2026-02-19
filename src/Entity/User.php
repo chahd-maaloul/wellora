@@ -103,6 +103,10 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 128, nullable: true)]
     private ?string $lastSessionId = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    #[UniqueEntity(fields: ['googleId'], message: 'Ce compte Google est déjà lié à un autre utilisateur')]
+    private ?string $googleId = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -374,6 +378,17 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastSessionId(?string $lastSessionId): self
     {
         $this->lastSessionId = $lastSessionId;
+        return $this;
+    }
+
+    public function getGoogleId(): ?string
+    {
+        return $this->googleId;
+    }
+
+    public function setGoogleId(?string $googleId): self
+    {
+        $this->googleId = $googleId;
         return $this;
     }
 
