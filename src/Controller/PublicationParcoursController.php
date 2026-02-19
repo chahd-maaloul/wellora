@@ -9,6 +9,7 @@ use App\Repository\CommentairePublicationRepository;
 use App\Repository\ParcoursDeSanteRepository;
 use App\Repository\PublicationParcoursRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -35,7 +36,8 @@ final class PublicationParcoursController extends AbstractController
     public function index(
         Request $request,
         PublicationParcoursRepository $publicationParcoursRepository,
-        ParcoursDeSanteRepository $parcoursDeSanteRepository
+        ParcoursDeSanteRepository $parcoursDeSanteRepository,
+        PaginatorInterface $paginator
     ): Response
     {
         $parcoursId = $request->query->getInt('parcoursId');
@@ -60,8 +62,14 @@ final class PublicationParcoursController extends AbstractController
             $selectedSortDate
         );
 
+        $publicationPagination = $paginator->paginate(
+            $publications,
+            max(1, $request->query->getInt('page', 1)),
+            5
+        );
+
         return $this->render('publication_parcours/index.html.twig', [
-            'publication_parcours' => $publications,
+            'publication_parcours' => $publicationPagination,
             'selected_parcours' => $selectedParcours,
             'selected_experience' => $selectedExperience,
             'selected_type_publication' => $selectedTypePublication,
@@ -356,6 +364,10 @@ final class PublicationParcoursController extends AbstractController
         $typePublication = trim((string) ($request->request->get('typePublication', $request->query->get('typePublication', ''))));
         $sortDateRaw = strtoupper(trim((string) ($request->request->get('sortDate', $request->query->get('sortDate', 'DESC')))));
         $sortDate = $sortDateRaw === 'ASC' ? 'ASC' : 'DESC';
+        $page = $request->request->getInt('page');
+        if ($page <= 0) {
+            $page = $request->query->getInt('page');
+        }
 
         $redirectParams = [
             'sortDate' => $sortDate,
@@ -371,6 +383,10 @@ final class PublicationParcoursController extends AbstractController
 
         if ($typePublication !== '') {
             $redirectParams['typePublication'] = $typePublication;
+        }
+
+        if ($page > 1) {
+            $redirectParams['page'] = $page;
         }
 
         return $redirectParams;

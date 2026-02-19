@@ -21,7 +21,8 @@
         {% if image starts with 'http://' or image starts with 'https://' %}
             {% set image_src = image %}
         {% else %}
-            {% set image_src = asset(image starts with 'uploads/' ? image : 'uploads/parcours/' ~ image) %}
+            {% set image_path = image starts with '/' ? image : (image starts with 'uploads/' ? '/' ~ image : '/uploads/parcours/' ~ image) %}
+            {% set image_src = image_path|imagine_filter('publication_original') %}
         {% endif %}
     {% endif %}
 
@@ -42,8 +43,8 @@
                         <p class="font-medium text-gray-900 dark:text-white">
                             {{ publication_parcour.parcoursDeSante ? publication_parcour.parcoursDeSante.nomParcours : 'Unknown trail' }}
                         </p>
-                        <p class="text-xs text-gray-500">
-                            {{ publication_parcour.datePublication ? publication_parcour.datePublication|date('M d, Y') : 'No date' }}
+                        <p class="text-xs text-gray-500" title="{{ publication_parcour.datePublication ? publication_parcour.datePublication|date('M d, Y') : '-' }}">
+                            {{ publication_parcour.datePublication ? publication_parcour.datePublication|time_diff : 'No date' }}
                         </p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -96,10 +97,7 @@
             <div class="mt-3 space-y-2">
                 {% for commentaire in publication_parcour.commentairePublications %}
                     <div class="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                        <div class="flex items-start justify-between gap-2">
-                            <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                                {{ commentaire.dateCommentaire ? commentaire.dateCommentaire|date('M d, Y') : 'No date' }}
-                            </p>
+                        <div class="flex items-start justify-end gap-2">
                             <div class="flex items-center gap-2">
                                 <button
                                     type="button"

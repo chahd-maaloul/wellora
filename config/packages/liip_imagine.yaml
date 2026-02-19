@@ -1,0 +1,24 @@
+liip_imagine:
+    driver: gd
+
+    filter_sets:
+        cache: ~
+
+        parcours_card:
+            quality: 100
+            filters:
+                thumbnail:
+                    size: [480, 320]
+                    mode: outbound
+
+        parcours_detail:
+            quality: 100
+            filters:
+                thumbnail:
+                    size: [1200, 700]
+                    mode: outbound
+
+        publication_original:
+            quality: 100
+            filters:
+                auto_rotate: ~

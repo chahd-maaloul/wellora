@@ -8,6 +8,7 @@ use App\Repository\ParcoursDeSanteRepository;
 use App\Service\MapService;
 use App\Service\WeatherService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,7 +19,11 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ParcoursDeSanteController extends AbstractController
 {
     #[Route(name: 'app_parcours_de_sante_index', methods: ['GET'])]
-    public function index(Request $request, ParcoursDeSanteRepository $parcoursDeSanteRepository): Response
+    public function index(
+        Request $request,
+        ParcoursDeSanteRepository $parcoursDeSanteRepository,
+        PaginatorInterface $paginator
+    ): Response
     {
         $nomParcours = trim((string) $request->query->get('nomParcours', ''));
         $localisation = trim((string) $request->query->get('localisation', ''));
@@ -50,8 +55,7 @@ final class ParcoursDeSanteController extends AbstractController
         $sortBy = $sort['sortBy'];
         $sortOrder = $sort['sortOrder'];
 
-        return $this->render('parcours_de_sante/index.html.twig', [
-            'parcours_de_santes' => $parcoursDeSanteRepository->searchByNameAndLocation(
+        $parcours = $parcoursDeSanteRepository->searchByNameAndLocation(
                 $nomParcours !== '' ? $nomParcours : null,
                 $localisation !== '' ? $localisation : null,
                 $minDistance,
@@ -60,7 +64,16 @@ final class ParcoursDeSanteController extends AbstractController
                 $maxPublicationCount,
                 $sortBy,
                 $sortOrder
-            ),
+            );
+
+        $parcoursPagination = $paginator->paginate(
+            $parcours,
+            max(1, $request->query->getInt('page', 1)),
+            9
+        );
+
+        return $this->render('parcours_de_sante/index.html.twig', [
+            'parcours_de_santes' => $parcoursPagination,
             'nomParcours' => $nomParcours,
             'localisation' => $localisation,
             'minDistance' => $minDistance,
