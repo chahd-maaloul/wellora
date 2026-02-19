@@ -33,6 +33,11 @@
                             All community publications
                         </p>
                     {% endif %}
+                    {% if selected_hashtag %}
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Active hashtag: <span class="font-semibold text-wellcare-600 dark:text-wellcare-400">#{{ selected_hashtag }}</span>
+                        </p>
+                    {% endif %}
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <form method="get" action="{{ path('app_publication_parcours_index') }}" class="flex items-center gap-2">
@@ -51,6 +56,13 @@
                                 <option value="{{ value }}" {{ selected_type_publication == value ? 'selected' : '' }}>{{ label }}</option>
                             {% endfor %}
                         </select>
+                        <input
+                            type="text"
+                            name="hashtag"
+                            value="{{ selected_hashtag ? '#' ~ selected_hashtag : '' }}"
+                            placeholder="#hashtag"
+                            class="w-32 px-3 py-2 text-xs border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
                         <select name="sortDate" class="px-3 py-2 text-xs border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                             <option value="HOT" {{ selected_sort_date == 'HOT' ? 'selected' : '' }}>Hot publications</option>
                             <option value="DESC" {{ selected_sort_date == 'DESC' ? 'selected' : '' }}>Newest pub</option>
@@ -59,7 +71,7 @@
                         <button type="submit" class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" title="Filter" aria-label="Filter">
                             <i class="fa-solid fa-filter"></i>
                         </button>
-                        {% if selected_experience or selected_type_publication or selected_sort_date != 'DESC' %}
+                        {% if selected_experience or selected_type_publication or selected_sort_date != 'DESC' or selected_hashtag %}
                             <a href="{{ path('app_publication_parcours_index', selected_parcours ? {'parcoursId': selected_parcours.id} : {}) }}" class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700" title="Reset" aria-label="Reset">
                                 <i class="fa-solid fa-rotate-right"></i>
                             </a>
@@ -81,6 +93,7 @@
                 {% set type_value = publication_parcour.typePublication|default('opinion') %}
                 {% set type_label = type_value == 'event' ? 'Event' : 'Opinion' %}
                 {% set hot_metrics = publication_hot_metrics[publication_parcour.id]|default({'hotScore': 0, 'commentCount': 0, 'ageDays': 0}) %}
+                {% set publication_tags = publication_hashtags[publication_parcour.id]|default([]) %}
                 {% if image %}
                     {% if image starts with 'http://' or image starts with 'https://' %}
                         {% set image_src = image %}
@@ -136,6 +149,18 @@
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" title="{{ hot_metrics.commentCount }} comments, {{ hot_metrics.ageDays }} day(s) old">
                                         <i class="mr-1 fa-solid fa-fire"></i>{{ hot_metrics.hotScore }}
                                     </span>
+                                    {% if publication_tags is not empty %}
+                                        <span class="inline-flex items-center gap-2">
+                                            {% for hashtag in publication_tags %}
+                                                <a
+                                                    href="{{ path('app_publication_parcours_index', {'hashtag': hashtag, 'sortDate': selected_sort_date}) }}"
+                                                    class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-wellcare-50 text-wellcare-700 hover:bg-wellcare-100 dark:bg-wellcare-900/30 dark:text-wellcare-300"
+                                                >
+                                                    #{{ hashtag }}
+                                                </a>
+                                            {% endfor %}
+                                        </span>
+                                    {% endif %}
                                 </div>
 
                                 <p class="mb-3 text-sm text-gray-700 dark:text-gray-300">
@@ -158,6 +183,9 @@
                                     {% endif %}
                                     {% if selected_type_publication %}
                                         {% set comments_link_params = comments_link_params|merge({'typePublication': selected_type_publication}) %}
+                                    {% endif %}
+                                    {% if selected_hashtag %}
+                                        {% set comments_link_params = comments_link_params|merge({'hashtag': selected_hashtag}) %}
                                     {% endif %}
                                     <a href="{{ path('app_publication_parcours_comments', comments_link_params) }}" class="flex items-center gap-1 text-gray-500 hover:text-wellcare-500">
                                         <i class="fa-regular fa-comment"></i>{{ publication_parcour.commentairePublications|length }} comments
@@ -187,6 +215,9 @@
                                                             {% endif %}
                                                             {% if selected_type_publication %}
                                                                 <input type="hidden" name="typePublication" value="{{ selected_type_publication }}">
+                                                            {% endif %}
+                                                            {% if selected_hashtag %}
+                                                                <input type="hidden" name="hashtag" value="{{ selected_hashtag }}">
                                                             {% endif %}
                                                             <input type="hidden" name="sortDate" value="{{ selected_sort_date }}">
                                                             <input type="hidden" name="page" value="{{ current_page }}">
@@ -218,6 +249,9 @@
                                                     {% endif %}
                                                     {% if selected_type_publication %}
                                                         <input type="hidden" name="typePublication" value="{{ selected_type_publication }}">
+                                                    {% endif %}
+                                                    {% if selected_hashtag %}
+                                                        <input type="hidden" name="hashtag" value="{{ selected_hashtag }}">
                                                     {% endif %}
                                                     <input type="hidden" name="sortDate" value="{{ selected_sort_date }}">
                                                     <input type="hidden" name="page" value="{{ current_page }}">
@@ -257,6 +291,9 @@
                                         {% endif %}
                                         {% if selected_type_publication %}
                                             <input type="hidden" name="typePublication" value="{{ selected_type_publication }}">
+                                        {% endif %}
+                                        {% if selected_hashtag %}
+                                            <input type="hidden" name="hashtag" value="{{ selected_hashtag }}">
                                         {% endif %}
                                         <input type="hidden" name="sortDate" value="{{ selected_sort_date }}">
                                         <input type="hidden" name="page" value="{{ current_page }}">

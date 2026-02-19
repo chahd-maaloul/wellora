@@ -17,6 +17,7 @@
     {% set experience_color = experience_key == 'bad' ? 'text-red-600 dark:text-red-400' : (experience_key == 'excellent' ? 'text-emerald-600 dark:text-emerald-400' : (experience_key == 'good' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400')) %}
     {% set type_value = publication_parcour.typePublication|default('opinion') %}
     {% set type_label = type_value == 'event' ? 'Event' : 'Opinion' %}
+    {% set filter_sort_date = back_feed_params.sortDate|default('DESC') %}
     {% if image %}
         {% if image starts with 'http://' or image starts with 'https://' %}
             {% set image_src = image %}
@@ -75,6 +76,18 @@
                 <p class="text-sm text-gray-700 dark:text-gray-300">
                     {{ publication_parcour.textPublication }}
                 </p>
+                {% if publication_hashtags|default([]) is not empty %}
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        {% for hashtag in publication_hashtags|default([]) %}
+                            <a
+                                href="{{ path('app_publication_parcours_index', {'hashtag': hashtag, 'sortDate': filter_sort_date}) }}"
+                                class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-wellcare-50 text-wellcare-700 hover:bg-wellcare-100 dark:bg-wellcare-900/30 dark:text-wellcare-300"
+                            >
+                                #{{ hashtag }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
                 {% if image_src %}
                     <div class="mt-3">

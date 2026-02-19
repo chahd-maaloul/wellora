@@ -24,7 +24,8 @@ class PublicationParcoursRepository extends ServiceEntityRepository
         ?ParcoursDeSante $parcoursDeSante = null,
         ?string $experience = null,
         ?string $typePublication = null,
-        string $dateSortOrder = 'DESC'
+        string $dateSortOrder = 'DESC',
+        ?string $hashtag = null
     ): array
     {
         $sortOrder = strtoupper($dateSortOrder);
@@ -47,6 +48,12 @@ class PublicationParcoursRepository extends ServiceEntityRepository
             $qb
                 ->andWhere('pp.typePublication = :typePublication')
                 ->setParameter('typePublication', $typePublication);
+        }
+
+        if ($hashtag !== null && $hashtag !== '') {
+            $qb
+                ->andWhere('LOWER(pp.textPublication) LIKE :hashtagPattern')
+                ->setParameter('hashtagPattern', '%#' . mb_strtolower($hashtag, 'UTF-8') . '%');
         }
 
         if ($sortOrder === 'HOT') {

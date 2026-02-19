@@ -9,6 +9,7 @@ use App\Repository\CommentairePublicationRepository;
 use App\Repository\ParcoursDeSanteRepository;
 use App\Repository\PublicationParcoursRepository;
 use App\Service\CommentSanitizer;
+use App\Service\HashtagExtractor;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,9 +23,10 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/publication/parcours')]
 final class PublicationParcoursController extends AbstractController
 {
-    public function __construct(private readonly CommentSanitizer $commentSanitizer)
-    {
-    }
+    public function __construct(
+        private readonly CommentSanitizer $commentSanitizer,
+        private readonly HashtagExtractor $hashtagExtractor
+    ) {}
 
     private const EXPERIENCE_FILTERS = [
         'bad' => 'Bad',
@@ -56,6 +58,8 @@ final class PublicationParcoursController extends AbstractController
         $selectedTypePublication = self::TYPE_PUBLICATION_FILTERS[$typePublicationKey] ?? null;
         $sortDateRaw = strtoupper(trim((string) $request->query->get('sortDate', 'DESC')));
         $selectedSortDate = in_array($sortDateRaw, self::SORT_OPTIONS, true) ? $sortDateRaw : 'DESC';
+        $hashtagQuery = trim((string) $request->query->get('hashtag', ''));
+        $selectedHashtag = $this->hashtagExtractor->normalize($hashtagQuery);
         $selectedParcours = null;
 
         if ($parcoursId > 0) {
@@ -66,8 +70,20 @@ final class PublicationParcoursController extends AbstractController
             $selectedParcours,
             $selectedExperience,
             $selectedTypePublication,
-            $selectedSortDate
+            $selectedSortDate,
+            $selectedHashtag
         );
+
+        if ($selectedHashtag !== null) {
+            $publications = array_values(array_filter(
+                $publications,
+                fn (PublicationParcours $publication): bool => in_array(
+                    $selectedHashtag,
+                    $this->extractPublicationHashtags($publication),
+                    true
+                )
+            ));
+        }
 
         $publicationPagination = $paginator->paginate(
             $publications,
@@ -78,14 +94,17 @@ final class PublicationParcoursController extends AbstractController
             $publicationPagination->getItems(),
             $publicationParcoursRepository
         );
+        $publicationHashtags = $this->buildPublicationHashtags($publicationPagination->getItems());
 
         return $this->render('publication_parcours/index.html.twig', [
             'publication_parcours' => $publicationPagination,
             'publication_hot_metrics' => $publicationHotMetrics,
+            'publication_hashtags' => $publicationHashtags,
             'selected_parcours' => $selectedParcours,
             'selected_experience' => $selectedExperience,
             'selected_type_publication' => $selectedTypePublication,
             'selected_sort_date' => $selectedSortDate,
+            'selected_hashtag' => $selectedHashtag,
             'experience_filters' => [
                 'Bad' => 'Bad',
                 'Good' => 'good',
@@ -265,16 +284,19 @@ final class PublicationParcoursController extends AbstractController
 
         return $this->render('publication_parcours/show.html.twig', [
             'publication_parcour' => $publicationParcour,
+            'publication_hashtags' => $this->extractPublicationHashtags($publicationParcour),
             'comments_page' => true,
             'back_feed_params' => $backFeedParams,
         ]);
     }
 
     #[Route('/{id}', name: 'app_publication_parcours_show', methods: ['GET'])]
-    public function show(PublicationParcours $publicationParcour): Response
+    public function show(Request $request, PublicationParcours $publicationParcour): Response
     {
         return $this->render('publication_parcours/show.html.twig', [
             'publication_parcour' => $publicationParcour,
+            'publication_hashtags' => $this->extractPublicationHashtags($publicationParcour),
+            'back_feed_params' => $this->buildFeedRedirectParams($request),
         ]);
     }
 
@@ -386,6 +408,8 @@ final class PublicationParcoursController extends AbstractController
 
         $experience = trim((string) ($request->request->get('experience', $request->query->get('experience', ''))));
         $typePublication = trim((string) ($request->request->get('typePublication', $request->query->get('typePublication', ''))));
+        $hashtagQuery = trim((string) ($request->request->get('hashtag', $request->query->get('hashtag', ''))));
+        $hashtag = $this->hashtagExtractor->normalize($hashtagQuery);
         $sortDateRaw = strtoupper(trim((string) ($request->request->get('sortDate', $request->query->get('sortDate', 'DESC')))));
         $sortDate = in_array($sortDateRaw, self::SORT_OPTIONS, true) ? $sortDateRaw : 'DESC';
         $page = $request->request->getInt('page');
@@ -407,6 +431,10 @@ final class PublicationParcoursController extends AbstractController
 
         if ($typePublication !== '') {
             $redirectParams['typePublication'] = $typePublication;
+        }
+
+        if ($hashtag !== null) {
+            $redirectParams['hashtag'] = $hashtag;
         }
 
         if ($page > 1) {
@@ -466,5 +494,37 @@ final class PublicationParcoursController extends AbstractController
         }
 
         return $publicationParcoursRepository->findHotMetricsForPublicationIds($publicationIds);
+    }
+
+    /**
+     * @param PublicationParcours[] $publications
+     * @return array<int, string[]>
+     */
+    private function buildPublicationHashtags(array $publications): array
+    {
+        $hashtagsByPublication = [];
+
+        foreach ($publications as $publication) {
+            if (!$publication instanceof PublicationParcours) {
+                continue;
+            }
+
+            $publicationId = $publication->getId();
+            if ($publicationId === null) {
+                continue;
+            }
+
+            $hashtagsByPublication[$publicationId] = $this->extractPublicationHashtags($publication);
+        }
+
+        return $hashtagsByPublication;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function extractPublicationHashtags(PublicationParcours $publication): array
+    {
+        return $this->hashtagExtractor->extractFromText((string) $publication->getTextPublication());
     }
 }
