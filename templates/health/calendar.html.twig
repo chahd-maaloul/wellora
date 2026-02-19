@@ -1,0 +1,162 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Calendrier Santé - {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        {# Header #}
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                Calendrier de Santé
+            </h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">
+                Visualisez vos scores de santé quotidiens
+            </p>
+        </div>
+
+        {# Journal Selection #}
+        {% if journals is defined and journals|length > 0 %}
+        <div class="mb-6">
+            <label for="journal-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Sélectionner un journal
+            </label>
+            <select id="journal-select" 
+                    class="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                    onchange="window.location.href = '{{ path('app_health_calendar') }}?journal_id=' + this.value">
+                <option value="0" {% if selectedJournalId == 0 or selectedJournalId is null %}selected{% endif %}>
+                    Tous les journaux
+                </option>
+                {% for journal in journals %}
+                    <option value="{{ journal.id }}" {% if selectedJournalId == journal.id %}selected{% endif %}>
+                        {{ journal.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {# Legend #}
+        <div class="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                Légende des scores
+            </h3>
+            <div class="flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <span class="w-4 h-4 rounded mr-2" style="background-color: #22c55e;"></span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Score > 70 (Bon)</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-4 h-4 rounded mr-2" style="background-color: #f97316;"></span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Score 40-70 (Moyen)</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-4 h-4 rounded mr-2" style="background-color: #ef4444;"></span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Score < 40 (Faible)</span>
+                </div>
+            </div>
+        </div>
+
+        {# Error message (hidden by default) #}
+        <div id="calendar-error" class="hidden mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p class="text-sm text-red-600 dark:text-red-400">
+                <strong>Erreur:</strong> Impossible de charger les événements du calendrier. Vérifiez que le journal sélectionné contient des entrées.
+            </p>
+        </div>
+
+        {# Calendar Container #}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            {# Calendar - using CalendarBundle #}
+            <div id="calendar-holder"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    
+    {# FullCalendar JavaScript from CDN #}
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    
+    {# Initialize FullCalendar with CalendarBundle integration #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar-holder');
+            
+            if (!calendarEl) {
+                console.error('Calendar holder element not found');
+                return;
+            }
+
+            var journalId = {{ selectedJournalId|default(0) }};
+            console.log('Initializing calendar for journal ID:', journalId);
+            
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listMonth'
+                },
+                editable: false,
+                dayMaxEvents: true,
+                weekends: true,
+                locale: 'fr',
+                buttonText: {
+                    today: "Aujourd'hui",
+                    month: 'Mois',
+                    list: 'Liste'
+                },
+                eventSources: [
+                    {
+                        url: '{{ path("fc_load_events") }}',
+                        method: 'POST',
+                        extraParams: function() {
+                            return {
+                                filters: JSON.stringify({
+                                    journal_id: journalId
+                                })
+                            };
+                        },
+                        failure: function(error) {
+                            console.error('Failed to load calendar events:', error);
+                            var msgEl = document.getElementById('calendar-error');
+                            if (msgEl) {
+                                msgEl.classList.remove('hidden');
+                            }
+                        },
+                        success: function(events) {
+                            console.log('Loaded', events.length, 'calendar events');
+                        }
+                    }
+                ],
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    // Show event details in a tooltip/modal
+                    var props = info.event.extendedProps;
+                    var details = 'Date: ' + info.event.startStr + '\n' +
+                        'Score global: ' + (props.score !== undefined ? Math.round(props.score) : 'N/A') + '\n' +
+                        'Grade: ' + (props.grade || 'N/A') + '\n' +
+                        'Glycémie: ' + (props.glycemicScore !== undefined ? Math.round(props.glycemicScore) : '-') + '\n' +
+                        'Tension: ' + (props.bloodPressureScore !== undefined ? Math.round(props.bloodPressureScore) : '-') + '\n' +
+                        'Sommeil: ' + (props.sleepScore !== undefined ? Math.round(props.sleepScore) : '-') + '\n' +
+                        'Symptômes: ' + (props.symptomScore !== undefined ? Math.round(props.symptomScore) : '-') + '\n' +
+                        'Poids: ' + (props.weightScore !== undefined ? Math.round(props.weightScore) : '-');
+                    alert(details);
+                }
+            });
+            
+            calendar.render();
+        });
+    </script>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    
+    {# FullCalendar CSS #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.8/main.min.css">
+{% endblock %}
