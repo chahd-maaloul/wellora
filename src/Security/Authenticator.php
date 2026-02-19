@@ -104,6 +104,18 @@ class Authenticator extends AbstractLoginFormAuthenticator
             $user->setLastLoginAt(new \DateTime());
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+            
+            // Check if 2FA is enabled - if so, redirect to 2FA verification
+            if ($user->isTotpAuthenticationEnabled()) {
+                // Clear any previous target path to prevent redirect loops
+                $session = $request->getSession();
+                if ($session) {
+                    $session->remove('_security.main.target_path');
+                }
+                
+                // Redirect to 2FA verification
+                return new RedirectResponse($this->urlGenerator->generate('app_2fa_verify'));
+            }
         }
 
         if ($targetUrl = $this->getTargetPath($request->getSession(), $firewallName)) {

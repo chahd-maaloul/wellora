@@ -6,6 +6,9 @@ use App\Enum\UserRole;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -25,7 +28,7 @@ use Symfony\Component\Uid\Uuid;
 ])]
 #[UniqueEntity(fields: ['email'], message: 'Cette adresse email est déjà utilisée')]
 #[UniqueEntity(fields: ['licenseNumber'], message: 'Ce numéro de licence est déjà utilisé', groups: ['Professional'])]
-abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
+abstract class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFactorInterface, BackupCodeInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: 'string', unique: true, length: 36)]
@@ -106,6 +109,33 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, nullable: true)]
     #[UniqueEntity(fields: ['googleId'], message: 'Ce compte Google est déjà lié à un autre utilisateur')]
     private ?string $googleId = null;
+
+    // ============================================
+    // Two-Factor Authentication Fields (TOTP)
+    // ============================================
+    
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $isTwoFactorEnabled = false;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    // ============================================
+    // Backup Codes
+    // ============================================
+    
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $backupCodes = [];
+    
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $plainBackupCodes = [];
+
+    // ============================================
+    // Trusted Devices (custom implementation)
+    // ============================================
+    
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $trustedDevices = [];
 
     public function __construct()
     {
@@ -395,6 +425,295 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getFullName(): string
     {
         return $this->firstName . ' ' . $this->lastName;
+    }
+
+    // ============================================
+    // Two-Factor Authentication Getters/Setters
+    // ============================================
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->isTwoFactorEnabled;
+    }
+
+    public function setIsTwoFactorEnabled(bool $isTwoFactorEnabled): self
+    {
+        $this->isTwoFactorEnabled = $isTwoFactorEnabled;
+        return $this;
+    }
+
+    public function getTotpSecret(): ?string
+    {
+        return $this->totpSecret;
+    }
+
+    public function setTotpSecret(?string $totpSecret): self
+    {
+        $this->totpSecret = $totpSecret;
+        return $this;
+    }
+
+    // ============================================
+    // Backup Codes Getters/Setters
+    // ============================================
+
+    public function getBackupCodesArray(): ?array
+    {
+        return $this->backupCodes;
+    }
+
+    public function setBackupCodesArray(?array $backupCodes): self
+    {
+        $this->backupCodes = $backupCodes;
+        return $this;
+    }
+
+    // ============================================
+    // Trusted Devices Getters/Setters (Custom)
+    // ============================================
+
+    public function getTrustedDevicesArray(): ?array
+    {
+        return $this->trustedDevices;
+    }
+
+    public function setTrustedDevicesArray(?array $trustedDevices): self
+    {
+        $this->trustedDevices = $trustedDevices;
+        return $this;
+    }
+
+    // ============================================
+    // TwoFactorInterface Implementation (TOTP)
+    // ============================================
+
+    /**
+     * Return true if the user should do TOTP authentication.
+     */
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->isTwoFactorEnabled;
+    }
+
+    /**
+     * Return the user name. This is used in QR code generation.
+     */
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * Return the configuration for TOTP authentication.
+     */
+    public function getTotpAuthenticationConfiguration(): ?\Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface
+    {
+        // Return configuration if secret exists (during setup or after 2FA is enabled)
+        if (!$this->totpSecret) {
+            return null;
+        }
+        
+        return new TotpConfiguration(
+            $this->totpSecret,
+            TotpConfiguration::ALGORITHM_SHA1,
+            30,
+            6
+        );
+    }
+
+    // ============================================
+    // BackupCodeInterface Implementation
+    // ============================================
+
+    /**
+     * Check if a backup code is valid
+     */
+    public function isBackupCode(string $code): bool
+    {
+        $codes = $this->backupCodes ?? [];
+        
+        // Hash the entered code to compare with stored hashes
+        $hashedCode = hash('sha256', $code);
+        
+        foreach ($codes as $storedCode) {
+            if (hash_equals($storedCode, $hashedCode)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Invalidate a backup code after use
+     * @param string $code The plain code or already-hashed code
+     */
+    public function invalidateBackupCode(string $code): void
+    {
+        $codes = $this->backupCodes ?? [];
+        
+        // Check if the code looks like a SHA256 hash (64 characters hex)
+        $isAlreadyHashed = preg_match('/^[a-f0-9]{64}$/i', $code);
+        
+        if ($isAlreadyHashed) {
+            // Code is already hashed, use it directly
+            $hashToRemove = $code;
+        } else {
+            // Plain code, hash it
+            $hashToRemove = hash('sha256', $code);
+        }
+        
+        // Remove the used code from the array
+        $codes = array_filter($codes, function($storedCode) use ($hashToRemove) {
+            return !hash_equals($storedCode, $hashToRemove);
+        });
+        
+        $this->backupCodes = array_values($codes);
+        
+        // Also remove from plain codes for display
+        $plainCodes = $this->plainBackupCodes ?? [];
+        if (!$isAlreadyHashed) {
+            $this->plainBackupCodes = array_values(array_filter($plainCodes, function($plainCode) use ($code) {
+                return strtoupper($plainCode) !== strtoupper($code);
+            }));
+        }
+    }
+
+    /**
+     * Generate new backup codes
+     * Stores PLAIN codes for display, hashed for verification
+     */
+    public function generateBackupCodes(int $count = 10): array
+    {
+        $plainCodes = [];
+        $hashedCodes = [];
+        
+        for ($i = 0; $i < $count; $i++) {
+            // Generate a random 8-character code with format XXXX-XXXX
+            $code = strtoupper(sprintf('%04s-%04s', 
+                bin2hex(random_bytes(2)), 
+                bin2hex(random_bytes(2))
+            ));
+            
+            $plainCodes[] = $code;
+            $hashedCodes[] = hash('sha256', $code);
+        }
+        
+        // Store hashed codes for verification
+        $this->backupCodes = $hashedCodes;
+        // Store plain codes for display
+        $this->plainBackupCodes = $plainCodes;
+        
+        // Return the plain codes for user to save
+        return $plainCodes;
+    }
+    
+    /**
+     * Get plain backup codes for display
+     */
+    public function getPlainBackupCodes(): array
+    {
+        return $this->plainBackupCodes ?? [];
+    }
+
+    /**
+     * Get the backup codes (for interface compatibility)
+     */
+    public function getBackupCodes(): array
+    {
+        return $this->backupCodes ?? [];
+    }
+
+    /**
+     * Set the backup codes (for interface compatibility)
+     */
+    public function setBackupCodes(array $codes): void
+    {
+        $this->backupCodes = $codes;
+    }
+
+    // ============================================
+    // Custom Trusted Devices Methods
+    // ============================================
+
+    /**
+     * Get the trusted device identifier
+     */
+    public function getTrustedDeviceIdentifier(): string
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * Get trusted devices list
+     */
+    public function getTrustedDevices(): array
+    {
+        return $this->trustedDevices ?? [];
+    }
+
+    /**
+     * Add a trusted device
+     */
+    public function addTrustedDevice(string $deviceToken, \DateTimeInterface $expiresAt): void
+    {
+        $devices = $this->getTrustedDevices();
+        $devices[] = [
+            'token' => $deviceToken,
+            'expiresAt' => $expiresAt->format('Y-m-d H:i:s'),
+            'createdAt' => (new \DateTime())->format('Y-m-d H:i:s'),
+        ];
+        
+        $this->trustedDevices = $devices;
+    }
+
+    /**
+     * Remove a trusted device
+     */
+    public function removeTrustedDevice(string $deviceToken): void
+    {
+        $devices = $this->getTrustedDevices();
+        $devices = array_filter($devices, function($device) use ($deviceToken) {
+            return $device['token'] !== $deviceToken;
+        });
+        
+        $this->trustedDevices = array_values($devices);
+    }
+
+    /**
+     * Check if a device token is trusted
+     */
+    public function isTrustedDevice(string $deviceToken): bool
+    {
+        $devices = $this->getTrustedDevices();
+        
+        foreach ($devices as $device) {
+            if ($device['token'] === $deviceToken) {
+                // Check if not expired
+                $expiresAt = new \DateTime($device['expiresAt']);
+                if ($expiresAt > new \DateTime()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Clean up expired trusted devices
+     */
+    public function cleanupExpiredTrustedDevices(): void
+    {
+        $devices = $this->getTrustedDevices();
+        $now = new \DateTime();
+        
+        $devices = array_filter($devices, function($device) use ($now) {
+            $expiresAt = new \DateTime($device['expiresAt']);
+            return $expiresAt > $now;
+        });
+        
+        $this->trustedDevices = array_values($devices);
     }
 
     #[ORM\PreUpdate]
