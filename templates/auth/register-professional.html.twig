@@ -192,7 +192,7 @@
         }
       }
     }"
-    @submit.prevent="if (canProceed) { isSubmitting = true; document.getElementById('submit-type').value = 'submit'; document.getElementById('registration-form').submit(); } else { console.log('Cannot proceed - canProceed:', canProceed, 'isSubmitting:', isSubmitting); alert('Please fill in all required fields correctly.'); }"
+    @submit="if (!canProceed) { event.preventDefault(); alert('Veuillez remplir tous les champs requis correctement.'); } else { isSubmitting = true; document.getElementById('submit-type').value = 'submit'; }"
   >
     <input type="hidden" name="_submit" value="1">
     <input type="hidden" id="submit-type" name="_submit_type" value="">

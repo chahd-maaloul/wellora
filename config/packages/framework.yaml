@@ -10,10 +10,10 @@ framework:
         handler_id: null
         cookie_secure: auto
         cookie_samesite: lax
-        # Session timeout: 30 minutes of inactivity
+        # Session timeout: 30 minutes of inactivity (must match gc_maxlifetime)
         gc_maxlifetime: 1800
-        # Session cookie lifetime: 1 hour
-        cookie_lifetime: 3600
+        # Session cookie lifetime: 30 minutes (matches gc_maxlifetime for consistency)
+        cookie_lifetime: 1800
 
     #esi: true
     #fragments: true

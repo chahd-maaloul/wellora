@@ -165,7 +165,7 @@
         }
       }
     }"
-    @submit="if (!canProceed) { console.log('Cannot proceed - canProceed:', canProceed, 'isSubmitting:', isSubmitting, 'step:', step); console.log('Form data:', {firstName, lastName, email, birthdate, phone, pw}); event.preventDefault(); alert('Please fill in all required fields correctly.'); } else { console.log('Form is valid, submitting...'); isSubmitting = true; event.target.submit(); }"
+    @submit="if (!canProceed) { event.preventDefault(); alert('Veuillez remplir tous les champs requis correctement.'); } else { isSubmitting = true; }"
   >
     <input type="hidden" name="_submit" value="1">
 

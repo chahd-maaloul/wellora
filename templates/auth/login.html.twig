@@ -325,84 +325,26 @@
             hideFieldMessage(passwordInput, passwordMessage);
         });
         
-        // Form submission with AJAX validation
+        // Form submission - let the form submit normally to Symfony
+        // The AJAX validation was causing issues with session establishment
         loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
             const email = emailInput.value.trim();
             const password = passwordInput.value;
             
-            // Hide previous messages
-            hideAllMessages();
+            // Basic client-side validation
+            if (!email || !password) {
+                e.preventDefault();
+                showStatusMessage('error', 'Erreur', 'Veuillez remplir tous les champs.');
+                return;
+            }
             
-            // Validate via AJAX
-            validateLogin(email, password);
-        });
-        
-        function validateLogin(email, password) {
             // Show loading state
-            setLoading(true);
-            
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('password', password);
-            
-            fetch('{{ path('app_login_validate') }}', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                setLoading(false);
-                
-                if (data.valid) {
-                    // Credentials valid - submit form
-                    showStatusMessage('success', data.title, data.message);
-                    
-                    // Redirect after short delay
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1000);
-                } else {
-                    // Show error message
-                    if (data.field === 'email') {
-                        showFieldMessage(emailInput, emailMessage, data.type, data.title, data.message);
-                    } else if (data.field === 'password') {
-                        showFieldMessage(passwordInput, passwordMessage, data.type, data.title, data.message);
-                    } else {
-                        showStatusMessage(data.type, data.title, data.message);
-                    }
-                    
-                    // For blocking errors, show prominent message
-                    if (data.blocking) {
-                        showStatusMessage(data.type, data.title, data.message);
-                    }
-                }
-            })
-            .catch(error => {
-                setLoading(false);
-                console.error('Validation error:', error);
-                // On error, allow normal form submission
-                loginForm.submit();
-            });
-        }
-        
-        function setLoading(loading) {
             const btnText = submitBtn.querySelector('.btn-text');
             const btnLoading = submitBtn.querySelector('.btn-loading');
-            
-            if (loading) {
-                btnText.classList.add('hidden');
-                btnLoading.classList.remove('hidden');
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-            } else {
-                btnText.classList.remove('hidden');
-                btnLoading.classList.add('hidden');
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-            }
-        }
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+            submitBtn.disabled = true;
+        });
         
         function showFieldMessage(input, messageDiv, type, title, message) {
             input.classList.add(type === 'error' ? 'border-red-500 focus:ring-red-500' : 'border-yellow-500 focus:ring-yellow-500');
@@ -478,12 +420,6 @@
                     </div>
                 `;
             }
-        }
-        
-        function hideAllMessages() {
-            statusContainer.classList.add('hidden');
-            hideFieldMessage(emailInput, emailMessage);
-            hideFieldMessage(passwordInput, passwordMessage);
         }
     });
     </script>
