@@ -20,6 +20,9 @@ class HealthentryType extends AbstractType
             ->add('date', null, [
                 'widget' => 'single_text',
                 'label' => 'Date',
+                'attr' => [
+                    'max' => 'today',
+                ],
             ])
             ->add('poids', NumberType::class, [
                 'label' => 'Poids (kg)',

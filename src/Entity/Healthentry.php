@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 
 #[ORM\Entity(repositoryClass: HealthentryRepository::class)]
 #[ORM\UniqueConstraint(columns: ['date', 'journal_id'])]
@@ -22,6 +23,10 @@ class Healthentry
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Assert\NotNull(message: 'La date est requise')]
+    #[Assert\LessThanOrEqual(
+        'today',
+        message: 'La date ne peut pas être dans le futur'
+    )]
     private ?\DateTime $date = null;
 
     #[ORM\Column]

@@ -418,6 +418,16 @@ final class HealthController extends AbstractController
     
     private function validateNumericFields($form): void
     {
+        $date = $form->get('date')->getData();
+        if (null !== $date) {
+            $today = new \DateTime('today');
+            if ($date > $today) {
+                $form->get('date')->addError(new \Symfony\Component\Form\FormError(
+                    'La date ne peut pas être dans le futur'
+                ));
+            }
+        }
+        
         $poids = $form->get('poids')->getData();
         if (null !== $poids && $poids !== '' && ($poids < 30 || $poids > 200)) {
             $form->get('poids')->addError(new \Symfony\Component\Form\FormError(

@@ -157,6 +157,14 @@ final class HealthentryController extends AbstractController
             $date = $healthentry->getDate();
             $journal = $healthentry->getJournal();
             if ($date && $journal) {
+                // Check if date is in the future
+                $today = new \DateTime('today');
+                if ($date > $today) {
+                    $form->get('date')->addError(new \Symfony\Component\Form\FormError(
+                        'La date ne peut pas être dans le futur'
+                    ));
+                }
+                
                 $existingEntry = $healthentryRepository->findOneBy(['date' => $date, 'journal' => $journal]);
                 if ($existingEntry) {
                     $form->addError(new \Symfony\Component\Form\FormError(
@@ -249,6 +257,14 @@ final class HealthentryController extends AbstractController
             $date = $healthentry->getDate();
             $journal = $healthentry->getJournal();
             if ($date && $journal) {
+                // Check if date is in the future
+                $today = new \DateTime('today');
+                if ($date > $today) {
+                    $form->get('date')->addError(new \Symfony\Component\Form\FormError(
+                        'La date ne peut pas être dans le futur'
+                    ));
+                }
+                
                 $existingEntry = $healthentryRepository->findOneBy(['date' => $date, 'journal' => $journal]);
                 if ($existingEntry && $existingEntry->getId() !== $healthentry->getId()) {
                     $form->addError(new \Symfony\Component\Form\FormError(
