@@ -1,7 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
+use App\DTO\Health\HealthMetricDTO;
+use App\DTO\Health\HealthScoreDTO;
+use App\DTO\Health\HealthStatisticsDTO;
+use App\DTO\Health\HealthTrendDTO;
+use App\DTO\Health\HealthTrendDirection;
+use App\DTO\Health\HealthRiskDTO;
 use App\Entity\Healthentry;
 use App\Entity\Healthjournal;
 use App\Entity\Symptom;
@@ -9,6 +17,9 @@ use App\Form\HealthentryType;
 use App\Repository\HealthentryRepository;
 use App\Repository\HealthjournalRepository;
 use App\Repository\SymptomRepository;
+use App\Service\Health\HealthAnalyticsService;
+use App\Service\Health\HealthRiskEngineService;
+use App\Service\Health\HealthTrendService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,6 +29,12 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/health')]
 final class HealthController extends AbstractController
 {
+    public function __construct(
+        private readonly HealthAnalyticsService $analyticsService,
+        private readonly HealthTrendService $trendService,
+        private readonly HealthRiskEngineService $riskEngineService,
+    ) {}
+
     #[Route('/', name: 'app_health_index', methods: ['GET'])]
     public function index(): Response
     {
@@ -84,186 +101,116 @@ final class HealthController extends AbstractController
     public function analyticsPatient(
         Request $request,
         HealthjournalRepository $journalRepo,
-        HealthentryRepository $entryRepo,
-        SymptomRepository $symptomRepo
     ): Response {
+        // Get selected journal
         $journalId = $request->query->get('journal_id');
+        $selectedJournal = $this->resolveSelectedJournal($journalRepo, $journalId);
         
-        // Get all journals
-        $allJournals = $journalRepo->findAll();
-        
-        $selectedJournal = null;
-        $entries = [];
-        $startDate = null;
-        $endDate = null;
-        
-        if ($journalId) {
-            $selectedJournal = $journalRepo->find($journalId);
+        // Handle case with no data
+        if (null === $selectedJournal) {
+            return $this->render('health/analytics/patient-view.html.twig', [
+                'controller_name' => 'HealthController',
+                'has_data' => false,
+                'start_date' => null,
+                'end_date' => null,
+                'start_date_js' => '',
+                'end_date_js' => '',
+            ]);
         }
         
-        // If no journal selected and journals exist, use first one
-        if (!$selectedJournal && count($allJournals) > 0) {
-            $selectedJournal = $allJournals[0];
+        // Get analytics data from service
+        $analyticsData = $this->analyticsService->getAnalyticsForJournal($selectedJournal);
+        
+        $metrics = $analyticsData['metrics'];
+        $statistics = $analyticsData['statistics'];
+        $scores = $analyticsData['scores'];
+        
+        // Handle case with no entries - still pass date range
+        if ($metrics->isEmpty()) {
+            $dateRange = $this->parseJournalDateRange($selectedJournal);
+            
+            return $this->render('health/analytics/patient-view.html.twig', [
+                'controller_name' => 'HealthController',
+                'has_data' => false,
+                'journals' => $journalRepo->findAll(),
+                'selected_journal_id' => $selectedJournal->getId(),
+                'start_date' => $dateRange['start'],
+                'end_date' => $dateRange['end'],
+                'start_date_js' => $dateRange['startJs'],
+                'end_date_js' => $dateRange['endJs'],
+            ]);
         }
         
-        if ($selectedJournal) {
-            $entries = $entryRepo->findBy(['journal' => $selectedJournal], ['date' => 'ASC']);
-            
-            if (count($entries) > 0) {
-                $startDate = $entries[0]->getDate();
-                $endDate = end($entries)->getDate();
-            }
-            
-            // Parse month from journal name (e.g., "mars 2026", "March 2026", "january 2025")
-            $journalName = $selectedJournal->getName() ?? '';
-            $monthNum = null;
-            
-            $frenchMonths = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-            $englishMonths = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-            
-            $journalNameLower = strtolower($journalName);
-            
-            foreach ($frenchMonths as $index => $frMonth) {
-                if (strpos($journalNameLower, $frMonth) !== false) {
-                    $monthNum = $index + 1;
-                    break;
-                }
-            }
-            
-            if (!$monthNum) {
-                foreach ($englishMonths as $index => $enMonth) {
-                    if (strpos($journalNameLower, $enMonth) !== false) {
-                        $monthNum = $index + 1;
-                        break;
-                    }
-                }
-            }
-            
-            // Extract year from journal name (4 digits)
-            if (preg_match('/\b(19|20)\d{2}\b/', $journalName, $matches)) {
-                $year = (int)$matches[0];
-            } else {
-                $year = (int)date('Y');
-            }
-            
-            // Override date range if month/year found in journal name
-            if ($monthNum) {
-                $startDate = new \DateTime("$year-$monthNum-01");
-                $endDate = new \DateTime("$year-$monthNum-" . date('t', mktime(0, 0, 0, $monthNum, 1, $year)));
-            }
-        }
+        // Get trend comparison
+        $trend = $this->trendService->compareWithPrevious($selectedJournal);
         
-        // Data arrays for charts
-        $glycemicData = [];
-        $bpSystolic = [];
-        $bpDiastolic = [];
-        $sleepData = [];
-        $weightData = [];
-        $dates = [];
-        $symptomIntensity = [];
+        // Get risk assessment
+        $risk = $this->riskEngineService->analyzeRisk($metrics);
         
-        foreach ($entries as $entry) {
-            $glycemicData[] = $entry->getGlycemie() ?? 0;
-            
-            $tension = $entry->getTension();
-            if ($tension !== null && $tension !== '') {
-                $bpDiastolic[] = (float)$tension;
-                // Estimate systolic as tension + 40 (common approximation: 120/80 = 40 difference)
-                $bpSystolic[] = (float)$tension + 40;
-            } else {
-                $bpSystolic[] = 0;
-                $bpDiastolic[] = 0;
-            }
-            
-            $sleepData[] = $entry->getSommeil() ?? 0;
-            $weightData[] = $entry->getPoids() ?? 0;
-            $dates[] = $entry->getDate()->format('d/m/Y');
-            
-            $entrySymptoms = $entry->getSymptoms();
-            $totalIntensity = 0;
-            foreach ($entrySymptoms as $symptom) {
-                $totalIntensity += $symptom->getIntensite();
-            }
-            $symptomIntensity[] = $totalIntensity;
-        }
+        // Prepare chart data
+        $chartData = $this->prepareChartData($metrics);
         
-        // Calculate averages and scores
-        $avgGlycemia = count($glycemicData) > 0 ? array_sum($glycemicData) / count($glycemicData) : 0;
-        $minGlycemia = count($glycemicData) > 0 ? min($glycemicData) : 0;
-        $maxGlycemia = count($glycemicData) > 0 ? max($glycemicData) : 0;
-        $avgSystolic = count($bpSystolic) > 0 ? round(array_sum($bpSystolic) / count($bpSystolic)) : 0;
-        $avgDiastolic = count($bpDiastolic) > 0 ? round(array_sum($bpDiastolic) / count($bpDiastolic)) : 0;
-        $avgSleep = count($sleepData) > 0 ? array_sum($sleepData) / count($sleepData) : 0;
-        $currentWeight = count($weightData) > 0 ? end($weightData) : 0;
-        $weightVariation = 0;
-        if (count($weightData) >= 2) {
-            $weightVariation = $currentWeight - $weightData[0];
-        }
-        
-        $avgIntensity = count($symptomIntensity) > 0 ? array_sum($symptomIntensity) / count($symptomIntensity) : 0;
-        $totalSymptoms = array_sum($symptomIntensity);
-        
-        // Calculate scores (0-100)
-        // Glycemic score: 100 = 1.0 g/L (ideal), lower/higher = lower score
-        $glycemicScore = $avgGlycemia > 0 ? max(0, min(100, 100 - abs($avgGlycemia - 1.0) * 100)) : 50;
-        
-        // Blood pressure score: 100 = 120/80 (ideal)
-        if ($avgSystolic >= 90 && $avgSystolic <= 120 && $avgDiastolic >= 60 && $avgDiastolic <= 80) {
-            $bpScore = 100;
-        } elseif ($avgSystolic >= 70 && $avgSystolic <= 130 && $avgDiastolic >= 50 && $avgDiastolic <= 85) {
-            $bpScore = 75;
-        } else {
-            $bpScore = 50;
-        }
-        
-        // Sleep score: 100 = 8 hours
-        $sleepScore = $avgSleep > 0 ? min(100, ($avgSleep / 8) * 100) : 50;
-        
-        // Symptom score: 100 = no symptoms
-        $symptomScore = $avgIntensity > 0 ? max(0, 100 - ($avgIntensity * 10)) : 100;
-        
-        // Weight score: BMI-based (simplified)
-        $bmi = 23.2; // Placeholder
-        $weightScore = $bmi >= 18.5 && $bmi <= 25 ? 100 : ($bmi >= 17 && $bmi <= 30 ? 75 : 50);
-        
-        // Global health score (weighted average)
-        $globalScore = round(($glycemicScore * 0.25 + $bpScore * 0.25 + $sleepScore * 0.2 + $symptomScore * 0.15 + $weightScore * 0.15));
+        // Date range parsing from journal name (kept in controller as it's view-related)
+        $dateRange = $this->parseJournalDateRange($selectedJournal);
         
         return $this->render('health/analytics/patient-view.html.twig', [
             'controller_name' => 'HealthController',
-            'glycemic_data' => $glycemicData,
-            'bp_systolic' => $bpSystolic,
-            'bp_diastolic' => $bpDiastolic,
-            'sleep_data' => $sleepData,
-            'weight_data' => $weightData,
-            'dates' => $dates,
-            'symptom_intensity' => $symptomIntensity,
+            'has_data' => true,
             
-            // Pass data for JS
-            'avg_glycemia' => $avgGlycemia,
-            'min_glycemia' => $minGlycemia,
-            'max_glycemia' => $maxGlycemia,
-            'avg_systolic' => $avgSystolic,
-            'avg_diastolic' => $avgDiastolic,
-            'avg_sleep' => $avgSleep,
-            'current_weight' => $currentWeight,
-            'weight_variation' => $weightVariation,
-            'avg_intensity' => $avgIntensity,
-            'total_symptoms' => $totalSymptoms,
+            // Chart data
+            'glycemic_data' => $chartData['glycemia'],
+            'bp_systolic' => $chartData['bpSystolic'],
+            'bp_diastolic' => $chartData['bpDiastolic'],
+            'sleep_data' => $chartData['sleep'],
+            'weight_data' => $chartData['weight'],
+            'dates' => $chartData['dates'],
+            'symptom_intensity' => $chartData['symptomIntensity'],
             
-            'glycemic_score' => $glycemicScore,
-            'bp_score' => $bpScore,
-            'sleep_score' => $sleepScore,
-            'symptom_score' => $symptomScore,
-            'weight_score' => $weightScore,
-            'global_score' => $globalScore,
+            // Statistics
+            'avg_glycemia' => $statistics->avgGlycemia,
+            'min_glycemia' => $statistics->minGlycemia,
+            'max_glycemia' => $statistics->maxGlycemia,
+            'avg_systolic' => $statistics->avgSystolic,
+            'avg_diastolic' => $statistics->avgDiastolic,
+            'avg_sleep' => $statistics->avgSleep,
+            'current_weight' => $statistics->currentWeight,
+            'weight_variation' => $statistics->weightVariation,
+            'avg_intensity' => $statistics->avgIntensity,
+            'total_symptoms' => $statistics->totalSymptomIntensity,
             
-            'journals' => $allJournals,
-            'selected_journal_id' => $journalId ?: (count($allJournals) > 0 ? $allJournals[0]->getId() : null),
-            'start_date' => $startDate ? $startDate->format('d/m/Y') : null,
-            'end_date' => $endDate ? $endDate->format('d/m/Y') : null,
-            'start_date_js' => $startDate ? $startDate->format('Y-m-d') : '',
-            'end_date_js' => $endDate ? $endDate->format('Y-m-d') : '',
+            // Scores
+            'glycemic_score' => $scores->glycemicScore,
+            'bp_score' => $scores->bloodPressureScore,
+            'sleep_score' => $scores->sleepScore,
+            'symptom_score' => $scores->symptomScore,
+            'weight_score' => $scores->weightScore,
+            'global_score' => $scores->globalScore,
+            'global_grade' => $scores->globalScoreGrade,
+            
+            // Trend data
+            'has_trend_data' => $trend->hasPreviousData,
+            'global_evolution' => $trend->globalEvolutionPercentage,
+            'trend_direction' => $trend->globalDirection->value,
+            
+            // Risk data
+            'risk_tier' => $risk->tier->value,
+            'risk_score' => $risk->overallRiskScore,
+            'risk_summary' => $risk->summary,
+            'risk_recommendations' => $risk->recommendations,
+            'risk_factors' => array_map(fn($f) => [
+                'name' => $f->name,
+                'description' => $f->description,
+                'severity' => $f->severity,
+            ], $risk->riskFactors),
+            'requires_attention' => $risk->requiresImmediateAttention,
+            
+            // Journal info
+            'journals' => $journalRepo->findAll(),
+            'selected_journal_id' => $selectedJournal->getId(),
+            'start_date' => $dateRange['start'],
+            'end_date' => $dateRange['end'],
+            'start_date_js' => $dateRange['startJs'],
+            'end_date_js' => $dateRange['endJs'],
         ]);
     }
 
@@ -276,11 +223,14 @@ final class HealthController extends AbstractController
     }
 
     #[Route('/journal/accessible', name: 'app_health_journal_accessible', methods: ['GET', 'POST'])]
-    public function journalAccessible(Request $request, EntityManagerInterface $entityManager, HealthjournalRepository $journalRepo, HealthentryRepository $entryRepo): Response
-    {
+    public function journalAccessible(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        HealthjournalRepository $journalRepo,
+        HealthentryRepository $entryRepo
+    ): Response {
         $healthentry = new Healthentry();
-        
-        // Pre-populate with one empty symptom for UX
+        // Add empty symptom for form rendering - will be removed before saving if not filled
         $healthentry->addSymptom(new Symptom());
         
         $form = $this->createForm(HealthentryType::class, $healthentry);
@@ -289,11 +239,8 @@ final class HealthController extends AbstractController
         if ($form->isSubmitted()) {
             // Handle "Add Symptom" button
             if ($request->request->has('add_symptom')) {
-                // Add a new empty symptom to the collection
                 $symptom = new Symptom();
                 $healthentry->addSymptom($symptom);
-                
-                // Re-create form with updated data
                 $form = $this->createForm(HealthentryType::class, $healthentry);
                 
                 return $this->render('health/accessible/journal-entry.html.twig', [
@@ -303,69 +250,10 @@ final class HealthController extends AbstractController
             }
             
             // Manual validation for numeric fields
-            $poids = $form->get('poids')->getData();
-            if ($poids !== null && $poids !== '' && ($poids < 30 || $poids > 200)) {
-                $form->get('poids')->addError(new \Symfony\Component\Form\FormError(
-                    'Le poids doit être compris entre 30 et 200 kg'
-                ));
-            }
-            
-            $glycemie = $form->get('glycemie')->getData();
-            if ($glycemie !== null && $glycemie !== '' && ($glycemie < 0.5 || $glycemie > 3)) {
-                $form->get('glycemie')->addError(new \Symfony\Component\Form\FormError(
-                    'La glycémie doit être comprise entre 0.5 et 3 g/l'
-                ));
-            }
-            
-            $tension = $form->get('tension')->getData();
-            if ($tension !== null && $tension !== '') {
-                $tensionValue = (float)$tension;
-                if ($tensionValue < 40 || $tensionValue > 120) {
-                    $form->get('tension')->addError(new \Symfony\Component\Form\FormError(
-                        'La tension doit être comprise entre 40 et 120 mmHg'
-                    ));
-                }
-            }
-            
-            $sommeil = $form->get('sommeil')->getData();
-            if ($sommeil !== null && $sommeil !== '' && ($sommeil < 0 || $sommeil > 12)) {
-                $form->get('sommeil')->addError(new \Symfony\Component\Form\FormError(
-                    'Le sommeil doit être compris entre 0 et 12 heures'
-                ));
-            }
+            $this->validateNumericFields($form);
             
             if ($form->isValid()) {
-                // Set journal
-                $journal = $journalRepo->findOneBy([]);
-                if (!$journal) {
-                    $journal = new Healthjournal();
-                    $journal->setName('Journal Principal');
-                    $journal->setDatedebut(new \DateTime());
-                    $entityManager->persist($journal);
-                    $entityManager->flush();
-                }
-                $healthentry->setJournal($journal);
-                
-                // Check for duplicate entry
-                $date = $healthentry->getDate();
-                if ($date) {
-                    $existingEntry = $entryRepo->findOneBy(['date' => $date, 'journal' => $journal]);
-                    if ($existingEntry) {
-                        $form->addError(new \Symfony\Component\Form\FormError(
-                            'Une entrée existe déjà pour cette date. Veuillez modifier l\'entrée existante.'
-                        ));
-                        return $this->render('health/accessible/journal-entry.html.twig', [
-                            'controller_name' => 'HealthController',
-                            'form' => $form->createView(),
-                        ]);
-                    }
-                }
-                
-                $entityManager->persist($healthentry);
-                $entityManager->flush();
-
-                $this->addFlash('success', 'Entrée de journal créée avec succès');
-                return $this->redirectToRoute('app_health_journal_accessible');
+                $this->processValidEntry($form, $entityManager, $journalRepo, $entryRepo, $request);
             }
         }
         
@@ -375,10 +263,264 @@ final class HealthController extends AbstractController
         ]);
     }
 
-    // Legacy route redirect for backward compatibility
     #[Route('/accessible/journal-entry', name: 'app_health_accessible_journal_entry', methods: ['GET'])]
     public function accessibleJournalEntryRedirect(): Response
     {
         return $this->redirectToRoute('app_health_journal_accessible', [], 301);
+    }
+
+    // ============================================
+    // PRIVATE HELPER METHODS
+    // ============================================
+    
+    private function resolveSelectedJournal(
+        HealthjournalRepository $journalRepo,
+        ?string $journalId
+    ): ?Healthjournal {
+        // If specific journal requested
+        if ($journalId) {
+            return $journalRepo->find((int) $journalId);
+        }
+        
+        // Get all journals and return first one
+        $journals = $journalRepo->findBy([], ['datedebut' => 'DESC']);
+        
+        return !empty($journals) ? $journals[0] : null;
+    }
+    
+    /**
+     * @param \App\DTO\Health\HealthMetricDTO $metrics
+     */
+    private function prepareChartData($metrics): array
+    {
+        // Create new arrays for template to avoid readonly issues
+        $glycemia = [];
+        $bpSystolic = [];
+        $bpDiastolic = [];
+        $sleep = [];
+        $weight = [];
+        $dates = [];
+        $symptomIntensity = [];
+        
+        foreach ($metrics->glycemia as $v) {
+            $glycemia[] = $v;
+        }
+        foreach ($metrics->bloodPressureSystolic as $v) {
+            $bpSystolic[] = $v;
+        }
+        foreach ($metrics->bloodPressureDiastolic as $v) {
+            $bpDiastolic[] = $v;
+        }
+        foreach ($metrics->sleep as $v) {
+            $sleep[] = $v;
+        }
+        foreach ($metrics->weight as $v) {
+            $weight[] = $v;
+        }
+        foreach ($metrics->symptomIntensity as $v) {
+            $symptomIntensity[] = $v;
+        }
+        foreach ($metrics->dates as $d) {
+            $dates[] = $d instanceof \DateTimeInterface 
+                ? $d->format('d/m/Y') 
+                : (is_object($d) ? $d->format('d/m/Y') : '');
+        }
+        
+        return [
+            'glycemia' => $glycemia,
+            'bpSystolic' => $bpSystolic,
+            'bpDiastolic' => $bpDiastolic,
+            'sleep' => $sleep,
+            'weight' => $weight,
+            'dates' => $dates,
+            'symptomIntensity' => $symptomIntensity,
+        ];
+    }
+    
+    private function parseJournalDateRange(Healthjournal $journal): array
+    {
+        $journalName = $journal->getName() ?? '';
+        $datedebut = $journal->getDatedebut();
+        $datefin = $journal->getDatefin();
+        
+        // Try to extract month/year from journal name
+        $extracted = $this->extractMonthYearFromName($journalName);
+        
+        if (null !== $extracted) {
+            $startDate = $extracted['start'];
+            $endDate = $extracted['end'];
+        } elseif (null !== $datedebut && null !== $datefin) {
+            $startDate = $datedebut;
+            $endDate = $datefin;
+        } else {
+            $startDate = new \DateTime();
+            $endDate = new \DateTime();
+        }
+        
+        return [
+            'start' => $startDate->format('d/m/Y'),
+            'end' => $endDate->format('d/m/Y'),
+            'startJs' => $startDate->format('Y-m-d'),
+            'endJs' => $endDate->format('Y-m-d'),
+        ];
+    }
+    
+    private function extractMonthYearFromName(string $name): ?array
+    {
+        $frenchMonths = [
+            'janvier' => 1, 'février' => 2, 'mars' => 3, 'avril' => 4,
+            'mai' => 5, 'juin' => 6, 'juillet' => 7, 'août' => 8,
+            'septembre' => 9, 'octobre' => 10, 'novembre' => 11, 'décembre' => 12,
+        ];
+        
+        $englishMonths = [
+            'january' => 1, 'february' => 2, 'march' => 3, 'april' => 4,
+            'may' => 5, 'june' => 6, 'july' => 7, 'august' => 8,
+            'september' => 9, 'october' => 10, 'november' => 11, 'december' => 12,
+        ];
+        
+        $nameLower = strtolower($name);
+        $month = null;
+        
+        // Check French months
+        foreach ($frenchMonths as $monthName => $monthNum) {
+            if (str_contains($nameLower, $monthName)) {
+                $month = $monthNum;
+                break;
+            }
+        }
+        
+        // Check English months if not found
+        if (null === $month) {
+            foreach ($englishMonths as $monthName => $monthNum) {
+                if (str_contains($nameLower, $monthName)) {
+                    $month = $monthNum;
+                    break;
+                }
+            }
+        }
+        
+        // Extract year
+        $year = (int) date('Y');
+        if (preg_match('/\b(19|20)\d{2}\b/', $name, $matches)) {
+            $year = (int) $matches[0];
+        }
+        
+        if (null === $month) {
+            return null;
+        }
+        
+        $startDate = new \DateTime(sprintf('%d-%02d-01', $year, $month));
+        $endDate = (clone $startDate)->modify('last day of this month');
+        
+        return ['start' => $startDate, 'end' => $endDate];
+    }
+    
+    private function validateNumericFields($form): void
+    {
+        $poids = $form->get('poids')->getData();
+        if (null !== $poids && $poids !== '' && ($poids < 30 || $poids > 200)) {
+            $form->get('poids')->addError(new \Symfony\Component\Form\FormError(
+                'Le poids doit être compris entre 30 et 200 kg'
+            ));
+        }
+        
+        $glycemie = $form->get('glycemie')->getData();
+        if (null !== $glycemie && $glycemie !== '' && ($glycemie < 0.5 || $glycemie > 3)) {
+            $form->get('glycemie')->addError(new \Symfony\Component\Form\FormError(
+                'La glycémie doit être comprise entre 0.5 et 3 g/l'
+            ));
+        }
+        
+        $tension = $form->get('tension')->getData();
+        if (null !== $tension && $tension !== '') {
+            $tensionValue = (float) $tension;
+            if ($tensionValue < 40 || $tensionValue > 120) {
+                $form->get('tension')->addError(new \Symfony\Component\Form\FormError(
+                    'La tension doit être comprise entre 40 et 120 mmHg'
+                ));
+            }
+        }
+        
+        $sommeil = $form->get('sommeil')->getData();
+        if (null !== $sommeil && $sommeil !== '' && ($sommeil < 0 || $sommeil > 12)) {
+            $form->get('sommeil')->addError(new \Symfony\Component\Form\FormError(
+                'Le sommeil doit être compris entre 0 et 12 heures'
+            ));
+        }
+    }
+    
+    private function processValidEntry(
+        $form,
+        EntityManagerInterface $entityManager,
+        HealthjournalRepository $journalRepo,
+        HealthentryRepository $entryRepo,
+        Request $request
+    ): Response {
+        $healthentry = $form->getData();
+        
+        // Remove empty symptoms (those without type) before saving
+        if ($healthentry->getSymptoms()->count() > 0) {
+            $symptomsToRemove = [];
+            foreach ($healthentry->getSymptoms() as $symptom) {
+                if (null === $symptom->getType() || '' === $symptom->getType()) {
+                    $symptomsToRemove[] = $symptom;
+                }
+            }
+            foreach ($symptomsToRemove as $symptom) {
+                $healthentry->removeSymptom($symptom);
+            }
+        }
+        
+        // Find the journal based on entry date - entries are automatically assigned
+        // to the journal whose date range includes the entry date
+        $entryDate = $healthentry->getDate();
+        $journal = null;
+        
+        if (null !== $entryDate) {
+            // Find journal whose date range includes this entry date
+            $journal = $journalRepo->createQueryBuilder('j')
+                ->andWhere('j.datedebut <= :entryDate')
+                ->andWhere('j.datefin >= :entryDate')
+                ->setParameter('entryDate', $entryDate)
+                ->getQuery()
+                ->getOneOrNullResult();
+        }
+        
+        // Fallback: if no journal found by date, use first journal
+        if (null === $journal) {
+            $journal = $journalRepo->findOneBy([]);
+            if (null === $journal) {
+                $journal = new Healthjournal();
+                $journal->setName('Journal Principal');
+                $journal->setDatedebut(new \DateTime());
+                $entityManager->persist($journal);
+                $entityManager->flush();
+            }
+        }
+        
+        $healthentry->setJournal($journal);
+        
+        // Check for duplicate entry
+        $date = $healthentry->getDate();
+        if (null !== $date) {
+            $existingEntry = $entryRepo->findOneBy(['date' => $date, 'journal' => $journal]);
+            if (null !== $existingEntry) {
+                $form->addError(new \Symfony\Component\Form\FormError(
+                    'Une entrée existe déjà pour cette date. Veuillez modifier l\'entrée existante.'
+                ));
+                return $this->render('health/accessible/journal-entry.html.twig', [
+                    'controller_name' => 'HealthController',
+                    'form' => $form->createView(),
+                ]);
+            }
+        }
+        
+        $entityManager->persist($healthentry);
+        $entityManager->flush();
+        
+        $this->addFlash('success', 'Entrée de journal créée avec succès');
+        
+        return $this->redirectToRoute('app_health_journal_accessible');
     }
 }

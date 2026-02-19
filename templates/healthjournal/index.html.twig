@@ -181,31 +181,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.text();
-        })
-        .then(html => {
-            // Parse the returned HTML
-            const parser = new DOMParser();
-            const doc = parser.parseFromHTML(html, 'text/html');
-            
+        .then(response => response.json())
+        .then(data => {
             // Update journals container with animation
-            const newContainer = doc.querySelector('#journalsContainer');
-            if (newContainer) {
-                journalsContainer.innerHTML = newContainer.innerHTML;
-                journalsContainer.classList.remove('fade-in');
-                void journalsContainer.offsetWidth; // Trigger reflow
-                journalsContainer.classList.add('fade-in');
-            }
+            journalsContainer.innerHTML = data.html;
+            journalsContainer.classList.remove('fade-in');
+            void journalsContainer.offsetWidth; // Trigger reflow
+            journalsContainer.classList.add('fade-in');
             
-            // Update results summary count
-            const newCount = doc.querySelector('#totalJournals');
-            if (newCount) {
-                updateResultsSummary(newCount.textContent, params.toString().length > 0);
-            }
+            // Update results summary
+            updateResultsSummary(data.total, params.toString().length > 0);
             
             journalsContainer.classList.remove('opacity-50');
             loadingIndicator.classList.add('hidden');

@@ -1,5 +1,5 @@
 {#
-    Health Entry Index - Lists all health entries with edit/delete options
+    Health Entry Index - Lists all health entries with edit/delete options and AJAX search/filter/sort
 #}
 
 {% extends 'layouts/app.html.twig' %}
@@ -51,156 +51,162 @@
 
     {# Filter & Sort Section #}
     <div class="mb-6 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-        <form method="POST" action="{{ path('app_healthentry_index') }}" class="flex flex-wrap gap-3 items-center">
-            
+        <form id="searchForm" class="flex flex-wrap gap-3 items-center">
             {# Search #}
-            <input type="text" name="search" id="search" value="{{ search|default('') }}" 
-                   placeholder="{{ 'Rechercher par poids...'|trans }}"
-                   class="flex-1 min-w-[200px] px-4 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+            <div class="relative flex-1 min-w-[200px]">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" name="search" id="search" value="{{ search|default('') }}" 
+                       placeholder="{{ 'Rechercher par poids...'|trans }}"
+                       class="w-full pl-10 pr-4 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+            </div>
             
             {# Filter by Date #}
             <div class="flex items-center gap-2">
                 <i class="fa-regular fa-calendar text-gray-400"></i>
                 <input type="date" name="filterDate" id="filterDate" value="{{ filterDate|default('') }}" 
-                       class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                       class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
             </div>
             
             {# Sort #}
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-sort text-gray-400"></i>
                 <select name="sortBy" id="sortBy" 
-                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                     <option value="date" {% if sortBy|default('date') == 'date' %}selected{% endif %}>{{ 'Date'|trans }}</option>
                     <option value="poids" {% if sortBy|default('date') == 'poids' %}selected{% endif %}>{{ 'Poids'|trans }}</option>
                     <option value="glycemie" {% if sortBy|default('date') == 'glycemie' %}selected{% endif %}>{{ 'Glycémie'|trans }}</option>
                 </select>
                 <select name="sortOrder" id="sortOrder" 
-                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                    <option value="ASC" {% if sortOrder|default('ASC') == 'ASC' %}selected{% endif %}>↑ Asc</option>
-                    <option value="DESC" {% if sortOrder|default('ASC') == 'DESC' %}selected{% endif %}>↓ Desc</option>
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="ASC" {% if sortOrder|default('ASC') == 'ASC' %}selected{% endif %}>↑</option>
+                    <option value="DESC" {% if sortOrder|default('ASC') == 'DESC' %}selected{% endif %}>↓</option>
                 </select>
             </div>
             
             {# Apply Button #}
-            <button type="submit" class="px-4 py-2 text-sm font-medium text-white rounded-lg" style="background-color: #16a34a;">
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 transition-colors">
                 <i class="fa-solid fa-check mr-1"></i>{{ 'Appliquer'|trans }}
             </button>
             
             {# Reset Button #}
-            <a href="{{ path('app_healthentry_index') }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+            <a href="{{ path('app_healthentry_index') }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 transition-colors">
                 <i class="fa-solid fa-rotate-left mr-1"></i>{{ 'Reset'|trans }}
             </a>
         </form>
     </div>
 
-    {# Entries Grid #}
-    {% if healthentries|length > 0 %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for entry in healthentries %}
-                <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
-                    {# Header #}
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
-                                <i class="fa-solid fa-calendar-day text-wellcare-600 dark:text-wellcare-400"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-gray-900 dark:text-white">
-                                    {{ entry.date|date('d/m/Y') }}
-                                </h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
-                                    {{ entry.date|date('l')|trans }}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        {# Actions Dropdown #}
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-10" style="display: none;">
-                                <a href="/healthentry/{{ entry.id }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <i class="fa-solid fa-eye text-wellcare-500"></i>
-                                    {{ 'Voir'|trans }}
-                                </a>
-                                <a href="/healthentry/{{ entry.id }}/edit" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <i class="fa-solid fa-pen text-blue-500"></i>
-                                    {{ 'Modifier'|trans }}
-                                </a>
-                                <form action="/healthentry/{{ entry.id }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette entrée?');">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ entry.id) }}">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <button type="submit" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                        <i class="fa-solid fa-trash"></i>
-                                        {{ 'Supprimer'|trans }}
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {# Metrics #}
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Poids'|trans }}</p>
-                            <p class="font-bold text-gray-900 dark:text-white">{{ entry.poids|default('-') }} <span class="text-xs font-normal">kg</span></p>
-                        </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Glycémie'|trans }}</p>
-                            <p class="font-bold text-gray-900 dark:text-white">{{ entry.glycemie|default('-') }} <span class="text-xs font-normal">g/l</span></p>
-                        </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Tension'|trans }}</p>
-                            <p class="font-bold text-gray-900 dark:text-white">{{ entry.tension|default('-') }}</p>
-                        </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Sommeil'|trans }}</p>
-                            <p class="font-bold text-gray-900 dark:text-white">{{ entry.sommeil|default('-') }} <span class="text-xs font-normal">h</span></p>
-                        </div>
-                    </div>
-                    
-                    {# Symptoms Summary #}
-                    {% if entry.symptoms|length > 0 %}
-                        <div class="pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                <i class="fa-solid fa-notes-medical mr-1"></i>
-                                {{ entry.symptoms|length }} {{ 'symptôme(s)'|trans }}
-                            </p>
-                            <div class="flex flex-wrap gap-1">
-                                {% for symptom in entry.symptoms|slice(0, 3) %}
-                                    <span class="px-2 py-1 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300 rounded-full text-xs">
-                                        {{ symptom.type|title }}
-                                    </span>
-                                {% endfor %}
-                                {% if entry.symptoms|length > 3 %}
-                                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs">
-                                        +{{ entry.symptoms|length - 3 }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        {# Empty State #}
-        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
-            <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800">
-                <i class="fa-solid fa-clipboard-list text-3xl text-gray-400"></i>
-            </div>
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                {{ 'Aucune entrée enregistrée'|trans }}
-            </h2>
-            <p class="text-gray-500 dark:text-gray-400 mb-6">
-                {{ 'Commencez à suivre votre santé en créant votre première entrée'|trans }}
-            </p>
-            <a href="/health/journal/accessible" class="btn-primary">
-                <i class="fa-solid fa-plus mr-2"></i>
-                {{ 'Créer ma première entrée'|trans }}
-            </a>
-        </div>
-    {% endif %}
+    {# Loading Indicator #}
+    <div id="loadingIndicator" class="hidden flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-wellcare-600"></div>
+        <span class="ml-3 text-gray-500">{{ 'Recherche en cours...'|trans }}</span>
+    </div>
+
+    {# Results Summary #}
+    <div id="resultsSummary" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+        {% if healthentries|length > 0 %}
+            <span class="results-count">{{ healthentries|length }}</span> résultat(s) trouvé(s)
+        {% else %}
+            <span class="results-count">0</span> résultat(s)
+        {% endif %}
+    </div>
+
+    {# Entries Container (updated via AJAX) #}
+    <div id="entriesContainer" class="fade-in">
+        {{ include('healthentry/_entries_list.html.twig') }}
+    </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<style>
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const entriesContainer = document.getElementById('entriesContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsSummary = document.getElementById('resultsSummary');
+    
+    // Debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Update results summary
+    function updateResultsSummary(count) {
+        const countSpan = resultsSummary.querySelector('.results-count');
+        if (countSpan) {
+            countSpan.textContent = count;
+        }
+    }
+    
+    // Perform AJAX search
+    function performSearch(event) {
+        if (event) {
+            event.preventDefault();
+        }
+        
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams(formData);
+        
+        loadingIndicator.classList.remove('hidden');
+        entriesContainer.classList.add('opacity-50');
+        
+        fetch('{{ path('app_healthentry_search') }}?' + params.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            entriesContainer.innerHTML = data.html;
+            entriesContainer.classList.remove('fade-in');
+            void entriesContainer.offsetWidth;
+            entriesContainer.classList.add('fade-in');
+            
+            updateResultsSummary(data.total);
+            
+            entriesContainer.classList.remove('opacity-50');
+            loadingIndicator.classList.add('hidden');
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            loadingIndicator.classList.add('hidden');
+            entriesContainer.classList.remove('opacity-50');
+        });
+    }
+    
+    // Form submit handler
+    searchForm.addEventListener('submit', performSearch);
+    
+    // Debounced live search for text input
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', debounce(performSearch, 300));
+    
+    // Live filter for date and sort changes
+    const filterDate = document.getElementById('filterDate');
+    const sortBy = document.getElementById('sortBy');
+    const sortOrder = document.getElementById('sortOrder');
+    
+    filterDate.addEventListener('change', debounce(performSearch, 300));
+    sortBy.addEventListener('change', performSearch);
+    sortOrder.addEventListener('change', performSearch);
+});
+</script>
 {% endblock %}

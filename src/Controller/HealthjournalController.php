@@ -80,12 +80,32 @@ final class HealthjournalController extends AbstractController
         $queryBuilder->orderBy('h.' . $sortBy, $sortOrder);
         $healthjournals = $queryBuilder->getQuery()->getResult();
         
-        return $this->render('healthjournal/_journals_list.html.twig', [
+        // Calculate stats
+        $total = count($healthjournals);
+        $completed = 0;
+        $ongoing = 0;
+        foreach ($healthjournals as $journal) {
+            if ($journal->getDatefin() && $journal->getDatefin() < new \DateTime()) {
+                $completed++;
+            } else {
+                $ongoing++;
+            }
+        }
+        
+        // Render the partial template
+        $html = $this->renderView('healthjournal/_journals_list.html.twig', [
             'healthjournals' => $healthjournals,
             'search' => $search,
             'filterDate' => $filterDate,
             'sortBy' => $sortBy,
             'sortOrder' => $sortOrder,
+        ]);
+        
+        return new JsonResponse([
+            'html' => $html,
+            'total' => $total,
+            'completed' => $completed,
+            'ongoing' => $ongoing,
         ]);
     }
 

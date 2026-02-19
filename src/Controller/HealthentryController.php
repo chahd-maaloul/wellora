@@ -9,6 +9,7 @@ use App\Repository\HealthentryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validation;
@@ -51,6 +52,46 @@ final class HealthentryController extends AbstractController
             'filterDate' => $filterDate,
             'sortBy' => $sortBy,
             'sortOrder' => $sortOrder,
+        ]);
+    }
+
+    #[Route('/search', name: 'app_healthentry_search', methods: ['GET'])]
+    public function search(HealthentryRepository $healthentryRepository, Request $request): Response
+    {
+        $search = $request->query->get('search', '');
+        $filterDate = $request->query->get('filterDate', '');
+        $sortBy = $request->query->get('sortBy', 'date');
+        $sortOrder = $request->query->get('sortOrder', 'DESC');
+        
+        $queryBuilder = $healthentryRepository->createQueryBuilder('e');
+        
+        // Search by poids (weight)
+        if ($search) {
+            $queryBuilder->andWhere('e.poids LIKE :search')
+                ->setParameter('search', '%' . $search . '%');
+        }
+        
+        // Filter by date
+        if ($filterDate) {
+            $queryBuilder->andWhere('e.date >= :filterDate')
+                ->setParameter('filterDate', new \DateTime($filterDate));
+        }
+        
+        // Sort results
+        $queryBuilder->orderBy('e.' . $sortBy, $sortOrder);
+        $healthentries = $queryBuilder->getQuery()->getResult();
+        
+        $html = $this->renderView('healthentry/_entries_list.html.twig', [
+            'healthentries' => $healthentries,
+            'search' => $search,
+            'filterDate' => $filterDate,
+            'sortBy' => $sortBy,
+            'sortOrder' => $sortOrder,
+        ]);
+        
+        return new JsonResponse([
+            'html' => $html,
+            'total' => count($healthentries),
         ]);
     }
 
