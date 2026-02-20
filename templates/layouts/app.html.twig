@@ -207,6 +207,9 @@
                                     <a href="/health/calendar" role="menuitem" class="sidebar-sublink" :class="isActive('/health/calendar') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Calendrier</a>
                                 </li>
                                 <li role="none">
+                                    <a href="{{ path('app_health_report_index') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/health/report') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">📄 Rapport de Santé</a>
+                                </li>
+                                <li role="none">
                                     <a href="/health/records" role="menuitem" class="sidebar-sublink" :class="isActive('/health/records') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Historique Médical</a>
                                 </li>
                                 <li role="none">

@@ -422,6 +422,7 @@ final class HealthAnalyticsService
         float $symptom,
         float $weight
     ): float {
+        // Step 1: Calculate weighted score
         $weighted = (
             ($glycemic * self::WEIGHT_GLYCEMIC) +
             ($bp * self::WEIGHT_BLOOD_PRESSURE) +
@@ -430,7 +431,21 @@ final class HealthAnalyticsService
             ($weight * self::WEIGHT_WEIGHT)
         );
         
-        return round($weighted, 2);
+        // Step 2: Apply Clinical Override Rules (Hybrid Medical Scoring Model)
+        // Critical Override: If glycemic OR BP is severely compromised, global score is capped
+        
+        // Rule 1: If glycemicScore < 50 OR bpScore < 50 → global score cannot exceed 59
+        if ($glycemic < 50 || $bp < 50) {
+            $weighted = min($weighted, 59);
+        }
+        
+        // Rule 2: If glycemicScore < 40 AND bpScore < 40 → global score cannot exceed 49
+        if ($glycemic < 40 && $bp < 40) {
+            $weighted = min($weighted, 49);
+        }
+        
+        // Step 3: Ensure score stays within valid range (0-100)
+        return round(min(max($weighted, 0), 100), 2);
     }
     
     private function determineGrade(float $globalScore): string

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Santé - Wellora</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+            background: #fff;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2563eb, #0d9488);
+            color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Info Section */
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        
+        /* Score Section */
+        .score-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .score-value {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        
+        .score-label {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        /* Score Colors */
+        .score-excellent { background: #dcfce7; color: #16a34a; }
+        .score-good { background: #dbeafe; color: #2563eb; }
+        .score-average { background: #fef3c7; color: #d97706; }
+        .score-low { background: #ffedd5; color: #ea580c; }
+        .score-poor { background: #fee2e2; color: #dc2626; }
+        
+        .circle-excellent { background: #dcfce7; border: 4px solid #16a34a; }
+        .circle-good { background: #dbeafe; border: 4px solid #2563eb; }
+        .circle-average { background: #fef3c7; border: 4px solid #d97706; }
+        .circle-low { background: #ffedd5; border: 4px solid #ea580c; }
+        .circle-poor { background: #fee2e2; border: 4px solid #dc2626; }
+        
+        /* Score Breakdown */
+        .score-breakdown {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .score-item {
+            text-align: center;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 6px;
+            min-width: 80px;
+        }
+        
+        .score-item-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        
+        .score-item-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* Risk Section */
+        .risk-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .risk-excellent, .risk-stable { background: #dcfce7; border-left: 4px solid #16a34a; }
+        .risk-warning { background: #fef3c7; border-left: 4px solid #d97706; }
+        .risk-high_risk { background: #fee2e2; border-left: 4px solid #dc2626; }
+        
+        .risk-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .risk-excellent .risk-title, .risk-stable .risk-title { color: #16a34a; }
+        .risk-warning .risk-title { color: #d97706; }
+        .risk-high_risk .risk-title { color: #dc2626; }
+        
+        /* Prediction Section */
+        .prediction-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f5f3ff;
+            border-radius: 8px;
+            border-left: 4px solid #9333ea;
+            text-align: center;
+        }
+        
+        .prediction-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        
+        .prediction-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #9333ea;
+        }
+        
+        /* Recommendations */
+        .recommendations-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        
+        .recommendations-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+        
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .recommendation-bullet {
+            color: #2563eb;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        /* Table */
+        .table-section {
+            margin-bottom: 30px;
+        }
+        
+        .table-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        
+        th {
+            background: #f1f5f9;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 10px;
+        }
+        
+        /* Utility */
+        .mb-20 { margin-bottom: 20px; }
+        .mb-10 { margin-bottom: 10px; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Rapport de Santé</h1>
+            <p class="subtitle">Wellora - Analyse complète de vos données de santé</p>
+        </div>
+        
+        <!-- Patient Info -->
+        <div class="info-section">
+            <div class="info-item">
+                <div class="info-label">Patient</div>
+                <div class="info-value">{{ report.patientName }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Date du Rapport</div>
+                <div class="info-value">{{ report.generatedAt|date('d/m/Y') }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Période</div>
+                <div class="info-value">{{ report.periodString }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Entrées</div>
+                <div class="info-value">{{ report.totalEntries }}</div>
+            </div>
+        </div>
+        
+        <!-- Global Score -->
+        <div class="score-section">
+            <div class="score-circle 
+                {% if report.globalScore >= 80 %}circle-excellent
+                {% elseif report.globalScore >= 60 %}circle-good
+                {% elseif report.globalScore >= 40 %}circle-average
+                {% elseif report.globalScore >= 20 %}circle-low
+                {% else %}circle-poor{% endif %}">
+                <div class="score-value 
+                    {% if report.globalScore >= 80 %}text-green-600
+                    {% elseif report.globalScore >= 60 %}text-blue-600
+                    {% elseif report.globalScore >= 40 %}text-yellow-600
+                    {% elseif report.globalScore >= 20 %}text-orange-600
+                    {% else %}text-red-600{% endif %}" style="
+                    {% if report.globalScore >= 80 %}color: #16a34a;
+                    {% elseif report.globalScore >= 60 %}color: #2563eb;
+                    {% elseif report.globalScore >= 40 %}color: #d97706;
+                    {% elseif report.globalScore >= 20 %}color: #ea580c;
+                    {% else %}color: #dc2626;{% endif %}">
+                    {{ report.globalScore|number_format(0) }}
+                </div>
+            </div>
+            <div>
+                <span class="score-label 
+                    {% if report.globalScore >= 80 %}score-excellent
+                    {% elseif report.globalScore >= 60 %}score-good
+                    {% elseif report.globalScore >= 40 %}score-average
+                    {% elseif report.globalScore >= 20 %}score-low
+                    {% else %}score-poor{% endif %}">
+                    {{ report.getScoreLabel() }}
+                </span>
+            </div>
+            <div class="score-breakdown">
+                <div class="score-item">
+                    <div class="score-item-label">Glycémie</div>
+                    <div class="score-item-value" style="color: {{ report.scores.glycemic >= 60 ? '#16a34a' : '#d97706' }}">
+                        {{ report.scores.glycemic|number_format(0) }}
+                    </div>
+                </div>
+                <div class="score-item">
+                    <div class="score-item-label">Tension</div>
+                    <div class="score-item-value" style="color: {{ report.scores.bloodPressure >= 60 ? '#16a34a' : '#d97706' }}">
+                        {{ report.scores.bloodPressure|number_format(0) }}
+                    </div>
+                </div>
+                <div class="score-item">
+                    <div class="score-item-label">Sommeil</div>
+                    <div class="score-item-value" style="color: {{ report.scores.sleep >= 60 ? '#16a34a' : '#d97706' }}">
+                        {{ report.scores.sleep|number_format(0) }}
+                    </div>
+                </div>
+                <div class="score-item">
+                    <div class="score-item-label">Symptômes</div>
+                    <div class="score-item-value" style="color: {{ report.scores.symptom >= 60 ? '#16a34a' : '#d97706' }}">
+                        {{ report.scores.symptom|number_format(0) }}
+                    </div>
+                </div>
+                <div class="score-item">
+                    <div class="score-item-label">Poids</div>
+                    <div class="score-item-value" style="color: {{ report.scores.weight >= 60 ? '#16a34a' : '#d97706' }}">
+                        {{ report.scores.weight|number_format(0) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Risk Level -->
+        <div class="risk-section 
+            {% if report.riskLevel == 'excellent' or report.riskLevel == 'stable' %}risk-excellent
+            {% elseif report.riskLevel == 'warning' %}risk-warning
+            {% elseif report.riskLevel == 'high_risk' %}risk-high_risk
+            {% else %}risk-stable{% endif %}">
+            <div class="risk-title">
+                Niveau de Risque: {{ report.riskLevelLabel }}
+            </div>
+            <div style="color: #64748b; font-size: 12px;">
+                {% if report.riskLevel == 'excellent' %}Votre santé est excellente. Continuez vos bonnes habitudes !
+                {% elseif report.riskLevel == 'stable' %}Votre état de santé est stable.
+                {% elseif report.riskLevel == 'warning' %}Certains indicateurs nécessitent une attention particulière.
+                {% elseif report.riskLevel == 'high_risk' %}Une consultation médicale est recommandée.
+                {% else %}Données insuffisantes pour une évaluation complète.{% endif %}
+            </div>
+        </div>
+        
+        <!-- AI Prediction -->
+        {% if report.hasPrediction() %}
+        <div class="prediction-section">
+            <div class="prediction-label">Prédiction IA de Glycémie</div>
+            <div class="prediction-value">
+                {{ report.predictedGlycemia|number_format(2, '.', ',') }} g/L
+            </div>
+            <div style="font-size: 10px; color: #64748b; margin-top: 5px;">
+                Basé sur les tendances des 30 derniers jours
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recommendations -->
+        <div class="recommendations-section">
+            <div class="recommendations-title">Recommandations</div>
+            {% for line in report.recommendationText|split('\n\n') %}
+            <div class="recommendation-item">
+                <span class="recommendation-bullet">•</span>
+                <span>{{ line }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Entries Table -->
+        <div class="table-section">
+            <div class="table-title">Historique des Entrées</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Glycémie</th>
+                        <th>Poids</th>
+                        <th>Tension</th>
+                        <th>Sommeil</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in report.entries|slice(0, 15) %}
+                    <tr>
+                        <td>{{ entry.date ? entry.date|date('d/m/Y') : 'N/A' }}</td>
+                        <td>{{ entry.glycemie ? entry.glycemie|number_format(2, '.', ',') : 'N/A' }} g/L</td>
+                        <td>{{ entry.poids ? entry.poids|number_format(1, '.', ',') : 'N/A' }} kg</td>
+                        <td>{{ entry.tension|default('N/A') }}</td>
+                        <td>{{ entry.sommeil|default('N/A') }} h</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Document généré automatiquement par Wellora</p>
+            <p>Ce rapport est fourni à titre informatif uniquement et ne remplace pas un avis médical professionnel.</p>
+            <p>Date de génération: {{ report.generatedAt|date('d/m/Y H:i') }}</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -331,6 +331,75 @@ final class HealthRiskEngineService
             requiresImmediateAttention: $requiresImmediate,
         );
     }
+
+    /**
+     * Calculate risk level based on global health score and predicted glycemia.
+     * 
+     * Rules:
+     * - If less than 5 entries → "non evalue"
+     * - If score > 70 AND predicted glycemia < 1.2 → "faible"
+     * - If score between 40-70 OR predicted glycemia between 1.2-1.8 → "modere"
+     * - If score < 40 OR predicted glycemia > 1.8 → "eleve"
+     *
+     * @return array{tier: string, label: string, score: float}
+     */
+    public function calculateRiskLevel(
+        int $entryCount,
+        float $globalScore,
+        ?float $predictedGlycemia
+    ): array {
+        // Not enough data
+        if ($entryCount < 5) {
+            return [
+                'tier' => 'non_evalue',
+                'label' => 'Non évalué',
+                'score' => 0.0,
+            ];
+        }
+
+        // Determine risk based on score and prediction
+        $riskScore = 0.0;
+        
+        // Score contribution (inverse - higher score = lower risk)
+        $scoreContribution = match (true) {
+            $globalScore >= 70 => 0.0,
+            $globalScore >= 40 => 0.5,
+            default => 1.0,
+        };
+        
+        // Glycemia prediction contribution
+        $glycemiaContribution = 0.0;
+        if ($predictedGlycemia !== null) {
+            $glycemiaContribution = match (true) {
+                $predictedGlycemia < 1.2 => 0.0,
+                $predictedGlycemia <= 1.8 => 0.5,
+                default => 1.0,
+            };
+        }
+        
+        // Calculate combined risk
+        $combinedScore = ($scoreContribution * 0.6) + ($glycemiaContribution * 0.4);
+        
+        // Determine tier
+        return match (true) {
+            $globalScore > 70 && ($predictedGlycemia === null || $predictedGlycemia < 1.2) => [
+                'tier' => 'faible',
+                'label' => 'Faible',
+                'score' => $combinedScore,
+            ],
+            ($globalScore >= 40 && $globalScore <= 70) || 
+            ($predictedGlycemia !== null && $predictedGlycemia >= 1.2 && $predictedGlycemia <= 1.8) => [
+                'tier' => 'modere',
+                'label' => 'Modéré',
+                'score' => $combinedScore,
+            ],
+            default => [
+                'tier' => 'eleve',
+                'label' => 'Élevé',
+                'score' => $combinedScore,
+            ],
+        };
+    }
     
     /**
      * @param array<HealthRiskFactorDTO> $riskFactors
