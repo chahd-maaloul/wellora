@@ -19,21 +19,25 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class GoogleAuthenticator extends OAuth2Authenticator
 {
     private ClientRegistry $clientRegistry;
     private EntityManagerInterface $entityManager;
     private RouterInterface $router;
+    private ?UrlGeneratorInterface $urlGenerator = null;
 
     public function __construct(
         ClientRegistry $clientRegistry,
         EntityManagerInterface $entityManager,
-        RouterInterface $router
+        RouterInterface $router,
+        ?UrlGeneratorInterface $urlGenerator = null
     ) {
         $this->clientRegistry = $clientRegistry;
         $this->entityManager = $entityManager;
         $this->router = $router;
+        $this->urlGenerator = $urlGenerator;
     }
 
     public function supports(Request $request): ?bool
@@ -125,6 +129,20 @@ class GoogleAuthenticator extends OAuth2Authenticator
             $user->setLastLoginAt(new \DateTime());
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+            
+            // Check if 2FA is enabled - if so, redirect to 2FA verification
+            if ($user->isTotpAuthenticationEnabled()) {
+                // Clear any previous target path to prevent redirect loops
+                $session = $request->getSession();
+                if ($session && $this->urlGenerator) {
+                    $session->remove('_security.main.target_path');
+                }
+                
+                // Redirect to 2FA verification
+                if ($this->urlGenerator) {
+                    return new RedirectResponse($this->urlGenerator->generate('app_2fa_verify'));
+                }
+            }
         }
         
         // Redirect based on user role
