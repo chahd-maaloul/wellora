@@ -66,6 +66,15 @@
                     </h2>
                 </div>
 
+                <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+                    <h3 class="text-xs font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
+                        <i class="mr-2 fa-solid fa-wand-magic-sparkles text-wellcare-500"></i>AI Trail Chat
+                    </h3>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Click the chat icon at the bottom-right to open AI recommendations.
+                    </p>
+                </div>
+
                 <!-- Search -->
                 <div class="p-3 border-b border-gray-100 dark:border-gray-700">
                     <form method="get" action="{{ path('app_parcours_de_sante_index') }}" class="space-y-2">
@@ -355,8 +364,364 @@
     </div>
 </div>
 
+<div
+    class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3"
+    style="position: fixed; right: 20px; bottom: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 12px;"
+>
+    <div
+        id="aiChatPanel"
+        class="w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 rounded-2xl dark:border-gray-700"
+        style="display: none; width: 352px; max-width: calc(100vw - 2rem); background: #ffffff; border: 1px solid #d1d5db; border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);"
+    >
+        <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                <i class="mr-1 fa-solid fa-wand-magic-sparkles text-wellcare-500"></i>AI Trail Chat
+            </h3>
+            <button
+                type="button"
+                id="aiChatClose"
+                class="inline-flex items-center justify-center w-8 h-8 text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                aria-label="Close AI trail chat"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div
+            id="aiTrailChat"
+            data-endpoint="{{ ai_chat_endpoint }}"
+            class="p-3"
+        >
+            <div id="aiChatMessages" class="h-56 p-2 space-y-2 overflow-y-auto rounded bg-gray-50 dark:bg-gray-700/70"></div>
+
+            <div class="flex flex-wrap gap-1 mt-2">
+                {% for value, label in ai_weather_options %}
+                    {% if value != 'any' %}
+                        <button
+                            type="button"
+                            class="aiWeatherChip px-2 py-1 text-[11px] font-medium border border-gray-200 rounded-full text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+                            data-weather="{{ value }}"
+                        >
+                            {{ label }}
+                        </button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button
+                    type="button"
+                    id="aiChatUseLocation"
+                    class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                    <i class="mr-1 fa-solid fa-location-crosshairs"></i>Use my location
+                </button>
+                <button
+                    type="button"
+                    id="aiChatReset"
+                    class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                    Reset chat
+                </button>
+            </div>
+
+            <form id="aiChatForm" class="flex gap-2 mt-2">
+                <input
+                    id="aiChatInput"
+                    type="text"
+                    placeholder="Type your answer..."
+                    autocomplete="off"
+                    class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                >
+                <button type="submit" class="px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <button
+        type="button"
+        id="aiChatLauncher"
+        aria-controls="aiChatPanel"
+        aria-expanded="false"
+        class="inline-flex items-center justify-center w-14 h-14 text-white rounded-full shadow-lg bg-wellcare-500 hover:bg-wellcare-600 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+        style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 9999px; border: 0; background: #00a790; color: #ffffff; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28); cursor: pointer;"
+    >
+        <i class="text-lg fa-solid fa-comments"></i>
+        <span class="sr-only">Open AI trail chat</span>
+    </button>
+</div>
+
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
+    <script>
+        (function () {
+            const chatLauncher = document.getElementById('aiChatLauncher');
+            const chatPanel = document.getElementById('aiChatPanel');
+            const chatClose = document.getElementById('aiChatClose');
+            const chatRoot = document.getElementById('aiTrailChat');
+            const messages = document.getElementById('aiChatMessages');
+            const form = document.getElementById('aiChatForm');
+            const input = document.getElementById('aiChatInput');
+            const useLocationButton = document.getElementById('aiChatUseLocation');
+            const resetButton = document.getElementById('aiChatReset');
+            const weatherChips = document.querySelectorAll('.aiWeatherChip');
+
+            if (!chatLauncher || !chatPanel || !chatClose || !chatRoot || !messages || !form || !input || !useLocationButton || !resetButton) {
+                return;
+            }
+
+            const endpoint = chatRoot.dataset.endpoint;
+            const state = {
+                location: '',
+                latitude: null,
+                longitude: null,
+                weather: '',
+                step: 'ask_location',
+                pending: false
+            };
+
+            function isChatOpen() {
+                return chatPanel.style.display !== 'none';
+            }
+
+            function openChat() {
+                chatPanel.style.display = 'block';
+                chatLauncher.setAttribute('aria-expanded', 'true');
+                input.focus();
+            }
+
+            function closeChat() {
+                chatPanel.style.display = 'none';
+                chatLauncher.setAttribute('aria-expanded', 'false');
+            }
+
+            function addMessage(role, text, recommendation) {
+                const row = document.createElement('div');
+                row.className = role === 'assistant' ? 'flex justify-start' : 'flex justify-end';
+
+                const bubble = document.createElement('div');
+                bubble.className = role === 'assistant'
+                    ? 'max-w-[90%] rounded-lg px-2 py-1.5 text-xs bg-white text-gray-700 border border-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600'
+                    : 'max-w-[90%] rounded-lg px-2 py-1.5 text-xs bg-wellcare-500 text-white';
+                bubble.textContent = text;
+                row.appendChild(bubble);
+                messages.appendChild(row);
+
+                if (recommendation && recommendation.details_url) {
+                    const actionRow = document.createElement('div');
+                    actionRow.className = 'flex justify-start';
+                    const link = document.createElement('a');
+                    link.href = recommendation.details_url;
+                    link.className = 'inline-flex mt-1 items-center justify-center px-2 py-1 text-[11px] font-medium text-white rounded bg-wellcare-500 hover:bg-wellcare-600';
+                    link.textContent = 'Open trail details';
+                    actionRow.appendChild(link);
+                    messages.appendChild(actionRow);
+                }
+
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function normalizeWeather(inputValue) {
+                const value = inputValue.toLowerCase();
+
+                if (value.includes('clear') || value.includes('sun')) return 'clear';
+                if (value.includes('cloud') || value.includes('fog')) return 'cloudy';
+                if (value.includes('rain') || value.includes('drizzle') || value.includes('storm')) return 'rain';
+                if (value.includes('snow')) return 'snow';
+                if (value.includes('wind')) return 'windy';
+                if (value.includes('any') || value.includes('no preference')) return 'any';
+
+                if (value.includes('soleil') || value.includes('ensoleille')) return 'clear';
+                if (value.includes('nuage') || value.includes('brume')) return 'cloudy';
+                if (value.includes('pluie') || value.includes('orage')) return 'rain';
+                if (value.includes('neige')) return 'snow';
+                if (value.includes('vent')) return 'windy';
+
+                return null;
+            }
+
+            async function fetchRecommendation() {
+                if (state.pending) {
+                    return;
+                }
+
+                state.pending = true;
+                addMessage('assistant', 'Checking nearby parcours for you...');
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            location: state.location,
+                            latitude: state.latitude,
+                            longitude: state.longitude,
+                            weather: state.weather
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.ok) {
+                        addMessage('assistant', data.message || 'I could not compute a recommendation. Try again.');
+                        state.step = state.location !== '' || (state.latitude !== null && state.longitude !== null) ? 'ask_weather' : 'ask_location';
+                        return;
+                    }
+
+                    addMessage('assistant', data.message, data.recommendation || null);
+                    addMessage('assistant', 'If you want a new suggestion, type "restart".');
+                    state.step = 'done';
+                } catch (error) {
+                    addMessage('assistant', 'Network error while contacting AI recommendation service.');
+                } finally {
+                    state.pending = false;
+                }
+            }
+
+            function resetConversation() {
+                state.location = '';
+                state.latitude = null;
+                state.longitude = null;
+                state.weather = '';
+                state.step = 'ask_location';
+                state.pending = false;
+                messages.innerHTML = '';
+                addMessage('assistant', 'Hi, I am your trail assistant.');
+                addMessage('assistant', 'Where are you located? Share a city/address or use "Use my location".');
+                input.value = '';
+                if (isChatOpen()) {
+                    input.focus();
+                }
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const text = input.value.trim();
+                if (text === '') {
+                    return;
+                }
+
+                addMessage('user', text);
+                input.value = '';
+
+                const lowerText = text.toLowerCase();
+                if (state.step === 'done') {
+                    if (lowerText.includes('restart') || lowerText.includes('again')) {
+                        resetConversation();
+                        return;
+                    }
+
+                    addMessage('assistant', 'Type "restart" to start a new recommendation.');
+                    return;
+                }
+
+                if (state.step === 'ask_location') {
+                    state.location = text;
+                    state.latitude = null;
+                    state.longitude = null;
+                    state.step = 'ask_weather';
+                    addMessage('assistant', 'Great. What weather do you want? (clear, cloudy, rain, snow, windy, or any)');
+                    return;
+                }
+
+                if (state.step === 'ask_weather') {
+                    const weather = normalizeWeather(text);
+                    if (!weather) {
+                        addMessage('assistant', 'Please choose: clear, cloudy, rain, snow, windy, or any.');
+                        return;
+                    }
+
+                    state.weather = weather;
+                    fetchRecommendation();
+                }
+            });
+
+            useLocationButton.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    addMessage('assistant', 'Geolocation is not available in this browser.');
+                    return;
+                }
+
+                useLocationButton.disabled = true;
+                const previousLabel = useLocationButton.textContent;
+                useLocationButton.textContent = 'Locating...';
+
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        state.latitude = Number(position.coords.latitude.toFixed(6));
+                        state.longitude = Number(position.coords.longitude.toFixed(6));
+                        state.location = 'Current location';
+                        addMessage('user', 'Use my location');
+
+                        if (state.step === 'ask_location') {
+                            state.step = 'ask_weather';
+                            addMessage('assistant', 'Location received. What weather do you want? (clear, cloudy, rain, snow, windy, or any)');
+                        } else {
+                            addMessage('assistant', 'Location updated.');
+                        }
+
+                        useLocationButton.disabled = false;
+                        useLocationButton.textContent = previousLabel;
+                    },
+                    function () {
+                        addMessage('assistant', 'I could not access your location. Please type your city instead.');
+                        useLocationButton.disabled = false;
+                        useLocationButton.textContent = previousLabel;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            });
+
+            weatherChips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    const weatherValue = chip.dataset.weather;
+                    if (!weatherValue) {
+                        return;
+                    }
+
+                    addMessage('user', chip.textContent.trim());
+                    state.weather = weatherValue;
+
+                    if (state.step === 'ask_location' && state.location === '' && (state.latitude === null || state.longitude === null)) {
+                        addMessage('assistant', 'Please share your location first.');
+                        return;
+                    }
+
+                    state.step = 'ask_weather';
+                    fetchRecommendation();
+                });
+            });
+
+            resetButton.addEventListener('click', function () {
+                resetConversation();
+            });
+
+            chatLauncher.addEventListener('click', function () {
+                if (!isChatOpen()) {
+                    openChat();
+                } else {
+                    closeChat();
+                }
+            });
+
+            chatClose.addEventListener('click', function () {
+                closeChat();
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && isChatOpen()) {
+                    closeChat();
+                }
+            });
+
+            resetConversation();
+        })();
+    </script>
 {% endblock %}
