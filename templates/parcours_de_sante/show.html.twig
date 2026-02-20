@@ -164,6 +164,23 @@
                 {% endif %}
             </section>
 
+        </div>
+
+        <aside class="space-y-5">
+            <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Actions</h2>
+                <div class="mt-4 space-y-2">
+                    <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours_de_sante.id}) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                        <i class="fa-solid fa-newspaper"></i>
+                        View publications
+                    </a>
+                    <a href="{{ path('app_parcours_de_sante_index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">
+                        <i class="fa-solid fa-list"></i>
+                        All Health Trails
+                    </a>
+                </div>
+            </section>
+
             <section
                 id="parcours-distance-section"
                 class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
@@ -192,22 +209,6 @@
                     <i class="fa-solid fa-route"></i>
                     Open route in OpenStreetMap
                 </a>
-            </section>
-        </div>
-
-        <aside class="space-y-5">
-            <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Actions</h2>
-                <div class="mt-4 space-y-2">
-                    <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours_de_sante.id}) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/40">
-                        <i class="fa-solid fa-newspaper"></i>
-                        View publications
-                    </a>
-                    <a href="{{ path('app_parcours_de_sante_index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">
-                        <i class="fa-solid fa-list"></i>
-                        All Health Trails
-                    </a>
-                </div>
             </section>
 
             <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -294,39 +295,43 @@
                 distanceStatusElement.textContent = statusText;
             };
 
+            const updateDistance = (userLatitude, userLongitude) => {
+                const distanceKm = haversineDistanceKm(
+                    userLatitude,
+                    userLongitude,
+                    parcoursLatitude,
+                    parcoursLongitude
+                );
+
+                setStatus(
+                    `${distanceKm.toFixed(2)} km`,
+                    'Live direct distance between your current location and this parcours.'
+                );
+
+                const routeUrl = new URL('https://www.openstreetmap.org/directions');
+                routeUrl.searchParams.set('engine', 'fossgis_osrm_foot');
+                routeUrl.searchParams.set(
+                    'route',
+                    `${userLatitude.toFixed(6)},${userLongitude.toFixed(6)};${parcoursLatitude.toFixed(6)},${parcoursLongitude.toFixed(6)}`
+                );
+
+                directionsLink.href = routeUrl.toString();
+                directionsLink.classList.remove('hidden');
+            };
+
             const calculateDistance = () => {
                 if (!('geolocation' in navigator)) {
                     setStatus('-', 'Geolocation is not supported in this browser.');
                     return;
                 }
 
-                setStatus('Calculating...', 'Waiting for your location permission.');
+                setStatus('Calculating...', 'Waiting for your location permission to start live tracking.');
 
-                navigator.geolocation.getCurrentPosition(
+                const watchId = navigator.geolocation.watchPosition(
                     (position) => {
                         const userLatitude = position.coords.latitude;
                         const userLongitude = position.coords.longitude;
-                        const distanceKm = haversineDistanceKm(
-                            userLatitude,
-                            userLongitude,
-                            parcoursLatitude,
-                            parcoursLongitude
-                        );
-
-                        setStatus(
-                            `${distanceKm.toFixed(2)} km`,
-                            `Direct distance between your current location and this parcours.`
-                        );
-
-                        const routeUrl = new URL('https://www.openstreetmap.org/directions');
-                        routeUrl.searchParams.set('engine', 'fossgis_osrm_foot');
-                        routeUrl.searchParams.set(
-                            'route',
-                            `${userLatitude.toFixed(6)},${userLongitude.toFixed(6)};${parcoursLatitude.toFixed(6)},${parcoursLongitude.toFixed(6)}`
-                        );
-
-                        directionsLink.href = routeUrl.toString();
-                        directionsLink.classList.remove('hidden');
+                        updateDistance(userLatitude, userLongitude);
                     },
                     (error) => {
                         const fallbackStatusByCode = {
@@ -336,12 +341,21 @@
                         };
 
                         setStatus('-', fallbackStatusByCode[error.code] ?? 'Could not read your location.');
+                        directionsLink.classList.add('hidden');
                     },
                     {
                         enableHighAccuracy: true,
                         timeout: 10000,
-                        maximumAge: 60000,
+                        maximumAge: 0,
                     }
+                );
+
+                window.addEventListener(
+                    'beforeunload',
+                    () => {
+                        navigator.geolocation.clearWatch(watchId);
+                    },
+                    { once: true }
                 );
             };
 
