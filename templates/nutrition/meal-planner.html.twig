@@ -178,7 +178,7 @@
                                     <a href="{{ path('nutrition_meal_plan_toggle', {id: meal.id}) }}" class="p-1 text-green-500 hover:text-green-700" title="Marquer comme mangé">
                                         <i class="fas fa-check"></i>
                                     </a>
-                                    <a href="{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}" class="p-1 text-red-500 hover:text-red-700" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce repas?')">
+                                    <a href="{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}" class="p-1 text-red-500 hover:text-red-700" title="Supprimer" onclick="showDeleteModal(event, '{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}', '{{ meal.name|escape('js') }}')">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -209,7 +209,7 @@
                                     <a href="{{ path('nutrition_meal_plan_toggle', {id: meal.id}) }}" class="p-1 text-green-500 hover:text-green-700" title="Marquer comme mangé">
                                         <i class="fas fa-check"></i>
                                     </a>
-                                    <a href="{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}" class="p-1 text-red-500 hover:text-red-700" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce repas?')">
+                                    <a href="{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}" class="p-1 text-red-500 hover:text-red-700" title="Supprimer" onclick="showDeleteModal(event, '{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}', '{{ meal.name|escape('js') }}')">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -240,7 +240,7 @@
                                     <a href="{{ path('nutrition_meal_plan_toggle', {id: meal.id}) }}" class="p-1 text-green-500 hover:text-green-700" title="Marquer comme mangé">
                                         <i class="fas fa-check"></i>
                                     </a>
-                                    <a href="{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}" class="p-1 text-red-500 hover:text-red-700" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce repas?')">
+                                    <a href="{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}" class="p-1 text-red-500 hover:text-red-700" title="Supprimer" onclick="showDeleteModal(event, '{{ path('nutrition_meal_plan_delete', {id: meal.id}) }}', '{{ meal.name|escape('js') }}')">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
@@ -338,6 +338,62 @@
         </div>
     </div>
 </div>
+
+{# Delete Confirmation Modal #}
+<div id="delete-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideDeleteModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <div class="text-center">
+                <div class="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600 dark:text-red-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Confirmer la suppression</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6" id="delete-modal-message">
+                    Êtes-vous sûr de vouloir supprimer cet élément? Cette action est irréversible.
+                </p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="hideDeleteModal()" 
+                        class="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
+                        Annuler
+                    </button>
+                    <a href="#" id="delete-modal-confirm" 
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                        Supprimer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showDeleteModal(event, url, itemName) {
+    event.preventDefault();
+    const modal = document.getElementById('delete-modal');
+    const message = document.getElementById('delete-modal-message');
+    const confirmBtn = document.getElementById('delete-modal-confirm');
+    
+    if (itemName) {
+        message.textContent = 'Êtes-vous sûr de vouloir supprimer "' + itemName + '"? Cette action est irréversible.';
+    }
+    
+    confirmBtn.href = url;
+    modal.classList.remove('hidden');
+}
+
+function hideDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    modal.classList.add('hidden');
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideDeleteModal();
+    }
+});
+</script>
 
 {# Floating AI Chat Button #}
 {% include 'nutrition/_ai-floating-button.html.twig' %}
