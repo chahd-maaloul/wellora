@@ -1,10 +1,17 @@
-{% extends 'base.html.twig' %}
+{% extends 'layouts/app.html.twig' %}
 
 {% block title %}Assistant Nutritionnel AI - WellCare{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
 {% block body %}
-<div class="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-4xl">
         <!-- Header -->
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg mb-4">
@@ -160,7 +167,7 @@ Tapez votre demande ci-dessous ou utilisez les actions rapides!
                 </div>
                 
                 <!-- Toast notification -->
-                <div id="toast" class="fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+                <div id="toast" class="fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 dark:bg-emerald-600">
                     <p id="toast-message" class="text-sm font-medium"></p>
                 </div>
             </div>
@@ -192,17 +199,17 @@ Tapez votre demande ci-dessous ou utilisez les actions rapides!
 
         <!-- Navigation -->
         <div class="mt-6 flex flex-wrap justify-center gap-3">
-            <a href="{{ path('nutrition_dashboard') }}" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all">
-                ← Tableau de bord
+            <a href="{{ path('nutrition_dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-arrow-left"></i>Tableau de bord
             </a>
-            <a href="{{ path('nutrition_meal_planner') }}" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all">
-                📅 Planificateur
+            <a href="{{ path('nutrition_meal_planner') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-calendar-alt"></i>Planificateur
             </a>
-            <a href="{{ path('nutrition_goals') }}" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all">
-                🎯 Mes objectifs
+            <a href="{{ path('nutrition_goals') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-bullseye"></i>Objectifs
             </a>
-            <a href="{{ path('nutrition_food_diary') }}" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all">
-                📓 Journal
+            <a href="{{ path('nutrition_food_diary') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-book"></i>Journal
             </a>
         </div>
     </div>
