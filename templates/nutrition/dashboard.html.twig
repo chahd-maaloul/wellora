@@ -66,6 +66,11 @@
                     <i class="mr-2 fas fa-glass-water"></i>
                     Eau
                 </a>
+                <a href="{{ path('nutrition_ai_assistant') }}" 
+                   class="inline-flex items-center px-4 py-2 text-white bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg hover:from-purple-600 hover:to-indigo-700 shadow-sm">
+                    <i class="mr-2 fas fa-robot"></i>
+                    Assistant AI
+                </a>
             </div>
         </div>
 
@@ -522,4 +527,7 @@
         </div>
     </main>
 </div>
+
+{# Floating AI Chat Button #}
+{% include 'nutrition/_ai-floating-button.html.twig' %}
 {% endblock %}

@@ -1,0 +1,157 @@
+{# Floating AI Chat Button - Bottom Right #}
+{# Uses CSS-only checkbox hack for toggle without JavaScript #}
+<style>
+.ai-floating-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+}
+.ai-floating-btn input[type="checkbox"] {
+    display: none;
+}
+.ai-floating-btn .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-decoration: none;
+}
+.ai-floating-btn .btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+}
+.ai-floating-btn .btn i {
+    color: white;
+    font-size: 24px;
+}
+.ai-floating-btn .chat-popup {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 320px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s ease;
+}
+.ai-floating-btn input[type="checkbox"]:checked ~ .chat-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+.ai-floating-btn .popup-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.ai-floating-btn .popup-header i {
+    color: white;
+    font-size: 24px;
+}
+.ai-floating-btn .popup-header span {
+    color: white;
+    font-weight: 600;
+}
+.ai-floating-btn .popup-body {
+    padding: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #f9fafb;
+}
+.ai-floating-btn .quick-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ai-floating-btn .quick-questions form button {
+    width: 100%;
+    padding: 10px 12px;
+    text-align: left;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    color: #374151;
+}
+.ai-floating-btn .quick-questions form button:hover {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+}
+.ai-floating-btn .popup-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+}
+.ai-floating-btn .popup-footer a {
+    color: #6366f1;
+    text-decoration: font-medium;
+    font-size: 14px;
+}
+.dark .ai-floating-btn .chat-popup {
+    background: #1f2937;
+}
+.dark .ai-floating-btn .popup-body {
+    background: #111827;
+}
+.dark .ai-floating-btn .quick-questions form button {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+}
+.dark .ai-floating-btn .popup-footer {
+    border-color: #4b5563;
+}
+</style>
+
+<div class="ai-floating-btn">
+    <label for="ai-chat-toggle" class="btn">
+        <i class="fas fa-robot"></i>
+    </label>
+    <input type="checkbox" id="ai-chat-toggle">
+    
+    <div class="chat-popup">
+        <div class="popup-header">
+            <i class="fas fa-robot"></i>
+            <span>Assistant WellCare AI</span>
+        </div>
+        <div class="popup-body">
+            <div class="quick-questions">
+                <a href="{{ path('nutrition_ai_assistant') }}" class="block w-full p-3 text-left bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                    <i class="fas fa-utensils mr-2 text-green-600"></i>
+                    <span class="text-gray-700 dark:text-gray-300">Générer un menu</span>
+                </a>
+                <a href="{{ path('nutrition_ai_assistant') }}" class="block w-full p-3 text-left bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                    <i class="fas fa-calendar-week mr-2 text-blue-600"></i>
+                    <span class="text-gray-700 dark:text-gray-300">Planifier ma semaine</span>
+                </a>
+                <a href="{{ path('nutrition_ai_assistant') }}" class="block w-full p-3 text-left bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                    <i class="fas fa-plus-circle mr-2 text-purple-600"></i>
+                    <span class="text-gray-700 dark:text-gray-300">Ajouter un aliment</span>
+                </a>
+                <a href="{{ path('nutrition_ai_assistant') }}" class="block w-full p-3 text-left bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                    <i class="fas fa-fire mr-2 text-orange-600"></i>
+                    <span class="text-gray-700 dark:text-gray-300">Conseils calories</span>
+                </a>
+            </div>
+        </div>
+        <div class="popup-footer">
+            <a href="{{ path('nutrition_ai_assistant') }}">Ouvrir le chat complet <i class="fas fa-external-link-alt ml-1"></i></a>
+        </div>
+    </div>
+</div>

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\FoodItem;
 use App\Entity\FoodLog;
+use App\Entity\MealPlan;
 use App\Entity\NutritionGoal;
 use App\Entity\WaterIntake;
 use App\Form\FoodItemFormType;
@@ -12,6 +13,7 @@ use App\Form\NutritionGoalFormType;
 use App\Form\WaterIntakeFormType;
 use App\Repository\FoodItemRepository;
 use App\Repository\FoodLogRepository;
+use App\Repository\MealPlanRepository;
 use App\Repository\NutritionGoalRepository;
 use App\Repository\WaterIntakeRepository;
 use DateTime;
@@ -1125,9 +1127,97 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
     }
 
     #[Route('/planner', name: 'meal_planner')]
-    public function mealPlanner(): Response
+    public function mealPlanner(Request $request, MealPlanRepository $mealPlanRepository): Response
     {
-        return $this->render('nutrition/meal-planner.html.twig');
+        $userId = $this->getUserId();
+        $today = new \DateTime();
+        
+        // Get this week's meal plans
+        $weekStart = (clone $today)->modify('monday this week');
+        $weekEnd = (clone $today)->modify('sunday this week');
+        $mealPlans = $mealPlanRepository->findByUserIdAndDateRange($userId, $weekStart, $weekEnd);
+        
+        // Get recent meal plans
+        $recentMeals = $mealPlanRepository->findRecentByUserId($userId, 10);
+        
+        // Group by day
+        $days = ['Monday' => [], 'Tuesday' => [], 'Wednesday' => [], 'Thursday' => [], 'Friday' => [], 'Saturday' => [], 'Sunday' => []];
+        foreach ($mealPlans as $plan) {
+            $day = $plan->getDayOfWeek();
+            if (isset($days[$day])) {
+                $days[$day][] = $plan;
+            }
+        }
+        
+        // Calculate weekly totals
+        $weeklyStats = $mealPlanRepository->getMealStatsByUserId($userId);
+        
+        return $this->render('nutrition/meal-planner.html.twig', [
+            'mealPlans' => $mealPlans,
+            'days' => $days,
+            'recentMeals' => $recentMeals,
+            'weeklyStats' => $weeklyStats,
+            'weekStart' => $weekStart,
+            'weekEnd' => $weekEnd,
+        ]);
+    }
+    
+    #[Route('/planner/delete/{id}', name: 'meal_plan_delete', requirements: ['id' => '\d+'])]
+    public function deleteMealPlan(int $id, MealPlanRepository $mealPlanRepository, EntityManagerInterface $entityManager): Response
+    {
+        $mealPlan = $mealPlanRepository->find($id);
+        if ($mealPlan) {
+            $entityManager->remove($mealPlan);
+            $entityManager->flush();
+            $this->addFlash('success', 'Repas supprimé avec succès');
+        }
+        return $this->redirectToRoute('nutrition_meal_planner');
+    }
+    
+    #[Route('/planner/toggle/{id}', name: 'meal_plan_toggle', requirements: ['id' => '\d+'])]
+    public function toggleMealPlan(int $id, MealPlanRepository $mealPlanRepository, EntityManagerInterface $entityManager): Response
+    {
+        $mealPlan = $mealPlanRepository->find($id);
+        if ($mealPlan) {
+            $mealPlan->setIsCompleted(!$mealPlan->isCompleted());
+            $entityManager->flush();
+        }
+        return $this->redirectToRoute('nutrition_meal_planner');
+    }
+    
+    #[Route('/planner/week/{offset}', name: 'meal_planner_week', requirements: ['offset' => '-?\d+'], defaults: ['offset' => 0])]
+    public function mealPlannerWeek(Request $request, MealPlanRepository $mealPlanRepository, int $offset = 0): Response
+    {
+        $userId = $this->getUserId();
+        $today = new \DateTime();
+        
+        // Calculate week based on offset
+        $weekStart = (clone $today)->modify('monday this week +' . $offset . ' weeks');
+        $weekEnd = (clone $weekStart)->modify('+6 days');
+        
+        $mealPlans = $mealPlanRepository->findByUserIdAndDateRange($userId, $weekStart, $weekEnd);
+        $recentMeals = $mealPlanRepository->findRecentByUserId($userId, 10);
+        
+        // Group by day
+        $days = ['Monday' => [], 'Tuesday' => [], 'Wednesday' => [], 'Thursday' => [], 'Friday' => [], 'Saturday' => [], 'Sunday' => []];
+        foreach ($mealPlans as $plan) {
+            $day = $plan->getDayOfWeek();
+            if (isset($days[$day])) {
+                $days[$day][] = $plan;
+            }
+        }
+        
+        $weeklyStats = $mealPlanRepository->getMealStatsByUserId($userId);
+        
+        return $this->render('nutrition/meal-planner.html.twig', [
+            'mealPlans' => $mealPlans,
+            'days' => $days,
+            'recentMeals' => $recentMeals,
+            'weeklyStats' => $weeklyStats,
+            'weekStart' => $weekStart,
+            'weekEnd' => $weekEnd,
+            'offset' => $offset,
+        ]);
     }
 
     #[Route('/recipes/{category}', name: 'nutrition_recipes', requirements: ['category' => '[a-zA-Z]+'], defaults: ['category' => null])]
@@ -1158,6 +1248,469 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
     public function groceryList(): Response
     {
         return $this->render('nutrition/grocery-list.html.twig');
+    }
+
+    #[Route('/ai-assistant', name: 'ai_assistant')]
+    public function aiAssistant(Request $request, FoodLogRepository $foodLogRepository, MealPlanRepository $mealPlanRepository): Response
+    {
+        $userMessage = $request->request->get('message', '');
+        $aiResponse = null;
+        $conversation = $request->getSession()->get('ai_conversation', []);
+        $suggestedMeals = $request->getSession()->get('ai_suggested_meals', []);
+        $weeklyPlan = $request->getSession()->get('ai_weekly_plan', null);
+        
+        if ($userMessage) {
+            $responseData = $this->generateAIResponse($userMessage, $conversation, $request->getSession());
+            $aiResponse = $responseData['response'];
+            $suggestedMeals = $responseData['meals'] ?? [];
+            $weeklyPlan = $responseData['weeklyPlan'] ?? null;
+            
+            $conversation[] = ['role' => 'user', 'content' => $userMessage];
+            $conversation[] = ['role' => 'assistant', 'content' => $aiResponse, 'meals' => $suggestedMeals, 'weeklyPlan' => $weeklyPlan];
+            if (count($conversation) > 20) {
+                $conversation = array_slice($conversation, -20);
+            }
+            $request->getSession()->set('ai_conversation', $conversation);
+            $request->getSession()->set('ai_suggested_meals', $suggestedMeals);
+            $request->getSession()->set('ai_weekly_plan', $weeklyPlan);
+        }
+        
+        if ($request->request->get('clear') === '1') {
+            $request->getSession()->remove('ai_conversation');
+            $request->getSession()->remove('ai_suggested_meals');
+            $request->getSession()->remove('ai_weekly_plan');
+            $conversation = [];
+            $suggestedMeals = [];
+            $weeklyPlan = null;
+        }
+        
+        // Get recent AI-generated meal plans for quick access
+        $recentAIMeals = $mealPlanRepository->findRecentByUserId($this->getUserId(), 5);
+        
+        return $this->render('nutrition/ai-assistant.html.twig', [
+            'conversation' => $conversation,
+            'userMessage' => $userMessage,
+            'aiResponse' => $aiResponse,
+            'suggestedMeals' => $suggestedMeals,
+            'weeklyPlan' => $weeklyPlan,
+            'recentAIMeals' => $recentAIMeals,
+        ]);
+    }
+
+    #[Route('/ai-add-meal', name: 'ai_add_meal')]
+    public function aiAddMeal(Request $request, FoodItemRepository $foodItemRepository, EntityManagerInterface $entityManager): Response
+    {
+        $name = $request->query->get('name', '');
+        $calories = (int) $request->query->get('calories', 0);
+        $protein = (float) $request->query->get('protein', 0);
+        $carbs = (float) $request->query->get('carbs', 0);
+        $fats = (float) $request->query->get('fats', 0);
+        $mealType = $request->query->get('meal', 'lunch');
+        
+        if ($name && $calories > 0) {
+            // Just redirect to the food add page with pre-filled values
+            return $this->redirectToRoute('nutrition_food_add', [
+                'meal' => $mealType,
+                'name' => $name,
+                'calories' => $calories,
+                'protein' => $protein,
+                'carbs' => $carbs,
+                'fats' => $fats,
+            ]);
+        }
+        
+        return $this->redirectToRoute('nutrition_ai_assistant');
+    }
+
+    #[Route('/ai-save-meal-plan', name: 'ai_save_meal_plan')]
+    public function aiSaveMealPlan(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $userId = $this->getUserId();
+        $mealData = $request->request->get('meal_data', '');
+        
+        if ($mealData) {
+            $meals = json_decode($mealData, true);
+            if (is_array($meals)) {
+                $savedCount = 0;
+                foreach ($meals as $meal) {
+                    $mealPlan = new MealPlan();
+                    $mealPlan->setUserId($userId);
+                    $mealPlan->setName($meal['name'] ?? 'Meal');
+                    $mealPlan->setMealType($meal['mealType'] ?? 'lunch');
+                    $mealPlan->setCalories($meal['calories'] ?? 0);
+                    $mealPlan->setProtein($meal['protein'] ?? 0);
+                    $mealPlan->setCarbs($meal['carbs'] ?? 0);
+                    $mealPlan->setFats($meal['fats'] ?? 0);
+                    $mealPlan->setDescription($meal['description'] ?? '');
+                    
+                    // Set date to today + day offset
+                    $dayOffset = $meal['day'] ?? 0;
+                    $date = new \DateTime();
+                    $date->modify("+{$dayOffset} days");
+                    $mealPlan->setDate($date);
+                    $mealPlan->setDayOfWeek($date->format('l'));
+                    $mealPlan->setGeneratedAt(new \DateTime());
+                    
+                    $entityManager->persist($mealPlan);
+                    $savedCount++;
+                }
+                $entityManager->flush();
+                
+                $this->addFlash('success', "{$savedCount} repas ajoutés à votre planificateur!");
+            }
+        }
+        
+        return $this->redirectToRoute('nutrition_meal_planner');
+    }
+
+
+    private function generateAIResponse(string $message, array $conversation, $session): array
+    {
+        $message = strtolower(trim($message));
+        
+        // More comprehensive keyword detection
+        $recipeKeywords = ['recette', 'recipe', 'préparer', 'cuisiner', 'menu', 'repas', 'déjeuner', 'dîner', 'petit-déjeuner', 'douche', 'plat', 'cook', 'cook'];
+        $mealPlanKeywords = ['plan', 'semaine', 'planning', 'programme', 'hebdomadaire', 'semain', 'week'];
+        $nutritionKeywords = ['calorie', 'protein', 'protéine', 'gras', 'fat', 'sucre', 'sugar', 'fibre', 'vitamine', 'minéral', 'santé', 'alimentation', 'équilibré', 'manger', 'diet'];
+        $analysisKeywords = ['analyse', 'calculer', 'valeur', 'nutritive', 'combien', 'apport'];
+        $greetings = ['bonjour', 'salut', 'hello', 'hi', 'hey', 'coucou', 'bjr'];
+        $weightLossKeywords = ['perdre', 'maigrir', 'mincir', 'weight', 'slim', 'amaigrissant'];
+        $muscleKeywords = ['muscle', 'musculaire', 'force', 'prise', 'mass', 'bodybuilding', 'athlete'];
+        $veganKeywords = ['végétalien', 'vegan', 'vegetarian', 'végétarien', 'sans viande'];
+        $ketoKeywords = ['keto', 'cétogène', 'low carb', '低碳水'];
+        $sportKeywords = ['sport', 'athlete', 'entraînement', 'exercice', 'training', 'course', 'running'];
+        $diabetesKeywords = ['diabète', 'diabete', 'glycémie', 'sucre sang'];
+        $heartKeywords = ['coeur', 'cardio', 'cardiaque', 'cholesterol'];
+        $pregnancyKeywords = ['grossesse', 'grossesse', 'bébé', 'baby', 'futur'];
+        
+        if (in_array($message, $greetings)) {
+            return [
+                'response' => "Bonjour! Je suis votre assistant nutritionnel WellCare AI. 🌟\n\nJe peux vous aider avec:\n\n🍳 **Recettes** - Suggestions personnalisées\n📅 **Planification** - Menus semaine\n💊 **Conseils** - Nutrition détaillée\n🔍 **Analyse** - Valeurs nutritives\n⚖️ **Minuteur** - Perte de poids\n💪 **Muscle** - Prise de masse\n🌱 **Régimes** - Vegan, Keto...\n🏃 **Sport** - Performance\n\nQue souhaitez-vous?",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        
+        // Handle specific diet types
+        if ($this->containsAny($message, $veganKeywords)) {
+            return $this->generateVeganResponse($message);
+        }
+        if ($this->containsAny($message, $ketoKeywords)) {
+            return $this->generateKetoResponse($message);
+        }
+        if ($this->containsAny($message, $weightLossKeywords)) {
+            return $this->generateWeightLossResponse($message);
+        }
+        if ($this->containsAny($message, $muscleKeywords)) {
+            return $this->generateMuscleResponse($message);
+        }
+        if ($this->containsAny($message, $sportKeywords)) {
+            return $this->generateSportResponse($message);
+        }
+        if ($this->containsAny($message, $diabetesKeywords)) {
+            return $this->generateDiabetesResponse($message);
+        }
+        if ($this->containsAny($message, $heartKeywords)) {
+            return $this->generateHeartHealthResponse($message);
+        }
+        if ($this->containsAny($message, $pregnancyKeywords)) {
+            return $this->generatePregnancyResponse($message);
+        }
+        
+        if ($this->containsAny($message, $recipeKeywords)) return $this->generateRecipeResponse($message, $session);
+        if ($this->containsAny($message, $mealPlanKeywords)) return $this->generateMealPlanResponse($message, $session);
+        if ($this->containsAny($message, $analysisKeywords)) return $this->generateAnalysisResponse($message);
+        if ($this->containsAny($message, $nutritionKeywords)) return $this->generateNutritionAdviceResponse($message);
+        
+        return [
+            'response' => "Je peux vous aider:\n\n🍳 Tapez: \"recette déjeuner\"\n📅 Tapez: \"menu semaine\"\n⚖️ Tapez: \"perdre du poids\"\n💪 Tapez: \"prise de muscle\"\n🌱 Tapez: \"régime vegan\"\n🏃 Tapez: \"sportif\"\n\nComment puis-je vous aider?",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function containsAny(string $text, array $keywords): bool
+    {
+        foreach ($keywords as $keyword) { if (strpos($text, $keyword) !== false) return true; }
+        return false;
+    }
+    
+    private function generateRecipeResponse(string $message, $session): array
+    {
+        $meals = [];
+        $mealType = 'breakfast';
+        
+        if ($this->containsAny($message, ['petit-déjeuner', 'breakfast', 'matin'])) {
+            $mealType = 'breakfast';
+            $meals = [
+                ['name' => 'Omelette Légumes', 'calories' => 250, 'protein' => 18, 'carbs' => 8, 'fats' => 15, 'mealType' => 'breakfast', 'description' => 'Omelette avec légumes frais'],
+                ['name' => 'Yaourt Grec', 'calories' => 180, 'protein' => 15, 'carbs' => 12, 'fats' => 8, 'mealType' => 'breakfast', 'description' => 'Yaourt grec nature'],
+                ['name' => 'Toast Avocat', 'calories' => 280, 'protein' => 9, 'carbs' => 25, 'fats' => 16, 'mealType' => 'breakfast', 'description' => 'Pain complet avec avocat'],
+            ];
+        } elseif ($this->containsAny($message, ['déjeuner', 'lunch', 'midi'])) {
+            $mealType = 'lunch';
+            $meals = [
+                ['name' => 'Salade Quinoa', 'calories' => 320, 'protein' => 12, 'carbs' => 45, 'fats' => 12, 'mealType' => 'lunch', 'description' => 'Quinoa avec légumes'],
+                ['name' => 'Bowl Poke', 'calories' => 450, 'protein' => 28, 'carbs' => 50, 'fats' => 14, 'mealType' => 'lunch', 'description' => 'Bol hawaïen au poisson'],
+                ['name' => 'Poulet Grillé', 'calories' => 380, 'protein' => 42, 'carbs' => 10, 'fats' => 18, 'mealType' => 'lunch', 'description' => 'Poulet grillé avec légumes'],
+            ];
+        } elseif ($this->containsAny($message, ['dîner', 'dinner', 'soir'])) {
+            $mealType = 'dinner';
+            $meals = [
+                ['name' => 'Saumon Grillé', 'calories' => 420, 'protein' => 38, 'carbs' => 5, 'fats' => 26, 'mealType' => 'dinner', 'description' => 'Saumon grillé avec herbes'],
+                ['name' => 'Poisson Vapeur', 'calories' => 280, 'protein' => 35, 'carbs' => 8, 'fats' => 12, 'mealType' => 'dinner', 'description' => 'Poisson blanc vapeur'],
+                ['name' => 'Poulet Rôti', 'calories' => 320, 'protein' => 40, 'carbs' => 6, 'fats' => 14, 'mealType' => 'dinner', 'description' => 'Poulet rôti aux épices'],
+            ];
+        } else {
+            $meals = [
+                ['name' => 'Salade Quinoa', 'calories' => 320, 'protein' => 12, 'carbs' => 45, 'fats' => 12, 'mealType' => 'lunch', 'description' => 'Quinoa avec légumes'],
+                ['name' => 'Omelette', 'calories' => 250, 'protein' => 18, 'carbs' => 8, 'fats' => 15, 'mealType' => 'breakfast', 'description' => 'Omelette avec légumes'],
+                ['name' => 'Saumon', 'calories' => 420, 'protein' => 38, 'carbs' => 5, 'fats' => 26, 'mealType' => 'dinner', 'description' => 'Saumon grillé'],
+                ['name' => 'Bowl Poke', 'calories' => 450, 'protein' => 28, 'carbs' => 50, 'fats' => 14, 'mealType' => 'lunch', 'description' => 'Bol hawaïen'],
+            ];
+        }
+        
+        return [
+            'response' => "🍳 **Suggestions de repas:**\n\n" . implode("\n", array_map(function($m) {
+            return "• {$m['name']} ({$m['calories']} kcal) - P:{$m['protein']}g G:{$m['carbs']}g L:{$m['fats']}g";
+        }, $meals)) . "\n\nCliquez sur \"Sauvegarder ce repas\" pour l'ajouter à votre planificateur!",
+            'meals' => $meals,
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateMealPlanResponse(string $message, $session): array
+    {
+        $weeklyPlan = [
+            ['day' => 0, 'dayName' => 'Lundi', 'meals' => [
+                ['name' => 'Yaourt + Granola', 'calories' => 350, 'protein' => 15, 'carbs' => 45, 'fats' => 12, 'mealType' => 'breakfast'],
+                ['name' => 'Salade + Poulet', 'calories' => 520, 'protein' => 40, 'carbs' => 35, 'fats' => 18, 'mealType' => 'lunch'],
+                ['name' => 'Saumon + Légumes', 'calories' => 450, 'protein' => 38, 'carbs' => 20, 'fats' => 22, 'mealType' => 'dinner'],
+            ]],
+            ['day' => 1, 'dayName' => 'Mardi', 'meals' => [
+                ['name' => 'Omelette', 'calories' => 280, 'protein' => 20, 'carbs' => 8, 'fats' => 18, 'mealType' => 'breakfast'],
+                ['name' => 'Bowl Quinoa', 'calories' => 480, 'protein' => 18, 'carbs' => 55, 'fats' => 16, 'mealType' => 'lunch'],
+                ['name' => 'Poisson Vapeur', 'calories' => 320, 'protein' => 35, 'carbs' => 15, 'fats' => 14, 'mealType' => 'dinner'],
+            ]],
+            ['day' => 2, 'dayName' => 'Mercredi', 'meals' => [
+                ['name' => 'Toast Avocat', 'calories' => 320, 'protein' => 10, 'carbs' => 30, 'fats' => 18, 'mealType' => 'breakfast'],
+                ['name' => 'Poulet Grillé', 'calories' => 450, 'protein' => 45, 'carbs' => 25, 'fats' => 16, 'mealType' => 'lunch'],
+                ['name' => 'Soupe + Pain', 'calories' => 280, 'protein' => 12, 'carbs' => 40, 'fats' => 8, 'mealType' => 'dinner'],
+            ]],
+            ['day' => 3, 'dayName' => 'Jeudi', 'meals' => [
+                ['name' => 'Smoothie Fruits', 'calories' => 250, 'protein' => 8, 'carbs' => 45, 'fats' => 5, 'mealType' => 'breakfast'],
+                ['name' => 'Bowl Poke', 'calories' => 500, 'protein' => 30, 'carbs' => 55, 'fats' => 15, 'mealType' => 'lunch'],
+                ['name' => 'Dinde + Riz', 'calories' => 400, 'protein' => 35, 'carbs' => 40, 'fats' => 10, 'mealType' => 'dinner'],
+            ]],
+            ['day' => 4, 'dayName' => 'Vendredi', 'meals' => [
+                ['name' => 'Yaourt + Fruits', 'calories' => 220, 'protein' => 12, 'carbs' => 35, 'fats' => 6, 'mealType' => 'breakfast'],
+                ['name' => 'Wrap Légumes', 'calories' => 380, 'protein' => 15, 'carbs' => 45, 'fats' => 14, 'mealType' => 'lunch'],
+                ['name' => 'Saumon + Brocoli', 'calories' => 420, 'protein' => 36, 'carbs' => 15, 'fats' => 24, 'mealType' => 'dinner'],
+            ]],
+            ['day' => 5, 'dayName' => 'Samedi', 'meals' => [
+                ['name' => 'Pancakes', 'calories' => 400, 'protein' => 12, 'carbs' => 55, 'fats' => 14, 'mealType' => 'breakfast'],
+                ['name' => 'Pâtes Légères', 'calories' => 450, 'protein' => 18, 'carbs' => 60, 'fats' => 12, 'mealType' => 'lunch'],
+                ['name' => 'Gratin Poisson', 'calories' => 380, 'protein' => 32, 'carbs' => 25, 'fats' => 18, 'mealType' => 'dinner'],
+            ]],
+            ['day' => 6, 'dayName' => 'Dimanche', 'meals' => [
+                ['name' => 'Œufs Brouillés', 'calories' => 300, 'protein' => 18, 'carbs' => 5, 'fats' => 22, 'mealType' => 'breakfast'],
+                ['name' => 'Rôti + Pommes', 'calories' => 550, 'protein' => 45, 'carbs' => 40, 'fats' => 20, 'mealType' => 'lunch'],
+                ['name' => 'Velouté + Croûtons', 'calories' => 280, 'protein' => 10, 'carbs' => 35, 'fats' => 10, 'mealType' => 'dinner'],
+            ]],
+        ];
+        
+        $totalCalories = 0;
+        $totalProtein = 0;
+        $allMeals = [];
+        foreach ($weeklyPlan as $day) {
+            foreach ($day['meals'] as $meal) {
+                $totalCalories += $meal['calories'];
+                $totalProtein += $meal['protein'];
+                $allMeals[] = array_merge($meal, ['day' => $day['day'], 'dayName' => $day['dayName']]);
+            }
+        }
+        $avgCalories = round($totalCalories / 7);
+        
+        return [
+            'response' => "📅 **Menu de la semaine:**\n\n" . implode("\n", array_map(function($d) {
+            $mealsStr = implode(", ", array_map(function($m) { return "{$m['name']}({$m['calories']})"; }, $d['meals']));
+            return "**{$d['dayName']}:** {$mealsStr}";
+        }, $weeklyPlan)) . "\n\n💡 **Total hebdomadaire:** {$totalCalories} kcal\n📊 **Moyenne/jour:** {$avgCalories} kcal\n🥩 **Protéines:** {$totalProtein}g\n\nCliquez sur \"Sauvegarder le menu\" pour l'ajouter à votre planificateur!",
+            'meals' => [],
+            'weeklyPlan' => $allMeals
+        ];
+    }
+    
+    private function generateAnalysisResponse(string $message): array
+    {
+        $foods = [
+            'avocat'=>['calories'=>160, 'protein'=>2, 'carbs'=>9, 'fats'=>15],
+            'poulet'=>['calories'=>165, 'protein'=>31, 'carbs'=>0, 'fats'=>3.6],
+            'pomme'=>['calories'=>95, 'protein'=>0.5, 'carbs'=>25, 'fats'=>0.3],
+            'banane'=>['calories'=>105, 'protein'=>1.3, 'carbs'=>27, 'fats'=>0.4],
+            'oeuf'=>['calories'=>155, 'protein'=>13, 'carbs'=>1.1, 'fats'=>11],
+            'saumon'=>['calories'=>208, 'protein'=>20, 'carbs'=>0, 'fats'=>13],
+            'riz'=>['calories'=>130, 'protein'=>2.7, 'carbs'=>28, 'fats'=>0.3],
+            'brocoli'=>['calories'=>55, 'protein'=>3.7, 'carbs'=>11, 'fats'=>0.6],
+            'thon'=>['calories'=>132, 'protein'=>28, 'carbs'=>0, 'fats'=>1],
+            'lentilles'=>['calories'=>116, 'protein'=>9, 'carbs'=>20, 'fats'=>0.4],
+        ];
+        
+        foreach ($foods as $food => $v) {
+            if (strpos($message, $food) !== false) {
+                return [
+                    'response' => "🔍 **{$food} (100g):**\n\n• {$v['calories']} kcal\n• {$v['protein']}g protéines\n• {$v['carbs']}g glucides\n• {$v['fats']}g lipides\n\nCliquez sur \"Ajouter ce repas\" pour l'ajouter à votre journal!",
+                    'meals' => [['name' => ucfirst($food), 'calories' => $v['calories'], 'protein' => $v['protein'], 'carbs' => $v['carbs'], 'fats' => $v['fats'], 'mealType' => 'lunch', 'description' => $food . ' (100g)']],
+                    'weeklyPlan' => null
+                ];
+            }
+        }
+        
+        return [
+            'response' => "🔍 **Aliments disponibles:**\n\n" . implode("\n", array_map(function($f, $v) { return "• {$f}: {$v['calories']} kcal"; }, array_keys($foods), array_values($foods))) . "\n\nTapez le nom d'un aliment pour voir ses valeurs nutritives!",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateNutritionAdviceResponse(string $message): array
+    {
+        if ($this->containsAny($message, ['calorie'])) {
+            return [
+                'response' => "💡 **Calories:**\n\n• Sédentaire: 1800-2000 kcal\n• Actif: 2400-2800 kcal\n• Athlete: 2800-3500 kcal\n\nVotre objectif dépend de votre activité. Voulez-vous un plan personnalisé?",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        if ($this->containsAny($message, ['protéine'])) {
+            return [
+                'response' => "💡 **Protéines:**\n\n• Besoin: 0.8-1g par kg de poids\n• Sources: poulet, poisson, œufs\n• Végétal: légumineuses, tofu\n\nRépartissez sur 3-4 repas!",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        if ($this->containsAny($message, ['gras', 'fat'])) {
+            return [
+                'response' => "💡 **Lipides:**\n\n• À limiter: beurre, friture\n• Bons: huile olive, noix, avocado\n• Apport: <10% des calories\n\nPréférez les gras insaturés!",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        if ($this->containsAny($message, ['sucre'])) {
+            return [
+                'response' => "💡 **Sucres:**\n\n• Femmes: 25g/jour max\n• Hommes: 36g/jour max\n• Évitez: sucres cachés\n\nLisez les étiquettes!",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        if ($this->containsAny($message, ['fibre'])) {
+            return [
+                'response' => "💡 **Fibres:**\n\n• Besoin: 25-30g/jour\n• Sources: légumes, fruits, céréales\n• Conseil: buvez beaucoup d'eau!\n\nLes fibres aident la digestion!",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        if ($this->containsAny($message, ['vitamine'])) {
+            return [
+                'response' => "💡 **Vitamines:**\n\n• Vitamine C: agrumes\n• Vitamine D: soleil, poisson\n• Vitamine A: carottes\n• Vitamine K: légumes verts\n\nUne alimentation variée = apport complet!",
+                'meals' => [],
+                'weeklyPlan' => null
+            ];
+        }
+        
+        return [
+            'response' => "💡 **Sujets disponibles:**\n\n• Calories - Besoins journaliers\n• Protéines - Sources et apport\n• Lipides - Bons vs mauvais\n• Sucres - Limites recommandées\n• Fibres - Importance\n• Vitamines - Sources alimentaires\n\nPosez votre question!",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    // Specialized diet responses
+    private function generateVeganResponse(string $message): array
+    {
+        return [
+            'response' => "🌱 **Régime Végan:**\n\n**Sources de protéines:**\n• Lentilles, pois chiches\n• Tofu, tempeh\n• Seitan\n• Noix, graines\n\n**Vitamine B12:**\n• Supplément nécessaire\n• Aliments enrichis\n\n**Conseil:** Variez les sources pour un apport complet en acides aminés!",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateKetoResponse(string $message): array
+    {
+        return [
+            'response' => "🥑 **Régime Keto:**\n\n**Principe:**\n• Glucides: <50g/jour\n• Protéines: modéré\n• Lipides: 70-80% des calories\n\n**Aliments autorisés:**\n• Viandes, poissons\n• Œufs, fromages\n• Avocat, huile olive\n• Légumes verts\n\n**À éviter:** Pain, pâtes, riz, fruits!",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateWeightLossResponse(string $message): array
+    {
+        $weeklyPlan = [];
+        for ($i = 0; $i < 7; $i++) {
+            $weeklyPlan[] = ['day' => $i, 'dayName' => ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'][$i], 'meals' => [
+                ['name' => 'Smoothie protéiné', 'calories' => 250, 'protein' => 25, 'carbs' => 20, 'fats' => 5, 'mealType' => 'breakfast'],
+                ['name' => 'Salade poulet', 'calories' => 350, 'protein' => 35, 'carbs' => 15, 'fats' => 12, 'mealType' => 'lunch'],
+                ['name' => 'Poisson vapeur', 'calories' => 280, 'protein' => 30, 'carbs' => 10, 'fats' => 10, 'mealType' => 'dinner'],
+            ]];
+        }
+        $allMeals = [];
+        foreach ($weeklyPlan as $day) {
+            foreach ($day['meals'] as $meal) {
+                $allMeals[] = array_merge($meal, ['day' => $day['day'], 'dayName' => $day['dayName']]);
+            }
+        }
+        
+        return [
+            'response' => "⚖️ **Plan Perte de Poids:**\n\nUn deficit calorique de 300-500 kcal/jour est recommandé pour une perte de 0.5kg/semaine.\n\n**Exemple de journée:**\n• Breakfast: Smoothie (250 kcal)\n• Déjeuner: Salade poulet (350 kcal)\n• Dîner: Poisson vapeur (280 kcal)\n\nTotal: ~880 kcal\n\n⚠️ Consultez un professionnel pour un plan personnalisé!",
+            'meals' => [],
+            'weeklyPlan' => $allMeals
+        ];
+    }
+    
+    private function generateMuscleResponse(string $message): array
+    {
+        return [
+            'response' => "💪 **Prise de Masse:**\n\n**Apport calorique:**\n• Surplus de 300-500 kcal\n\n**Protéines:**\n• 1.6-2g par kg de poids\n• Sources: viande, poisson, œufs\n\n**Timing:**\n• Protéines après entraînement\n• Carburants 2h avant\n\n**Suppléments optionnels:**\n• Créatine, whey protéine",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateSportResponse(string $message): array
+    {
+        return [
+            'response' => "🏃 **Nutrition Sportive:**\n\n**Avant l'exercice (2-3h):**\n• Repas riche en glucides\n• Protéines modérées\n• Lipides limités\n\n**Pendant (>1h):**\n• Boissons isotoniciennes\n• Barres énergétiques\n\n**Après l'exercice:**\n• Protéines + glucides (ratio 1:3)\n• Hydratation importante\n\n**Énergie:** 2400-3500 kcal/jour",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateDiabetesResponse(string $message): array
+    {
+        return [
+            'response' => "🍬 **Diabète - Conseils:**\n\n**Index glycémique:**\n• Préférez les IG bas\n• Évitez sucre rapide\n\n**Aliments à privilégier:**\n• Légumes, fibres\n• Protéines maigres\n• Céréales complètes\n\n**À limiter:**\n• Pain blanc, riz\n• Fruits secs\n• Boissons sucrées\n\n⚠️ Suivi médical essentiel!",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generateHeartHealthResponse(string $message): array
+    {
+        return [
+            'response' => "❤️ **Santé Cardiovasculaire:**\n\n**À privilégier:**\n• Poissons gras (omega-3)\n• Fruits, légumes\n• Céréales complètes\n• Huiles végétales\n\n**À limiter:**\n• Sel (<5g/jour)\n• Graisses saturées\n• Sucres ajoutés\n\n**Bonnes habitudes:**\n• Activité physique\n• Pas de tabac",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
+    }
+    
+    private function generatePregnancyResponse(string $message): array
+    {
+        return [
+            'response' => "👶 **Grossesse - Nutrition:**\n\n**Suppléments:**\n• Acide folique (avant et pendant)\n• Fer\n• Vitamine D\n\n**Aliments à éviter:**\n• Fromages au lait cru\n• Poisson cru, sushis\n• Alcool\n\n**À augmenter:**\n• Protéines\n• Calcium\n• Fibres\n\n⚠️ Suivi médical obligatoire!",
+            'meals' => [],
+            'weeklyPlan' => null
+        ];
     }
 
     #[Route('/messages/{nutritionistId}', name: 'messages', requirements: ['nutritionistId' => '\d+'])]

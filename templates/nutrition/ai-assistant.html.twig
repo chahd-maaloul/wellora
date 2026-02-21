@@ -1,0 +1,249 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Assistant AI Nutritionnel - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-4xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-2 text-wellcare-500 fas fa-robot"></i>
+                    Assistant Nutritionnel AI
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Votre advisor nutritionnel intelligent</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('nutrition_dashboard') }}" 
+                   class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-arrow-left"></i>
+                    Retour
+                </a>
+            </div>
+        </div>
+
+        {# Quick Actions #}
+        <div class="p-4 mb-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 text-wellcare-500 fas fa-bolt"></i>
+                Questions fréquentes
+            </h2>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <form method="post" action="{{ path('nutrition_ai_assistant') }}">
+                    <input type="hidden" name="message" value="recette">
+                    <button type="submit" class="w-full p-3 text-left bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                        <span class="text-green-600 dark:text-green-400">🍳</span>
+                        <span class="ml-2 text-gray-700 dark:text-gray-300">Suggestion de recettes</span>
+                    </button>
+                </form>
+                <form method="post" action="{{ path('nutrition_ai_assistant') }}">
+                    <input type="hidden" name="message" value="menu semaine">
+                    <button type="submit" class="w-full p-3 text-left bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                        <span class="text-blue-600 dark:text-blue-400">📅</span>
+                        <span class="ml-2 text-gray-700 dark:text-gray-300">Menu de la semaine</span>
+                    </button>
+                </form>
+                <form method="post" action="{{ path('nutrition_ai_assistant') }}">
+                    <input type="hidden" name="message" value="combien de calories">
+                    <button type="submit" class="w-full p-3 text-left bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                        <span class="text-orange-600 dark:text-orange-400">💊</span>
+                        <span class="ml-2 text-gray-700 dark:text-gray-300">Besoins caloriques</span>
+                    </button>
+                </form>
+                <form method="post" action="{{ path('nutrition_ai_assistant') }}">
+                    <input type="hidden" name="message" value="analyse">
+                    <button type="submit" class="w-full p-3 text-left bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                        <span class="text-purple-600 dark:text-purple-400">🔍</span>
+                        <span class="ml-2 text-gray-700 dark:text-gray-300">Analyser un aliment</span>
+                    </button>
+                </form>
+                <form method="post" action="{{ path('nutrition_ai_assistant') }}">
+                    <input type="hidden" name="message" value="perdre du poids">
+                    <button type="submit" class="w-full p-3 text-left bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                        <span class="text-red-600 dark:text-red-400">⚖️</span>
+                        <span class="ml-2 text-gray-700 dark:text-gray-300">Perte de poids</span>
+                    </button>
+                </form>
+                <form method="post" action="{{ path('nutrition_ai_assistant') }}">
+                    <input type="hidden" name="message" value="prise de muscle">
+                    <button type="submit" class="w-full p-3 text-left bg-yellow-50 dark:bg-yellow-900/20 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors">
+                        <span class="text-yellow-600 dark:text-yellow-400">💪</span>
+                        <span class="ml-2 text-gray-700 dark:text-gray-300">Prise de muscle</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {# Chat Interface #}
+        <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 text-wellcare-500 fas fa-comments"></i>
+                Conversation
+            </h2>
+            
+            {# Messages Display #}
+            <div class="mb-4 space-y-4 max-h-96 overflow-y-auto">
+                {% if conversation|default([])|length == 0 %}
+                    <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-10 h-10 bg-wellcare-500 rounded-full flex items-center justify-center">
+                                <i class="text-white fas fa-robot"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400">WellCare AI</p>
+                                <p class="mt-1 text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">Bonjour! Je suis votre assistant nutritionnel WellCare AI. Je peux vous aider avec:
+
+🍳 <strong>Recettes</strong> - Suggestions de recettes saines
+📅 <strong>Planification</strong> - Créer des menus hebdomadaires
+💊 <strong>Conseils nutritionnels</strong> - Informations sur les nutriments
+🔍 <strong>Analyse alimentaire</strong> - Estimer les valeurs nutritionnelles
+
+Que souhaitez-vous aujourd'hui?</p>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    {% for msg in conversation %}
+                        {% if msg.role == 'user' %}
+                            <div class="p-4 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-lg">
+                                <div class="flex items-start justify-end">
+                                    <div class="mr-3">
+                                        <p class="mt-1 text-gray-700 dark:text-gray-300 text-sm">{{ msg.content }}</p>
+                                    </div>
+                                    <div class="flex-shrink-0 w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                                        <i class="text-gray-600 dark:text-gray-300 fas fa-user"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 w-10 h-10 bg-wellcare-500 rounded-full flex items-center justify-center">
+                                        <i class="text-white fas fa-robot"></i>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <p class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400">WellCare AI</p>
+                                        <p class="mt-1 text-gray-700 dark:text-gray-300 text-sm whitespace-pre-line">{{ msg.content }}</p>
+                                        
+                                        {# Save Meals Button #}
+                                        {% if msg.meals|default([])|length > 0 %}
+                                            <form method="post" action="{{ path('nutrition_ai_save_meal_plan') }}" class="mt-3">
+                                                <input type="hidden" name="meal_data" value='{{ msg.meals|json_encode|escape('html_attr') }}'>
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors">
+                                                    <i class="mr-1 fas fa-save"></i>
+                                                    Sauvegarder ce repas
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        
+                                        {# Save Weekly Plan Button #}
+                                        {% if msg.weeklyPlan|default(null) %}
+                                            <form method="post" action="{{ path('nutrition_ai_save_meal_plan') }}" class="mt-3">
+                                                <input type="hidden" name="meal_data" value='{{ msg.weeklyPlan|json_encode|escape('html_attr') }}'>
+                                                <button type="submit" class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">
+                                                    <i class="mr-1 fas fa-calendar-plus"></i>
+                                                    Sauvegarder le menu
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            {# Input Form #}
+            <form method="post" action="{{ path('nutrition_ai_assistant') }}" class="flex gap-3">
+                <input type="text" 
+                       name="message" 
+                       placeholder="Posez votre question..." 
+                       required
+                       class="flex-1 px-4 py-3 text-gray-900 bg-gray-100 border-0 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500">
+                <button type="submit" 
+                        class="px-6 py-3 font-medium text-white bg-wellcare-500 rounded-lg hover:bg-wellcare-600 focus:ring-2 focus:ring-wellcare-500">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+
+            {# Clear Chat #}
+            {% if conversation|default([])|length > 0 %}
+            <form method="post" action="{{ path('nutrition_ai_assistant') }}" class="mt-3">
+                <input type="hidden" name="clear" value="1">
+                <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                    <i class="mr-1 fas fa-trash"></i>
+                    Effacer la conversation
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        {# Features Info #}
+        <div class="mt-6 p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 text-wellcare-500 fas fa-info-circle"></i>
+                Comment utiliser l'Assistant AI
+            </h2>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <h3 class="font-semibold text-green-700 dark:text-green-400 mb-2">🍳 Recettes</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Tapez "recette" suivi du type de repas (déjeuner, dîner, etc.) pour obtenir des suggestions.</p>
+                </div>
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <h3 class="font-semibold text-blue-700 dark:text-blue-400 mb-2">📅 Planning</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Demandez un "menu pour la semaine" pour un esempio di piano alimentare.</p>
+                </div>
+                <div class="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <h3 class="font-semibold text-orange-700 dark:text-orange-400 mb-2">💊 Conseils</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Posez des questions sur les calories, protéines, vitamines, et autres nutriments.</p>
+                </div>
+                <div class="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <h3 class="font-semibold text-purple-700 dark:text-purple-400 mb-2">🔍 Analyse</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Tapez le nom d'un aliment pour connaître ses valeurs nutritionnelles.</p>
+                </div>
+            </div>
+        </div>
+        
+        {# Recent AI Meals #}
+        {% if recentAIMeals|default([])|length > 0 %}
+        <div class="mt-6 p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="mr-2 text-wellcare-500 fas fa-history"></i>
+                Repas récents générés par l'AI
+            </h2>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {% for meal in recentAIMeals %}
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ meal.name }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ meal.mealType }} - {{ meal.date|date('d/m') }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-wellcare-600 dark:text-wellcare-400">{{ meal.calories }} kcal</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">P:{{ meal.protein }}g G:{{ meal.carbs }}g L:{{ meal.fats }}g</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 text-center">
+                <a href="{{ path('nutrition_meal_planner') }}" class="inline-flex items-center px-4 py-2 text-wellcare-600 dark:text-wellcare-400 hover:underline">
+                    <i class="mr-2 fas fa-calendar"></i>
+                    Voir tout dans le planificateur
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
