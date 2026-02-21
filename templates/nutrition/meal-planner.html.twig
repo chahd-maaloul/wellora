@@ -4,14 +4,13 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css">
+    {{ encore_entry_link_tags('nutrition-css') }}
 {% endblock %}
 
 {% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
 
 {% block body %}
-<div class="min-h-screen py-8" x-data="mealPlanner()" x-init="init()">
+<div class="min-h-screen py-8">
     <div class="px-4 mx-auto max-w-7xl">
         {# Header #}
         <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
@@ -20,332 +19,145 @@
                 <p class="mt-1 text-gray-500 dark:text-gray-400">Planifiez vos repas pour la semaine</p>
             </div>
             <div class="flex items-center gap-3">
-                <button @click="previousWeek()" class="p-2 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i class="text-gray-600 fas fa-chevron-left dark:text-gray-300"></i>
-                </button>
-                <span class="px-4 py-2 font-medium text-white rounded-lg bg-wellcare-500" x-text="weekRange"></span>
-                <button @click="nextWeek()" class="p-2 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i class="text-gray-600 fas fa-chevron-right dark:text-gray-300"></i>
-                </button>
-                <button @click="goToToday()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    Aujourd'hui
-                </button>
+                <a href="{{ path('nutrition_dashboard') }}" 
+                   class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-arrow-left"></i>
+                    Retour
+                </a>
             </div>
         </div>
 
-        {# Quick Actions #}
+        {# Quick Links #}
         <div class="flex flex-wrap gap-3 mb-6">
-            <button @click="openRecipeLibrary()" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                <i class="mr-2 fas fa-book-open"></i>Ajouter une recette
-            </button>
-            <button @click="generateGroceryList()" class="px-4 py-2 font-medium text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
-                <i class="mr-2 fas fa-shopping-cart"></i>Générer liste courses
-            </button>
-            <button @click="copyPreviousWeek()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <i class="mr-2 fas fa-copy"></i>Copier semaine précédente
-            </button>
-            <button @click="clearWeek()" class="px-4 py-2 text-red-600 transition-colors border border-red-300 rounded-lg dark:border-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
-                <i class="mr-2 fas fa-trash"></i>Effacer
-            </button>
+            <a href="{{ path('nutrition_quick_log') }}" 
+               class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                <i class="mr-2 fas fa-plus"></i>Ajouter un repas
+            </a>
+            <a href="{{ path('nutrition_grocery_list') }}" 
+               class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
+                <i class="mr-2 fas fa-shopping-cart"></i>Liste de courses
+            </a>
+            <a href="{{ path('nutrition_recipes') }}" 
+               class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
+                <i class="mr-2 fas fa-book"></i>Recettes
+            </a>
         </div>
 
-        {# Nutrition Summary #}
-        <div class="p-4 mb-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-wellcare-500" x-text="weeklyStats.calories"></p>
-                        <p class="text-xs text-gray-500">Calories/semaine</p>
+        {# Week Days #}
+        {% set days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] %}
+        {% set today = 1 %}
+        
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {% for day in days %}
+            {% set dayNum = loop.index %}
+            {% set isToday = dayNum == today %}
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                {# Day Header #}
+                <div class="p-4 {% if isToday %}bg-wellcare-500{% else %}bg-gray-100 dark:bg-gray-700{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-semibold {% if isToday %}text-white{% else %}text-gray-900 dark:text-white{% endif %}">
+                            {{ day }}
+                        </h3>
+                        {% if isToday %}
+                        <span class="px-2 py-1 text-xs font-medium bg-white text-wellcare-500 rounded-full">Aujourd'hui</span>
+                        {% endif %}
                     </div>
-                    <div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-wellcare-500" x-text="weeklyStats.avgCalories"></p>
-                        <p class="text-xs text-gray-500">Moyenne/jour</p>
-                    </div>
-                    <div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
-                    <div class="text-center">
-                        <p class="text-lg font-semibold text-wellcare-500" x-text="weeklyStats.protein + 'g'"></p>
-                        <p class="text-xs text-gray-500">Protéines/jour</p>
-                    </div>
-                    <div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
-                    <div class="text-center">
-                        <p class="text-lg font-semibold text-wellcare-500" x-text="weeklyStats.carbs + 'g'"></p>
-                        <p class="text-xs text-gray-500">Glucides/jour</p>
-                    </div>
-                    <div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
-                    <div class="text-center">
-                        <p class="text-lg font-semibold text-wellcare-500" x-text="weeklyStats.fats + 'g'"></p>
-                        <p class="text-xs text-gray-500">Lipides/jour</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 text-sm font-medium rounded-full" 
-                          :class="nutritionStatus.class"
-                          x-text="nutritionStatus.text"></span>
-                </div>
-            </div>
-        </div>
-
-        {# Weekly Calendar #}
-        <div class="p-6 mb-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-            <div class="grid grid-cols-7 gap-4">
-                {# Day Headers #}
-                {% for day in ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] %}
-                <div class="text-center">
-                    <p class="font-semibold text-gray-900 dark:text-white">{{ day }}</p>
-                    <p class="text-sm text-gray-500" x-text="getDayDate('{{ day|lower }}')"></p>
-                </div>
-                {% endfor %}
-
-                {# Day Columns #}
-                {% for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
-                <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-3 min-h-[300px] bg-gray-50 dark:bg-gray-800/50"
-                     :data-day="'{{ day }}'"
-                     @dragover.prevent="dragOver = '{{ day }}'"
-                     @dragleave="dragOver = null"
-                     @drop="dropMeal('{{ day }}')">
-                    
-                    {# Meal Slots #}
-                    <div class="space-y-3">
-                        {# Breakfast #}
-                        <div class="meal-slot" data-meal-type="breakfast">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-medium text-wellcare-500"><i class="mr-1 fas fa-coffee"></i>Petit-déjeuner</span>
-                                <span class="text-xs text-gray-400" x-text="getMealCalories('{{ day }}', 'breakfast') + ' kcal'"></span>
-                            </div>
-                            <div class="meal-drop-zone rounded-lg p-2 min-h-[60px] cursor-pointer transition-all"
-                                 :class="{'bg-wellcare-100 dark:bg-wellcare-900/30 border-2 border-dashed border-wellcare-400': dragOver === '{{ day }}' && draggedMealType === 'breakfast'}"
-                                 @dragstart="startDrag($event, '{{ day }}', 'breakfast')"
-                                 @click="addMeal('{{ day }}', 'breakfast')">
-                                <template x-for="meal in weekPlan['{{ day }}'].breakfast" :key="meal.id">
-                                    <div class="relative p-2 mb-2 transition-shadow bg-white rounded-lg shadow-sm cursor-move dark:bg-gray-700 hover:shadow-md group"
-                                         draggable="true"
-                                         @dragstart="startDrag($event, '{{ day }}', 'breakfast', meal.id)"
-                                         @click="editMeal(meal)">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
-                                                <i class="text-xs fas fa-utensils text-wellcare-500"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-gray-900 truncate dark:text-white" x-text="meal.name"></p>
-                                                <p class="text-xs text-gray-500" x-text="meal.calories + ' kcal'"></p>
-                                            </div>
-                                        </div>
-                                        <button @click.stop="removeMeal('{{ day }}', 'breakfast', meal.id)" 
-                                                class="absolute flex items-center justify-center w-4 h-4 text-xs text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 group-hover:opacity-100">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                                <div x-show="weekPlan['{{ day }}'].breakfast.length === 0" class="py-2 text-sm text-center text-gray-400">
-                                    <i class="mb-1 fas fa-plus-circle"></i>
-                                    <p>Ajouter</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# Lunch #}
-                        <div class="meal-slot" data-meal-type="lunch">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-medium text-blue-500"><i class="mr-1 fas fa-sun"></i>Déjeuner</span>
-                                <span class="text-xs text-gray-400" x-text="getMealCalories('{{ day }}', 'lunch') + ' kcal'"></span>
-                            </div>
-                            <div class="meal-drop-zone rounded-lg p-2 min-h-[60px] cursor-pointer transition-all"
-                                 :class="{'bg-blue-100 dark:bg-blue-900/30 border-2 border-dashed border-blue-400': dragOver === '{{ day }}' && draggedMealType === 'lunch'}"
-                                 @dragstart="startDrag($event, '{{ day }}', 'lunch')"
-                                 @click="addMeal('{{ day }}', 'lunch')">
-                                <template x-for="meal in weekPlan['{{ day }}'].lunch" :key="meal.id">
-                                    <div class="relative p-2 mb-2 transition-shadow bg-white rounded-lg shadow-sm cursor-move dark:bg-gray-700 hover:shadow-md group"
-                                         draggable="true"
-                                         @dragstart="startDrag($event, '{{ day }}', 'lunch', meal.id)"
-                                         @click="editMeal(meal)">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg dark:bg-blue-900/30">
-                                                <i class="text-xs text-blue-500 fas fa-utensils"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-gray-900 truncate dark:text-white" x-text="meal.name"></p>
-                                                <p class="text-xs text-gray-500" x-text="meal.calories + ' kcal'"></p>
-                                            </div>
-                                        </div>
-                                        <button @click.stop="removeMeal('{{ day }}', 'lunch', meal.id)" 
-                                                class="absolute flex items-center justify-center w-4 h-4 text-xs text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 group-hover:opacity-100">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                                <div x-show="weekPlan['{{ day }}'].lunch.length === 0" class="py-2 text-sm text-center text-gray-400">
-                                    <i class="mb-1 fas fa-plus-circle"></i>
-                                    <p>Ajouter</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# Dinner #}
-                        <div class="meal-slot" data-meal-type="dinner">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-medium text-purple-500"><i class="mr-1 fas fa-moon"></i>Dîner</span>
-                                <span class="text-xs text-gray-400" x-text="getMealCalories('{{ day }}', 'dinner') + ' kcal'"></span>
-                            </div>
-                            <div class="meal-drop-zone rounded-lg p-2 min-h-[60px] cursor-pointer transition-all"
-                                 :class="{'bg-purple-100 dark:bg-purple-900/30 border-2 border-dashed border-purple-400': dragOver === '{{ day }}' && draggedMealType === 'dinner'}"
-                                 @dragstart="startDrag($event, '{{ day }}', 'dinner')"
-                                 @click="addMeal('{{ day }}', 'dinner')">
-                                <template x-for="meal in weekPlan['{{ day }}'].dinner" :key="meal.id">
-                                    <div class="relative p-2 mb-2 transition-shadow bg-white rounded-lg shadow-sm cursor-move dark:bg-gray-700 hover:shadow-md group"
-                                         draggable="true"
-                                         @dragstart="startDrag($event, '{{ day }}', 'dinner', meal.id)"
-                                         @click="editMeal(meal)">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-lg dark:bg-purple-900/30">
-                                                <i class="text-xs text-purple-500 fas fa-utensils"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-gray-900 truncate dark:text-white" x-text="meal.name"></p>
-                                                <p class="text-xs text-gray-500" x-text="meal.calories + ' kcal'"></p>
-                                            </div>
-                                        </div>
-                                        <button @click.stop="removeMeal('{{ day }}', 'dinner', meal.id)" 
-                                                class="absolute flex items-center justify-center w-4 h-4 text-xs text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 group-hover:opacity-100">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                                <div x-show="weekPlan['{{ day }}'].dinner.length === 0" class="py-2 text-sm text-center text-gray-400">
-                                    <i class="mb-1 fas fa-plus-circle"></i>
-                                    <p>Ajouter</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# Snacks #}
-                        <div class="meal-slot" data-meal-type="snacks">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-medium text-amber-500"><i class="mr-1 fas fa-cookie"></i>Colations</span>
-                                <span class="text-xs text-gray-400" x-text="getMealCalories('{{ day }}', 'snacks') + ' kcal'"></span>
-                            </div>
-                            <div class="meal-drop-zone rounded-lg p-2 min-h-[50px] cursor-pointer transition-all"
-                                 :class="{'bg-amber-100 dark:bg-amber-900/30 border-2 border-dashed border-amber-400': dragOver === '{{ day }}' && draggedMealType === 'snacks'}"
-                                 @dragstart="startDrag($event, '{{ day }}', 'snacks')"
-                                 @click="addMeal('{{ day }}', 'snacks')">
-                                <template x-for="meal in weekPlan['{{ day }}'].snacks" :key="meal.id">
-                                    <div class="relative p-2 mb-1 transition-shadow bg-white rounded-lg shadow-sm cursor-move dark:bg-gray-700 hover:shadow-md group"
-                                         draggable="true"
-                                         @dragstart="startDrag($event, '{{ day }}', 'snacks', meal.id)"
-                                         @click="editMeal(meal)">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex items-center justify-center w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                                                <i class="text-xs fas fa-cookie text-amber-500"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-xs font-medium text-gray-900 truncate dark:text-white" x-text="meal.name"></p>
-                                                <p class="text-xs text-gray-500" x-text="meal.calories + ' kcal'"></p>
-                                            </div>
-                                        </div>
-                                        <button @click.stop="removeMeal('{{ day }}', 'snacks', meal.id)" 
-                                                class="absolute flex items-center justify-center w-4 h-4 text-xs text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 group-hover:opacity-100">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </template>
-                                <div x-show="weekPlan['{{ day }}'].snacks.length === 0" class="py-1 text-xs text-center text-gray-400">
-                                    + Colation
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# Day Total #}
-                    <div class="pt-2 mt-3 border-t border-gray-200 dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total:</span>
-                            <span class="text-sm font-bold" 
-                                  :class="{'text-green-500': getDayTotal('{{ day }}') <= 2000, 'text-yellow-500': getDayTotal('{{ day }}') > 2000 && getDayTotal('{{ day }}') <= 2500, 'text-red-500': getDayTotal('{{ day }}') > 2500}"
-                                  x-text="getDayTotal('{{ day }}') + ' kcal'"></span>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        {# Weekly Summary Chart #}
-        <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-            <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Récapitulatif hebdomadaire</h2>
-            <div class="h-64">
-                <canvas id="weeklySummaryChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    {# Recipe Library Modal #}
-    <div x-show="showRecipeLibrary" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="fixed inset-0 transition-opacity bg-black/50" @click="showRecipeLibrary = false"></div>
-            <div class="relative z-10 w-full max-w-4xl p-6 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Bibliothèque de recettes</h2>
-                    <button @click="showRecipeLibrary = false" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <i class="text-gray-500 fas fa-times"></i>
-                    </button>
+                    <p class="text-sm {% if isToday %}text-white/80{% else %}text-gray-500 dark:text-gray-400{% endif %}">
+                        {{ "now"|date_modify('+' ~ (loop.index0 - today) ~ ' days')|date('d/m/Y') }}
+                    </p>
                 </div>
                 
-                {# Search & Filters #}
-                <div class="flex gap-4 mb-6">
-                    <div class="relative flex-1">
-                        <input type="text" x-model="recipeSearch" placeholder="Rechercher une recette..." 
-                               class="w-full py-3 pl-10 pr-4 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500">
-                        <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
-                    </div>
-                    <select x-model="recipeCategory" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        <option value="">Toutes catégories</option>
-                        <option value="breakfast">Petit-déjeuner</option>
-                        <option value="lunch">Déjeuner</option>
-                        <option value="dinner">Dîner</option>
-                        <option value="snacks">Colations</option>
-                    </select>
-                    <select x-model="recipeDiet" class="px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        <option value="">Tous régimes</option>
-                        <option value="vegetarian">Végétarien</option>
-                        <option value="vegan">Végan</option>
-                        <option value="gluten_free">Sans gluten</option>
-                        <option value="low_carb">Low carb</option>
-                    </select>
-                </div>
-
-                {# Recipe Grid #}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
-                    <template x-for="recipe in filteredRecipes" :key="recipe.id">
-                        <div class="p-4 transition-shadow cursor-pointer bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:shadow-lg"
-                             @click="selectRecipe(recipe)">
-                            <div class="flex items-start gap-3">
-                                <div class="flex items-center justify-center flex-shrink-0 w-16 h-16 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
-                                    <i :class="recipe.icon + ' text-wellcare-500 text-xl'"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-semibold text-gray-900 dark:text-white" x-text="recipe.name"></h3>
-                                    <p class="text-sm text-gray-500 truncate dark:text-gray-400" x-text="recipe.description"></p>
-                                    <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                                        <span><i class="mr-1 fas fa-fire"></i><span x-text="recipe.calories + ' kcal'"></span></span>
-                                        <span><i class="mr-1 fas fa-clock"></i><span x-text="recipe.time + ' min'"></span></span>
-                                        <span class="px-2 py-0.5 rounded-full" 
-                                              :class="getDietBadgeClass(recipe.diet)"
-                                              x-text="recipe.diet"></span>
-                                    </div>
-                                </div>
-                            </div>
+                {# Meals for the Day #}
+                <div class="p-4 space-y-3">
+                    {# Breakfast #}
+                    <div class="p-3 border border-orange-200 dark:border-gray-600 rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-orange-700 dark:text-orange-400">
+                                <i class="mr-1 fas fa-mug-hot"></i>Petit-déjeuner
+                            </span>
+                            <a href="{{ path('nutrition_food_add', { meal: 'breakfast' }) }}" class="text-orange-500 hover:text-orange-700">
+                                <i class="fas fa-plus"></i>
+                            </a>
                         </div>
-                    </template>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Cliquez pour ajouter</p>
+                    </div>
+                    
+                    {# Lunch #}
+                    <div class="p-3 border border-yellow-200 dark:border-gray-600 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                                <i class="mr-1 fas fa-utensils"></i>Déjeuner
+                            </span>
+                            <a href="{{ path('nutrition_food_add', { meal: 'lunch' }) }}" class="text-yellow-500 hover:text-yellow-700">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Cliquez pour ajouter</p>
+                    </div>
+                    
+                    {# Dinner #}
+                    <div class="p-3 border border-indigo-200 dark:border-gray-600 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-indigo-700 dark:text-indigo-400">
+                                <i class="mr-1 fas fa-moon"></i>Dîner
+                            </span>
+                            <a href="{{ path('nutrition_food_add', { meal: 'dinner' }) }}" class="text-indigo-500 hover:text-indigo-700">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Cliquez pour ajouter</p>
+                    </div>
+                    
+                    {# Snacks #}
+                    <div class="p-3 border border-pink-200 dark:border-gray-600 rounded-lg bg-pink-50 dark:bg-pink-900/20">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-pink-700 dark:text-pink-400">
+                                <i class="mr-1 fas fa-cookie"></i>Collation
+                            </span>
+                            <a href="{{ path('nutrition_food_add', { meal: 'snacks' }) }}" class="text-pink-500 hover:text-pink-700">
+                                <i class="fas fa-plus"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Cliquez pour ajouter</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {# Tips Section #}
+        <div class="mt-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+                <i class="mr-2 text-wellcare-500 fas fa-lightbulb"></i>
+                Conseils pour une alimentation équilibrée
+            </h2>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <h3 class="font-semibold text-green-700 dark:text-green-400 mb-2">
+                        <i class="mr-2 fas fa-carrot"></i>Fibres
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Includez des légumes et des féculents complets dans chaque repas pour une bonne digestion.
+                    </p>
+                </div>
+                <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <h3 class="font-semibold text-blue-700 dark:text-blue-400 mb-2">
+                        <i class="mr-2 fas fa-glass-water"></i>Hydratation
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Buvez au moins 8 verres d'eau par jour, de préférence entre les repas.
+                    </p>
+                </div>
+                <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <h3 class="font-semibold text-amber-700 dark:text-amber-400 mb-2">
+                        <i class="mr-2 fas fa-clock"></i>Horaire
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Essayez de manger à des heures régulières pour maintenir votre métabolisme actif.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-    <script src="{{ asset('build/meal-planner.js') }}"></script>
-    <script src="{{ asset('build/nutrition-goals.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,322 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Communication - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Communication</h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Échangez avec vos patients et collaborez avec d'autres professionnels</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="#" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-plus"></i>Nouveau message
+                </a>
+            </div>
+        </div>
+
+        {# Tabs #}
+        <div class="flex gap-2 mb-6">
+            <button class="px-4 py-2 transition-colors rounded-lg bg-wellcare-500 text-white">
+                <i class="mr-2 fas fa-envelope"></i>Messages
+                <span class="ml-2 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs">3</span>
+            </button>
+            <a href="#" class="px-4 py-2 transition-colors rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-users"></i>Mes patients
+            </a>
+            <a href="#" class="px-4 py-2 transition-colors rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-user-plus"></i>Demandes
+                <span class="ml-2 px-2 py-0.5 rounded-full bg-amber-500 text-white text-xs">2</span>
+            </a>
+        </div>
+
+        {# Messages Tab #}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {# Conversations List #}
+            <div class="overflow-hidden bg-white shadow-lg lg:col-span-1 dark:bg-gray-800 rounded-2xl">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="relative">
+                        <form method="get" action="#">
+                            <input type="text" name="search" placeholder="Rechercher..."
+                                   class="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                        </form>
+                    </div>
+                </div>
+                <div class="overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700 max-h-96">
+                    {# Conversation 1 #}
+                    <a href="#" class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 bg-wellcare-50 dark:bg-wellcare-900/20">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="text-sm font-medium text-wellcare-600">MD</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-900 truncate dark:text-white">Marie Dubois</h4>
+                                    <span class="text-xs text-gray-400">Il y a 2h</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Bonjour, j'ai une question sur...</p>
+                            </div>
+                            <div class="flex-shrink-0 w-2 h-2 rounded-full bg-wellcare-500"></div>
+                        </div>
+                    </a>
+                    {# Conversation 2 #}
+                    <a href="#" class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-300">JM</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-900 truncate dark:text-white">Jean Martin</h4>
+                                    <span class="text-xs text-gray-400">Hier</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Merci pour le plan alimentaire...</p>
+                            </div>
+                        </div>
+                    </a>
+                    {# Conversation 3 #}
+                    <a href="#" class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-300">SB</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-900 truncate dark:text-white">Sophie Bernard</h4>
+                                    <span class="text-xs text-gray-400">Il y a 3j</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Les résultats sont très bien...</p>
+                            </div>
+                        </div>
+                    </a>
+                    {# Conversation 4 #}
+                    <a href="#" class="p-4 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="text-sm font-medium text-wellcare-600">PL</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-900 truncate dark:text-white">Pierre Lefebvre</h4>
+                                    <span class="text-xs text-gray-400">Il y a 5j</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">Quand est ma prochaine consulta...</p>
+                            </div>
+                            <div class="flex-shrink-0 w-2 h-2 rounded-full bg-wellcare-500"></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            {# Chat Area #}
+            <div class="flex flex-col bg-white shadow-lg lg:col-span-2 dark:bg-gray-800 rounded-2xl">
+                <div class="flex flex-col h-full">
+                    {# Chat Header #}
+                    <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="text-sm font-medium text-wellcare-500">MD</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Marie Dubois</h3>
+                                <p class="text-sm text-gray-500">Patient depuis janvier 2025</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="#" class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
+                                <i class="fas fa-video"></i>
+                            </a>
+                            <a href="#" class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
+                                <i class="fas fa-phone"></i>
+                            </a>
+                            <a href="#" class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    {# Messages #}
+                    <div class="flex-1 p-4 space-y-4 overflow-y-auto">
+                        <div class="flex justify-start">
+                            <div class="max-w-[70%] rounded-2xl px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-bl-md">
+                                <p class="text-sm">Bonjour Marie! Comment allez-vous aujourd'hui?</p>
+                                <p class="mt-1 text-xs text-gray-400">10:30</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <div class="max-w-[70%] rounded-2xl px-4 py-2 bg-wellcare-500 text-white rounded-br-md">
+                                <p class="text-sm">Bonjour! Je vais bien merci. J'avais une question sur les repas de la semaine prochaine.</p>
+                                <p class="mt-1 text-xs text-white/80">10:32</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-start">
+                            <div class="max-w-[70%] rounded-2xl px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-bl-md">
+                                <p class="text-sm">Bien sûr, quelle est votre question?</p>
+                                <p class="mt-1 text-xs text-gray-400">10:35</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <div class="max-w-[70%] rounded-2xl px-4 py-2 bg-wellcare-500 text-white rounded-br-md">
+                                <p class="text-sm">Je ne suis pas sûre des quantités pour les légumes. Pouvez-vous me donner plus de détails?</p>
+                                <p class="mt-1 text-xs text-white/80">10:38</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-start">
+                            <div class="max-w-[70%] rounded-2xl px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-bl-md">
+                                <p class="text-sm">Bien sûr! Pour les légumes, visez environ 200-300g par repas. Je vous envoie un détaillé.</p>
+                                <p class="mt-1 text-xs text-gray-400">10:42</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Message Input #}
+                    <form method="post" action="#" class="p-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <a href="#" class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
+                                <i class="fas fa-paperclip"></i>
+                            </a>
+                            <input type="text" name="message" placeholder="Écrivez votre message..."
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-full dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <button type="submit" class="p-2 text-white transition-colors rounded-full bg-wellcare-500 hover:bg-wellcare-600">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# Patients Tab #}
+        <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Mes patients</h2>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {# Patient 1 #}
+                <div class="p-4 transition-colors border border-gray-200 cursor-pointer dark:border-gray-700 rounded-xl hover:border-wellcare-500">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <span class="text-sm font-medium text-wellcare-500">MD</span>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Marie Dubois</h3>
+                            <p class="text-xs text-gray-500">Dernière visite: Il y a 3j</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="#" class="flex-1 px-3 py-2 text-sm text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-wellcare-500 hover:text-white">
+                            <i class="mr-1 fas fa-envelope"></i>Message
+                        </a>
+                        <a href="#" class="flex-1 px-3 py-2 text-sm text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-wellcare-500 hover:text-white">
+                            <i class="mr-1 fas fa-calendar"></i>Rdv
+                        </a>
+                    </div>
+                </div>
+                {# Patient 2 #}
+                <div class="p-4 transition-colors border border-gray-200 cursor-pointer dark:border-gray-700 rounded-xl hover:border-wellcare-500">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <span class="text-sm font-medium text-wellcare-500">JM</span>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Jean Martin</h3>
+                            <p class="text-xs text-gray-500">Dernière visite: Il y a 5j</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="#" class="flex-1 px-3 py-2 text-sm text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-wellcare-500 hover:text-white">
+                            <i class="mr-1 fas fa-envelope"></i>Message
+                        </a>
+                        <a href="#" class="flex-1 px-3 py-2 text-sm text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-wellcare-500 hover:text-white">
+                            <i class="mr-1 fas fa-calendar"></i>Rdv
+                        </a>
+                    </div>
+                </div>
+                {# Patient 3 #}
+                <div class="p-4 transition-colors border border-gray-200 cursor-pointer dark:border-gray-700 rounded-xl hover:border-wellcare-500">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <span class="text-sm font-medium text-wellcare-500">SB</span>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900 dark:text-white">Sophie Bernard</h3>
+                            <p class="text-xs text-gray-500">Dernière visite: Hier</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="#" class="flex-1 px-3 py-2 text-sm text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-wellcare-500 hover:text-white">
+                            <i class="mr-1 fas fa-envelope"></i>Message
+                        </a>
+                        <a href="#" class="flex-1 px-3 py-2 text-sm text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-wellcare-500 hover:text-white">
+                            <i class="mr-1 fas fa-calendar"></i>Rdv
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Requests Tab #}
+        <div class="space-y-4">
+            {# Request 1 #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full dark:bg-gray-600">
+                            <span class="text-lg font-medium text-gray-600 dark:text-gray-300">AT</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Alain Thomas</h3>
+                            <p class="text-sm text-gray-500">Je souhaiterais prendre rendez-vous pour une consultation nutritionnelle.</p>
+                            <p class="mt-1 text-xs text-gray-400">Il y a 2 jours</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="#" class="px-4 py-2 text-sm text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
+                            <i class="mr-1 fas fa-check"></i>Accepter
+                        </a>
+                        <a href="#" class="px-4 py-2 text-sm text-red-500 transition-colors border border-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <i class="mr-1 fas fa-times"></i>Refuser
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {# Request 2 #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full dark:bg-gray-600">
+                            <span class="text-lg font-medium text-gray-600 dark:text-gray-300">LM</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Lisa Martin</h3>
+                            <p class="text-sm text-gray-500">Bonjour, je cherche un nutritionist pour m'aider dans ma perte de poids.</p>
+                            <p class="mt-1 text-xs text-gray-400">Il y a 3 jours</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="#" class="px-4 py-2 text-sm text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
+                            <i class="mr-1 fas fa-check"></i>Accepter
+                        </a>
+                        <a href="#" class="px-4 py-2 text-sm text-red-500 transition-colors border border-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <i class="mr-1 fas fa-times"></i>Refuser
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

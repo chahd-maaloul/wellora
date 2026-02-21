@@ -4,208 +4,281 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+    {{ encore_entry_link_tags('nutrition-css') }}
+    <style>
+    @media print {
+        body { background: white !important; padding: 0 !important; }
+        .no-print { display: none !important; }
+        .print-header { display: block !important; margin-bottom: 20px; }
+        .shadow-lg { box-shadow: none !important; }
+        .dark\\:bg-gray-800 { background: white !important; }
+        .dark\\:text-white { color: #333 !important; }
+        .dark\\:text-gray-300 { color: #333 !important; }
+        .dark\\:text-gray-400 { color: #666 !important; }
+        .dark\\:text-gray-500 { color: #666 !important; }
+        .dark\\:text-gray-900 { color: black !important; }
+        .dark\\:bg-gray-700 { background: #f5f5f5 !important; }
+        .dark\\:bg-gray-100 { background: #f0f0f0 !important; }
+        input[type="checkbox"] { 
+            width: 20px !important; 
+            height: 20px !important; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+        }
+        table { font-size: 12pt !important; width: 100% !important; }
+        th, td { padding: 8px 12px !important; }
+        .category-row td { font-weight: bold !important; }
+        h1 { font-size: 24pt !important; color: black !important; }
+        tr { page-break-inside: avoid !important; }
+    }
+    @media screen {
+        .print-header { display: none; }
+    }
+    </style>
 {% endblock %}
 
 {% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
 
 {% block body %}
-<div class="min-h-screen py-8" x-data="groceryList()" x-init="init()">
+<div class="min-h-screen py-8">
     <div class="max-w-5xl px-4 mx-auto">
         {# Header #}
-        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Liste de courses</h1>
-                <p class="mt-1 text-gray-500 dark:text-gray-400" x-text="weekLabel"></p>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Préparez vos courses pour la semaine</p>
             </div>
-            <div class="flex items-center gap-3">
-                <select x-model="selectedWeek" @change="loadWeek()" class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                    <option value="current">Cette semaine</option>
-                    <option value="next">Semaine prochaine</option>
-                    <option value="custom">Personnalisé</option>
-                </select>
-                <button @click="generateFromMealPlan()" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                    <i class="mr-2 fas fa-sync-alt"></i>Générer
-                </button>
-                <button @click="printList()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i class="mr-2 fas fa-print"></i>Imprimer
+            <div class="flex items-center gap-3 no-print">
+                <a href="{{ path('nutrition_dashboard') }}" 
+                   class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-arrow-left"></i>
+                    Retour
+                </a>
+                <button onclick="window.print()" class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-wellcare-500 rounded-lg hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-print"></i>
+                    Imprimer
                 </button>
             </div>
         </div>
 
-        {# Budget & Stats #}
-        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Articles</span>
-                    <span class="text-2xl font-bold text-gray-900 dark:text-white" x-text="totalItems"></span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-600" x-text="checkedItems + ' achetés'"></span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600" x-text="remainingItems + ' restants'"></span>
-                </div>
-            </div>
-            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Estimé</span>
-                    <span class="text-2xl font-bold text-gray-900 dark:text-white" x-text="estimatedCost.toFixed(2) + ' €'"></span>
-                </div>
-                <div class="w-full h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                    <div class="h-full rounded-full bg-wellcare-500" :style="'width: ' + (checkedCost / estimatedCost * 100) + '%'"></div>
-                </div>
-                <p class="mt-1 text-xs text-gray-500" x-text="'Acheté: ' + checkedCost.toFixed(2) + ' €'"></p>
-            </div>
-            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Catégories</span>
-                    <span class="text-2xl font-bold text-gray-900 dark:text-white" x-text="Object.keys(itemsByCategory).length"></span>
-                </div>
-                <p class="text-xs text-gray-500">Articles répartis dans <span x-text="Object.keys(itemsByCategory).length"></span> catégories</p>
-            </div>
-            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-500 dark:text-gray-400">Progression</span>
-                    <span class="text-2xl font-bold text-wellcare-500" x-text="Math.round(checkedItems / totalItems * 100) + '%'"></span>
-                </div>
-                <div class="w-full h-2 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
-                    <div class="h-full transition-all rounded-full bg-gradient-to-r from-wellcare-400 to-wellcare-600" 
-                         :style="'width: ' + (checkedItems / totalItems * 100) + '%'"></div>
-                </div>
-            </div>
+        {# Print-only Header #}
+        <div class="hidden print-header">
+            <h1 class="text-2xl font-bold">Liste de courses</h1>
+            <p class="text-sm text-gray-600">Date: {{ "now"|date("d/m/Y") }}</p>
         </div>
 
-        {# Quick Actions #}
-        <div class="flex flex-wrap gap-3 mb-6">
-            <button @click="checkAll()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <i class="mr-2 fas fa-check-double"></i>Tout cocher
-            </button>
-            <button @click="uncheckAll()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <i class="mr-2 fas fa-undo"></i>Tout décocher
-            </button>
-            <button @click="clearChecked()" class="px-4 py-2 text-red-600 transition-colors border border-red-300 rounded-lg dark:border-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
-                <i class="mr-2 fas fa-trash"></i>Supprimer cochés
-            </button>
-            <button @click="addCustomItem()" class="px-4 py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
-                <i class="mr-2 fas fa-plus"></i>Ajouter article
-            </button>
+        {# Table View #}
+        <div class="bg-white shadow-lg dark:bg-gray-800 rounded-xl overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-100 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Catégorie</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Article</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Quantité</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 w-16">✓</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {# Fruits & Légumes #}
+                    <tr class="category-row">
+                        <td colspan="4" class="px-4 py-2 bg-green-50 dark:bg-green-900/20 font-semibold text-green-700 dark:text-green-400">
+                            <i class="mr-2 fas fa-carrot"></i>Fruits & Légumes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Pommes</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">6 pièces</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Bananes</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 kg</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Carottes</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Salade</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 pièce</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Tomates</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Avocats</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">3 pièces</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+
+                    {# Viandes & Poissons #}
+                    <tr class="category-row">
+                        <td colspan="4" class="px-4 py-2 bg-red-50 dark:bg-red-900/20 font-semibold text-red-700 dark:text-red-400">
+                            <i class="mr-2 fas fa-drumstick-bite"></i>Viandes & Poissons
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Poulet</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 kg</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Saumon</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">400 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Oeufs</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">12 pièces</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Thon (boîte)</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">2 boîtes</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+
+                    {# Produits laitiers #}
+                    <tr class="category-row">
+                        <td colspan="4" class="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 font-semibold text-yellow-700 dark:text-yellow-400">
+                            <i class="mr-2 fas fa-cheese"></i>Produits laitiers
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Lait</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 L</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Yaourts grecs</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">4 pots</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Fromage frais</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">200 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+
+                    {# Épicerie #}
+                    <tr class="category-row">
+                        <td colspan="4" class="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 font-semibold text-amber-700 dark:text-amber-400">
+                            <i class="mr-2 fas fa-box"></i>Épicerie
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Riz complet</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Quinoa</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">400 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Pâtes complètes</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Pain complet</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 pain</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Compote de pommes</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">4 pots</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+
+                    {# Boissons #}
+                    <tr class="category-row">
+                        <td colspan="4" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 font-semibold text-blue-700 dark:text-blue-400">
+                            <i class="mr-2 fas fa-glass-water"></i>Boissons
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Eau minérale</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">6 litres</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Jus de fruits naturel</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 L</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+
+                    {# Condiments #}
+                    <tr class="category-row">
+                        <td colspan="4" class="px-4 py-2 bg-purple-50 dark:bg-purple-900/20 font-semibold text-purple-700 dark:text-purple-400">
+                            <i class="mr-2 fas fa-wine-bottle"></i>Condiments
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Huile d'olive</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 bouteille</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Vinaigre balsamique</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 bouteille</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
+                        <td class="px-4 py-2 text-gray-900 dark:text-white">Sel, poivre, épices</td>
+                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">au goût</td>
+                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
+                    </tr>
+                </tbody>
+                <tfoot class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total articles:</td>
+                        <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">32</td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
 
-        {# Categories Grid #}
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <template x-for="(items, category) in itemsByCategory" :key="category">
-                <div class="overflow-hidden bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
-                    {# Category Header #}
-                    <div class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50">
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-lg" :class="getCategoryClass(category)">
-                                <i :class="getCategoryIcon(category) + ' text-white'"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="getCategoryName(category)"></h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
-                                    <span x-text="items.filter(i => i.checked).length"></span>/<span x-text="items.length"></span> articles
-                                </p>
-                            </div>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300" 
-                              x-text="getCategoryTotal(items)"></span>
-                    </div>
-                    
-                    {# Items List #}
-                    <div class="p-4 space-y-2">
-                        <template x-for="item in items" :key="item.id">
-                            <div class="flex items-center gap-3 p-2 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                                 :class="{'opacity-50': item.checked}">
-                                <input type="checkbox" x-model="item.checked" @change="toggleItem(item)"
-                                       class="w-5 h-5 border-gray-300 rounded cursor-pointer text-wellcare-500 focus:ring-wellcare-500">
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-gray-900 dark:text-white" 
-                                       :class="{'line-through': item.checked}"
-                                       x-text="item.name"></p>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400" x-text="item.quantity + ' ' + item.unit"></p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-semibold text-gray-900 dark:text-white" x-text="item.estimatedPrice.toFixed(2) + ' €'"></p>
-                                    <p x-show="item.brand" class="text-xs text-gray-500 truncate max-w-[100px]" x-text="item.brand"></p>
-                                </div>
-                                <button @click="removeItem(item)" class="p-1 text-gray-400 transition-colors hover:text-red-500">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </template>
-                        
-                        {# Add Item to Category #}
-                        <button @click="addItemToCategory(category)" 
-                                class="w-full py-2 mt-2 text-gray-500 transition-colors border-2 border-gray-300 border-dashed rounded-lg dark:border-gray-600 hover:text-wellcare-500 hover:border-wellcare-500">
-                            <i class="mr-1 fas fa-plus"></i> Ajouter un article
-                        </button>
-                    </div>
-                </div>
-            </template>
-        </div>
-
-        {# Add Item Modal #}
-        <div x-show="showAddModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-            <div class="flex items-center justify-center min-h-screen px-4">
-                <div class="fixed inset-0 bg-black/50" @click="showAddModal = false"></div>
-                <div class="relative z-10 w-full max-w-md p-6 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
-                    <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Ajouter un article</h3>
-                    <form @submit.prevent="saveItem()" class="space-y-4">
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
-                            <input type="text" x-model="newItem.name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Quantité</label>
-                                <input type="number" x-model="newItem.quantity" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Unité</label>
-                                <select x-model="newItem.unit" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <option value="pcs">Pièces</option>
-                                    <option value="kg">Kg</option>
-                                    <option value="g">g</option>
-                                    <option value="L">L</option>
-                                    <option value="ml">ml</option>
-                                    <option value="bouteille">Bouteille</option>
-                                    <option value="paquet">Paquet</option>
-                                    <option value="boîte">Boîte</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Catégorie</label>
-                            <select x-model="newItem.category" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                <option value="produce">Fruits & Légumes</option>
-                                <option value="dairy">Produits laitiers</option>
-                                <option value="meat">Viandes & Poissons</option>
-                                <option value="bakery">Boulangerie</option>
-                                <option value="frozen">Surgelés</option>
-                                <option value="pantry">Épicerie</option>
-                                <option value="beverages">Boissons</option>
-                                <option value="snacks">Snacks</option>
-                                <option value="condiments">Condiments</option>
-                                <option value="other">Autre</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Prix estimé (€)</label>
-                            <input type="number" x-model="newItem.estimatedPrice" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        </div>
-                        <div class="flex gap-3">
-                            <button type="button" @click="showAddModal = false" class="flex-1 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
-                            <button type="submit" class="flex-1 py-2 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">Ajouter</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+        {# Tips - Hidden when printing #}
+        <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl no-print">
+            <h3 class="font-semibold text-blue-700 dark:text-blue-400 mb-2">
+                <i class="mr-2 fas fa-lightbulb"></i>Conseils pour vos courses
+            </h3>
+            <ul class="text-sm text-blue-600 dark:text-blue-300 space-y-1">
+                <li>• Planifiez vos repas avant de faire vos courses</li>
+                <li>• Faites une liste et respectez-la pour éviter les achats impulsifs</li>
+                <li>• Privilégiez les produits frais et de saison</li>
+            </ul>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('build/meal-planner.js') }}"></script>
-{% endblock %}
+{% endblock body %}

@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="foodDiary()">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     {# Page Header #}
     <div class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -21,8 +21,15 @@
                     <p class="mt-1 text-gray-600 dark:text-gray-400">Suivez et analysez votre alimentation quotidienne</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <input type="date" x-model="selectedDate" 
-                           class="px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                    <a href="{{ path('nutrition_food_diary', { date: 'yesterday' }) }}" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <span class="px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        21/02/2026
+                    </span>
+                    <a href="{{ path('nutrition_food_diary', { date: 'tomorrow' }) }}" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white hover:bg-gray-50">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
                 </div>
             </div>
         </div>

@@ -1,0 +1,377 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Analyse nutritionnelle - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Analyse nutritionnelle</h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Outils d'analyse et de suivi des patients</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <form method="get" action="#" class="flex gap-2">
+                    <select name="patient" class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <option value="">Sélectionner un patient...</option>
+                        <option value="1">Marie Dubois</option>
+                        <option value="2">Jean Martin</option>
+                        <option value="3">Sophie Bernard</option>
+                        <option value="4">Pierre Lefebvre</option>
+                    </select>
+                    <button type="submit" class="px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="mr-2 fas fa-file-export"></i>Exporter rapport
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {# Analysis Type Tabs #}
+        <div class="flex gap-2 mb-6 overflow-x-auto">
+            <button class="px-4 py-2 transition-colors rounded-lg whitespace-nowrap bg-wellcare-500 text-white">
+                <i class="fas fa-chart-line mr-2"></i>Vue d'ensemble
+            </button>
+            <a href="#" class="px-4 py-2 transition-colors rounded-lg whitespace-nowrap bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-book mr-2"></i>Journal alimentaire
+            </a>
+            <a href="#" class="px-4 py-2 transition-colors rounded-lg whitespace-nowrap bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-chart-pie mr-2"></i>Progression
+            </a>
+            <a href="#" class="px-4 py-2 transition-colors rounded-lg whitespace-nowrap bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="fas fa-flask mr-2"></i>Analyses
+            </a>
+        </div>
+
+        {# Patient Overview #}
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                {# Patient Info #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Informations patient</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center justify-center w-16 h-16 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="text-2xl font-bold text-wellcare-500">#{{ patientId }}</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">Patient #{{ patientId }}</h3>
+                                <p class="text-sm text-gray-500">ID: {{ patientId }}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <div>
+                                <p class="text-sm text-gray-500">Calories cible</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">{{ targets.calories|default(2000) }} kcal</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Protéines cible</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">{{ targets.proteins|default(120) }}g</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Glucides cible</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">{{ targets.carbs|default(200) }}g</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Lipides cible</p>
+                                <p class="text-xl font-bold text-gray-900 dark:text-white">{{ targets.fats|default(65) }}g</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Nutrition Summary #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Bilan nutritionnel (30 jours)</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Calories</span>
+                                <span class="font-medium">{{ stats.avgCalories|default(0) }} / {{ targets.calories|default(2000) }} kcal</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full rounded-full bg-wellcare-500" style="width: {{ adherence.calories|default(0) }}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Protéines</span>
+                                <span class="font-medium">{{ stats.avgProteins|default(0) }} / {{ targets.proteins|default(120) }}g</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-blue-500 rounded-full" style="width: {{ adherence.proteins|default(0) }}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Glucides</span>
+                                <span class="font-medium">{{ stats.avgCarbs|default(0) }} / {{ targets.carbs|default(200) }}g</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full rounded-full bg-amber-500" style="width: {{ adherence.carbs|default(0) }}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Lipides</span>
+                                <span class="font-medium">{{ stats.avgFats|default(0) }} / {{ targets.fats|default(65) }}g</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-red-500 rounded-full" style="width: {{ adherence.fats|default(0) }}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span class="text-gray-500">Hydratation</span>
+                                <span class="font-medium">{{ stats.avgWater|default(0) }} / {{ targets.water|default(8) }} verres</span>
+                            </div>
+                            <div class="h-3 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-cyan-500 rounded-full" style="width: {{ adherence.water|default(0) }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Summary Stats #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Statistiques (30 jours)</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                            <p class="text-xs text-gray-500">Total Calories</p>
+                            <p class="font-semibold text-wellcare-600">{{ stats.totalCalories|default(0)|number_format(0) }} kcal</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                            <p class="text-xs text-gray-500">Total Protéines</p>
+                            <p class="font-semibold text-blue-600">{{ stats.totalProteins|default(0) }}g</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                            <p class="text-xs text-gray-500">Total Glucides</p>
+                            <p class="font-semibold text-amber-600">{{ stats.totalCarbs|default(0) }}g</p>
+                        </div>
+                        <div class="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
+                            <p class="text-xs text-gray-500">Total Lipides</p>
+                            <p class="font-semibold text-purple-600">{{ stats.totalFats|default(0) }}g</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Recent Meals #}
+            <div class="mt-6">
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Repas récents (7 derniers jours)</h2>
+                    {% if recentMeals|default([])|length > 0 %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="pb-3 text-left text-sm font-medium text-gray-500">Date</th>
+                                        <th class="pb-3 text-left text-sm font-medium text-gray-500">Type</th>
+                                        <th class="pb-3 text-left text-sm font-medium text-gray-500">Calories</th>
+                                        <th class="pb-3 text-left text-sm font-medium text-gray-500">Protéines</th>
+                                        <th class="pb-3 text-left text-sm font-medium text-gray-500">Glucides</th>
+                                        <th class="pb-3 text-left text-sm font-medium text-gray-500">Lipides</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for meal in recentMeals|default([]) %}
+                                    <tr class="border-b border-gray-100 dark:border-gray-700">
+                                        <td class="py-3 text-sm text-gray-900 dark:text-white">{{ meal.date|date('d/m/Y') }}</td>
+                                        <td class="py-3 text-sm text-gray-900 dark:text-white">{{ meal.mealType|default('N/A') }}</td>
+                                        <td class="py-3 text-sm text-gray-900 dark:text-white">{{ meal.calories|default(0) }} kcal</td>
+                                        <td class="py-3 text-sm text-gray-900 dark:text-white">{{ meal.protein|default(0) }}g</td>
+                                        <td class="py-3 text-sm text-gray-900 dark:text-white">{{ meal.carbs|default(0) }}g</td>
+                                        <td class="py-3 text-sm text-gray-900 dark:text-white">{{ meal.fats|default(0) }}g</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="py-8 text-center">
+                            <i class="mb-4 text-4xl text-gray-300 fas fa-utensils"></i>
+                            <p class="text-gray-500 dark:text-gray-400">Aucun repas enregistré pour ce patient</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Charts Row #}
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
+                {# Weekly Progress Chart #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Progression hebdomadaire</h2>
+                    <div class="flex items-center justify-center h-64 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div class="text-center">
+                            <i class="mb-2 text-4xl text-gray-300 fas fa-chart-line"></i>
+                            <p class="text-gray-400">Graphique de progression</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# Food Group Distribution #}
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Répartition des groupes alimentaires</h2>
+                    <div class="flex items-center justify-center h-64 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div class="text-center">
+                            <i class="mb-2 text-4xl text-gray-300 fas fa-chart-pie"></i>
+                            <p class="text-gray-400">Diagramme circulaire</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Food Diary Review #}
+        <div class="p-6 mt-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+            <h2 class="mb-6 text-lg font-bold text-gray-900 dark:text-white">Journal alimentaire</h2>
+            <div class="space-y-6">
+                {# Day 1 #}
+                <div class="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700/50">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Lundi 17 février</h3>
+                            <span class="text-sm font-medium text-wellcare-500">1850 kcal</span>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-gray-500">Petit-déjeuner</p>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                        <i class="fas fa-coffee text-gray-400"></i>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300">Flocons d'avoine</span>
+                                </div>
+                                <span class="text-sm text-gray-500">350 kcal</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-gray-500">Déjeuner</p>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                        <i class="fas fa-drumstick-bite text-gray-400"></i>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300">Poulet grillé</span>
+                                </div>
+                                <span class="text-sm text-gray-500">520 kcal</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-gray-500">Dîner</p>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                        <i class="fas fa-fish text-gray-400"></i>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300">Saumon poché</span>
+                                </div>
+                                <span class="text-sm text-gray-500">480 kcal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Day 2 #}
+                <div class="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700/50">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Mardi 18 février</h3>
+                            <span class="text-sm font-medium text-wellcare-500">1920 kcal</span>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-gray-500">Petit-déjeuner</p>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                        <i class="fas fa-egg text-gray-400"></i>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300">Omelette</span>
+                                </div>
+                                <span class="text-sm text-gray-500">320 kcal</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-gray-500">Déjeuner</p>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                        <i class="fas fa-carrot text-gray-400"></i>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-gray-300">Salade composée</span>
+                                </div>
+                                <span class="text-sm text-gray-500">420 kcal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Progress Tracking #}
+        <div class="space-y-6 mt-6">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-2 text-sm text-gray-500">Poids</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">-4.2 kg</p>
+                    <p class="mt-1 text-sm text-green-500"><i class="mr-1 fas fa-arrow-down"></i>Ce mois</p>
+                    <div class="flex items-end h-20 gap-1 mt-4">
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 60%"></div>
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 55%"></div>
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 50%"></div>
+                        <div class="flex-1 rounded-t bg-wellcare-500" style="height: 45%"></div>
+                    </div>
+                </div>
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-2 text-sm text-gray-500">IMC</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">25.1</p>
+                    <p class="mt-1 text-sm text-green-500"><i class="mr-1 fas fa-arrow-down"></i>-2.3 points</p>
+                    <div class="flex items-end h-20 gap-1 mt-4">
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 100%"></div>
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 95%"></div>
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 90%"></div>
+                        <div class="flex-1 bg-blue-500 rounded-t" style="height: 85%"></div>
+                    </div>
+                </div>
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h3 class="mb-2 text-sm text-gray-500">Masse musculaire</h3>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white">+1.8 kg</p>
+                    <p class="mt-1 text-sm text-blue-500"><i class="mr-1 fas fa-arrow-up"></i>Ce mois</p>
+                    <div class="flex items-end h-20 gap-1 mt-4">
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 40%"></div>
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 45%"></div>
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 50%"></div>
+                        <div class="flex-1 bg-purple-500 rounded-t" style="height: 55%"></div>
+                    </div>
+                </div>
+            </div>
+
+            {# Long-term Trends #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <h2 class="mb-4 text-lg font-bold text-gray-900 dark:text-white">Tendances à long terme</h2>
+                <div class="flex items-center justify-center rounded-lg h-80 bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-center">
+                        <i class="mb-2 text-4xl text-gray-300 fas fa-chart-line"></i>
+                        <p class="text-gray-400">Graphique des tendances</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

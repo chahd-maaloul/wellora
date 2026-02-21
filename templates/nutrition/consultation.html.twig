@@ -1,3 +1,8 @@
+{#
+    Consultation Page
+    Video consultation with nutritionist - works without JavaScript
+#}
+
 {% extends 'layouts/app.html.twig' %}
 
 {% block title %}Consultation Nutritionniste - WellCare Connect{% endblock %}
@@ -8,7 +13,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="nutritionConsultation()">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     {# Page Header #}
     <div class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -32,20 +37,20 @@
                     <i class="text-3xl fas fa-user-md text-wellcare-500"></i>
                 </div>
                 <div class="flex-1">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ nutritionist.name }}</h2>
-                    <p class="text-gray-500 dark:text-gray-400">{{ nutritionist.specialty }}</p>
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Dr. Marie Laurent</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Spécialiste en nutrition sportive et équilibrée</p>
                     <div class="flex items-center gap-2 mt-2">
                         <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
                             <i class="mr-1 text-xs fas fa-circle"></i>
-                            {{ nutritionist.status }}
+                            Disponible
                         </span>
-                        <span class="text-sm text-gray-500">Prochaine disponibilité: {{ nutritionist.nextAvailable|date('d/m/Y H:i') }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Prochaine disponibilité: 25/02/2026 14:00</span>
                     </div>
                 </div>
-                <button class="px-6 py-3 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                <a href="#" class="px-6 py-3 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                     <i class="mr-2 fas fa-calendar-check"></i>
                     Prendre rendez-vous
-                </button>
+                </a>
             </div>
         </div>
 
@@ -55,34 +60,125 @@
                 <h3 class="font-semibold text-gray-900 dark:text-white">Prochaines consultations</h3>
             </div>
             <div class="p-6">
-                {% if upcomingAppointments|length > 0 %}
-                    {% for appointment in upcomingAppointments %}
-                    <div class="flex items-center justify-between p-4 mb-4 border border-gray-100 rounded-lg dark:border-gray-700">
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                <i class="text-wellcare-500 fas fa-video"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ appointment.date|date('d/m/Y H:i') }}</p>
-                                <p class="text-sm text-gray-500">{{ appointment.duration }} minutes - {{ appointment.type }}</p>
-                            </div>
+                {# Static sample appointments #}
+                <div class="flex items-center justify-between p-4 mb-4 border border-gray-100 rounded-lg dark:border-gray-700">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <i class="text-wellcare-500 fas fa-video"></i>
                         </div>
-                        <span class="px-3 py-1 text-sm font-medium rounded-full
-                            {% if appointment.status == 'confirmed' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
-                            {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
-                            {{ appointment.status }}
-                        </span>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">22/02/2026 10:00</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">30 minutes - Suivi hebdomadaire</p>
+                        </div>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="py-8 text-center">
-                        <i class="mb-4 text-4xl text-gray-300 fas fa-calendar-xmark"></i>
-                        <p class="text-gray-500 dark:text-gray-400">Aucune consultation prévue</p>
-                        <button class="px-6 py-2 mt-4 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                            Planifier une consultation
-                        </button>
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Confirmée
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between p-4 mb-4 border border-gray-100 rounded-lg dark:border-gray-700">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <i class="text-wellcare-500 fas fa-video"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">01/03/2026 14:30</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">45 minutes - Bilan mensuel</p>
+                        </div>
                     </div>
-                {% endif %}
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Confirmée
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between p-4 border border-gray-100 rounded-lg dark:border-gray-700">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <i class="text-wellcare-500 fas fa-video"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">08/03/2026 09:00</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">30 minutes - Consultation de suivi</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                        En attente
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {# Consultation Types #}
+        <div class="grid grid-cols-1 gap-6 mt-8 md:grid-cols-3">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <i class="text-xl text-blue-500 fas fa-calendar-week"></i>
+                </div>
+                <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">Consultation hebdomadaire</h4>
+                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Suivi régulier de votre progression nutritionnelle</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">45€</span>
+                    <span class="text-sm text-gray-500">30 min</span>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                    <i class="text-xl text-purple-500 fas fa-chart-line"></i>
+                </div>
+                <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">Bilan mensuel</h4>
+                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Analyse complète de vos résultats et objectifs</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">80€</span>
+                    <span class="text-sm text-gray-500">60 min</span>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <i class="text-xl text-green-500 fas fa-utensils"></i>
+                </div>
+                <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">Programme personnalisé</h4>
+                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Création d'un plan alimentaire adapté à vos besoins</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">150€</span>
+                    <span class="text-sm text-gray-500">90 min</span>
+                </div>
+            </div>
+        </div>
+
+        {# How It Works #}
+        <div class="mt-8">
+            <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">Comment ça marche</h3>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+                <div class="text-center">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
+                        <i class="text-xl fas fa-calendar"></i>
+                    </div>
+                    <h4 class="font-medium text-gray-900 dark:text-white">1. Réservez</h4>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Choisissez un créneau disponible</p>
+                </div>
+                <div class="text-center">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
+                        <i class="text-xl fas fa-video"></i>
+                    </div>
+                    <h4 class="font-medium text-gray-900 dark:text-white">2. Connectez-vous</h4>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Rejoignez la visioconférence</p>
+                </div>
+                <div class="text-center">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
+                        <i class="text-xl fas fa-comments"></i>
+                    </div>
+                    <h4 class="font-medium text-gray-900 dark:text-white">3. Échangez</h4>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Discutez de vos objectifs</p>
+                </div>
+                <div class="text-center">
+                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
+                        <i class="text-xl fas fa-clipboard-list"></i>
+                    </div>
+                    <h4 class="font-medium text-gray-900 dark:text-white">4. Recevez</h4>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Vos recommandations</p>
+                </div>
             </div>
         </div>
     </main>

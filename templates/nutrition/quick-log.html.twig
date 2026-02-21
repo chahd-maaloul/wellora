@@ -1,6 +1,6 @@
 {#
 Quick Log Entry Page
-This page provides a dedicated interface for quick food logging
+This page provides a dedicated interface for quick food logging without JavaScript
 #}
 
 {% extends 'layouts/app.html.twig' %}
@@ -26,109 +26,109 @@ This page provides a dedicated interface for quick food logging
 
         {# Quick Entry Card #}
         <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-            {# Meal Selection #}
+            {# Meal Selection as Links #}
             <div class="mb-6">
                 <label class="block mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Type de repas</label>
                 <div class="grid grid-cols-4 gap-3">
+                    {% set current_meal = app.request.query.get('meal', 'lunch') %}
                     {% for meal, data in {
                         'breakfast': { icon: 'fa-mug-hot', color: 'orange', label: 'Petit-déj' },
                         'lunch': { icon: 'fa-sun', color: 'yellow', label: 'Déjeuner' },
                         'dinner': { icon: 'fa-moon', color: 'indigo', label: 'Dîner' },
                         'snacks': { icon: 'fa-cookie-bite', color: 'pink', label: 'Collation' }
                     } %}
-                    <button @click="selectedMeal = '{{ meal }}'"
-                            class="flex flex-col items-center p-4 transition-all border-2 rounded-lg"
-                            :class="selectedMeal === '{{ meal }}' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
+                    <a href="{{ path('nutrition_quick_log', { meal: meal }) }}"
+                       class="flex flex-col items-center p-4 transition-all border-2 rounded-lg text-center
+                              {% if current_meal == meal %}border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20{% else %}border-gray-200 dark:border-gray-700 hover:border-wellcare-300{% endif %}">
                         <i class="fas {{ data.icon }} text-{{ data.color }}-500 text-xl mb-2"></i>
                         <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ data.label }}</span>
-                    </button>
+                    </a>
                     {% endfor %}
                 </div>
             </div>
 
-            {# Food Search #}
-            <div class="mb-6">
-                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Rechercher un aliment</label>
-                <div class="relative">
-                    <input type="text" x-model="foodSearch" @input.debounce.300ms="searchFoods()"
-                           placeholder="Ex: pomme, poulet, riz..."
-                           class="w-full px-4 py-3 pl-12 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
-                    <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-4 top-1/2"></i>
-                </div>
-            </div>
-
-            {# Quick Add Foods #}
+            {# Quick Add Foods as Links #}
             <div class="mb-6">
                 <label class="block mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Ajout rapide</label>
                 <div class="flex flex-wrap gap-2">
                     {% for food in [
-                        { name: 'Pomme', calories: 95, icon: 'fa-apple-alt' },
-                        { name: 'Banane', calories: 105, icon: 'fa-banana' },
-                        { name: 'Oeuf', calories: 78, icon: 'fa-egg' },
-                        { name: 'Yaourt', calories: 120, icon: 'fa-ice-cream' },
-                        { name: 'Pain', calories: 80, icon: 'fa-bread-slice' },
-                        { name: 'Lait', calories: 150, icon: 'fa-glass-milk' },
-                        { name: 'Poulet', calories: 165, icon: 'fa-drumstick-bite' },
-                        { name: 'Riz', calories: 130, icon: 'fa-bowl-rice' }
+                        { name: 'Pomme', calories: 95 },
+                        { name: 'Banane', calories: 105 },
+                        { name: 'Oeuf', calories: 78 },
+                        { name: 'Yaourt', calories: 120 },
+                        { name: 'Pain', calories: 80 },
+                        { name: 'Lait', calories: 150 },
+                        { name: 'Poulet', calories: 165 },
+                        { name: 'Riz', calories: 130 }
                     ] %}
-                    <button @click="addQuickFood('{{ food.name }}', {{ food.calories }})"
-                            class="flex items-center gap-2 px-3 py-2 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30">
-                        <i class="fas {{ food.icon }} text-wellcare-500"></i>
+                    <a href="{{ path('nutrition_food_add', { meal: current_meal, quick: true, name: food.name, calories: food.calories }) }}"
+                       class="flex items-center gap-2 px-3 py-2 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30">
                         <span class="text-sm text-gray-700 dark:text-gray-300">{{ food.name }}</span>
                         <span class="text-xs text-gray-500">{{ food.calories }} kcal</span>
-                    </button>
+                    </a>
                     {% endfor %}
                 </div>
             </div>
 
-            {# Manual Entry #}
+            {# Manual Entry Form #}
             <div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 class="mb-4 font-medium text-gray-900 dark:text-white">
                     <i class="mr-2 text-gray-400 fas fa-pen"></i>
                     Saisie manuelle
                 </h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Nom de l'aliment</label>
-                        <input type="text" x-model="manualFood.name" 
-                               class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                
+                <form method="post" action="{{ path('nutrition_food_add', { meal: current_meal }) }}">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="foodName" class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Nom de l'aliment</label>
+                            <input type="text" name="foodName" id="foodName" required
+                                   class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white"
+                                   value="{{ app.request.query.get('name', '') }}">
+                        </div>
+                        <div class="grid grid-cols-4 gap-3">
+                            <div>
+                                <label for="calories" class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Calories</label>
+                                <input type="number" name="calories" id="calories" required
+                                       class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white"
+                                       value="{{ app.request.query.get('calories', '') }}">
+                            </div>
+                            <div>
+                                <label for="proteins" class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Protéines (g)</label>
+                                <input type="number" name="proteins" id="proteins"
+                                       class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <div>
+                                <label for="carbs" class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Glucides (g)</label>
+                                <input type="number" name="carbs" id="carbs"
+                                       class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <div>
+                                <label for="fats" class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Lipides (g)</label>
+                                <input type="number" name="fats" id="fats"
+                                       class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="quantity" class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Quantité</label>
+                            <input type="number" name="quantity" id="quantity" value="1" min="1"
+                                   class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <input type="hidden" name="mealType" value="{{ current_meal }}">
                     </div>
-                    <div class="grid grid-cols-4 gap-3">
-                        <div>
-                            <label class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Calories</label>
-                            <input type="number" x-model="manualFood.calories" 
-                                   class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Protéines</label>
-                            <input type="number" x-model="manualFood.proteins" 
-                                   class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Glucides</label>
-                            <input type="number" x-model="manualFood.carbs" 
-                                   class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="block mb-1 text-sm text-gray-600 dark:text-gray-400">Lipides</label>
-                            <input type="number" x-model="manualFood.fats" 
-                                   class="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-2 focus:ring-wellcare-500 dark:bg-gray-700 dark:text-white">
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            {# Actions #}
-            <div class="flex gap-3 mt-6">
-                <a href="{{ path('nutrition_dashboard') }}" 
-                   class="flex-1 px-4 py-3 text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
-                    Annuler
-                </a>
-                <button @click="submitEntry()"
-                        class="flex-1 px-4 py-3 text-center text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                    <i class="mr-2 fas fa-plus"></i>
-                    Ajouter
-                </button>
+                    {# Actions #}
+                    <div class="flex gap-3 mt-6">
+                        <a href="{{ path('nutrition_dashboard') }}" 
+                           class="flex-1 px-4 py-3 text-center text-gray-700 transition-colors bg-gray-100 rounded-lg dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            Annuler
+                        </a>
+                        <button type="submit" name="submit_quick_log"
+                                class="flex-1 px-4 py-3 text-center text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="mr-2 fas fa-plus"></i>
+                            Ajouter
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -137,71 +137,23 @@ This page provides a dedicated interface for quick food logging
             <h3 class="mb-4 font-medium text-gray-900 dark:text-white">Aujourd'hui</h3>
             <div class="grid grid-cols-4 gap-4 text-center">
                 <div>
-                    <p class="text-xl font-bold text-wellcare-600">{{ todaySummary.calories|default(0) }}</p>
+                    <p class="text-xl font-bold text-wellcare-600">{{ calories.consumed|default(0) }}</p>
                     <p class="text-xs text-gray-500">Calories</p>
                 </div>
                 <div>
-                    <p class="text-xl font-bold text-amber-600">{{ todaySummary.proteins|default(0) }}g</p>
+                    <p class="text-xl font-bold text-amber-600">{{ macros.proteins|default(0) }}g</p>
                     <p class="text-xs text-gray-500">Protéines</p>
                 </div>
                 <div>
-                    <p class="text-xl font-bold text-green-600">{{ todaySummary.carbs|default(0) }}g</p>
+                    <p class="text-xl font-bold text-green-600">{{ macros.carbs|default(0) }}g</p>
                     <p class="text-xs text-gray-500">Glucides</p>
                 </div>
                 <div>
-                    <p class="text-xl font-bold text-purple-600">{{ todaySummary.fats|default(0) }}g</p>
+                    <p class="text-xl font-bold text-purple-600">{{ macros.fats|default(0) }}g</p>
                     <p class="text-xs text-gray-500">Lipides</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('quickLog', () => ({
-        selectedMeal: 'lunch',
-        foodSearch: '',
-        manualFood: {
-            name: '',
-            calories: '',
-            proteins: '',
-            carbs: '',
-            fats: ''
-        },
-        
-        searchFoods() {
-            // Food search implementation
-        },
-        
-        addQuickFood(name, calories) {
-            this.manualFood.name = name;
-            this.manualFood.calories = calories;
-            this.submitEntry();
-        },
-        
-        submitEntry() {
-            if (!this.manualFood.name || !this.manualFood.calories) {
-                alert('Veuillez remplir le nom et les calories');
-                return;
-            }
-            
-            fetch('/api/nutrition/log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: this.manualFood.name,
-                    calories: parseInt(this.manualFood.calories),
-                    proteins: parseInt(this.manualFood.proteins) || 0,
-                    carbs: parseInt(this.manualFood.carbs) || 0,
-                    fats: parseInt(this.manualFood.fats) || 0,
-                    mealType: this.selectedMeal
-                })
-            }).then(() => {
-                window.location.href = '{{ path('nutrition_dashboard') }}';
-            });
-        }
-    }));
-});
-</script>
 {% endblock %}
