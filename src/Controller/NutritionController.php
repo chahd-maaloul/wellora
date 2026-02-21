@@ -7,6 +7,7 @@ use App\Entity\FoodLog;
 use App\Entity\MealPlan;
 use App\Entity\NutritionGoal;
 use App\Entity\WaterIntake;
+use App\Entity\AiConversation;
 use App\Form\FoodItemFormType;
 use App\Form\FoodLogFormType;
 use App\Form\NutritionGoalFormType;
@@ -16,6 +17,8 @@ use App\Repository\FoodLogRepository;
 use App\Repository\MealPlanRepository;
 use App\Repository\NutritionGoalRepository;
 use App\Repository\WaterIntakeRepository;
+use App\Repository\AiConversationRepository;
+use App\Service\NutritionAIService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,10 +30,12 @@ use Symfony\Component\Routing\Annotation\Route;
 class NutritionController extends AbstractController
 {
     private $entityManager;
+    private NutritionAIService $aiService;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, NutritionAIService $aiService)
     {
         $this->entityManager = $entityManager;
+        $this->aiService = $aiService;
     }
 
     private function getUserId(): int
@@ -1304,13 +1309,16 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
     }
 
     #[Route('/ai-assistant', name: 'ai_assistant')]
-    public function aiAssistant(Request $request, FoodLogRepository $foodLogRepository, MealPlanRepository $mealPlanRepository, NutritionGoalRepository $nutritionGoalRepository): Response
+    public function aiAssistant(Request $request, FoodLogRepository $foodLogRepository, MealPlanRepository $mealPlanRepository, NutritionGoalRepository $nutritionGoalRepository, AiConversationRepository $conversationRepository): Response
     {
         $userId = $this->getUserId();
         $userMessage = $request->request->get('message', '');
         $conversation = $request->getSession()->get('ai_conversation', []);
         $suggestedMeals = $request->getSession()->get('ai_suggested_meals', []);
         $weeklyPlan = $request->getSession()->get('ai_weekly_plan', null);
+        
+        // Initialize AI Service with user ID
+        $this->aiService->setUserId($userId);
         
         // Get user's nutrition goals
         $userGoal = $nutritionGoalRepository->findByUserId($userId);
@@ -1326,11 +1334,13 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         }
         
         if ($userMessage) {
-            $responseData = $this->generateAIResponse($userMessage, $conversation, $request->getSession(), $goalData);
-            $aiResponse = $responseData['response'];
+            // Use the new AI Service for processing
+            $responseData = $this->aiService->processMessage($userMessage, $conversation);
+            $aiResponse = $responseData['message'];
             $suggestedMeals = $responseData['meals'] ?? [];
             $weeklyPlan = $responseData['weeklyPlan'] ?? null;
             
+            // Add user message to conversation
             $conversation[] = ['role' => 'user', 'content' => $userMessage];
             $conversation[] = ['role' => 'assistant', 'content' => $aiResponse, 'meals' => $suggestedMeals, 'weeklyPlan' => $weeklyPlan];
             if (count($conversation) > 20) {
@@ -1339,6 +1349,9 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
             $request->getSession()->set('ai_conversation', $conversation);
             $request->getSession()->set('ai_suggested_meals', $suggestedMeals);
             $request->getSession()->set('ai_weekly_plan', $weeklyPlan);
+            
+            // Save conversation to database for persistence
+            $this->saveConversation($userId, $userMessage, $aiResponse, $goalData);
             
             // Check if this is an AJAX request
             if ($request->isXmlHttpRequest()) {
@@ -1372,6 +1385,57 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
             'recentAIMeals' => $recentAIMeals,
             'userGoal' => $goalData,
         ]);
+    }
+    
+    /**
+     * Save conversation to database for persistence
+     */
+    private function saveConversation(int $userId, string $userMessage, string $aiResponse, ?array $goalData = null): void
+    {
+        // Detect intent from message
+        $message = strtolower(trim($userMessage));
+        $intent = 'default';
+        
+        $intentPatterns = [
+            'recipe' => ['recette', 'recipe', 'cuisiner', 'menu', 'repas'],
+            'meal_plan' => ['plan', 'semaine', 'planning', 'menu'],
+            'weight_loss' => ['perdre', 'poids', 'mincir', 'maigrir'],
+            'muscle' => ['muscle', 'force', 'masse', 'fitness'],
+            'vegan' => ['vegan', 'végétalien', 'végétarien'],
+            'keto' => ['keto', 'cétogène'],
+            'sport' => ['sport', 'athlete', 'entraînement'],
+            'water' => ['eau', 'hydratation'],
+            'calories' => ['calorie', 'kcal'],
+            'protein' => ['protéine', 'protein'],
+            'carbs' => ['glucide', 'carb'],
+            'fats' => ['lipide', 'fat', 'gras'],
+        ];
+        
+        foreach ($intentPatterns as $intentName => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (strpos($message, $keyword) !== false) {
+                    $intent = $intentName;
+                    break 2;
+                }
+            }
+        }
+        
+        $conversation = new AiConversation();
+        $conversation->setUserId($userId);
+        $conversation->setUserMessage($userMessage);
+        $conversation->setAiResponse($aiResponse);
+        $conversation->setIntent($intent);
+        $conversation->setCreatedAt(new \DateTime());
+        
+        if ($goalData) {
+            $conversation->setCaloriesContext($goalData['calories'] ?? null);
+            $conversation->setProteinContext($goalData['protein'] ?? null);
+            $conversation->setCarbsContext($goalData['carbs'] ?? null);
+            $conversation->setFatsContext($goalData['fats'] ?? null);
+        }
+        
+        $this->entityManager->persist($conversation);
+        $this->entityManager->flush();
     }
 
     #[Route('/ai-add-meal', name: 'ai_add_meal')]
@@ -1484,6 +1548,170 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         return $this->redirectToRoute('nutrition_ai_assistant');
     }
 
+    #[Route('/ai-history', name: 'ai_history')]
+    public function aiHistory(Request $request, AiConversationRepository $conversationRepository): Response
+    {
+        $userId = $this->getUserId();
+        $conversations = $conversationRepository->findByUserId($userId, 100);
+        
+        // Group conversations by date
+        $groupedConversations = [];
+        foreach ($conversations as $conv) {
+            $date = $conv->getCreatedAt()->format('Y-m-d');
+            if (!isset($groupedConversations[$date])) {
+                $groupedConversations[$date] = [];
+            }
+            $groupedConversations[$date][] = $conv;
+        }
+        
+        return $this->render('nutrition/ai-history.html.twig', [
+            'conversations' => $groupedConversations,
+            'totalCount' => count($conversations),
+        ]);
+    }
+
+    #[Route('/ai-insights', name: 'ai_insights')]
+    public function aiInsights(Request $request, AiConversationRepository $conversationRepository): Response
+    {
+        $userId = $this->getUserId();
+        $conversations = $conversationRepository->findByUserId($userId, 500);
+        
+        // Analyze intent distribution
+        $intentCounts = [];
+        $weeklyActivity = [];
+        
+        foreach ($conversations as $conv) {
+            $intent = $conv->getIntent() ?? 'unknown';
+            if (!isset($intentCounts[$intent])) {
+                $intentCounts[$intent] = 0;
+            }
+            $intentCounts[$intent]++;
+            
+            $week = $conv->getCreatedAt()->format('Y-W');
+            if (!isset($weeklyActivity[$week])) {
+                $weeklyActivity[$week] = 0;
+            }
+            $weeklyActivity[$week]++;
+        }
+        
+        // Get most common intents
+        arsort($intentCounts);
+        $topIntents = array_slice($intentCounts, 0, 5, true);
+        
+        // Get starred conversations
+        $starredConversations = $conversationRepository->findStarredByUserId($userId);
+        
+        return $this->render('nutrition/ai-insights.html.twig', [
+            'totalConversations' => count($conversations),
+            'intentCounts' => $intentCounts,
+            'topIntents' => $topIntents,
+            'weeklyActivity' => $weeklyActivity,
+            'starredCount' => count($starredConversations),
+            'starredConversations' => array_slice($starredConversations, 0, 10),
+        ]);
+    }
+
+    #[Route('/ai-star/{id}', name: 'ai_star')]
+    public function aiStarConversation(int $id, Request $request, AiConversationRepository $conversationRepository, EntityManagerInterface $entityManager): Response
+    {
+        $userId = $this->getUserId();
+        $conversation = $conversationRepository->findOneBy(['id' => $id, 'userId' => $userId]);
+        
+        if ($conversation) {
+            $conversation->setIsStarred(!$conversation->isStarred());
+            $entityManager->flush();
+            
+            $this->addFlash('success', $conversation->isStarred() ? 'Conversation sauvegardée!' : 'Sauvegarde supprimée!');
+        }
+        
+        return $this->redirectToRoute('nutrition_ai_history');
+    }
+
+    #[Route('/ai-delete/{id}', name: 'ai_delete')]
+    public function aiDeleteConversation(int $id, Request $request, AiConversationRepository $conversationRepository, EntityManagerInterface $entityManager): Response
+    {
+        $userId = $this->getUserId();
+        $conversation = $conversationRepository->findOneBy(['id' => $id, 'userId' => $userId]);
+        
+        if ($conversation) {
+            $entityManager->remove($conversation);
+            $entityManager->flush();
+            
+            $this->addFlash('success', 'Conversation supprimée!');
+        }
+        
+        return $this->redirectToRoute('nutrition_ai_history');
+    }
+
+    #[Route('/ai-clear-history', name: 'ai_clear_history')]
+    public function aiClearHistory(Request $request, AiConversationRepository $conversationRepository): Response
+    {
+        $userId = $this->getUserId();
+        
+        // Clear database conversations
+        $conversationRepository->deleteOldConversations($userId, 0);
+        
+        // Clear session-based conversation
+        $request->getSession()->remove('ai_conversation');
+        $request->getSession()->remove('ai_suggested_meals');
+        $request->getSession()->remove('ai_weekly_plan');
+        
+        $this->addFlash('success', 'Historique effacé!');
+        
+        return $this->redirectToRoute('nutrition_ai_assistant');
+    }
+
+    #[Route('/ai-recommendations', name: 'ai_recommendations')]
+    public function aiRecommendations(Request $request, NutritionGoalRepository $nutritionGoalRepository, FoodLogRepository $foodLogRepository, WaterIntakeRepository $waterIntakeRepository): Response
+    {
+        $userId = $this->getUserId();
+        
+        // Get user goals
+        $goal = $nutritionGoalRepository->findByUserId($userId);
+        
+        // Get today's food logs
+        $today = new \DateTime();
+        $foodLogs = $foodLogRepository->findAllByUserIdAndDate($userId, $today);
+        
+        // Calculate today's stats
+        $calories = 0;
+        $protein = 0;
+        $carbs = 0;
+        $fats = 0;
+        
+        foreach ($foodLogs as $log) {
+            foreach ($log->getFoodItems() as $item) {
+                $calories += $item->getCalories() ?? 0;
+                $protein += floatval($item->getProtein() ?? 0);
+                $carbs += floatval($item->getCarbs() ?? 0);
+                $fats += floatval($item->getFats() ?? 0);
+            }
+        }
+        
+        // Get water intake
+        $waterIntakes = $waterIntakeRepository->findByUserAndDate($userId, $today);
+        $water = 0;
+        foreach ($waterIntakes as $intake) {
+            $water += $intake->getAmount() ?? 0;
+        }
+        
+        $stats = [
+            'calories' => $calories,
+            'protein' => round($protein),
+            'carbs' => round($carbs),
+            'fats' => round($fats),
+            'water' => round($water / 1000, 1),
+            'targetCalories' => $goal?->getCaloriesTarget() ?? 2000,
+            'targetProtein' => $goal?->getProteinTarget() ?? 120,
+            'targetCarbs' => $goal?->getCarbsTarget() ?? 200,
+            'targetFats' => $goal?->getFatsTarget() ?? 65,
+            'targetWater' => $goal?->getWaterTarget() ?? 2,
+        ];
+        
+        return $this->render('nutrition/ai-recommendations.html.twig', [
+            'stats' => $stats,
+        ]);
+    }
 
     private function generateAIResponse(string $message, array $conversation, $session, $goalData = null): array
     {

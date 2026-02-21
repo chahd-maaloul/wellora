@@ -1,0 +1,176 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Analyses AI - WellCare Nutrition{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-4xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <a href="{{ path('nutrition_ai_assistant') }}" class="p-2 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Analyses AI</h1>
+                    <p class="text-gray-600 dark:text-gray-400">Statistiques de vos conversations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white">
+                <div class="text-4xl font-bold mb-1">{{ totalConversations }}</div>
+                <div class="text-emerald-100">Total conversations</div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6">
+                <div class="text-4xl font-bold text-blue-600 mb-1">{{ starredCount }}</div>
+                <div class="text-gray-500 dark:text-gray-400">Sauvegardées</div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6">
+                <div class="text-4xl font-bold text-purple-600 mb-1">{{ topIntents|length }}</div>
+                <div class="text-gray-500 dark:text-gray-400">Sujets différents</div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6">
+                <a href="{{ path('nutrition_ai_history') }}" class="block hover:opacity-80">
+                    <div class="text-4xl font-bold text-orange-600 mb-1">📋</div>
+                    <div class="text-gray-500 dark:text-gray-400">Voir historique</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Intent Distribution -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Sujets les plus demandés</h2>
+                <div class="space-y-3">
+                    {% set intentLabels = {
+                        'recipe': 'Recettes',
+                        'meal_plan': 'Planification',
+                        'weight_loss': 'Perte de poids',
+                        'muscle': 'Muscle',
+                        'vegan': 'Végan',
+                        'keto': 'Keto',
+                        'sport': 'Sport',
+                        'water': 'Hydratation',
+                        'calories': 'Calories',
+                        'protein': 'Protéines',
+                        'carbs': 'Glucides',
+                        'fats': 'Lipides',
+                        'fiber': 'Fibres',
+                        'greeting': 'Salutation',
+                        'help': 'Aide',
+                        'default': 'Autre',
+                        'unknown': 'Non classé'
+                    } %}
+                    {% for intent, count in intentCounts %}
+                        {% if count > 0 %}
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 text-2xl">
+                                    {% set intentEmoji = {
+                                        'recipe': '🍳',
+                                        'meal_plan': '📅',
+                                        'weight_loss': '⚖️',
+                                        'muscle': '💪',
+                                        'vegan': '🌱',
+                                        'keto': '🥑',
+                                        'sport': '🏃',
+                                        'water': '💧',
+                                        'calories': '🔥',
+                                        'protein': '🥩',
+                                        'carbs': '🍚',
+                                        'fats': '🥑',
+                                        'fiber': '🌾',
+                                        'greeting': '👋',
+                                        'help': '❓',
+                                        'default': '💬',
+                                        'unknown': '❓'
+                                    }[intent] ?? '💬' %}
+                                    {{ intentEmoji }}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ intentLabels[intent] ?? intent }}</span>
+                                        <span class="text-sm text-gray-500">{{ count }}</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full" style="width: {{ (count / totalConversations * 100)|round }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Weekly Activity -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Activité récente</h2>
+                <div class="space-y-2">
+                    {% for week, count in weeklyActivity|reverse|slice(0, 8) %}
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-gray-500 w-20">{{ week }}</span>
+                            <div class="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+                                {% set maxCount = weeklyActivity|reduce((max, v) => max > v ? max : v, 0) %}
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded flex items-center justify-end pr-2" style="width: {{ (count / maxCount * 100)|round }}%">
+                                    <span class="text-xs text-white font-medium">{{ count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 dark:text-gray-400 text-center py-4">Pas assez de données</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Starred Conversations -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Conversations sauvegardées</h2>
+            <div class="space-y-3">
+                {% for conv in starredConversations %}
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-500">{{ conv.createdAt|date('d MMM yyyy') }}</span>
+                            <span class="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 text-xs rounded">
+                                {% if conv.intent %}{{ intentLabels[conv.intent] ?? conv.intent }}{% else %}Non classé{% endif %}
+                            </span>
+                        </div>
+                        <p class="text-gray-800 dark:text-white font-medium">{{ conv.userMessage }}</p>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2">{{ conv.aiResponse|slice(0, 150) }}...</p>
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-2">⭐</div>
+                        <p class="text-gray-500 dark:text-gray-400">Aucune conversation sauvegardée</p>
+                        <p class="text-sm text-gray-400">Cliquez sur l'étoile dans vos conversations pour les sauvegarder</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <a href="{{ path('nutrition_ai_assistant') }}" class="inline-flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors">
+                💬 Assistant
+            </a>
+            <a href="{{ path('nutrition_ai_history') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                📋 Historique
+            </a>
+            <a href="{{ path('nutrition_ai_recommendations') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                💡 Recommandations
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -181,6 +181,41 @@ Main nutrition tracking dashboard without JavaScript dependencies
                 </div>
             </div>
 
+            {# AI Quick Actions #}
+            <div class="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-emerald-500 fas fa-robot"></i>
+                        Assistant AI
+                    </h3>
+                    <a href="{{ path('nutrition_ai_insights') }}" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">
+                        Voir analyses →
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <a href="{{ path('nutrition_ai_assistant', {'_fragment': 'ask'}) }}?message=recette" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">🍳</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Recettes</span>
+                    </a>
+                    <a href="{{ path('nutrition_ai_assistant') }}?message=menu semaine" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">📅</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Menu</span>
+                    </a>
+                    <a href="{{ path('nutrition_ai_assistant') }}?message=perdre du poids" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">⚖️</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Perte poids</span>
+                    </a>
+                    <a href="{{ path('nutrition_ai_recommendations') }}" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">💡</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Conseils</span>
+                    </a>
+                </div>
+            </div>
+
             {# Sidebar #}
             <div class="space-y-6">
                 {# Water Intake #}
@@ -307,4 +342,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
+{# Floating AI Chat Button #}
+{% include 'nutrition/_ai-floating-button.html.twig' %}
 {% endblock %}
