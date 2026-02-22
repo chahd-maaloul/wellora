@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Patient;
 use App\Entity\ParcoursDeSante;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -102,10 +103,17 @@ class ParcoursDeSanteRepository extends ServiceEntityRepository
         ?int $minPublicationCount = null,
         ?int $maxPublicationCount = null,
         string $sortBy = 'date',
-        string $sortOrder = 'DESC'
+        string $sortOrder = 'DESC',
+        ?Patient $ownerPatient = null
     ): array
     {
         $qb = $this->createQueryBuilder('p');
+
+        if ($ownerPatient !== null) {
+            $qb
+                ->andWhere('p.ownerPatient = :ownerPatient')
+                ->setParameter('ownerPatient', $ownerPatient);
+        }
 
         if ($nomParcours !== null && trim($nomParcours) !== '') {
             $qb

@@ -173,7 +173,7 @@
                         </div>
                         <div class="flex-1 ml-3">
                             <div class="flex items-center justify-between gap-2">
-                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ publication.parcoursDeSante ? publication.parcoursDeSante.nomParcours : 'Unknown trail' }}</p>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ publication.ownerPatient ? publication.ownerPatient.fullName : (publication.parcoursDeSante ? publication.parcoursDeSante.nomParcours : 'Unknown user') }}</p>
                                 <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200">{{ typeLabel }}</span>
                             </div>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ publication.textPublication|slice(0, 90) }}{% if publication.textPublication|length > 90 %}...{% endif %}</p>
@@ -206,7 +206,7 @@
                 <thead>
                     <tr class="border-b border-gray-200 dark:border-gray-700">
                         <th class="px-4 py-3 text-left">ID</th>
-                        <th class="px-4 py-3 text-left">Trail</th>
+                        <th class="px-4 py-3 text-left">Owner</th>
                         <th class="px-4 py-3 text-left">Type</th>
                         <th class="px-4 py-3 text-left">Experience</th>
                         <th class="px-4 py-3 text-left">Ratings</th>
@@ -219,7 +219,7 @@
                     {% for publication in publications %}
                         <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">#PUB-{{ publication.id }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ publication.parcoursDeSante ? publication.parcoursDeSante.nomParcours : 'Unknown trail' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ publication.ownerPatient ? publication.ownerPatient.fullName : (publication.parcoursDeSante ? publication.parcoursDeSante.nomParcours : 'Unknown user') }}</td>
                             <td class="px-4 py-3 text-sm">
                                 <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full {{ publication.typePublication == 'event' ? 'text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-200' }}">
                                     {{ publication.typePublication == 'event' ? 'Event' : 'Opinion' }}

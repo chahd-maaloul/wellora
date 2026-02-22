@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\CommentairePublication;
+use App\Entity\Patient;
 use App\Form\CommentairePublicationType;
 use App\Repository\CommentairePublicationRepository;
 use App\Service\CommentSanitizer;
@@ -30,7 +31,9 @@ final class CommentairePublicationController extends AbstractController
     #[Route('/new', name: 'app_commentaire_publication_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
+        $patient = $this->getAuthenticatedPatient();
         $commentairePublication = new CommentairePublication();
+        $commentairePublication->setOwnerPatient($patient);
         $form = $this->createForm(CommentairePublicationType::class, $commentairePublication);
         $form->handleRequest($request);
 
@@ -61,6 +64,8 @@ final class CommentairePublicationController extends AbstractController
     #[Route('/{id}/edit', name: 'app_commentaire_publication_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, CommentairePublication $commentairePublication, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted('EDIT', $commentairePublication);
+
         $form = $this->createForm(CommentairePublicationType::class, $commentairePublication);
         $form->handleRequest($request);
 
@@ -82,11 +87,23 @@ final class CommentairePublicationController extends AbstractController
     #[Route('/{id}', name: 'app_commentaire_publication_delete', methods: ['POST'])]
     public function delete(Request $request, CommentairePublication $commentairePublication, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted('DELETE', $commentairePublication);
+
         if ($this->isCsrfTokenValid('delete'.$commentairePublication->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($commentairePublication);
             $entityManager->flush();
         }
 
         return $this->redirectToRoute('app_commentaire_publication_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function getAuthenticatedPatient(): Patient
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Patient) {
+            throw $this->createAccessDeniedException('Only patients can create comments.');
+        }
+
+        return $user;
     }
 }

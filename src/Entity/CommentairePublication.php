@@ -25,6 +25,10 @@ class CommentairePublication
     #[ORM\ManyToOne(inversedBy: 'commentairePublications')]
     private ?PublicationParcours $PublicationParcours = null;
 
+    #[ORM\ManyToOne(targetEntity: Patient::class)]
+    #[ORM\JoinColumn(name: 'owner_patient_uuid', referencedColumnName: 'uuid', nullable: true, onDelete: 'SET NULL')]
+    private ?Patient $ownerPatient = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -62,6 +66,18 @@ class CommentairePublication
     public function setPublicationParcours(?PublicationParcours $PublicationParcours): static
     {
         $this->PublicationParcours = $PublicationParcours;
+
+        return $this;
+    }
+
+    public function getOwnerPatient(): ?Patient
+    {
+        return $this->ownerPatient;
+    }
+
+    public function setOwnerPatient(?Patient $ownerPatient): static
+    {
+        $this->ownerPatient = $ownerPatient;
 
         return $this;
     }

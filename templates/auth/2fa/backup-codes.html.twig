@@ -1,0 +1,55 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Codes de Sauvegarde - WellCare Connect{% endblock %}
+
+{% block body %}
+<div class="w-full max-w-2xl mx-auto">
+    <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-green-100 rounded-full dark:bg-green-900/30">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Codes de Sauvegarde</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Conservez ces codes en lieu sûr. Vous pouvez les utiliser si vous perdez l'accès à votre application d'authentification.</p>
+    </div>
+
+    <div class="p-8 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+        <div class="p-4 mb-6 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 dark:border-yellow-800">
+            <div class="flex">
+                <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Important</p>
+                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                        Chaque code ne peut être utilisé qu'une seule fois. Nous vous recommandons de noter ces codes et de les conserver dans un endroit sécurisé.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            {% for code in backupCodes %}
+                <div class="px-4 py-3 font-mono text-lg font-bold text-center text-gray-900 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
+                    {{ code }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex flex-col gap-4 sm:flex-row">
+            <form action="{{ path('app_2fa_regenerate_backup_codes') }}" method="post" class="flex-1">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('regenerate_backup_codes') }}">
+                <button type="submit" 
+                        class="flex justify-center w-full px-4 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm dark:border-gray-600 dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-wellcare-500">
+                    Générer de nouveaux codes
+                </button>
+            </form>
+            <a href="{{ path('app_2fa_manage') }}" 
+               class="flex justify-center flex-1 px-4 py-3 text-sm font-medium text-white border border-transparent rounded-lg shadow-sm bg-wellcare-600 hover:bg-wellcare-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-wellcare-500">
+                Terminé
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

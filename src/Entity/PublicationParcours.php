@@ -84,6 +84,10 @@ class PublicationParcours
     )]
     private ?string $typePublication = null;
 
+    #[ORM\ManyToOne(targetEntity: Patient::class)]
+    #[ORM\JoinColumn(name: 'owner_patient_uuid', referencedColumnName: 'uuid', nullable: true, onDelete: 'SET NULL')]
+    private ?Patient $ownerPatient = null;
+
     public function __construct()
     {
         $this->commentairePublications = new ArrayCollection();
@@ -216,6 +220,18 @@ class PublicationParcours
     public function setTypePublication(?string $typePublication): static
     {
         $this->typePublication = $typePublication;
+
+        return $this;
+    }
+
+    public function getOwnerPatient(): ?Patient
+    {
+        return $this->ownerPatient;
+    }
+
+    public function setOwnerPatient(?Patient $ownerPatient): static
+    {
+        $this->ownerPatient = $ownerPatient;
 
         return $this;
     }

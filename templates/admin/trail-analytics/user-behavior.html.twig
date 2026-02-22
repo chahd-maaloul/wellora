@@ -67,7 +67,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                                    {{ trail ? trail.nomParcours : 'Unknown trail' }}
+                                    {{ comment.ownerPatient ? comment.ownerPatient.fullName : (trail ? trail.nomParcours : 'Unknown user') }}
                                 </p>
                                 <span class="text-xs text-gray-500 dark:text-gray-400">
                                     {{ comment.dateCommentaire ? comment.dateCommentaire|date('M d, Y') : 'N/A' }}

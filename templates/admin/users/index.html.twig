@@ -1,0 +1,288 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Gestion des utilisateurs{% endblock %}
+
+{% block body %}
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            Gestion des utilisateurs
+        </h1>
+        <p class="mt-1 text-gray-500 dark:text-gray-400">
+            Gérez tous les utilisateurs de la plateforme
+        </p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+        <div class="p-4 bg-white rounded-lg shadow dark:bg-gray-800">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Total utilisateurs</div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ statistics.total }}</div>
+        </div>
+        <div class="p-4 bg-white rounded-lg shadow dark:bg-gray-800">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Actifs</div>
+            <div class="text-2xl font-bold text-green-600">{{ statistics.active }}</div>
+        </div>
+        <div class="p-4 bg-white rounded-lg shadow dark:bg-gray-800">
+            <div class="text-sm text-gray-500 dark:text-gray-400">En attente de vérification</div>
+            <div class="text-2xl font-bold text-amber-600">{{ statistics.unverified_professionals }}</div>
+        </div>
+        <div class="p-4 bg-white rounded-lg shadow dark:bg-gray-800">
+            <a href="{{ path('admin_users_pending_verification') }}" class="block transition-opacity hover:opacity-75">
+                <div class="text-sm text-blue-500">Voir en attente →</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="p-4 mb-6 bg-white rounded-lg shadow dark:bg-gray-800">
+        <form method="get" action="{{ path('admin_users_index') }}" class="flex flex-wrap items-end gap-4">
+            <div class="w-full md:w-auto">
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Rôle</label>
+                <select name="role" class="w-full border-gray-300 rounded-lg md:w-48 dark:bg-gray-700 dark:border-gray-600">
+                    <option value="all" {% if filters.role == 'all' %}selected{% endif %}>Tous les rôles</option>
+                    <option value="ROLE_PATIENT" {% if filters.role == 'ROLE_PATIENT' %}selected{% endif %}>Patient</option>
+                    <option value="ROLE_MEDECIN" {% if filters.role == 'ROLE_MEDECIN' %}selected{% endif %}>Médecin</option>
+                    <option value="ROLE_COACH" {% if filters.role == 'ROLE_COACH' %}selected{% endif %}>Coach</option>
+                    <option value="ROLE_NUTRITIONIST" {% if filters.role == 'ROLE_NUTRITIONIST' %}selected{% endif %}>Nutritionniste</option>
+                    <option value="ROLE_ADMIN" {% if filters.role == 'ROLE_ADMIN' %}selected{% endif %}>Administrateur</option>
+                </select>
+            </div>
+            <div class="w-full md:w-auto">
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Recherche</label>
+                <input type="text" name="search" value="{{ filters.search }}" placeholder="Email, nom, prénom..." class="w-full border-gray-300 rounded-lg md:w-64 dark:bg-gray-700 dark:border-gray-600">
+            </div>
+            <div class="w-full md:w-auto">
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Statut</label>
+                <select name="isActive" class="w-full border-gray-300 rounded-lg md:w-40 dark:bg-gray-700 dark:border-gray-600">
+                    <option value="" {% if filters.isActive == '' %}selected{% endif %}>Tous les statuts</option>
+                    <option value="1" {% if filters.isActive == '1' %}selected{% endif %}>Actif</option>
+                    <option value="0" {% if filters.isActive == '0' %}selected{% endif %}>Inactif</option>
+                </select>
+            </div>
+            <div class="w-full md:w-auto">
+                <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Email vérifié</label>
+                <select name="isVerified" class="w-full border-gray-300 rounded-lg md:w-40 dark:bg-gray-700 dark:border-gray-600">
+                    <option value="" {% if filters.isVerified == '' %}selected{% endif %}>Tous</option>
+                    <option value="1" {% if filters.isVerified == '1' %}selected{% endif %}>Vérifié</option>
+                    <option value="0" {% if filters.isVerified == '0' %}selected{% endif %}>Non vérifié</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    Filtrer
+                </button>
+                <a href="{{ path('admin_users_index') }}" class="px-4 py-2 text-gray-700 transition-colors bg-gray-300 rounded-lg dark:bg-gray-600 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-500">
+                    Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions Toolbar -->
+    <div id="bulk-actions-toolbar" class="hidden p-4 mb-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    <span id="selected-count">0</span> utilisateur(s) sélectionné(s)
+                </span>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="bulkAction('activate')" class="px-3 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                    Activer
+                </button>
+                <button type="button" onclick="bulkAction('deactivate')" class="px-3 py-1.5 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors">
+                    Désactiver
+                </button>
+                <button type="button" onclick="bulkAction('delete')" class="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="overflow-hidden bg-white rounded-lg shadow dark:bg-gray-800">
+        <form id="bulk-actions-form" method="POST" action="">
+            <input type="hidden" name="_token" value="{{ csrf_token('bulk-action') }}">
+            <input type="hidden" name="uuids" id="selected-uuids" value="">
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                <input type="checkbox" id="select-all" class="border-gray-300 rounded text-wellcare-500 focus:ring-wellcare-500">
+                            </th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Email</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Nom</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Rôle</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Statut</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Vérification</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Créé le</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                        {% for user in users %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 user-row">
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <input type="checkbox" name="user_uuid[]" value="{{ user.uuid }}" class="border-gray-300 rounded user-checkbox text-wellcare-500 focus:ring-wellcare-500">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ user.email }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 dark:text-white">{{ user.firstName }} {{ user.lastName }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% set role_key = 'admin.users.roles.' ~ user.roles[0]|lower %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if user.roles[0] == 'ROLE_PATIENT' %}bg-blue-100 text-blue-800
+                                    {% elseif user.roles[0] == 'ROLE_MEDECIN' %}bg-green-100 text-green-800
+                                    {% elseif user.roles[0] == 'ROLE_COACH' %}bg-purple-100 text-purple-800
+                                    {% elseif user.roles[0] == 'ROLE_NUTRITIONIST' %}bg-orange-100 text-orange-800
+                                    {% elseif user.roles[0] == 'ROLE_ADMIN' %}bg-red-100 text-red-800{% endif %}">
+                                    {% if user.roles[0] == 'ROLE_PATIENT' %}Patient
+                                    {% elseif user.roles[0] == 'ROLE_MEDECIN' %}Médecin
+                                    {% elseif user.roles[0] == 'ROLE_COACH' %}Coach
+                                    {% elseif user.roles[0] == 'ROLE_NUTRITIONIST' %}Nutritionniste
+                                    {% elseif user.roles[0] == 'ROLE_ADMIN' %}Administrateur{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if user.isActive %}
+                                    <span class="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex px-2 text-xs font-semibold leading-5 text-red-800 bg-red-100 rounded-full">
+                                        Inactif
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if user.isEmailVerified %}
+                                    <span class="text-green-500">✓ Vérifié</span>
+                                {% else %}
+                                    <span class="text-gray-400">Non vérifié</span>
+                                {% endif %}
+                                
+                                {# Professional verification status #}
+                                {% set user_role = user.roles[0] %}
+                                {% if user_role in ['ROLE_MEDECIN', 'ROLE_COACH', 'ROLE_NUTRITIONIST'] %}
+                                    {% if attribute(user, 'isVerifiedByAdmin') is defined and user.isVerifiedByAdmin %}
+                                        <span class="ml-2 text-green-500">• Licence vérifiée</span>
+                                    {% else %}
+                                        <span class="ml-2 text-amber-500">• En attente</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">
+                                {{ user.createdAt|date('d/m/Y H:i') }}
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
+                                <a href="{{ path('admin_users_show', {'uuid': user.uuid}) }}" class="mr-3 text-wellcare-500 hover:text-wellcare-600">
+                                    Voir
+                                </a>
+                                <a href="{{ path('admin_users_edit', {'uuid': user.uuid}) }}" class="text-blue-500 hover:text-blue-600">
+                                    Modifier
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                Aucun utilisateur trouvé
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    const toolbar = document.getElementById('bulk-actions-toolbar');
+    const selectedCount = document.getElementById('selected-count');
+    const selectedUuids = document.getElementById('selected-uuids');
+
+    // Select all checkbox
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateToolbar();
+    });
+
+    // Individual checkboxes
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateToolbar();
+            // Update select all based on individual checkboxes
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            const noneChecked = Array.from(checkboxes).every(c => !c.checked);
+            selectAll.checked = allChecked;
+            selectAll.indeterminate = !allChecked && !noneChecked;
+        });
+    });
+
+    function updateToolbar() {
+        const selected = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        selectedCount.textContent = selected.length;
+        selectedUuids.value = JSON.stringify(selected);
+        
+        if (selected.length > 0) {
+            toolbar.classList.remove('hidden');
+        } else {
+            toolbar.classList.add('hidden');
+        }
+    }
+
+    // Bulk action handler
+    window.bulkAction = function(action) {
+        const selected = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        if (selected.length === 0) {
+            alert('Veuillez sélectionner au moins un utilisateur');
+            return;
+        }
+
+        const messages = {
+            'activate': 'Êtes-vous sûr de vouloir activer ' + selected.length + ' utilisateur(s) ?',
+            'deactivate': 'Êtes-vous sûr de vouloir désactiver ' + selected.length + ' utilisateur(s) ?',
+            'delete': 'Êtes-vous sûr de vouloir supprimer ' + selected.length + ' utilisateur(s) ? Cette action est irréversible.'
+        };
+
+        if (!confirm(messages[action])) {
+            return;
+        }
+
+        const form = document.getElementById('bulk-actions-form');
+        const actionUrls = {
+            'activate': '{{ path("admin_users_bulk_activate") }}',
+            'deactivate': '{{ path("admin_users_bulk_deactivate") }}',
+            'delete': '{{ path("admin_users_bulk_delete") }}'
+        };
+
+        form.action = actionUrls[action];
+        form.method = 'POST';
+        document.getElementById('selected-uuids').value = JSON.stringify(selected);
+        form.submit();
+    };
+});
+</script>
+{% endblock %}

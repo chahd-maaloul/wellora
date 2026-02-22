@@ -1,0 +1,116 @@
+{% extends 'layouts/auth.html.twig' %}
+
+{% block title %}Vérification 2FA - WellCare Connect{% endblock %}
+
+{% block body %}
+<div class="w-full max-w-md mx-auto">
+    <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+            <svg class="w-8 h-8 text-wellcare-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Vérification en Deux Étapes</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Entrez le code de votre application d'authentification</p>
+    </div>
+
+    <div class="p-8 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+        {% for flash_error in app.flashes('error') %}
+            <div class="p-4 mb-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/30 dark:border-red-800">
+                <p class="text-sm text-red-600 dark:text-red-400">{{ flash_error }}</p>
+            </div>
+        {% endfor %}
+        
+        {% for flash_success in app.flashes('success') %}
+            <div class="p-4 mb-4 border border-green-200 rounded-lg bg-green-50 dark:bg-green-900/30 dark:border-green-800">
+                <p class="text-sm text-green-600 dark:text-green-400">{{ flash_success }}</p>
+            </div>
+        {% endfor %}
+
+        <!-- Single Form for both TOTP and Backup Code -->
+        <form action="{{ path('app_2fa_check') }}" method="post" class="space-y-6">
+            <!-- Toggle between TOTP and Backup Code -->
+            <div class="flex justify-center mb-4">
+                <div class="inline-flex p-1 bg-gray-100 rounded-lg dark:bg-gray-700" role="group">
+                    <button type="button" id="btn-totp" onclick="showTotp()" class="px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-600">
+                        Code App
+                    </button>
+                    <button type="button" id="btn-backup" onclick="showBackup()" class="px-4 py-2 text-sm font-medium text-gray-600 transition-colors rounded-lg dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        Code Sauvegarde
+                    </button>
+                </div>
+            </div>
+            
+            <!-- TOTP Code Input -->
+            <div id="totp-section">
+                <label for="code" class="block mb-2 text-sm font-medium text-center text-gray-700 dark:text-gray-300">Code à 6 chiffres</label>
+                <input type="text" 
+                       name="code" 
+                       id="code" 
+                       maxlength="6" 
+                       pattern="[0-9]*"
+                       inputmode="numeric"
+                       autocomplete="one-time-code"
+                       class="block w-full px-4 py-3 text-2xl tracking-widest text-center placeholder-gray-400 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:text-white"
+                       placeholder="000000">
+            </div>
+            
+            <!-- Backup Code Input (hidden by default) -->
+            <div id="backup-section" class="hidden">
+                <label for="backup_code" class="block mb-2 text-sm font-medium text-center text-gray-700 dark:text-gray-300">Code de sauvegarde</label>
+                <input type="text" 
+                       name="backup_code" 
+                       id="backup_code" 
+                       class="block w-full px-4 py-3 text-lg tracking-wider text-center placeholder-gray-400 uppercase border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:text-white"
+                       placeholder="XXXX-XXXX"
+                       style="text-transform: uppercase;">
+                <p class="mt-2 text-xs text-center text-gray-500 dark:text-gray-400">Les codes de sauvegarde sont à usage unique</p>
+            </div>
+            
+            <!-- CSRF Token -->
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('2fa_verify') }}">
+
+            <button type="submit" 
+                    class="flex justify-center w-full px-4 py-3 text-sm font-medium text-white transition-colors border border-transparent rounded-lg shadow-sm bg-wellcare-600 hover:bg-wellcare-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-wellcare-500">
+                Vérifier
+            </button>
+        </form>
+
+        <div class="pt-6 mt-6 text-center border-t border-gray-200 dark:border-gray-700">
+            <form action="{{ path('app_logout') }}" method="post" class="inline">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                <button type="submit" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    Se déconnecter et réessayer
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTotp() {
+    document.getElementById('totp-section').classList.remove('hidden');
+    document.getElementById('backup-section').classList.add('hidden');
+    document.getElementById('code').setAttribute('required', 'required');
+    document.getElementById('backup_code').removeAttribute('required');
+    document.getElementById('backup_code').value = '';
+    document.getElementById('btn-totp').classList.add('bg-wellcare-600', 'text-white');
+    document.getElementById('btn-totp').classList.remove('text-gray-600', 'dark:text-gray-300');
+    document.getElementById('btn-backup').classList.remove('bg-wellcare-600', 'text-white');
+    document.getElementById('btn-backup').classList.add('text-gray-600', 'dark:text-gray-300');
+}
+
+function showBackup() {
+    document.getElementById('totp-section').classList.add('hidden');
+    document.getElementById('backup-section').classList.remove('hidden');
+    document.getElementById('code').removeAttribute('required');
+    document.getElementById('code').value = '';
+    document.getElementById('backup_code').setAttribute('required', 'required');
+    document.getElementById('backup_code').focus();
+    document.getElementById('btn-backup').classList.add('bg-wellcare-600', 'text-white');
+    document.getElementById('btn-backup').classList.remove('text-gray-600', 'dark:text-gray-300');
+    document.getElementById('btn-totp').classList.remove('bg-wellcare-600', 'text-white');
+    document.getElementById('btn-totp').classList.add('text-gray-600', 'dark:text-gray-300');
+}
+</script>
+{% endblock %}

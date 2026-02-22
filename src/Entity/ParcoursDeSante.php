@@ -80,6 +80,10 @@ class ParcoursDeSante
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $imageParcours = null;
 
+    #[ORM\ManyToOne(targetEntity: Patient::class)]
+    #[ORM\JoinColumn(name: 'owner_patient_uuid', referencedColumnName: 'uuid', nullable: true, onDelete: 'SET NULL')]
+    private ?Patient $ownerPatient = null;
+
     /**
      * @var Collection<int, PublicationParcours>
      */
@@ -176,6 +180,18 @@ class ParcoursDeSante
     public function setImageParcours(?string $imageParcours): static
     {
         $this->imageParcours = $imageParcours;
+
+        return $this;
+    }
+
+    public function getOwnerPatient(): ?Patient
+    {
+        return $this->ownerPatient;
+    }
+
+    public function setOwnerPatient(?Patient $ownerPatient): static
+    {
+        $this->ownerPatient = $ownerPatient;
 
         return $this;
     }

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Patient;
 use App\Entity\ParcoursDeSante;
 use App\Form\ParcoursDeSanteType;
 use App\Repository\ParcoursDeSanteRepository;
@@ -89,6 +90,83 @@ final class ParcoursDeSanteController extends AbstractController
             'sortOrder' => $sortOrder,
             'ai_weather_options' => $this->aiWeatherOptions(),
             'ai_chat_endpoint' => $this->generateUrl('app_parcours_de_sante_ai_recommend'),
+            'is_my_trails_view' => false,
+        ]);
+    }
+
+    #[Route('/my', name: 'app_parcours_de_sante_my', methods: ['GET'])]
+    public function myTrails(
+        Request $request,
+        ParcoursDeSanteRepository $parcoursDeSanteRepository,
+        PaginatorInterface $paginator
+    ): Response
+    {
+        $patient = $this->getAuthenticatedPatient();
+
+        $nomParcours = trim((string) $request->query->get('nomParcours', ''));
+        $localisation = trim((string) $request->query->get('localisation', ''));
+        $minDistanceRaw = trim((string) $request->query->get('minDistance', ''));
+        $maxDistanceRaw = trim((string) $request->query->get('maxDistance', ''));
+        $minPublicationCountRaw = trim((string) $request->query->get('minPublicationCount', ''));
+        $maxPublicationCountRaw = trim((string) $request->query->get('maxPublicationCount', ''));
+        $sortByRaw = strtolower(trim((string) $request->query->get('sortBy', 'date')));
+        $sortOrderRaw = strtoupper(trim((string) $request->query->get('sortOrder', 'DESC')));
+
+        $distanceFilter = $parcoursDeSanteRepository->distanceRangeFilter(
+            $minDistanceRaw !== '' && is_numeric($minDistanceRaw) ? (float) $minDistanceRaw : null,
+            $maxDistanceRaw !== '' && is_numeric($maxDistanceRaw) ? (float) $maxDistanceRaw : null
+        );
+        $publicationFilter = $parcoursDeSanteRepository->publicationRangeFilter(
+            $minPublicationCountRaw !== '' && is_numeric($minPublicationCountRaw) ? (int) $minPublicationCountRaw : null,
+            $maxPublicationCountRaw !== '' && is_numeric($maxPublicationCountRaw) ? (int) $maxPublicationCountRaw : null
+        );
+        $sort = $parcoursDeSanteRepository->normalizeSort($sortByRaw, $sortOrderRaw);
+
+        $distanceFilterApplied = $minDistanceRaw !== '' || $maxDistanceRaw !== '';
+        $publicationFilterApplied = $minPublicationCountRaw !== '' || $maxPublicationCountRaw !== '';
+
+        $minDistance = $distanceFilterApplied ? $distanceFilter['minValue'] : null;
+        $maxDistance = $distanceFilterApplied ? $distanceFilter['maxValue'] : null;
+        $minPublicationCount = $publicationFilterApplied ? $publicationFilter['minValue'] : null;
+        $maxPublicationCount = $publicationFilterApplied ? $publicationFilter['maxValue'] : null;
+
+        $sortBy = $sort['sortBy'];
+        $sortOrder = $sort['sortOrder'];
+
+        $parcours = $parcoursDeSanteRepository->searchByNameAndLocation(
+            $nomParcours !== '' ? $nomParcours : null,
+            $localisation !== '' ? $localisation : null,
+            $minDistance,
+            $maxDistance,
+            $minPublicationCount,
+            $maxPublicationCount,
+            $sortBy,
+            $sortOrder,
+            $patient
+        );
+
+        $parcoursPagination = $paginator->paginate(
+            $parcours,
+            max(1, $request->query->getInt('page', 1)),
+            9
+        );
+
+        return $this->render('parcours_de_sante/index.html.twig', [
+            'parcours_de_santes' => $parcoursPagination,
+            'nomParcours' => $nomParcours,
+            'localisation' => $localisation,
+            'minDistance' => $minDistance,
+            'maxDistance' => $maxDistance,
+            'minPublicationCount' => $minPublicationCount,
+            'maxPublicationCount' => $maxPublicationCount,
+            'distanceFilter' => $distanceFilter,
+            'publicationFilter' => $publicationFilter,
+            'discoveryConfig' => $parcoursDeSanteRepository->parcoursDiscovery(),
+            'sortBy' => $sortBy,
+            'sortOrder' => $sortOrder,
+            'ai_weather_options' => $this->aiWeatherOptions(),
+            'ai_chat_endpoint' => $this->generateUrl('app_parcours_de_sante_ai_recommend'),
+            'is_my_trails_view' => true,
         ]);
     }
 
@@ -198,7 +276,9 @@ final class ParcoursDeSanteController extends AbstractController
     #[Route('/new', name: 'app_parcours_de_sante_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
+        $patient = $this->getAuthenticatedPatient();
         $parcoursDeSante = new ParcoursDeSante();
+        $parcoursDeSante->setOwnerPatient($patient);
         $form = $this->createForm(ParcoursDeSanteType::class, $parcoursDeSante);
         $form->handleRequest($request);
 
@@ -272,6 +352,8 @@ final class ParcoursDeSanteController extends AbstractController
     #[Route('/{id}/edit', name: 'app_parcours_de_sante_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, ParcoursDeSante $parcoursDeSante, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted('EDIT', $parcoursDeSante);
+
         $form = $this->createForm(ParcoursDeSanteType::class, $parcoursDeSante);
         $form->handleRequest($request);
 
@@ -315,6 +397,8 @@ final class ParcoursDeSanteController extends AbstractController
     #[Route('/{id}', name: 'app_parcours_de_sante_delete', methods: ['POST'])]
     public function delete(Request $request, ParcoursDeSante $parcoursDeSante, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted('DELETE', $parcoursDeSante);
+
         if ($this->isCsrfTokenValid('delete'.$parcoursDeSante->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($parcoursDeSante);
             $entityManager->flush();
@@ -362,5 +446,15 @@ final class ParcoursDeSanteController extends AbstractController
         }
 
         return 'any';
+    }
+
+    private function getAuthenticatedPatient(): Patient
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Patient) {
+            throw $this->createAccessDeniedException('Only patients can create a parcours.');
+        }
+
+        return $user;
     }
 }

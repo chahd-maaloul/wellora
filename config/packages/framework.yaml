@@ -5,12 +5,15 @@ framework:
     http_method_override: false
     handle_all_throwables: true
 
-    # Enables session support. Note that the session will ONLY be started if you read or write from it.
-    # Remove or comment this section to explicitly disable session support.
+    # Session configuration
     session:
         handler_id: null
         cookie_secure: auto
         cookie_samesite: lax
+        # Session timeout: 30 minutes of inactivity (must match gc_maxlifetime)
+        gc_maxlifetime: 1800
+        # Session cookie lifetime: 30 minutes (matches gc_maxlifetime for consistency)
+        cookie_lifetime: 1800
 
     #esi: true
     #fragments: true

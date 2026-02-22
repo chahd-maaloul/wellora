@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\CommentairePublication;
+use App\Entity\Patient;
 use App\Entity\PublicationParcours;
 use App\Form\PublicationParcoursType;
 use App\Repository\CommentairePublicationRepository;
@@ -124,6 +125,7 @@ final class PublicationParcoursController extends AbstractController
         ParcoursDeSanteRepository $parcoursDeSanteRepository
     ): Response
     {
+        $patient = $this->getAuthenticatedPatient();
         $parcoursId = $request->query->getInt('parcoursId');
         $selectedParcours = $parcoursId > 0 ? $parcoursDeSanteRepository->find($parcoursId) : null;
 
@@ -135,6 +137,7 @@ final class PublicationParcoursController extends AbstractController
 
         $publicationParcour = new PublicationParcours();
         $publicationParcour->setParcoursDeSante($selectedParcours);
+        $publicationParcour->setOwnerPatient($patient);
 
         $form = $this->createForm(PublicationParcoursType::class, $publicationParcour, [
             'require_image' => true,
@@ -180,6 +183,7 @@ final class PublicationParcoursController extends AbstractController
         EntityManagerInterface $entityManager
     ): Response
     {
+        $patient = $this->getAuthenticatedPatient();
         $redirectParams = $this->buildFeedRedirectParams($request);
 
         $token = (string) $request->request->get('_token', '');
@@ -200,6 +204,7 @@ final class PublicationParcoursController extends AbstractController
         $comment->setCommentaire($this->commentSanitizer->sanitize($commentText));
         $comment->setDateCommentaire(new \DateTime());
         $comment->setPublicationParcours($publicationParcour);
+        $comment->setOwnerPatient($patient);
 
         $entityManager->persist($comment);
         $entityManager->flush();
@@ -224,6 +229,8 @@ final class PublicationParcoursController extends AbstractController
 
             return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
         }
+
+        $this->denyAccessUnlessGranted('EDIT', $comment);
 
         $token = (string) $request->request->get('_token', '');
         if (!$this->isCsrfTokenValid('edit_comment' . $comment->getId(), $token)) {
@@ -264,6 +271,8 @@ final class PublicationParcoursController extends AbstractController
             return $this->redirectAfterCommentAction($request, $publicationParcour, $redirectParams);
         }
 
+        $this->denyAccessUnlessGranted('DELETE', $comment);
+
         $token = (string) $request->request->get('_token', '');
         if (!$this->isCsrfTokenValid('delete_comment' . $comment->getId(), $token)) {
             $this->addFlash('error', 'Invalid delete form. Please try again.');
@@ -303,6 +312,8 @@ final class PublicationParcoursController extends AbstractController
     #[Route('/{id}/edit', name: 'app_publication_parcours_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, PublicationParcours $publicationParcour, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted('EDIT', $publicationParcour);
+
         $form = $this->createForm(PublicationParcoursType::class, $publicationParcour, [
             'require_image' => false,
         ]);
@@ -343,6 +354,8 @@ final class PublicationParcoursController extends AbstractController
     #[Route('/{id}', name: 'app_publication_parcours_delete', methods: ['POST'])]
     public function delete(Request $request, PublicationParcours $publicationParcour, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessGranted('DELETE', $publicationParcour);
+
         $selectedParcoursId = $publicationParcour->getParcoursDeSante()?->getId();
 
         if ($this->isCsrfTokenValid('delete'.$publicationParcour->getId(), $request->getPayload()->getString('_token'))) {
@@ -526,5 +539,15 @@ final class PublicationParcoursController extends AbstractController
     private function extractPublicationHashtags(PublicationParcours $publication): array
     {
         return $this->hashtagExtractor->extractFromText((string) $publication->getTextPublication());
+    }
+
+    private function getAuthenticatedPatient(): Patient
+    {
+        $user = $this->getUser();
+        if (!$user instanceof Patient) {
+            throw $this->createAccessDeniedException('Only patients can create publications and comments.');
+        }
+
+        return $user;
     }
 }

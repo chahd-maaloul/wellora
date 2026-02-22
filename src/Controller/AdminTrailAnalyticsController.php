@@ -17,7 +17,7 @@ class AdminTrailAnalyticsController extends AbstractController
     #[Route('/admin/trail-analytics', name: 'admin_trail_analytics')]
     public function dashboard(): Response
     {
-        return $this->render('admin/trail-analytics/dashboard.html.twig');
+        return $this->redirectToRoute('admin_trail_safety');
     }
 
     #[Route('/admin/trail-analytics/usage', name: 'admin_trail_usage')]

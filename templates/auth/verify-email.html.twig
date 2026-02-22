@@ -1,13 +1,28 @@
 {% extends 'layouts/auth.html.twig' %}
 {% set auth_container_class = 'max-w-lg' %}
 
-{% block title %}Verify Your Email - WellCare Connect{% endblock %}
+{% block title %}Vérification d'email - WellCare Connect{% endblock %}
 
 {% block auth_heading %}{% endblock %}
 {% block auth_description %}{% endblock %}
 
 {% block auth_form %}
-<div class="flex flex-col items-center justify-center py-12">
+{# Success Banner for newly registered users #}
+{% if app.session.get('registration_success') %}
+<div class="p-4 mb-6 border border-green-200 rounded-lg bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+    <div class="flex items-center gap-3">
+        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+            <p class="font-medium text-green-800 dark:text-green-300">Votre compte a été créé avec succès !</p>
+            <p class="text-sm text-green-700 dark:text-green-400">Veuillez vérifier votre email pour activer votre compte.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="flex flex-col items-center justify-center py-8">
     <div class="w-full max-w-md text-center">
         {# Email Icon #}
         <div class="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
@@ -17,58 +32,176 @@
         </div>
 
         {# Heading #}
-        <h1 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">Check your email</h1>
-        <p class="mb-8 text-sm text-gray-600 dark:text-gray-400">
-            We've sent a verification link to your email address. Please click the link to verify your account.
-        </p>
-
-        {# Resend Email Form #}
-        <form action="/verify-email" method="POST" class="space-y-4" x-data="{ email: '', isSubmitting: false }" @submit.prevent="isSubmitting = true; $el.submit()">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('verify_email') }}">
-
-            <div class="space-y-1.5 text-left">
-                <label for="email" class="flex items-center gap-2 label">
-                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
+        <h1 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+            {% if app.user and not app.user.emailVerified %}
+                Email non vérifié
+            {% else %}
+                Vérifiez votre email
+            {% endif %}
+        </h1>
+        
+        {% if app.user %}
+            {# For logged in users #}
+            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                Bonjour <strong>{{ app.user.firstName }}</strong>, votre compte a été créé avec succès !<br>
+                Votre email: <span class="font-medium text-wellcare-600 dark:text-wellcare-400">{{ app.user.email }}</span>
+            </p>
+            
+            <div class="p-4 mb-6 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                <div class="flex items-start gap-3 text-left">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    Email address
-                </label>
-                <input 
-                    id="email" 
-                    name="email" 
-                    type="email" 
-                    x-model="email"
-                    required 
-                    class="w-full input pl-11"
-                    placeholder="you@example.com"
-                >
+                    <div class="text-sm text-blue-800 dark:text-blue-300">
+                        <p class="mb-1 font-medium">📧 Prochaine étape:</p>
+                        <p>Cliquez sur le bouton ci-dessous pour recevoir un email de vérification et activer votre compte.</p>
+                    </div>
+                </div>
+            </div>
+            
+            {# Resend Email Button for logged in users #}
+            <form action="{{ path('app_resend_verification_email') }}" method="POST" x-data="{ isSubmitting: false, success: false, message: '' }" @submit.prevent="isSubmitting = true; 
+                fetch($el.action, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    isSubmitting = false;
+                    success = data.success;
+                    message = data.message;
+                    $refs.successMessage.classList.remove('hidden');
+                    $refs.successMessage.classList.add('block');
+                    $refs.successMessage.classList.remove('hidden');
+                    $refs.successMessage.querySelector('.message-text').textContent = data.message;
+                });">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('resend_verification') }}">
+                
+                <div x-ref="successMessage" class="hidden p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                    <span class="font-medium">Succès!</span> <span class="message-text">Un nouvel email de vérification vous a été envoyé.</span>
+                </div>
+                
+                <button type="submit" :disabled="isSubmitting" class="w-full btn-primary">
+                    <span x-show="!isSubmitting" class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        📧 Vérifier mon adresse email
+                    </span>
+                    <span x-show="isSubmitting" class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Envoi en cours...
+                    </span>
+                </button>
+            </form>
+            
+            <div class="mt-6">
+                <a href="{{ path('app_logout') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                    Se déconnecter
+                </a>
+            </div>
+            
+        {% else %}
+            {# For non-logged in users #}
+            <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                Un lien de vérification a été envoyé à votre adresse email.<br>
+                Veuillez cliquer sur ce lien pour activer votre compte.
+            </p>
+
+            {# Steps to follow #}
+            <div class="p-4 mb-6 text-left border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                <h3 class="mb-3 font-medium text-blue-800 dark:text-blue-300">📋 Comment vérifier votre email:</h3>
+                <ol class="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+                    <li class="flex items-start gap-2">
+                        <span class="flex items-center justify-center flex-shrink-0 w-5 h-5 text-xs font-medium bg-blue-200 rounded-full dark:bg-blue-800">1</span>
+                        <span>Ouvrez votre boîte email</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="flex items-center justify-center flex-shrink-0 w-5 h-5 text-xs font-medium bg-blue-200 rounded-full dark:bg-blue-800">2</span>
+                        <span>Recherchez l'email de WellCare Connect</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="flex items-center justify-center flex-shrink-0 w-5 h-5 text-xs font-medium bg-blue-200 rounded-full dark:bg-blue-800">3</span>
+                        <span>Cliquez sur le lien de vérification</span>
+                    </li>
+                </ol>
             </div>
 
-            <button type="submit" :disabled="isSubmitting" class="w-full btn-primary">
-                <span x-show="!isSubmitting">Resend verification email</span>
-                <span x-show="isSubmitting" class="flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Sending...
-                </span>
-            </button>
-        </form>
+            {# Resend Email Form #}
+            <form action="{{ path('app_resend_verification_email_public') }}" method="POST" class="space-y-4" x-data="{ email: '{{ prefillEmail|default('')|e('js') }}', isSubmitting: false, success: false, message: '' }" @submit.prevent="isSubmitting = true; 
+                fetch('{{ path('app_resend_verification_email_public') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'email=' + encodeURIComponent(email)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    isSubmitting = false;
+                    success = data.success;
+                    message = data.message;
+                    $refs.messageBox.classList.remove('hidden');
+                    $refs.messageBox.classList.add('block');
+                    $refs.messageBox.classList.remove('hidden');
+                    $refs.messageBox.querySelector('.message-text').textContent = data.message;
+                });">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('verify_email') }}">
 
-        {# Back to Login #}
-        <div class="mt-6">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-                Already verified?
-                <a href="/login" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Sign in</a>
-            </p>
-        </div>
+                <div x-ref="messageBox" class="hidden p-4 mb-4 text-sm rounded-lg" :class="success ? 'bg-green-50 text-green-800 dark:bg-gray-800 dark:text-green-400' : 'bg-red-50 text-red-800 dark:bg-gray-800 dark:text-red-400'" role="alert">
+                    <span class="font-medium" x-text="success ? 'Succès!' : 'Erreur!'"></span> <span class="message-text" x-text="message"></span>
+                </div>
+
+                <div class="space-y-1.5 text-left">
+                    <label for="email" class="flex items-center gap-2 label">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
+                        </svg>
+                        Adresse email utilisée lors de l'inscription
+                    </label>
+                    <input 
+                        id="email" 
+                        name="email" 
+                        type="email" 
+                        x-model="email"
+                        required 
+                        class="w-full input pl-11"
+                        placeholder="vous@example.com"
+                    >
+                </div>
+
+                <button type="submit" :disabled="isSubmitting" class="w-full btn-primary">
+                    <span x-show="!isSubmitting" class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        📧 Renvoyer l'email de vérification
+                    </span>
+                    <span x-show="isSubmitting" class="flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Envoi en cours...
+                    </span>
+                </button>
+            </form>
+
+            {# Back to Login #}
+            <div class="mt-6">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Déjà vérifié?
+                    <a href="{{ path('app_login') }}" class="font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">Se connecter</a>
+                </p>
+            </div>
+        {% endif %}
 
         {# Help Link #}
         <div class="pt-6 mt-8 border-t border-gray-200 dark:border-gray-700">
             <p class="text-xs text-gray-500 dark:text-gray-400">
-                Didn't receive the email? Check your spam folder or
-                <a href="/contact" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">contact support</a>
+                💡 Vous n'avez pas reçu l'email? Vérifiez votre dossier spam ou<br>
+                <a href="#" class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 hover:underline">contactez le support</a>
             </p>
         </div>
     </div>

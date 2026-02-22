@@ -1,0 +1,77 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Appareils de Confiance - WellCare Connect{% endblock %}
+
+{% block body %}
+<div class="w-full max-w-2xl mx-auto">
+    <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+            <svg class="w-8 h-8 text-wellcare-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Appareils de Confiance</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Gérez les appareils sur lesquels vous ne serez pas demandé de code 2FA</p>
+    </div>
+
+    <div class="p-8 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+        {% if trustedDevices|length > 0 %}
+            <div class="mb-6 space-y-4">
+                {% for device in trustedDevices %}
+                    <div class="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                    {% if device.name is defined %}
+                                        {{ device.name }}
+                                    {% else %}
+                                        Appareil enregistré le {{ device.createdAt|date('d/m/Y') }}
+                                    {% endif %}
+                                </p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Expire le {{ device.expiresAt|date('d/m/Y à H:i') }}
+                                </p>
+                            </div>
+                        </div>
+                        <form action="{{ path('app_2fa_trusted_device_remove', {token: device.token}) }}" method="post">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('remove_device_' ~ device.token) }}">
+                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form action="{{ path('app_2fa_trusted_devices_clear_all') }}" method="post" class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('clear_all_devices') }}">
+                <button type="submit" 
+                        class="flex justify-center w-full px-4 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm dark:border-gray-600 dark:text-gray-300 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-wellcare-500">
+                    Supprimer tous les appareils
+                </button>
+            </form>
+        {% else %}
+            <div class="py-8 text-center">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <p class="mb-4 text-gray-600 dark:text-gray-400">Aucun appareil de confiance enregistré</p>
+                <p class="text-sm text-gray-500 dark:text-gray-500">
+                    Lorsque vous vous connectez avec un appareil de confiance, vous ne serez pas demandé de code 2FA pendant 30 jours.
+                </p>
+            </div>
+        {% endif %}
+
+        <div class="mt-8 text-center">
+            <a href="{{ path('app_2fa_manage') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-wellcare-600">
+                ← Retour à la gestion 2FA
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
