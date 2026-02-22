@@ -572,11 +572,11 @@ class NutritionAIService
         
         $repo = $this->entityManager->getRepository(WaterIntake::class);
         $today = new DateTime();
-        $intakes = $repo->findByUserAndDate($this->userId, $today);
+        $intakes = $repo->findByUserIdAndDate($this->userId, $today);
         
         $total = 0;
         foreach ($intakes as $intake) {
-            $total += $intake->getAmount() ?? 0;
+            $total += $intake->getGlasses() ?? 0;
         }
         
         return $total / 1000; // Convert to liters

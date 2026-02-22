@@ -97,22 +97,24 @@ class NutritionController extends AbstractController
             $foodItems = $foodLog->getFoodItems();
             
             // Items inside FoodLog
-            foreach ($foodItems as $item) {
-                $totalCalories += $item->getCalories();
-                $totalProteins += floatval($item->getProtein());
-                $totalCarbs += floatval($item->getCarbs());
-                $totalFats += floatval($item->getFats());
-                
-                $meals[$mealType]['calories'] += $item->getCalories();
-                $meals[$mealType]['items'][] = [
-                    'name' => $item->getName(),
-                    'calories' => $item->getCalories(),
-                    'protein' => $item->getProtein() ?: 0,
-                    'carbs' => $item->getCarbs() ?: 0,
-                    'fats' => $item->getFats() ?: 0,
-                    'id' => $item->getId(),
-                    'category' => $item->getCategory()
-                ];
+            if ($foodItems) {
+                foreach ($foodItems as $item) {
+                    $totalCalories += $item->getCalories();
+                    $totalProteins += floatval($item->getProtein());
+                    $totalCarbs += floatval($item->getCarbs());
+                    $totalFats += floatval($item->getFats());
+                    
+                    $meals[$mealType]['calories'] += $item->getCalories();
+                    $meals[$mealType]['items'][] = [
+                        'name' => $item->getName(),
+                        'calories' => $item->getCalories(),
+                        'protein' => $item->getProtein() ?: 0,
+                        'carbs' => $item->getCarbs() ?: 0,
+                        'fats' => $item->getFats() ?: 0,
+                        'id' => $item->getId(),
+                        'category' => $item->getCategory()
+                    ];
+                }
             }
         }
 
@@ -125,17 +127,20 @@ class NutritionController extends AbstractController
         $quickAddFoods = [];
         $foodNames = [];
         foreach ($recentFoods as $log) {
-            foreach ($log->getFoodItems() as $item) {
-                if (!in_array($item->getName(), $foodNames)) {
-                    $foodNames[] = $item->getName();
-                    $quickAddFoods[] = [
-                        'name' => $item->getName(),
-                        'calories' => $item->getCalories(),
-                        'unit' => $item->getUnit() ?: 'serving'
-                    ];
-                }
-                if (count($quickAddFoods) >= 6) {
-                    break 2;
+            $logItems = $log->getFoodItems();
+            if ($logItems) {
+                foreach ($logItems as $item) {
+                    if (!in_array($item->getName(), $foodNames)) {
+                        $foodNames[] = $item->getName();
+                        $quickAddFoods[] = [
+                            'name' => $item->getName(),
+                            'calories' => $item->getCalories(),
+                            'unit' => $item->getUnit() ?: 'serving'
+                        ];
+                    }
+                    if (count($quickAddFoods) >= 6) {
+                        break 2;
+                    }
                 }
             }
         }
@@ -1689,10 +1694,10 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         }
         
         // Get water intake
-        $waterIntakes = $waterIntakeRepository->findByUserAndDate($userId, $today);
+        $waterIntakes = $waterIntakeRepository->findByUserIdAndDate($userId, $today);
         $water = 0;
         foreach ($waterIntakes as $intake) {
-            $water += $intake->getAmount() ?? 0;
+            $water += $intake->getGlasses() ?? 0;
         }
         
         $stats = [
@@ -2565,7 +2570,7 @@ Lipides: 70-80% des calories
         $totalWater = 0;
         
         foreach ($foodLogs as $log) {
-            $totalCalories += $log->getCalories() ?? 0;
+            $totalCalories += $log->getTotalCalories() ?? 0;
             $totalProteins += $log->getProtein() ?? 0;
             $totalCarbs += $log->getCarbs() ?? 0;
             $totalFats += $log->getFats() ?? 0;
