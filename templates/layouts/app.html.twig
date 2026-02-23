@@ -201,13 +201,13 @@
                                     <a href="/healthjournal/new" role="menuitem" class="sidebar-sublink" :class="isActive('/healthjournal/new') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Nouvelle Entrée</a>
                                 </li>
                                 <li role="none">
-                                    <a href="/health/prediction" role="menuitem" class="sidebar-sublink" :class="isActive('/health/prediction') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">🤖 Prédiction IA</a>
+                                    <a href="/health/prediction" role="menuitem" class="sidebar-sublink" :class="isActive('/health/prediction') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Prédiction IA</a>
                                 </li>
                                 <li role="none">
                                     <a href="/health/calendar" role="menuitem" class="sidebar-sublink" :class="isActive('/health/calendar') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Calendrier</a>
                                 </li>
                                 <li role="none">
-                                    <a href="{{ path('app_health_report_index') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/health/report') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">📄 Rapport de Santé</a>
+                                    <a href="{{ path('app_health_report_index') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/health/report') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Rapport de Santé</a>
                                 </li>
                                 <li role="none">
                                     <a href="/health/records" role="menuitem" class="sidebar-sublink" :class="isActive('/health/records') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Historique Médical</a>
@@ -725,7 +725,7 @@
                         </li>
 
                         {# Doctor Analytics #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/doctor/analytics', '/doctor/analytics/journal', '/doctor/analytics/report', '/doctor/analytics/compare']) }" x-show="!collapsed || isGroupActive(['/doctor/analytics', '/doctor/analytics/journal', '/doctor/analytics/report', '/doctor/analytics/compare']) }">
+                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/doctor/analytics', '/doctor/analytics/journal', '/doctor/analytics/report']) }" x-show="!collapsed || isGroupActive(['/doctor/analytics', '/doctor/analytics/journal', '/doctor/analytics/report']) }">
                             <button 
                                 @click="if (!collapsed) open = !open"
                                 class="w-full sidebar-link sidebar-link-inactive"
@@ -748,9 +748,7 @@
                                 <li role="none">
                                     <a href="/doctor/analytics" role="menuitem" class="sidebar-sublink" :class="isActive('/doctor/analytics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Dashboard</a>
                                 </li>
-                                <li role="none">
-                                    <a href="/doctor/analytics/compare" role="menuitem" class="sidebar-sublink" :class="isActive('/doctor/analytics/compare') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Comparer Journals</a>
-                                </li>
+
                             </ul>
                         </li>
 

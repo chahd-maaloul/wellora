@@ -41,6 +41,10 @@
             </div>
             
             <div class="flex items-center gap-2">
+                <a href="{{ path('app_healthjournal_compare') }}" class="btn-secondary">
+                    <i class="fa-solid fa-scale-balanced mr-2"></i>
+                    {{ 'Comparer'|trans }}
+                </a>
                 <a href="{{ path('app_healthjournal_new') }}" class="btn-primary">
                     <i class="fa-solid fa-plus mr-2"></i>
                     {{ 'Nouveau Journal'|trans }}

@@ -240,4 +240,86 @@ final class HealthjournalController extends AbstractController
 
         return $this->redirectToRoute('app_healthjournal_index', [], Response::HTTP_SEE_OTHER);
     }
+
+    /**
+     * Compare two journals
+     */
+    #[Route('/healthjournal/compare', name: 'app_healthjournal_compare', methods: ['GET'])]
+    public function compare(
+        Request $request,
+        HealthjournalRepository $healthjournalRepository,
+        HealthentryRepository $healthentryRepository
+    ): Response {
+        $journal1Id = $request->query->get('journal1');
+        $journal2Id = $request->query->get('journal2');
+
+        $journals = $healthjournalRepository->findAll();
+
+        $comparison = null;
+        if ($journal1Id && $journal2Id && $journal1Id !== $journal2Id) {
+            $journal1 = $healthjournalRepository->find($journal1Id);
+            $journal2 = $healthjournalRepository->find($journal2Id);
+
+            if ($journal1 && $journal2) {
+                $comparison = $this->compareJournals($journal1, $journal2, $healthentryRepository);
+            }
+        }
+
+        return $this->render('healthjournal/compare.html.twig', [
+            'journals' => $journals,
+            'selectedJournal1' => $journal1Id,
+            'selectedJournal2' => $journal2Id,
+            'comparison' => $comparison,
+        ]);
+    }
+
+    /**
+     * Compare two journals - private helper method
+     */
+    private function compareJournals(Healthjournal $j1, Healthjournal $j2, HealthentryRepository $entryRepository): array
+    {
+        $entries1 = $entryRepository->createQueryBuilder('e')
+            ->where('e.journal = :journal')
+            ->setParameter('journal', $j1)
+            ->getQuery()
+            ->getResult();
+        
+        $entries2 = $entryRepository->createQueryBuilder('e')
+            ->where('e.journal = :journal')
+            ->setParameter('journal', $j2)
+            ->getQuery()
+            ->getResult();
+
+        $getStats = function($entries) {
+            $weights = array_map(fn($e) => $e->getPoids(), $entries);
+            $glycemies = array_map(fn($e) => $e->getGlycemie(), $entries);
+            
+            return [
+                'count' => count($entries),
+                'avgWeight' => count($weights) > 0 ? round(array_sum($weights) / count($weights), 1) : 0,
+                'avgGlycemie' => count($glycemies) > 0 ? round(array_sum($glycemies) / count($glycemies), 2) : 0,
+                'weightChange' => count($weights) >= 2 ? round(end($weights) - $weights[0], 1) : 0,
+            ];
+        };
+
+        $stats1 = $getStats($entries1);
+        $stats2 = $getStats($entries2);
+
+        return [
+            'journal1' => [
+                'name' => $j1->getName(),
+                'period' => $j1->getDatedebut()->format('d/m/Y') . ' - ' . ($j1->getDatefin()?->format('d/m/Y') ?? 'Present'),
+                'stats' => $stats1,
+            ],
+            'journal2' => [
+                'name' => $j2->getName(),
+                'period' => $j2->getDatedebut()->format('d/m/Y') . ' - ' . ($j2->getDatefin()?->format('d/m/Y') ?? 'Present'),
+                'stats' => $stats2,
+            ],
+            'differences' => [
+                'weight' => round($stats2['avgWeight'] - $stats1['avgWeight'], 1),
+                'glycemie' => round($stats2['avgGlycemie'] - $stats1['avgGlycemie'], 2),
+            ],
+        ];
+    }
 }

@@ -467,8 +467,8 @@ document.addEventListener('alpine:init', () => {
         currentWeight: {{ current_weight|default(70.8) }},
         weightVariation: {{ weight_variation|default(-1.7) }},
         bmi: 23.2,
-        avgIntensity: {{ avg_intensity|default(3.6) }},
-        totalSymptoms: {{ total_symptoms|default(7) }},
+        avgIntensity: {{ avg_intensity|default(3.6)|round }},
+        totalSymptoms: {{ total_symptoms|default(7)|round }},
         
         // Scores (0-100) - These will be recalculated by calculateMetrics()
         glycemicScore: {{ glycemic_score|default(80) }},

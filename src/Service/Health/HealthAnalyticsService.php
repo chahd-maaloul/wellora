@@ -247,8 +247,8 @@ final class HealthAnalyticsService
             currentWeight: !empty($weight) ? end($weight) : 0.0,
             weightVariation: $this->calculateWeightVariation($weight),
             avgIntensity: !empty($metrics->symptomIntensity) 
-                ? array_sum($metrics->symptomIntensity) / count($metrics->symptomIntensity) 
-                : 0.0,
+                ? round(array_sum($metrics->symptomIntensity) / count($metrics->symptomIntensity))
+                : 0,
             totalSymptomIntensity: array_sum($metrics->symptomIntensity),
             startDate: !empty($metrics->dates) ? $metrics->dates[0] : null,
             endDate: !empty($metrics->dates) ? end($metrics->dates) : null,
