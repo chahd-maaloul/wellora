@@ -1,0 +1,430 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Calendrier Santé - {{ parent() }}{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-950{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">Tableau de bord</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/healthjournal" class="breadcrumb-link">Journal</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">Calendrier</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full" x-data="{ sidebarOpen: false }">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <svg class="w-6 h-6 text-wellcare-600 dark:text-wellcare-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        Calendrier de Santé
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Visualisez vos scores de santé quotidiens
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {# Sidebar - Journal Selection & Legend #}
+        <div class="lg:col-span-1 space-y-4">
+            {# Journal Selection Card #}
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-5">
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+                    Sélectionner un journal
+                </h3>
+                {% if journals is defined and journals|length > 0 %}
+                    <select id="journal-select" 
+                            class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 transition-colors"
+                            onchange="window.location.href = '{{ path('app_health_calendar') }}?journal_id=' + this.value">
+                        <option value="0" {% if selectedJournalId == 0 or selectedJournalId is null %}selected{% endif %}>
+                            📊 Tous les journaux
+                        </option>
+                        {% for journal in journals %}
+                            <option value="{{ journal.id }}" {% if selectedJournalId == journal.id %}selected{% endif %}>
+                                📋 {{ journal.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                {% else %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Aucun journal trouvé</p>
+                {% endif %}
+            </div>
+
+            {# Legend Card #}
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-5">
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+                    Légende des scores
+                </h3>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">> 70 Excellent</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">55-70 Bon</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">40-55 Moyen</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">25-40 Faible</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">< 25 Critique</span>
+                    </div>
+                </div>
+            </div>
+
+            {# Quick Info Card #}
+            <div class="bg-gradient-to-br from-wellcare-500 to-wellcare-600 rounded-xl shadow-lg p-5 text-white">
+                <h3 class="font-semibold mb-2 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Information
+                </h3>
+                <p class="text-sm text-wellcare-100">
+                    Cliquez sur un jour pour voir les détails de votre santé. Les événements en vert indiquent une bonne santé.
+                </p>
+            </div>
+        </div>
+
+        {# Main Calendar Area #}
+        <div class="lg:col-span-3">
+            {# Error message (hidden by default) #}
+            <div id="calendar-error" class="hidden mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p class="text-sm text-red-600 dark:text-red-400">
+                    <strong>Erreur:</strong> Impossible de charger les événements du calendrier.
+                </p>
+            </div>
+
+            {# Calendar Container #}
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <div class="p-6">
+                    <div id="calendar-holder" class="health-calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Modal for Event Details #}
+<div id="event-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        {# Background overlay #}
+        <div id="modal-overlay" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeEventModal()"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        {# Modal content #}
+        <div class="relative inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            {# Modal header #}
+            <div class="bg-gradient-to-r from-wellcare-500 to-wellcare-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2" id="modal-title">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Détails du Score
+                    </h3>
+                    <button onclick="closeEventModal()" class="text-white hover:text-wellcare-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p id="modal-date" class="text-wellcare-100 mt-1"></p>
+            </div>
+
+            {# Modal body #}
+            <div class="px-6 py-6">
+                {# Overall Score #}
+                <div class="flex items-center justify-center mb-6">
+                    <div class="text-center">
+                        <div id="modal-score-circle" class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold text-white mb-2">
+                            <span id="modal-score-value">--</span>
+                        </div>
+                        <p id="modal-grade" class="text-lg font-semibold text-gray-700 dark:text-gray-300"></p>
+                    </div>
+                </div>
+
+                {# Detailed scores grid #}
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Glycémie</p>
+                        <p id="modal-glycemic" class="text-lg font-bold text-gray-800 dark:text-white">--</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Tension</p>
+                        <p id="modal-blood-pressure" class="text-lg font-bold text-gray-800 dark:text-white">--</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Sommeil</p>
+                        <p id="modal-sleep" class="text-lg font-bold text-gray-800 dark:text-white">--</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Symptômes</p>
+                        <p id="modal-symptom" class="text-lg font-bold text-gray-800 dark:text-white">--</p>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center col-span-2">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Poids</p>
+                        <p id="modal-weight" class="text-lg font-bold text-gray-800 dark:text-white">--</p>
+                    </div>
+                </div>
+            </div>
+
+            {# Modal footer #}
+            <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4">
+                <button onclick="closeEventModal()" class="w-full px-4 py-2 bg-wellcare-600 hover:bg-wellcare-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    
+    {# FullCalendar JavaScript from CDN #}
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    
+    <script>
+        function openEventModal(info) {
+            var props = info.event.extendedProps;
+            var date = new Date(info.event.startStr).toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Set date
+            document.getElementById('modal-date').textContent = date;
+            
+            // Set score with color
+            var score = props.score !== undefined ? Math.round(props.score) : 0;
+            var scoreEl = document.getElementById('modal-score-value');
+            var circleEl = document.getElementById('modal-score-circle');
+            scoreEl.textContent = score;
+            
+            // Color based on score
+            var colorClass = '';
+            if (score >= 70) {
+                colorClass = 'bg-green-500';
+            } else if (score >= 55) {
+                colorClass = 'bg-blue-500';
+            } else if (score >= 40) {
+                colorClass = 'bg-yellow-500';
+            } else if (score >= 25) {
+                colorClass = 'bg-orange-500';
+            } else {
+                colorClass = 'bg-red-500';
+            }
+            circleEl.className = 'w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold text-white mb-2 ' + colorClass;
+            
+            // Set grade
+            var gradeEmoji = props.gradeEmoji || '';
+            var gradeText = props.grade || 'N/A';
+            document.getElementById('modal-grade').textContent = gradeEmoji + ' Grade: ' + gradeText;
+            
+            // Set detailed scores
+            document.getElementById('modal-glycemic').textContent = props.glycemicScore !== undefined ? Math.round(props.glycemicScore) : '-';
+            document.getElementById('modal-blood-pressure').textContent = props.bloodPressureScore !== undefined ? Math.round(props.bloodPressureScore) : '-';
+            document.getElementById('modal-sleep').textContent = props.sleepScore !== undefined ? Math.round(props.sleepScore) : '-';
+            document.getElementById('modal-symptom').textContent = props.symptomScore !== undefined ? Math.round(props.symptomScore) : '-';
+            document.getElementById('modal-weight').textContent = props.weightScore !== undefined ? Math.round(props.weightScore) : '-';
+            
+            // Show modal
+            document.getElementById('event-modal').classList.remove('hidden');
+        }
+        
+        function closeEventModal() {
+            document.getElementById('event-modal').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar-holder');
+            
+            if (!calendarEl) {
+                console.error('Calendar holder element not found');
+                return;
+            }
+
+            var journalId = {{ selectedJournalId|default(0) }};
+            var initialDate = {{ initialDate ? ("'" ~ initialDate ~ "'")|raw : 'null' }};
+            console.log('Initializing calendar for journal ID:', journalId, 'initialDate:', initialDate);
+            
+            var calendarOptions = {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listMonth'
+                },
+                editable: false,
+                dayMaxEvents: 3,
+                weekends: true,
+                locale: 'fr',
+                buttonText: {
+                    today: "Aujourd'hui",
+                    month: 'Mois',
+                    list: 'Liste'
+                },
+                eventSources: [
+                    {
+                        url: '{{ path("fc_load_events") }}',
+                        method: 'POST',
+                        extraParams: function() {
+                            return {
+                                filters: JSON.stringify({
+                                    journal_id: journalId
+                                })
+                            };
+                        },
+                        failure: function(error) {
+                            console.error('Failed to load calendar events:', error);
+                            var msgEl = document.getElementById('calendar-error');
+                            if (msgEl) {
+                                msgEl.classList.remove('hidden');
+                            }
+                        },
+                        success: function(events) {
+                            console.log('Loaded', events.length, 'calendar events');
+                        }
+                    }
+                ],
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    openEventModal(info);
+                },
+                eventDidMount: function(info) {
+                    var props = info.event.extendedProps;
+                    if (props && props.score !== undefined) {
+                        info.el.title = 'Score: ' + Math.round(props.score) + ' - Cliquez pour les détails';
+                    }
+                }
+            };
+
+            // If a specific journal is selected, navigate to its start date
+            if (initialDate) {
+                calendarOptions.initialDate = initialDate;
+            }
+
+            var calendar = new FullCalendar.Calendar(calendarEl, calendarOptions);
+            calendar.render();
+        });
+    </script>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    
+    {# FullCalendar CSS #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fullcalendar/list@6.1.8/main.min.css">
+    
+    <style>
+        /* Custom FullCalendar styling */
+        .health-calendar .fc-toolbar-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .dark .health-calendar .fc-toolbar-title {
+            color: #f3f4f6;
+        }
+        
+        .health-calendar .fc-button-primary {
+            background-color: #00A790 !important;
+            border-color: #00A790 !important;
+        }
+        
+        .health-calendar .fc-button-primary:hover {
+            background-color: #008c75 !important;
+            border-color: #008c75 !important;
+        }
+        
+        .health-calendar .fc-button-primary:disabled {
+            background-color: #9ca3af !important;
+            border-color: #9ca3af !important;
+        }
+        
+        .health-calendar .fc-day-today {
+            background-color: #f0fdf4 !important;
+        }
+        .dark .health-calendar .fc-day-today {
+            background-color: #14532d !important;
+        }
+        
+        .health-calendar .fc-event {
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none !important;
+        }
+        
+        .health-calendar .fc-event:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .health-calendar .fc-daygrid-event-dot {
+            display: none;
+        }
+        
+        .health-calendar .fc-h-event .fc-event-main {
+            padding: 2px 4px;
+        }
+        
+        .health-calendar .fc-col-header-cell-cushion {
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+        .dark .health-calendar .fc-col-header-cell-cushion {
+            color: #9ca3af;
+        }
+        
+        .health-calendar .fc-daygrid-day-number {
+            color: #374151;
+            font-weight: 500;
+        }
+        .dark .health-calendar .fc-daygrid-day-number {
+            color: #d1d5db;
+        }
+    </style>
+{% endblock %}

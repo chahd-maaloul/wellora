@@ -322,7 +322,7 @@
         Register as Patient
       </a>
       <span class="text-gray-300 dark:text-gray-700">|</span>
-      <button type="button" class="font-medium transition-colors text-wellcare-dark-600 hover:text-wellcare-dark-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-dark-300 hover:underline" onclick="document.getElementById('professionalModal').classList.remove('hidden')">
+      <button type="button" class="font-medium transition-colors text-wellcare-dark-600 hover:text-wellcare-dark-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-dark-300 hover:underline" @click="$dispatch('toggle-professional-modal', true)">
         Join as Professional
       </button>
     </div>

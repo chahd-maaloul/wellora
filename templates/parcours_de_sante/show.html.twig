@@ -11,7 +11,15 @@
 {% set heroImageRaw = parcours_de_sante.imageParcours|default('') %}
 {% set heroImageIsExternal = heroImageRaw starts with 'http://' or heroImageRaw starts with 'https://' %}
 {% set heroImageLocalPath = heroImageRaw starts with '/' ? heroImageRaw : '/' ~ heroImageRaw %}
-{% set heroImage = heroImageRaw ? (heroImageIsExternal ? heroImageRaw : heroImageLocalPath) : 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=1600&h=900&fit=crop' %}
+{% if heroImageRaw %}
+    {% if heroImageIsExternal %}
+        {% set heroImage = heroImageRaw %}
+    {% else %}
+        {% set heroImage = asset(heroImageLocalPath) %}
+    {% endif %}
+{% else %}
+    {% set heroImage = 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=1600&h=900&fit=crop' %}
+{% endif %}
 {% set weatherCondition = weather and weather.condition ? weather.condition : 'Unavailable' %}
 {% set weatherConditionKey = weatherCondition|lower %}
 {% set latitude = map_data and map_data.latitude is not null ? map_data.latitude : parcours_de_sante.latitudeParcours %}

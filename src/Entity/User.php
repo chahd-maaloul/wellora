@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\UserRole;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
@@ -137,10 +139,43 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $trustedDevices = [];
 
+    #[ORM\OneToMany(targetEntity: Healthjournal::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $healthJournals;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->uuid = Uuid::v4()->toRfc4122();
+        $this->healthJournals = new ArrayCollection();
+    }
+
+    /**
+     * @return Collection<int, Healthjournal>
+     */
+    public function getHealthJournals(): Collection
+    {
+        return $this->healthJournals;
+    }
+
+    public function addHealthJournal(Healthjournal $healthJournal): static
+    {
+        if (!$this->healthJournals->contains($healthJournal)) {
+            $this->healthJournals->add($healthJournal);
+            $healthJournal->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHealthJournal(Healthjournal $healthJournal): static
+    {
+        if ($this->healthJournals->removeElement($healthJournal)) {
+            if ($healthJournal->getUser() === $this) {
+                $healthJournal->setUser(null);
+            }
+        }
+
+        return $this;
     }
 
     public function getUuid(): ?string

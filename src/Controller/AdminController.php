@@ -7,11 +7,81 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Repository\HealthentryRepository;
+use App\Repository\HealthjournalRepository;
 
 #[Route('/admin', name: 'admin_')]
 #[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
+    public function __construct(
+        private readonly HealthentryRepository $entryRepository,
+        private readonly HealthjournalRepository $journalRepository,
+    ) {}
+
+    /**
+     * Health Backoffice - View health entries and journals statistics
+     */
+    #[Route('/health', name: 'health')]
+    public function healthBackoffice(): Response
+    {
+        // Get total counts
+        $totalEntries = $this->entryRepository->count([]);
+        $totalJournals = $this->journalRepository->count([]);
+        
+        // Get journals with entry counts
+        $journals = $this->journalRepository->findAll();
+        $journalsWithEntries = [];
+        
+        foreach ($journals as $journal) {
+            $entryCount = $this->entryRepository->count(['journal' => $journal]);
+            $journalsWithEntries[] = [
+                'id' => $journal->getId(),
+                'name' => $journal->getName(),
+                'dateDebut' => $journal->getDatedebut()?->format('Y-m-d'),
+                'dateFin' => $journal->getDatefin()?->format('Y-m-d'),
+                'entryCount' => $entryCount,
+                'status' => $journal->getDatefin() && $journal->getDatefin() < new \DateTime() ? 'Closed' : 'Active',
+            ];
+        }
+        
+        // Sort by entry count descending
+        usort($journalsWithEntries, function($a, $b) {
+            return $b['entryCount'] - $a['entryCount'];
+        });
+        
+        // Get recent entries
+        $recentEntries = $this->entryRepository->findBy([], ['date' => 'DESC'], 10);
+        $recentEntriesData = [];
+        
+        foreach ($recentEntries as $entry) {
+            $recentEntriesData[] = [
+                'id' => $entry->getId(),
+                'date' => $entry->getDate()?->format('Y-m-d H:i'),
+                'glycemie' => $entry->getGlycemie(),
+                'tension' => $entry->getTension(),
+                'poids' => $entry->getPoids(),
+                'journalName' => $entry->getJournal()?->getName(),
+            ];
+        }
+        
+        // Calculate statistics
+        $stats = [
+            'totalEntries' => $totalEntries,
+            'totalJournals' => $totalJournals,
+            'activeJournals' => count(array_filter($journalsWithEntries, fn($j) => $j['status'] === 'Active')),
+            'closedJournals' => count(array_filter($journalsWithEntries, fn($j) => $j['status'] === 'Closed')),
+            'avgEntriesPerJournal' => $totalJournals > 0 ? round($totalEntries / $totalJournals, 1) : 0,
+        ];
+        
+        return $this->render('admin/health-backoffice.html.twig', [
+            'pageTitle' => 'Health Backoffice - WellCare Connect',
+            'stats' => $stats,
+            'journals' => $journalsWithEntries,
+            'recentEntries' => $recentEntriesData,
+        ]);
+    }
+
     /**
      * Admin Dashboard - Main entry point for administrators
      */

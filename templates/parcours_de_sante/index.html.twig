@@ -290,7 +290,15 @@
                 {% set parcoursImageLocalPath = parcoursImage starts with '/' ? parcoursImage : '/' ~ parcoursImage %}
                 <div class="overflow-hidden transition bg-white border border-gray-100 shadow-sm cursor-pointer dark:bg-gray-800 rounded-xl dark:border-gray-700 hover:shadow-md" onclick="window.location.href='{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}'">
                     <div class="relative h-36 bg-gray-200 dark:bg-gray-700">
-                        <img src="{{ parcoursImage ? (parcoursImageIsExternal ? parcoursImage : parcoursImageLocalPath|imagine_filter('parcours_card')) : 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop' }}" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                        {% if parcoursImage %}
+                            {% if parcoursImageIsExternal %}
+                                <img src="{{ parcoursImage }}" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                            {% else %}
+                                <img src="{{ asset(parcoursImageLocalPath) }}" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                            {% endif %}
+                        {% else %}
+                            <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                        {% endif %}
                         {% if is_granted('EDIT', parcours) or is_granted('DELETE', parcours) %}
                             <div class="absolute flex items-center gap-2 top-2 right-2">
                                 {% if is_granted('EDIT', parcours) %}
@@ -341,7 +349,15 @@
                 {% set parcoursImageIsExternal = parcoursImage starts with 'http://' or parcoursImage starts with 'https://' %}
                 {% set parcoursImageLocalPath = parcoursImage starts with '/' ? parcoursImage : '/' ~ parcoursImage %}
                 <div class="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onclick="window.location.href='{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}'">
-                    <img src="{{ parcoursImage ? (parcoursImageIsExternal ? parcoursImage : parcoursImageLocalPath|imagine_filter('parcours_card')) : 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=60&h=60&fit=crop' }}" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                    {% if parcoursImage %}
+                        {% if parcoursImageIsExternal %}
+                            <img src="{{ parcoursImage }}" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                        {% else %}
+                            <img src="{{ asset(parcoursImageLocalPath) }}" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                        {% endif %}
+                    {% else %}
+                        <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=60&h=60&fit=crop" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                    {% endif %}
                     <div class="flex-1">
                         <h3 class="font-semibold text-gray-900 dark:text-white">{{ parcours.nomParcours }}</h3>
                         <p class="text-xs text-gray-500"><i class="mr-1 fa-solid fa-location-dot"></i>{{ parcours.localisationParcours }}</p>

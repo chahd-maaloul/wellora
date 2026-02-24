@@ -178,7 +178,7 @@
                         </li>
 
                         {# Patient Health Dropdown #}
-                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/health']) }" x-show="!collapsed || isGroupActive(['/health'])">
+                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/health', '/healthentry', '/healthjournal', '/health/analytics', '/health/prediction', '/health/calendar', '/health/report']) }" x-show="!collapsed || isGroupActive(['/health', '/healthentry', '/healthjournal', '/health/analytics', '/health/prediction', '/health/calendar', '/health/report'])">
                             <button 
                                 @click="if (!collapsed) open = !open"
                                 class="w-full sidebar-link sidebar-link-inactive"
@@ -199,6 +199,24 @@
                             </button>
                             <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
                                 <li role="none">
+                                    <a href="/healthjournal" role="menuitem" class="sidebar-sublink" :class="isActive('/healthjournal') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/healthentry" role="menuitem" class="sidebar-sublink" :class="isActive('/healthentry') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Mes Entrées</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/health/analytics" role="menuitem" class="sidebar-sublink" :class="isActive('/health/analytics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Analyses</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/health/prediction" role="menuitem" class="sidebar-sublink" :class="isActive('/health/prediction') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Prédiction IA</a>
+                                </li>
+                                <li role="none">
+                                    <a href="/health/calendar" role="menuitem" class="sidebar-sublink" :class="isActive('/health/calendar') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Calendrier</a>
+                                </li>
+                                <li role="none">
+                                    <a href="{{ path('app_health_report_index') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/health/report') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Rapport de Santé</a>
+                                </li>
+                                <li role="none">
                                     <a href="/health/records" role="menuitem" class="sidebar-sublink" :class="isActive('/health/records') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Historique Médical</a>
                                 </li>
                                 <li role="none">
@@ -209,15 +227,6 @@
                                 </li>
                                 <li role="none">
                                     <a href="/health/billing" role="menuitem" class="sidebar-sublink" :class="isActive('/health/billing') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Facturation</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/health/analytics" role="menuitem" class="sidebar-sublink" :class="isActive('/health/analytics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Analyses</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/health/journal" role="menuitem" class="sidebar-sublink" :class="isActive('/health/journal') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal</a>
-                                </li>
-                                <li role="none">
-                                    <a href="/health/symptoms" role="menuitem" class="sidebar-sublink" :class="isActive('/health/symptoms') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Symptômes</a>
                                 </li>
                             </ul>
                         </li>
@@ -473,8 +482,24 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                                     </svg>
                                 </span>
+<<<<<<< HEAD
                                 <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Messages</span>
                             </a>
+=======
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Accessibilité</span>
+                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
+                                <li role="none">
+                                    <a href="{{ path('app_health_accessible_body_map') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/health/accessible/body-map') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Carte Corporelle</a>
+                                </li>
+                                <li role="none">
+                                    <a href="{{ path('app_health_journal_accessible') }}" role="menuitem" class="sidebar-sublink" :class="isActive('/health/journal/accessible') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Journal d'Entrée</a>
+                                </li>
+                            </ul>
+>>>>>>> khalil/journal
                         </li>
                         <li role="none">
                             <a href="/coach/reports" 
@@ -617,6 +642,7 @@
                                 <span x-show="!collapsed" class="sidebar-text">Disponibilité</span>
                             </a>
                         </li>
+<<<<<<< HEAD
                         <li role="none">
                             <a href="/health/analytics/doctor" 
                                role="menuitem"
@@ -626,12 +652,40 @@
                                :title="collapsed ? 'Analyses' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
+=======
+
+                        {# Doctor Analytics #}
+                        <li role="none" x-data="{ open: !collapsed && isGroupActive(['/doctor/analytics', '/doctor/analytics/journal', '/doctor/analytics/report']) }" x-show="!collapsed || isGroupActive(['/doctor/analytics', '/doctor/analytics/journal', '/doctor/analytics/report']) }">
+                            <button 
+                                @click="if (!collapsed) open = !open"
+                                class="w-full sidebar-link sidebar-link-inactive"
+                                :class="[open ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : '', collapsed ? 'justify-center px-2' : '']"
+                                aria-haspopup="true"
+                                :aria-expanded="open"
+                                :title="collapsed ? 'Analyses' : ''"
+                            >
+                                <span class="sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+>>>>>>> khalil/journal
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                     </svg>
                                 </span>
+<<<<<<< HEAD
                                 <span x-show="!collapsed" class="sidebar-text">Analyses</span>
                             </a>
+=======
+                                <span x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-text">Analyses</span>
+                                <svg x-show="!collapsed" x-transition:enter="transition-opacity duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="sidebar-chevron" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <ul x-show="open && !collapsed" x-collapse class="mt-1 space-y-1 pl-11" role="menu">
+                                <li role="none">
+                                    <a href="/doctor/analytics" role="menuitem" class="sidebar-sublink" :class="isActive('/doctor/analytics') ? 'sidebar-sublink-active' : 'sidebar-sublink-inactive'">Dashboard</a>
+                                </li>
+
+                            </ul>
+>>>>>>> khalil/journal
                         </li>
                     </ul>
                 </div>
@@ -836,6 +890,22 @@
                             </a>
                         </li>
                         <li role="none">
+                            <a href="{{ path('admin_health') }}" 
+                               role="menuitem"
+                               class="sidebar-link"
+                               :class="[isActive('/admin/health') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/admin/health')"
+                               :title="collapsed ? 'Santé' : ''"
+                            >
+                                <span class="text-gray-500 sidebar-icon" :class="collapsed ? 'w-6 h-6' : ''">
+                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                </span>
+                                <span x-show="!collapsed" class="sidebar-text">Journal de santé</span>
+                            </a>
+                        </li>
+                        <li role="none">
                             <a href="/admin/analytics" 
                                role="menuitem"
                                class="sidebar-link"
@@ -961,6 +1031,18 @@
             </header>
 
             <main id="main-content" class="flex-1 p-4 overflow-y-auto sm:p-6 lg:p-8 page-content" tabindex="-1">
+                {# Flash Messages #}
+                {% for type, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg flash-message flash-{{ type }}" style="background-color: {% if type == 'success' %}#dcfce7{% elseif type == 'error' %}#fee2e2{% elseif type == 'warning' %}#fef3c7{% else %}#dbeafe{% endif %}; border: 1px solid {% if type == 'success' %}#22c55e{% elseif type == 'error' %}#ef4444{% elseif type == 'warning' %}#f59e0b{% else %}#3b82f6{% endif %};" role="alert">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid {% if type == 'success' %}fa-check-circle text-green-600{% elseif type == 'error' %}fa-exclamation-circle text-red-600{% elseif type == 'warning' %}fa-exclamation-triangle text-yellow-600{% else %}fa-info-circle text-blue-600{% endif %}"></i>
+                                <p class="text-sm font-medium" style="color: {% if type == 'success' %}#166534{% elseif type == 'error' %}#991b1b{% elseif type == 'warning' %}#92400e{% else %}#1e40af{% endif %};">{{ message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+                
                 {% block body %}
                 {% endblock %}
             </main>

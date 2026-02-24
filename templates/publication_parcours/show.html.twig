@@ -23,7 +23,7 @@
             {% set image_src = image %}
         {% else %}
             {% set image_path = image starts with '/' ? image : (image starts with 'uploads/' ? '/' ~ image : '/uploads/parcours/' ~ image) %}
-            {% set image_src = image_path|imagine_filter('publication_original') %}
+            {% set image_src = asset(image_path) %}
         {% endif %}
     {% endif %}
 

@@ -1,21 +1,56 @@
 liip_imagine:
-    driver: gd
-
     filter_sets:
         cache: ~
 
+        # Parcours de Santé filters
         parcours_card:
-            quality: 100
+            quality: 85
             filters:
                 thumbnail:
                     size: [480, 320]
                     mode: outbound
 
+        parcours_thumbnail:
+            quality: 80
+            filters:
+                thumbnail:
+                    size: [60, 60]
+                    mode: outbound
+
         parcours_detail:
-            quality: 100
+            quality: 90
             filters:
                 thumbnail:
                     size: [1200, 700]
+                    mode: outbound
+
+        parcours_list:
+            quality: 85
+            filters:
+                thumbnail:
+                    size: [400, 250]
+                    mode: outbound
+
+        # Publication Parcours filters
+        publication_thumbnail:
+            quality: 80
+            filters:
+                thumbnail:
+                    size: [100, 100]
+                    mode: outbound
+
+        publication_card:
+            quality: 85
+            filters:
+                thumbnail:
+                    size: [350, 250]
+                    mode: outbound
+
+        publication_detail:
+            quality: 90
+            filters:
+                thumbnail:
+                    size: [800, 600]
                     mode: outbound
 
         publication_original:

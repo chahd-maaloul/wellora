@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Symptom index{% endblock %}
+
+{% block body %}
+    <h1>Symptom index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Type</th>
+                <th>Intensite</th>
+                <th>Date_observation</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for symptom in symptoms %}
+            <tr>
+                <td>{{ symptom.id }}</td>
+                <td>{{ symptom.type }}</td>
+                <td>{{ symptom.intensite }}</td>
+                <td>{{ symptom.dateObservation ? symptom.dateObservation|date('Y-m-d') : '' }}</td>
+                <td>
+                    <a href="{{ path('app_symptom_show', {'id': symptom.id}) }}">show</a>
+                    <a href="{{ path('app_symptom_edit', {'id': symptom.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_symptom_new') }}">Create new</a>
+{% endblock %}
