@@ -19,6 +19,8 @@ use App\Repository\NutritionGoalRepository;
 use App\Repository\WaterIntakeRepository;
 use App\Repository\AiConversationRepository;
 use App\Service\NutritionAIService;
+use App\Service\GroceryListPdfService;
+use App\Service\TunisianPriceService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -1308,9 +1310,95 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
     }
 
     #[Route('/grocery-list', name: 'grocery_list')]
-    public function groceryList(): Response
+    public function groceryList(Request $request): Response
     {
-        return $this->render('nutrition/grocery-list.html.twig');
+        $pdfService = new GroceryListPdfService();
+        $priceService = new TunisianPriceService();
+        
+        // Get all available items from price service
+        $allPrices = $priceService->getAllPrices();
+        
+        // Create indexed array for Twig
+        $availableItems = [];
+        foreach ($allPrices as $name => $data) {
+            $availableItems[$name] = $data;
+        }
+        
+        // Initialize cart items from session or default
+        $session = $request->getSession();
+        $cartItems = $session->get('grocery_cart', $pdfService->getSampleGroceryList());
+        
+        // Handle form submission (update quantities)
+        if ($request->isMethod('POST')) {
+            $items = $request->request->all('items');
+            if (!is_array($items)) {
+                $items = [];
+            }
+            $cartItems = [];
+            
+            foreach ($items as $idx => $itemData) {
+                if (is_array($itemData) && !empty($itemData['name']) && isset($itemData['selected'])) {
+                    // Get price data for this item
+                    $priceData = $priceService->getPrice($itemData['name']);
+                    $unit = $priceData['unit'] ?? 'pièce';
+                    
+                    $cartItems[] = [
+                        'name' => $itemData['name'],
+                        'quantity' => floatval($itemData['quantity'] ?? 1),
+                        'unit' => $unit,
+                        'selected' => true,
+                    ];
+                }
+            }
+            
+            $session->set('grocery_cart', $cartItems);
+            
+            // Check if PDF button was clicked
+            if ($request->request->has('generate_pdf')) {
+                return $this->redirectToRoute('nutrition_grocery_list_pdf');
+            }
+            
+            // Check if print button was clicked
+            if ($request->request->has('print_list')) {
+                return $this->render('nutrition/grocery-list.html.twig', [
+                    'cartItems' => $cartItems,
+                    'availableItems' => $availableItems,
+                    'printMode' => true,
+                ]);
+            }
+            
+            // Check if clear cart button was clicked
+            if ($request->request->has('clear_cart')) {
+                $session->remove('grocery_cart');
+                return $this->redirectToRoute('nutrition_grocery_list');
+            }
+        }
+        
+        return $this->render('nutrition/grocery-list.html.twig', [
+            'cartItems' => $cartItems,
+            'availableItems' => $availableItems,
+        ]);
+    }
+
+    #[Route('/grocery-list/pdf', name: 'grocery_list_pdf')]
+    public function groceryListPdf(GroceryListPdfService $pdfService, Request $request): Response
+    {
+        // Get the grocery items from the session or generate sample data
+        $session = $request->getSession();
+        $groceryItems = $session->get('grocery_cart', $pdfService->getSampleGroceryList());
+        
+        // Generate the PDF
+        $pdfContent = $pdfService->generateGroceryListPdf($groceryItems);
+        
+        // Return the PDF as a response
+        return new Response(
+            $pdfContent,
+            200,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="liste-courses-wellcare.pdf"',
+            ]
+        );
     }
 
     #[Route('/ai-assistant', name: 'ai_assistant')]

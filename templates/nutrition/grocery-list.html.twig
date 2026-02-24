@@ -11,25 +11,31 @@
         .no-print { display: none !important; }
         .print-header { display: block !important; margin-bottom: 20px; }
         .shadow-lg { box-shadow: none !important; }
-        .dark\\:bg-gray-800 { background: white !important; }
-        .dark\\:text-white { color: #333 !important; }
-        .dark\\:text-gray-300 { color: #333 !important; }
-        .dark\\:text-gray-400 { color: #666 !important; }
-        .dark\\:text-gray-500 { color: #666 !important; }
-        .dark\\:text-gray-900 { color: black !important; }
-        .dark\\:bg-gray-700 { background: #f5f5f5 !important; }
-        .dark\\:bg-gray-100 { background: #f0f0f0 !important; }
+        .dark\:bg-gray-800 { background: white !important; }
+        .dark\:text-white { color: #333 !important; }
+        .dark\:text-gray-300 { color: #333 !important; }
+        .dark\:text-gray-400 { color: #666 !important; }
+        .dark\:text-gray-500 { color: #666 !important; }
+        .dark\:text-gray-900 { color: black !important; }
+        .dark\:bg-gray-700 { background: #f5f5f5 !important; }
+        .dark\:bg-gray-100 { background: #f0f0f0 !important; }
         input[type="checkbox"] { 
             width: 20px !important; 
             height: 20px !important; 
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important; 
         }
-        table { font-size: 12pt !important; width: 100% !important; }
-        th, td { padding: 8px 12px !important; }
+        input[type="number"] { 
+            border: none !important; 
+            background: transparent !important;
+            width: 60px !important;
+        }
+        table { font-size: 11pt !important; width: 100% !important; }
+        th, td { padding: 6px 8px !important; }
         .category-row td { font-weight: bold !important; }
         h1 { font-size: 24pt !important; color: black !important; }
         tr { page-break-inside: avoid !important; }
+        .total-row { font-weight: bold !important; background: #f0f0f0 !important; }
     }
     @media screen {
         .print-header { display: none; }
@@ -41,12 +47,12 @@
 
 {% block body %}
 <div class="min-h-screen py-8">
-    <div class="max-w-5xl px-4 mx-auto">
+    <div class="max-w-7xl px-4 mx-auto">
         {# Header #}
         <div class="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Liste de courses</h1>
-                <p class="mt-1 text-gray-500 dark:text-gray-400">Préparez vos courses pour la semaine</p>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Sélectionnez les articles et ajustez les quantités</p>
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ path('nutrition_dashboard') }}" 
@@ -54,10 +60,6 @@
                     <i class="mr-2 fas fa-arrow-left"></i>
                     Retour
                 </a>
-                <button onclick="window.print()" class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-wellcare-500 rounded-lg hover:bg-wellcare-600">
-                    <i class="mr-2 fas fa-print"></i>
-                    Imprimer
-                </button>
             </div>
         </div>
 
@@ -67,218 +69,286 @@
             <p class="text-sm text-gray-600">Date: {{ "now"|date("d/m/Y") }}</p>
         </div>
 
-        {# Table View #}
-        <div class="bg-white shadow-lg dark:bg-gray-800 rounded-xl overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gray-100 dark:bg-gray-700">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Catégorie</th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Article</th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Quantité</th>
-                        <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 w-16">✓</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    {# Fruits & Légumes #}
-                    <tr class="category-row">
-                        <td colspan="4" class="px-4 py-2 bg-green-50 dark:bg-green-900/20 font-semibold text-green-700 dark:text-green-400">
-                            <i class="mr-2 fas fa-carrot"></i>Fruits & Légumes
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Pommes</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">6 pièces</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Bananes</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 kg</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Carottes</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Salade</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 pièce</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Tomates</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Avocats</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">3 pièces</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-
-                    {# Viandes & Poissons #}
-                    <tr class="category-row">
-                        <td colspan="4" class="px-4 py-2 bg-red-50 dark:bg-red-900/20 font-semibold text-red-700 dark:text-red-400">
-                            <i class="mr-2 fas fa-drumstick-bite"></i>Viandes & Poissons
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Poulet</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 kg</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Saumon</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">400 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Oeufs</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">12 pièces</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Thon (boîte)</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">2 boîtes</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-
-                    {# Produits laitiers #}
-                    <tr class="category-row">
-                        <td colspan="4" class="px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 font-semibold text-yellow-700 dark:text-yellow-400">
-                            <i class="mr-2 fas fa-cheese"></i>Produits laitiers
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Lait</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 L</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Yaourts grecs</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">4 pots</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Fromage frais</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">200 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-
-                    {# Épicerie #}
-                    <tr class="category-row">
-                        <td colspan="4" class="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 font-semibold text-amber-700 dark:text-amber-400">
-                            <i class="mr-2 fas fa-box"></i>Épicerie
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Riz complet</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Quinoa</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">400 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Pâtes complètes</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">500 g</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Pain complet</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 pain</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Compote de pommes</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">4 pots</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-
-                    {# Boissons #}
-                    <tr class="category-row">
-                        <td colspan="4" class="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 font-semibold text-blue-700 dark:text-blue-400">
-                            <i class="mr-2 fas fa-glass-water"></i>Boissons
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Eau minérale</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">6 litres</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Jus de fruits naturel</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 L</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-
-                    {# Condiments #}
-                    <tr class="category-row">
-                        <td colspan="4" class="px-4 py-2 bg-purple-50 dark:bg-purple-900/20 font-semibold text-purple-700 dark:text-purple-400">
-                            <i class="mr-2 fas fa-wine-bottle"></i>Condiments
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Huile d'olive</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 bouteille</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Vinaigre balsamique</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">1 bouteille</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400"></td>
-                        <td class="px-4 py-2 text-gray-900 dark:text-white">Sel, poivre, épices</td>
-                        <td class="px-4 py-2 text-gray-500 dark:text-gray-400">au goût</td>
-                        <td class="px-4 py-2 text-center"><input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-wellcare-500"></td>
-                    </tr>
-                </tbody>
-                <tfoot class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <td colspan="3" class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total articles:</td>
-                        <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">32</td>
-                    </tr>
-                </tfoot>
-            </table>
+        {# Summary Cards #}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 no-print">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <i class="text-green-600 dark:text-green-400 fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Articles</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="selected-count">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <i class="text-blue-600 dark:text-blue-400 fas fa-fire-alt text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Calories</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="total-calories">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                        <i class="text-yellow-600 dark:text-yellow-400 fas fa-coins text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="total-price">0dt000</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 bg-wellcare-100 dark:bg-wellcare-900/30 rounded-lg">
+                        <i class="text-wellcare-600 dark:text-wellcare-400 fas fa-utensils text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Catégories</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white" id="category-count">0</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {# Tips - Hidden when printing #}
-        <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl no-print">
-            <h3 class="font-semibold text-blue-700 dark:text-blue-400 mb-2">
-                <i class="mr-2 fas fa-lightbulb"></i>Conseils pour vos courses
-            </h3>
-            <ul class="text-sm text-blue-600 dark:text-blue-300 space-y-1">
-                <li>• Planifiez vos repas avant de faire vos courses</li>
-                <li>• Faites une liste et respectez-la pour éviter les achats impulsifs</li>
-                <li>• Privilégiez les produits frais et de saison</li>
-            </ul>
+        {# Main Form #}
+        <form method="POST" id="grocery-form">
+            {# Action Buttons #}
+            <div class="flex flex-wrap gap-3 mb-6 no-print">
+                <button type="submit" name="update_cart" value="1" class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
+                    <i class="mr-2 fas fa-sync-alt"></i>
+                    Mettre à jour
+                </button>
+                <button type="submit" name="generate_pdf" value="1" class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-wellcare-500 rounded-lg hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-file-pdf"></i>
+                    Télécharger PDF
+                </button>
+                <button type="button" onclick="window.print()" class="inline-flex items-center px-4 py-2 font-medium text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600">
+                    <i class="mr-2 fas fa-print"></i>
+                    Imprimer
+                </button>
+                <button type="submit" name="clear_cart" value="1" class="inline-flex items-center px-4 py-2 font-medium text-red-600 transition-colors border border-red-300 rounded-lg hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20">
+                    <i class="mr-2 fas fa-trash"></i>
+                    Réinitialiser
+                </button>
+            </div>
+
+            {# Table View #}
+            <div class="bg-white shadow-lg dark:bg-gray-800 rounded-xl overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-3 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 w-10">✓</th>
+                            <th class="px-3 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Article</th>
+                            <th class="px-3 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 w-24">Catégorie</th>
+                            <th class="px-3 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 w-20">Cal.</th>
+                            <th class="px-3 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 w-24">Quantité</th>
+                            <th class="px-3 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 w-20">Prix U.</th>
+                            <th class="px-3 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300 w-20">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        {% set totalPrice = 0 %}
+                        {% set totalCalories = 0 %}
+                        {% set selectedCount = 0 %}
+                        {% set categorySet = [] %}
+                        
+                        {# Display items with inline grouping #}
+                        {% for item in cartItems %}
+                            {% set idx = loop.index0 %}
+                            {% set itemData = availableItems[item.name]|default({price: 0, unit: 'pièce', category: 'Autres', calories: 0}) %}
+                            {% set unitPrice = itemData.price|default(0) %}
+                            {% set unit = itemData.unit|default('pièce') %}
+                            {% set category = itemData.category|default('Autres') %}
+                            {% set calories = itemData.calories|default(0) %}
+                            {% set itemTotal = (unitPrice * item.quantity) %}
+                            {% set itemCalories = (calories * item.quantity) %}
+                            {% set isSelected = item.selected|default(true) %}
+                            
+                            {% if isSelected %}
+                                {% set totalPrice = totalPrice + itemTotal %}
+                                {% set totalCalories = totalCalories + itemCalories %}
+                                {% set selectedCount = selectedCount + 1 %}
+                                {% if category not in categorySet %}
+                                    {% set categorySet = categorySet|merge([category]) %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            {# Category Header #}
+                            {% if idx == 0 or (availableItems[cartItems[idx-1].name]|default({category: 'Autres'}).category|default('Autres') != category) %}
+                                <tr class="category-row">
+                                    <td colspan="7" class="px-3 py-2 bg-green-50 dark:bg-green-900/20 font-semibold text-green-700 dark:text-green-400">
+                                        <i class="mr-2 fas fa-folder"></i>{{ category }}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            
+                            <tr class="{{ isSelected ? '' : 'opacity-50' }}">
+                                <td class="px-3 py-2 text-center">
+                                    <input type="checkbox" 
+                                           name="items[{{ idx }}][selected]" 
+                                           value="1"
+                                           {{ isSelected ? 'checked' : '' }}
+                                           class="w-5 h-5 rounded border-gray-300 text-wellcare-500 item-checkbox"
+                                           data-price="{{ unitPrice }}"
+                                           data-calories="{{ calories }}"
+                                           data-quantity="{{ item.quantity }}">
+                                    <input type="hidden" name="items[{{ idx }}][name]" value="{{ item.name }}">
+                                    <input type="hidden" name="items[{{ idx }}][unit]" value="{{ unit }}">
+                                </td>
+                                <td class="px-3 py-2 text-gray-900 dark:text-white font-medium">
+                                    {{ item.name }}
+                                </td>
+                                <td class="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">
+                                    {{ category }}
+                                </td>
+                                <td class="px-3 py-2 text-orange-600 dark:text-orange-400 text-xs font-medium">
+                                    {% if calories > 0 %}{{ calories }} kcal/100g{% else %} - {% endif %}
+                                </td>
+                                <td class="px-3 py-2">
+                                    <div class="flex items-center">
+                                        <input type="number" 
+                                               name="items[{{ idx }}][quantity]" 
+                                               value="{{ item.quantity }}" 
+                                               min="0.1" 
+                                               step="0.1"
+                                               class="w-18 px-2 py-1 text-center text-sm border border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white quantity-input"
+                                               {{ not isSelected ? 'disabled' : '' }}>
+                                        <span class="ml-1 text-xs text-gray-500 dark:text-gray-400">{{ unit }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-2 text-right text-gray-900 dark:text-white text-sm">
+                                    <span class="price-display" data-price="{{ unitPrice }}"></span>
+                                </td>
+                                <td class="px-3 py-2 text-right font-medium text-gray-900 dark:text-white text-sm item-total" data-price="{{ itemTotal }}"></td>
+                            </tr>
+                        {% endfor %}
+                        
+                        {# Total Row #}
+                        <tr class="total-row bg-gray-100 dark:bg-gray-700">
+                            <td colspan="6" class="px-3 py-3 text-right text-lg font-bold text-gray-900 dark:text-white">
+                                TOTAL:
+                            </td>
+                            <td class="px-3 py-3 text-right text-lg font-bold text-wellcare-600 dark:text-wellcare-400 grand-total" data-price="{{ totalPrice }}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+
+        {# Price Legend #}
+        <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl no-print">
+            <div class="flex items-start">
+                <i class="text-yellow-600 dark:text-yellow-400 fas fa-info-circle mt-1 mr-3"></i>
+                <div>
+                    <h3 class="font-semibold text-yellow-800 dark:text-yellow-300">Prix indicatifs</h3>
+                    <p class="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                        Les prix affichés sont basés sur les prix moyens du marché tunisien (DT = Dinars Tunisiens). Les calories sont estimées pour 100g.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-{% endblock body %}
+
+
+{# JavaScript for price calculation #}
+<script>
+function formatPrice(price) {
+    var dt = Math.floor(price);
+    var ml = Math.round((price - dt) * 1000);
+    return dt + 'dt' + ml.toString().padStart(3, '0');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Format initial prices in table
+    document.querySelectorAll('.price-display').forEach(function(el) {
+        var price = parseFloat(el.dataset.price) || 0;
+        el.textContent = formatPrice(price);
+    });
+    
+    document.querySelectorAll('.item-total').forEach(function(el) {
+        var price = parseFloat(el.dataset.price) || 0;
+        el.textContent = formatPrice(price);
+    });
+    
+    document.querySelectorAll('.grand-total').forEach(function(el) {
+        var price = parseFloat(el.dataset.price) || 0;
+        el.textContent = formatPrice(price);
+    });
+    
+    function updateTotals() {
+        let total = 0;
+        let totalCal = 0;
+        let selectedCount = 0;
+        
+        document.querySelectorAll('.item-checkbox:checked').forEach(function(checkbox) {
+            const price = parseFloat(checkbox.dataset.price) || 0;
+            const calories = parseFloat(checkbox.dataset.calories) || 0;
+            const quantity = parseFloat(checkbox.closest('tr').querySelector('.quantity-input').value) || 0;
+            total += price * quantity;
+            totalCal += calories * quantity;
+            selectedCount++;
+        });
+        
+        document.getElementById('total-price').textContent = formatPrice(total);
+        document.getElementById('total-calories').textContent = totalCal.toLocaleString();
+        document.getElementById('selected-count').textContent = selectedCount;
+        
+        // Update grand total in table
+        const grandTotal = document.querySelector('.grand-total');
+        if (grandTotal) {
+            grandTotal.textContent = formatPrice(total);
+        }
+        
+        // Update individual item totals
+        document.querySelectorAll('.item-checkbox:checked').forEach(function(checkbox) {
+            const row = checkbox.closest('tr');
+            const price = parseFloat(checkbox.dataset.price) || 0;
+            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+            const totalCell = row.querySelector('.item-total');
+            if (totalCell) {
+                totalCell.textContent = formatPrice(price * quantity);
+            }
+        });
+    }
+    
+    // Event listeners
+    document.querySelectorAll('.item-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            const quantityInput = this.closest('tr').querySelector('.quantity-input');
+            quantityInput.disabled = !this.checked;
+            this.closest('tr').style.opacity = this.checked ? '1' : '0.5';
+            updateTotals();
+        });
+    });
+    
+    document.querySelectorAll('.quantity-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+            const row = this.closest('tr');
+            const checkbox = row.querySelector('.item-checkbox');
+            const price = parseFloat(checkbox.dataset.price) || 0;
+            const quantity = parseFloat(this.value) || 0;
+            const totalCell = row.querySelector('.item-total');
+            
+            if (totalCell) {
+                totalCell.textContent = formatPrice(price * quantity);
+            }
+            
+            if (checkbox.checked) {
+                updateTotals();
+            }
+        });
+    });
+    
+    // Initial calculation
+    updateTotals();
+});
+</script>
+{% endblock %}
