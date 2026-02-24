@@ -1,0 +1,254 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle Consultation - Tableau de Bord Nutrisioniste - WellCare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-4xl">
+        {# Header #}
+        <div class="flex items-center gap-4 mb-8">
+            <a href="{{ path('nutrisioniste_dash') }}" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="text-xl fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Nouvelle Consultation</h1>
+                <p class="text-gray-500 dark:text-gray-400">Planifiez une consultation avec un patient</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {# Main Form #}
+            <div class="lg:col-span-2">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-wellcare-500 to-wellcare-600">
+                        <h2 class="text-xl font-semibold text-white">Créer une consultation</h2>
+                        <p class="text-wellcare-100 text-sm mt-1">Remplissez les détails du rendez-vous</p>
+                    </div>
+                    
+                    <form method="post" class="p-6">
+                        <div class="space-y-6">
+                            {# Patient Selection #}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="mr-1 fas fa-user"></i> Patient
+                                </label>
+                                <select name="patient" required class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                                    <option value="">Sélectionner un patient...</option>
+                                    {% for patient in patients|default([]) %}
+                                    <option value="{{ patient.userId }}">{{ patient.name|default('Patient #' ~ patient.userId) }}</option>
+                                    {% endfor %}
+                                    <option value="1">Marie Dubois</option>
+                                    <option value="2">Jean Martin</option>
+                                    <option value="3">Sophie Bernard</option>
+                                    <option value="4">Ahmed Trabelsi</option>
+                                </select>
+                            </div>
+
+                            {# Date & Time #}
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="mr-1 fas fa-calendar"></i> Date
+                                    </label>
+                                    <input type="date" name="date" required min="{{ "now"|date("Y-m-d") }}" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="mr-1 fas fa-clock"></i> Heure
+                                    </label>
+                                    <select name="time" required class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
+                                        <option value="">Sélectionner...</option>
+                                        <option value="09:00">09:00</option>
+                                        <option value="09:30">09:30</option>
+                                        <option value="10:00">10:00</option>
+                                        <option value="10:30">10:30</option>
+                                        <option value="11:00">11:00</option>
+                                        <option value="11:30">11:30</option>
+                                        <option value="14:00">14:00</option>
+                                        <option value="14:30">14:30</option>
+                                        <option value="15:00">15:00</option>
+                                        <option value="15:30">15:30</option>
+                                        <option value="16:00">16:00</option>
+                                        <option value="16:30">16:30</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {# Consultation Type #}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="mr-1 fas fa-stethoscope"></i> Type de consultation
+                                </label>
+                                <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="type" value="initial" class="w-4 h-4 text-wellcare-500 focus:ring-wellcare-500">
+                                        <div>
+                                            <span class="block font-medium text-gray-900 dark:text-white">Consultation initiale</span>
+                                            <span class="text-sm text-gray-500">60 min • 100€</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="type" value="followup" class="w-4 h-4 text-wellcare-500 focus:ring-wellcare-500">
+                                        <div>
+                                            <span class="block font-medium text-gray-900 dark:text-white">Suivi mensuel</span>
+                                            <span class="text-sm text-gray-500">45 min • 80€</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="type" value="weekly" class="w-4 h-4 text-wellcare-500 focus:ring-wellcare-500">
+                                        <div>
+                                            <span class="block font-medium text-gray-900 dark:text-white">Suivi hebdomadaire</span>
+                                            <span class="text-sm text-gray-500">30 min • 45€</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="type" value="review" class="w-4 h-4 text-wellcare-500 focus:ring-wellcare-500">
+                                        <div>
+                                            <span class="block font-medium text-gray-900 dark:text-white">Bilan nutritionnel</span>
+                                            <span class="text-sm text-gray-500">60 min • 100€</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {# Duration #}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="mr-1 fas fa-hourglass-half"></i> Durée
+                                </label>
+                                <div class="flex gap-3">
+                                    <label class="flex-1 flex items-center justify-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="duration" value="30" class="w-4 h-4 text-wellcare-500">
+                                        <span class="text-gray-900 dark:text-white">30 min</span>
+                                    </label>
+                                    <label class="flex-1 flex items-center justify-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="duration" value="45" class="w-4 h-4 text-wellcare-500">
+                                        <span class="text-gray-900 dark:text-white">45 min</span>
+                                    </label>
+                                    <label class="flex-1 flex items-center justify-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <input type="radio" name="duration" value="60" class="w-4 h-4 text-wellcare-500">
+                                        <span class="text-gray-900 dark:text-white">60 min</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {# Notes #}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="mr-1 fas fa-sticky-note"></i> Notes / Objectifs
+                                </label>
+                                <textarea name="notes" rows="4" 
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent" 
+                                          placeholder="Notes sur les objectifs du patient, sujets à discuter..."></textarea>
+                            </div>
+
+                            {# Reminder #}
+                            <div class="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <input type="checkbox" name="send_reminder" id="send_reminder" checked class="mt-1 w-4 h-4 text-wellcare-500 rounded focus:ring-wellcare-500">
+                                <label for="send_reminder" class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>Envoyer un rappel automatique</strong> au patient 24h avant la consultation
+                                </label>
+                            </div>
+
+                            {# Action Buttons #}
+                            <div class="flex gap-3 pt-4">
+                                <a href="{{ path('nutrisioniste_dash') }}" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-gray-700 border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i class="fas fa-times"></i>
+                                    Annuler
+                                </a>
+                                <button type="submit" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                    <i class="fas fa-calendar-check"></i>
+                                    Créer la consultation
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# Sidebar #}
+            <div class="space-y-6">
+                {# Quick Tips #}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">
+                        <i class="mr-2 text-wellcare-500 fas fa-lightbulb"></i>Conseils
+                    </h3>
+                    <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                        <li class="flex items-start gap-2">
+                            <i class="mt-1 text-wellcare-500 fas fa-check"></i>
+                            <span>Vérifiez la disponibilité du patient avant de planifier</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="mt-1 text-wellcare-500 fas fa-check"></i>
+                            <span>Préparez les documents du patient à l'avance</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="mt-1 text-wellcare-500 fas fa-check"></i>
+                            <span>Notez les sujets à discuter pendant la consultation</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {# Upcoming #}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">
+                        <i class="mr-2 text-wellcare-500 fas fa-calendar"></i>Vos prochaines consultations
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <span class="text-xs font-medium text-wellcare-600">FEV</span>
+                                <span class="text-sm font-bold text-wellcare-600">22</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">10:00 - Marie D.</p>
+                                <p class="text-xs text-gray-500">Suivi hebdomadaire</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-600">
+                                <span class="text-xs font-medium text-gray-600 dark:text-gray-300">MAR</span>
+                                <span class="text-sm font-bold text-gray-600 dark:text-gray-300">01</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">14:30 - Jean M.</p>
+                                <p class="text-xs text-gray-500">Bilan mensuel</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ path('nutrisioniste_schedule') }}" class="block mt-4 text-sm text-center text-wellcare-500 hover:text-wellcare-600">
+                        Voir le calendrier complet
+                    </a>
+                </div>
+
+                {# Links #}
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Liens rapides</h3>
+                    <div class="space-y-2">
+                        <a href="{{ path('nutrisioniste_messages') }}" class="flex items-center gap-3 p-3 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <i class="fas fa-envelope"></i>
+                            <span class="text-sm">Messages patients</span>
+                        </a>
+                        <a href="{{ path('nutrisioniste_patients') }}" class="flex items-center gap-3 p-3 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <i class="fas fa-users"></i>
+                            <span class="text-sm">Mes patients</span>
+                        </a>
+                        <a href="{{ path('nutrisioniste_dash') }}" class="flex items-center gap-3 p-3 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <i class="fas fa-home"></i>
+                            <span class="text-sm">Tableau de bord</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

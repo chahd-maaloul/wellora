@@ -1,6 +1,6 @@
 {#
     Consultation Page
-    Video consultation with nutritionist - works without JavaScript
+    Video consultation with nutritionist - professional version without JavaScript
 #}
 
 {% extends 'layouts/app.html.twig' %}
@@ -21,165 +21,341 @@
                 <div>
                     <h1 class="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
                         <i class="text-3xl fas fa-video text-wellcare-500"></i>
-                        Consultation Vidéo
+                        Consultation Nutritionniste
                     </h1>
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">Prenez rendez-vous avec votre nutritionniste</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">Planifiez et gérez vos consultations vidéo</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ path('nutrition_messages', {nutritionistId: 1}) }}" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="mr-2 fas fa-envelope"></i>Messages
+                    </a>
+                    <a href="{{ path('nutrition_dashboard') }}" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="mr-2 fas fa-home"></i>Tableau de bord
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <main class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        {# Nutritionist Info #}
-        <div class="p-6 mb-8 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
-            <div class="flex items-center gap-4">
-                <div class="flex items-center justify-center w-20 h-20 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                    <i class="text-3xl fas fa-user-md text-wellcare-500"></i>
-                </div>
-                <div class="flex-1">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Dr. Marie Laurent</h2>
-                    <p class="text-gray-500 dark:text-gray-400">Spécialiste en nutrition sportive et équilibrée</p>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
-                            <i class="mr-1 text-xs fas fa-circle"></i>
-                            Disponible
-                        </span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Prochaine disponibilité: 25/02/2026 14:00</span>
+        {# Quick Stats #}
+        <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-4">
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30">
+                        <i class="text-green-500 fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Consultations à venir</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">2</p>
                     </div>
                 </div>
-                <a href="#" class="px-6 py-3 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                    <i class="mr-2 fas fa-calendar-check"></i>
-                    Prendre rendez-vous
-                </a>
             </div>
-        </div>
-
-        {# Upcoming Appointments #}
-        <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                <h3 class="font-semibold text-gray-900 dark:text-white">Prochaines consultations</h3>
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <i class="text-blue-500 fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Consultations effectuées</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">5</p>
+                    </div>
+                </div>
             </div>
-            <div class="p-6">
-                {# Static sample appointments #}
-                <div class="flex items-center justify-between p-4 mb-4 border border-gray-100 rounded-lg dark:border-gray-700">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                            <i class="text-wellcare-500 fas fa-video"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900 dark:text-white">22/02/2026 10:00</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">30 minutes - Suivi hebdomadaire</p>
-                        </div>
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                        <i class="text-purple-500 fas fa-clock"></i>
                     </div>
-                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        Confirmée
-                    </span>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Heures de consultation</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">3h 45</p>
+                    </div>
                 </div>
-
-                <div class="flex items-center justify-between p-4 mb-4 border border-gray-100 rounded-lg dark:border-gray-700">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                            <i class="text-wellcare-500 fas fa-video"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900 dark:text-white">01/03/2026 14:30</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">45 minutes - Bilan mensuel</p>
-                        </div>
+            </div>
+            <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                        <i class="text-amber-500 fas fa-star"></i>
                     </div>
-                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        Confirmée
-                    </span>
-                </div>
-
-                <div class="flex items-center justify-between p-4 border border-gray-100 rounded-lg dark:border-gray-700">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                            <i class="text-wellcare-500 fas fa-video"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-900 dark:text-white">08/03/2026 09:00</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">30 minutes - Consultation de suivi</p>
-                        </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Note du nutritionist</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">4.9</p>
                     </div>
-                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                        En attente
-                    </span>
                 </div>
             </div>
         </div>
 
-        {# Consultation Types #}
-        <div class="grid grid-cols-1 gap-6 mt-8 md:grid-cols-3">
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
-                <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <i class="text-xl text-blue-500 fas fa-calendar-week"></i>
+        {# Main Content Grid #}
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {# Left Column - Upcoming Appointments #}
+            <div class="lg:col-span-2 space-y-6">
+                {# Nutritionist Info #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <div class="flex flex-col gap-4 md:flex-row md:items-center">
+                        <div class="flex items-center justify-center w-20 h-20 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                            <i class="text-3xl fas fa-user-md text-wellcare-500"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Dr. Marie Laurent</h2>
+                                <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
+                                    <i class="mr-1 text-xs fas fa-circle"></i>
+                                    Disponible
+                                </span>
+                            </div>
+                            <p class="text-gray-500 dark:text-gray-400">Spécialiste en nutrition sportive et équilibrée</p>
+                            <div class="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                <span><i class="mr-1 fas fa-star text-amber-500"></i> 4.9/5 (120 avis)</span>
+                                <span><i class="mr-1 fas fa-briefcase"></i> 8 ans d'expérience</span>
+                                <span><i class="mr-1 fas fa-video"></i> Visioconférence</span>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="#" class="block w-full px-6 py-3 text-center text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                <i class="mr-2 fas fa-calendar-plus"></i>
+                                Prendre rendez-vous
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">Consultation hebdomadaire</h4>
-                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Suivi régulier de votre progression nutritionnelle</p>
-                <div class="flex items-center justify-between">
-                    <span class="text-lg font-bold text-gray-900 dark:text-white">45€</span>
-                    <span class="text-sm text-gray-500">30 min</span>
+
+                {# Upcoming Appointments #}
+                <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Prochaines consultations</h3>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">2 rendez-vous</span>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        {# Appointment 1 #}
+                        <div class="flex flex-col gap-4 p-4 border border-gray-100 rounded-lg dark:border-gray-700 md:flex-row md:items-center">
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                                    <span class="text-xs font-medium text-wellcare-600 dark:text-wellcare-400">FEV</span>
+                                    <span class="text-lg font-bold text-wellcare-600 dark:text-wellcare-400">22</span>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">10:00 - 10:30</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Suivi hebdomadaire</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 md:ml-auto">
+                                <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                    <i class="mr-1 fas fa-check"></i> Confirmée
+                                </span>
+                                <a href="#" class="p-2 text-gray-400 hover:text-wellcare-500" title="Rejoindre">
+                                    <i class="fas fa-video"></i>
+                                </a>
+                                <a href="#" class="p-2 text-gray-400 hover:text-red-500" title="Annuler">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        {# Appointment 2 #}
+                        <div class="flex flex-col gap-4 p-4 border border-gray-100 rounded-lg dark:border-gray-700 md:flex-row md:items-center">
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400">MAR</span>
+                                    <span class="text-lg font-bold text-gray-600 dark:text-gray-400">01</span>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">14:30 - 15:15</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Bilan mensuel (45 min)</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 md:ml-auto">
+                                <span class="px-3 py-1 text-sm font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                    <i class="mr-1 fas fa-clock"></i> En attente
+                                </span>
+                                <a href="#" class="p-2 text-gray-400 hover:text-gray-600" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="#" class="p-2 text-gray-400 hover:text-red-500" title="Annuler">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Past Consultations #}
+                <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900 dark:text-white">Historique des consultations</h3>
+                            <a href="#" class="text-sm text-wellcare-500 hover:text-wellcare-600">Voir tout</a>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <div class="flex items-center justify-between p-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700">
+                                    <i class="text-gray-500 fas fa-video"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">15/02/2026</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Suivi hebdomadaire</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                Terminée
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between p-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700">
+                                    <i class="text-gray-500 fas fa-video"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">08/02/2026</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Bilan mensuel</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                Terminée
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between p-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700">
+                                    <i class="text-gray-500 fas fa-video"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">01/02/2026</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Consultation initiale</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                                Terminée
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
-                <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                    <i class="text-xl text-purple-500 fas fa-chart-line"></i>
+            {# Right Column - Booking & Info #}
+            <div class="space-y-6">
+                {# Quick Book #}
+                <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Réserver une consultation</h3>
+                    </div>
+                    <form method="post" action="#" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de consultation</label>
+                            <select name="consultation_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <option value="">Sélectionner...</option>
+                                <option value="weekly">Suivi hebdomadaire (30 min) - 45€</option>
+                                <option value="monthly">Bilan mensuel (45 min) - 80€</option>
+                                <option value="initial">Consultation initiale (60 min) - 100€</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date préférée</label>
+                            <input type="date" name="preferred_date" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Créneau horaire</label>
+                            <select name="time_slot" class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <option value="">Sélectionner...</option>
+                                <option value="09:00">09:00 - 09:30</option>
+                                <option value="10:00">10:00 - 10:30</option>
+                                <option value="11:00">11:00 - 11:30</option>
+                                <option value="14:00">14:00 - 14:30</option>
+                                <option value="15:00">15:00 - 15:30</option>
+                                <option value="16:00">16:00 - 16:30</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sujet (optionnel)</label>
+                            <input type="text" name="topic" placeholder="的主题..." class="w-full px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <button type="submit" class="w-full px-4 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="mr-2 fas fa-calendar-check"></i>Demander un rendez-vous
+                        </button>
+                    </form>
                 </div>
-                <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">Bilan mensuel</h4>
-                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Analyse complète de vos résultats et objectifs</p>
-                <div class="flex items-center justify-between">
-                    <span class="text-lg font-bold text-gray-900 dark:text-white">80€</span>
-                    <span class="text-sm text-gray-500">60 min</span>
-                </div>
-            </div>
 
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
-                <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-green-100 dark:bg-green-900/30">
-                    <i class="text-xl text-green-500 fas fa-utensils"></i>
+                {# Consultation Types #}
+                <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">Types de consultations</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                <i class="text-sm text-blue-500 fas fa-calendar-week"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Suivi hebdomadaire</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">30 min • 45€</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                                <i class="text-sm text-purple-500 fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Bilan mensuel</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">45 min • 80€</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30">
+                                <i class="text-sm text-green-500 fas fa-utensils"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">Programme personnalisé</h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">60 min • 100€</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h4 class="mb-2 font-semibold text-gray-900 dark:text-white">Programme personnalisé</h4>
-                <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Création d'un plan alimentaire adapté à vos besoins</p>
-                <div class="flex items-center justify-between">
-                    <span class="text-lg font-bold text-gray-900 dark:text-white">150€</span>
-                    <span class="text-sm text-gray-500">90 min</span>
-                </div>
-            </div>
-        </div>
 
-        {# How It Works #}
-        <div class="mt-8">
-            <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">Comment ça marche</h3>
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
-                <div class="text-center">
-                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
-                        <i class="text-xl fas fa-calendar"></i>
+                {# How It Works #}
+                <div class="bg-gradient-to-br from-wellcare-50 to-blue-50 dark:from-gray-800 dark:to-gray-800 border border-wellcare-100 dark:border-gray-700 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Comment ça marche</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-wellcare-500 text-white text-sm font-medium">1</div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Réservez un créneau</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-wellcare-500 text-white text-sm font-medium">2</div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Recevez la confirmation par email</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-wellcare-500 text-white text-sm font-medium">3</div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Rejoignez la visioconférence</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-wellcare-500 text-white text-sm font-medium">4</div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Recevez vos recommandations</p>
+                        </div>
                     </div>
-                    <h4 class="font-medium text-gray-900 dark:text-white">1. Réservez</h4>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Choisissez un créneau disponible</p>
                 </div>
-                <div class="text-center">
-                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
-                        <i class="text-xl fas fa-video"></i>
+
+                {# Contact Info #}
+                <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Besoin d'aide?</h3>
+                    <div class="space-y-3">
+                        <a href="{{ path('nutrition_messages', {nutritionistId: 1}) }}" class="flex items-center gap-3 text-gray-600 dark:text-gray-400 hover:text-wellcare-500">
+                            <i class="fas fa-envelope"></i>
+                            <span class="text-sm">Envoyer un message</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 text-gray-600 dark:text-gray-400 hover:text-wellcare-500">
+                            <i class="fas fa-phone"></i>
+                            <span class="text-sm">Appeler le support</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 text-gray-600 dark:text-gray-400 hover:text-wellcare-500">
+                            <i class="fas fa-question-circle"></i>
+                            <span class="text-sm">FAQ</span>
+                        </a>
                     </div>
-                    <h4 class="font-medium text-gray-900 dark:text-white">2. Connectez-vous</h4>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Rejoignez la visioconférence</p>
                 </div>
-                <div class="text-center">
-                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
-                        <i class="text-xl fas fa-comments"></i>
-                    </div>
-                    <h4 class="font-medium text-gray-900 dark:text-white">3. Échangez</h4>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Discutez de vos objectifs</p>
-                </div>
-                <div class="text-center">
-                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white rounded-full bg-wellcare-500">
-                        <i class="text-xl fas fa-clipboard-list"></i>
-                    </div>
-                    <h4 class="font-medium text-gray-900 dark:text-white">4. Recevez</h4>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Vos recommandations</p>
-                </div>
-            </div>
         </div>
     </main>
 </div>

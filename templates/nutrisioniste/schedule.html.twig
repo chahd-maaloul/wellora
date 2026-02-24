@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Planning - Nutrisioniste - WellCare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-3 text-wellcare-500 fas fa-calendar-alt"></i>
+                    Planning des Consultations
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Gérez votre agenda de consultations</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('nutrisioniste_dash') }}" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-arrow-left"></i>Retour
+                </a>
+                <a href="{{ path('nutrisioniste_consultation_new') }}" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-plus"></i>Nouvelle Consultation
+                </a>
+            </div>
+        </div>
+
+        {# Date Navigation #}
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+                <a href="#" class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <input type="date" value="{{ selectedDate }}" class="px-4 py-2 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                <a href="#" class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+            <div class="flex gap-2">
+                <a href="?view=day" class="px-4 py-2 rounded-lg {% if view == 'day' %}bg-wellcare-500 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %}">Jour</a>
+                <a href="?view=week" class="px-4 py-2 rounded-lg {% if view == 'week' %}bg-wellcare-500 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %}">Semaine</a>
+                <a href="?view=month" class="px-4 py-2 rounded-lg {% if view == 'month' %}bg-wellcare-500 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300{% endif %}">Mois</a>
+            </div>
+        </div>
+
+        {# Consultations List #}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    {{ selectedDate|date('d MMMM YYYY') }}
+                </h2>
+            </div>
+            
+            <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                {% for consultation in consultations %}
+                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-20 flex-shrink-0">
+                            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ consultation.time }}</p>
+                            <p class="text-sm text-gray-500">{{ consultation.endTime }}</p>
+                        </div>
+                        <div class="w-1 h-16 rounded-full {% if consultation.status == 'confirmed' %}bg-green-500{% elseif consultation.status == 'completed' %}bg-gray-400{% else %}bg-amber-500{% endif %}"></div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ consultation.patientName }}</h3>
+                                {% if consultation.status == 'confirmed' %}
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Confirmée</span>
+                                {% elseif consultation.status == 'completed' %}
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-300">Terminée</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">En attente</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ consultation.type }}</p>
+                            {% if consultation.notes %}
+                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ consultation.notes }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ path('nutrisioniste_message_view', { id: consultation.patientId }) }}" class="p-2 text-gray-400 hover:text-wellcare-500" title="Envoyer message">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                            <a href="{{ path('nutrisioniste_patient_view', { id: consultation.patientId }) }}" class="p-2 text-gray-400 hover:text-wellcare-500" title="Voir dossier patient">
+                                <i class="fas fa-user"></i>
+                            </a>
+                            <button class="p-2 text-gray-400 hover:text-wellcare-500" title="Plus d'options">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if consultations|length == 0 %}
+                <div class="p-8 text-center text-gray-500">
+                    <i class="text-4xl mb-2 far fa-calendar-times"></i>
+                    <p>Aucune consultation prévue pour cette date</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

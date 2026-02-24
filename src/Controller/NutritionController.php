@@ -2807,7 +2807,8 @@ Lipides: 70-80% des calories
     #[Route('/nutritionniste/messages', name: 'nutritionniste_messages')]
     public function nutritionistMessages(): Response
     {
-        return $this->render('nutritionniste/communication.html.twig');
+        // Redirect to the unified messages system
+        return $this->redirectToRoute('nutrisioniste_messages');
     }
 
     #[Route('/nutritionniste/reports', name: 'nutritionniste_reports')]
