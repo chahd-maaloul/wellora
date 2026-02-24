@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\UserRole;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -103,10 +105,52 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 128, nullable: true)]
     private ?string $lastSessionId = null;
 
+    /**
+     * @var Collection<int, Goal>
+     */
+    #[ORM\OneToMany(targetEntity: Goal::class, mappedBy: 'patient')]
+    private Collection $goals;
+
+    /**
+     * @var Collection<int, Exercises>
+     */
+    #[ORM\OneToMany(targetEntity: Exercises::class, mappedBy: 'User')]
+    private Collection $exercises;
+
+    /**
+     * @var Collection<int, DailyPlan>
+     */
+    #[ORM\OneToMany(targetEntity: DailyPlan::class, mappedBy: 'coach')]
+    private Collection $dailyPlans;
+
+    /**
+     * @var Collection<int, Conversation>
+     */
+    #[ORM\OneToMany(targetEntity: Conversation::class, mappedBy: 'patient')]
+    private Collection $coach;
+
+    /**
+     * @var Collection<int, Conversation>
+     */
+    #[ORM\OneToMany(targetEntity: Conversation::class, mappedBy: 'patient')]
+    private Collection $conversations;
+
+    /**
+     * @var Collection<int, Message>
+     */
+    #[ORM\OneToMany(targetEntity: Message::class, mappedBy: 'sender')]
+    private Collection $messages;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->uuid = Uuid::v4()->toRfc4122();
+        $this->goals = new ArrayCollection();
+        $this->exercises = new ArrayCollection();
+        $this->dailyPlans = new ArrayCollection();
+        $this->coach = new ArrayCollection();
+        $this->conversations = new ArrayCollection();
+        $this->messages = new ArrayCollection();
     }
 
     public function getUuid(): ?string
@@ -405,4 +449,184 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     abstract public function getDiscriminatorValue(): string;
+
+    /**
+     * @return Collection<int, Goal>
+     */
+    public function getGoals(): Collection
+    {
+        return $this->goals;
+    }
+
+    public function addGoal(Goal $goal): static
+    {
+        if (!$this->goals->contains($goal)) {
+            $this->goals->add($goal);
+            $goal->setPatient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGoal(Goal $goal): static
+    {
+        if ($this->goals->removeElement($goal)) {
+            // set the owning side to null (unless already changed)
+            if ($goal->getPatient() === $this) {
+                $goal->setPatient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Exercises>
+     */
+    public function getExercises(): Collection
+    {
+        return $this->exercises;
+    }
+
+    public function addExercise(Exercises $exercise): static
+    {
+        if (!$this->exercises->contains($exercise)) {
+            $this->exercises->add($exercise);
+            $exercise->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeExercise(Exercises $exercise): static
+    {
+        if ($this->exercises->removeElement($exercise)) {
+            // set the owning side to null (unless already changed)
+            if ($exercise->getUser() === $this) {
+                $exercise->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, DailyPlan>
+     */
+    public function getDailyPlans(): Collection
+    {
+        return $this->dailyPlans;
+    }
+
+    public function addDailyPlan(DailyPlan $dailyPlan): static
+    {
+        if (!$this->dailyPlans->contains($dailyPlan)) {
+            $this->dailyPlans->add($dailyPlan);
+            $dailyPlan->setCoach($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDailyPlan(DailyPlan $dailyPlan): static
+    {
+        if ($this->dailyPlans->removeElement($dailyPlan)) {
+            // set the owning side to null (unless already changed)
+            if ($dailyPlan->getCoach() === $this) {
+                $dailyPlan->setCoach(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Conversation>
+     */
+    public function getCoach(): Collection
+    {
+        return $this->coach;
+    }
+
+    public function addCoach(Conversation $coach): static
+    {
+        if (!$this->coach->contains($coach)) {
+            $this->coach->add($coach);
+            $coach->setPatient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCoach(Conversation $coach): static
+    {
+        if ($this->coach->removeElement($coach)) {
+            // set the owning side to null (unless already changed)
+            if ($coach->getPatient() === $this) {
+                $coach->setPatient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Conversation>
+     */
+    public function getConversations(): Collection
+    {
+        return $this->conversations;
+    }
+
+    public function addConversation(Conversation $conversation): static
+    {
+        if (!$this->conversations->contains($conversation)) {
+            $this->conversations->add($conversation);
+            $conversation->setPatient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConversation(Conversation $conversation): static
+    {
+        if ($this->conversations->removeElement($conversation)) {
+            // set the owning side to null (unless already changed)
+            if ($conversation->getPatient() === $this) {
+                $conversation->setPatient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Message>
+     */
+    public function getMessages(): Collection
+    {
+        return $this->messages;
+    }
+
+    public function addMessage(Message $message): static
+    {
+        if (!$this->messages->contains($message)) {
+            $this->messages->add($message);
+            $message->setSender($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMessage(Message $message): static
+    {
+        if ($this->messages->removeElement($message)) {
+            // set the owning side to null (unless already changed)
+            if ($message->getSender() === $this) {
+                $message->setSender(null);
+            }
+        }
+
+        return $this;
+    }
 }

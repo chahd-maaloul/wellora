@@ -7,17 +7,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #8b5cf6;      /* violet principal */
-            --primary-hover: #7c3aed;
-            --secondary-color: #a78bfa;
+            --primary-color: #f59e0b;
+            --primary-hover: #d97706;
+            --secondary-color: #fbbf24;
             --success-color: #10b981;
-            --rest-color: #f59e0b;         /* orange pour rest day */
-            --light-bg: #faf5ff;
-            --border-color: #e9d5ff;
+            --rest-color: #f59e0b;
+            --light-bg: #fffbeb;
+            --border-color: #fef3c7;
             --text-primary: #0f172a;
             --text-secondary: #64748b;
-            --shadow: 0 4px 6px rgba(139, 92, 246, 0.15);
-            --shadow-hover: 0 10px 15px rgba(139, 92, 246, 0.25);
+            --shadow: 0 4px 6px rgba(245, 158, 11, 0.15);
+            --shadow-hover: 0 10px 15px rgba(245, 158, 11, 0.25);
         }
 
         body {
@@ -31,7 +31,6 @@
             padding: 20px;
         }
 
-        /* Rest Day Specific Styles */
         .rest-day-card {
             background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
             border-left: 4px solid var(--rest-color);
@@ -55,7 +54,6 @@
             font-weight: 600;
         }
 
-        /* Header */
         .pro-header {
             background: white;
             border-radius: 16px;
@@ -76,7 +74,6 @@
             font-size: 0.95rem;
         }
 
-        /* Stepper - Modifié pour 3 étapes au lieu de 4 */
         .pro-stepper {
             display: flex;
             justify-content: space-between;
@@ -101,6 +98,7 @@
             z-index: 2;
             text-align: center;
             flex: 1;
+            cursor: pointer;
         }
 
         .pro-step-circle {
@@ -124,7 +122,7 @@
             background: var(--primary-color);
             border-color: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
             transform: scale(1.05);
         }
 
@@ -146,7 +144,6 @@
             color: var(--primary-color);
         }
 
-        /* Form Steps */
         .form-step {
             display: none;
             animation: slideIn 0.4s ease-out;
@@ -167,7 +164,6 @@
             display: block;
         }
 
-        /* Form Cards */
         .form-card {
             background: white;
             border-radius: 16px;
@@ -203,15 +199,14 @@
             font-size: 1.2rem;
         }
 
-        /* User Cards */
-        .user-select-grid {
+        .goal-select-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
 
-        .user-card {
+        .goal-card {
             background: white;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
@@ -222,7 +217,7 @@
             overflow: hidden;
         }
 
-        .user-card:before {
+        .goal-card:before {
             content: '';
             position: absolute;
             top: 0;
@@ -233,26 +228,26 @@
             transition: all 0.3s ease;
         }
 
-        .user-card:hover {
+        .goal-card:hover {
             border-color: var(--primary-color);
             transform: translateY(-2px);
             box-shadow: var(--shadow-hover);
         }
 
-        .user-card:hover:before {
+        .goal-card:hover:before {
             background: var(--primary-color);
         }
 
-        .user-card.selected {
+        .goal-card.selected {
             border-color: var(--primary-color);
             background: linear-gradient(135deg, #f6f6f6 0%, #ffffff 100%);
         }
 
-        .user-card.selected:before {
+        .goal-card.selected:before {
             background: var(--primary-color);
         }
 
-        .user-avatar {
+        .goal-icon {
             width: 56px;
             height: 56px;
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -262,54 +257,56 @@
             justify-content: center;
             color: white;
             font-size: 1.4rem;
-            font-weight: 700;
             margin-bottom: 16px;
         }
 
-        .user-info h5 {
+        .goal-info h5 {
             margin: 0 0 4px 0;
             color: #1e293b;
             font-weight: 600;
         }
 
-        .user-info p {
-            color: #64748b;
+        .goal-info .patient-name {
+            color: var(--primary-color);
             font-size: 0.9rem;
-            margin: 0 0 8px 0;
-        }
-
-        .user-stats {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .user-stat {
-            background: #f1f5f9;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: #475569;
+            font-weight: 500;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        /* Form Controls */
-        .form-control, .form-select, .select2-container--default .select2-selection--multiple {
+        .goal-progress {
+            margin-top: 12px;
+        }
+
+        .progress {
+            height: 8px;
+            background-color: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.3s ease;
+        }
+
+        .form-control, .form-select {
             border: 2px solid #e2e8f0;
             border-radius: 10px;
             padding: 12px 16px;
             font-size: 0.95rem;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            outline: none;
         }
 
-        /* Stats Cards */
         .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -344,7 +341,6 @@
             font-weight: 500;
         }
 
-        /* Summary */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -390,7 +386,6 @@
             font-size: 1rem;
         }
 
-        /* Buttons */
         .btn-pro {
             padding: 12px 28px;
             border-radius: 10px;
@@ -401,6 +396,7 @@
             align-items: center;
             gap: 8px;
             border: none;
+            cursor: pointer;
         }
 
         .btn-pro-primary {
@@ -410,7 +406,7 @@
 
         .btn-pro-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
             color: white;
         }
 
@@ -436,7 +432,6 @@
             color: white;
         }
 
-        /* Navigation */
         .form-navigation {
             display: flex;
             justify-content: space-between;
@@ -446,12 +441,40 @@
             border-top: 2px solid #f1f5f9;
         }
 
-        /* Hidden Fields */
-        .hidden-field {
-            display: none !important;
+        .no-goal-card {
+            background: white;
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
         }
 
-        /* Responsive */
+        .no-goal-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .no-goal-card.selected {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, #f6f6f6 0%, #ffffff 100%);
+        }
+
+        .no-goal-icon {
+            width: 56px;
+            height: 56px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 1.4rem;
+            margin: 0 auto 16px;
+        }
+
         @media (max-width: 768px) {
             .pro-stepper {
                 flex-direction: column;
@@ -462,7 +485,7 @@
                 display: none;
             }
             
-            .user-select-grid {
+            .goal-select-grid {
                 grid-template-columns: 1fr;
             }
             
@@ -475,7 +498,6 @@
 
 {% block body %}
 <div class="pro-container">
-    <!-- Header -->
     <div class="pro-header rest-day-card">
         <div class="d-flex justify-content-between align-items-start">
             <div>
@@ -489,13 +511,12 @@
         </div>
     </div>
 
-    <!-- Stepper - Maintenant 3 étapes au lieu de 4 -->
     <div class="pro-stepper">
         <div class="pro-step active" data-step="1">
             <div class="pro-step-circle">
-                <i class="fas fa-user"></i>
+                <i class="fas fa-bullseye"></i>
             </div>
-            <div class="pro-step-label">Client</div>
+            <div class="pro-step-label">Goal</div>
         </div>
         <div class="pro-step" data-step="2">
             <div class="pro-step-circle">
@@ -511,55 +532,62 @@
         </div>
     </div>
 
-    <!-- Form -->
-    {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'rest-day-form'}}) }}
+    {{ form_start(form, {'attr': {'class': '', 'id': 'rest-day-form'}}) }}
     
-    <!-- Champs cachés pour calories et duree_min avec valeur 0 -->
-    {{ form_widget(form.calories, {'attr': {
-        'class': 'hidden-field',
-        'value': '0'
-    }}) }}
-    
-    {{ form_widget(form.duree_min, {'attr': {
-        'class': 'hidden-field',
-        'value': '0'
-    }}) }}
-
-    <!-- Step 1: Client Selection -->
+    <!-- Step 1: Goal Selection -->
     <div class="form-step active" id="step-1-content">
         <div class="form-card">
             <div class="form-card-header">
-                <h3><i class="fas fa-user-circle"></i> Select Client</h3>
-                <p class="text-muted mb-0 mt-2">Choose the client who needs a rest day</p>
+                <h3><i class="fas fa-bullseye"></i> Select Goal</h3>
+                <p class="text-muted mb-0 mt-2">Choose the goal for this rest day (or create a general plan)</p>
             </div>
             
-            <div class="user-select-grid">
-                {% for i in 1..3 %}
-                <div class="user-card" data-user-id="{{ i }}">
-                    <div class="user-avatar">
-                        {{ ['J', 'M', 'P'][i-1] }}
-                    </div>
-                    <div class="user-info">
-                        <h5>{{ ['John Doe', 'Mary Smith', 'Peter Johnson'][i-1] }}</h5>
-                        <p>{{ ['john@email.com', 'mary@email.com', 'peter@email.com'][i-1] }}</p>
-                        <div class="user-stats">
-                            <span class="user-stat">
-                                <i class="fas fa-dumbbell"></i> 5 workouts/week
-                            </span>
-                            <span class="user-stat bg-warning text-white">
-                                <i class="fas fa-bed"></i> Needs rest
-                            </span>
+            <div class="goal-select-grid">
+                {% if coachGoals is defined and coachGoals|length > 0 %}
+                    {% for goal in coachGoals %}
+                    <div class="goal-card" data-goal-id="{{ goal.id }}" data-goal-title="{{ goal.title }}" data-patient-name="{{ goal.patientName }}">
+                        <div class="goal-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="goal-info">
+                            <h5>{{ goal.title }}</h5>
+                            <div class="patient-name">
+                                <i class="fas fa-user"></i> {{ goal.patientName }}
+                            </div>
+                            <div class="goal-progress">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small class="text-muted">Progress</small>
+                                    <small class="text-muted">{{ goal.progress }}%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ goal.progress }}%"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted">No goals assigned to you yet.</p>
+                    </div>
+                {% endif %}
+                
+                <div class="no-goal-card" data-goal-id="">
+                    <div class="no-goal-icon">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="goal-info text-center">
+                        <h5>General Rest Day</h5>
+                        <p class="text-muted small">Create a rest day without a specific goal</p>
+                    </div>
                 </div>
-                {% endfor %}
             </div>
             
-            <input type="hidden" name="selected_user" id="selected-user">
+            <input type="hidden" name="selected_goal" id="selected-goal" value="">
             
-            <div class="alert alert-info border-0 bg-purple-50">
+            <div class="alert alert-info border-0" style="background-color: #fff7e6; color: #996600;">
                 <i class="fas fa-info-circle"></i>
-                <strong>Why rest days are important:</strong> They prevent overtraining, reduce injury risk, and optimize muscle recovery.
+                <strong>Note:</strong> Only goals assigned to you are shown. Select a goal to associate this rest day with a specific client.
             </div>
         </div>
         
@@ -572,7 +600,7 @@
         </div>
     </div>
 
-    <!-- Step 2: Schedule (ancienne étape 2) -->
+    <!-- Step 2: Schedule -->
     <div class="form-step" id="step-2-content">
         <div class="row">
             <div class="col-lg-8">
@@ -587,31 +615,27 @@
                             <label class="form-label fw-bold">Rest Day Title *</label>
                             {{ form_widget(form.titre, {'attr': {
                                 'class': 'form-control',
+                                'value': 'Rest Day',
                                 'placeholder': 'Ex: Active Recovery Day',
-                                'value': 'Rest Day'
+                                'required': 'required'
                             }}) }}
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Date *</label>
                             {{ form_widget(form.date, {'attr': {
-                                'class': 'form-control'
+                                'class': 'form-control',
+                                'required': 'required'
                             }}) }}
                         </div>
                     </div>
-                    
+
+                    <!-- Champ Status affiché -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Status</label>
-                            <select class="form-select" name="status" id="rest-status">
-                                <option value="rest">Rest Day</option>
-                                <option value="active_rest">Active Recovery</option>
-                                <option value="complete_rest">Complete Rest</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Associated Goal</label>
-                            {{ form_widget(form.goal, {'attr': {
-                                'class': 'form-select'
+                            {{ form_widget(form.status, {'attr': {
+                                'class': 'form-select',
+                                'value': 'Planned'
                             }}) }}
                         </div>
                     </div>
@@ -626,9 +650,14 @@
                         <small class="text-muted">Guide your client on how to make the most of their recovery day</small>
                     </div>
 
-                    <!-- Informations sur la récupération -->
-                    <div class="mt-4 p-3 rounded-lg bg-orange-50 border border-orange-100">
-                        <h5 class="fw-bold text-orange-700">
+                    <!-- Champs cachés pour calories et durée -->
+                    <div style="display: none;">
+                        {{ form_widget(form.calories, {'attr': {'value': '0'}}) }}
+                        {{ form_widget(form.duree_min, {'attr': {'value': '0'}}) }}
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-lg" style="background-color: #fff7e6; border: 1px solid #fef3c7;">
+                        <h5 class="fw-bold" style="color: #d97706;">
                             <i class="fas fa-heartbeat rest-icon"></i> Recovery Information
                         </h5>
                         <div class="row mt-2">
@@ -641,7 +670,7 @@
                                 <p class="mb-1"><strong>Nutrition:</strong> Focus on protein-rich meals</p>
                             </div>
                         </div>
-                        <p class="mt-2 text-sm text-orange-600">
+                        <p class="mt-2 text-sm" style="color: #d97706;">
                             <i class="fas fa-lightbulb rest-icon"></i>
                             <strong>Pro tip:</strong> Active recovery can be more effective than complete rest.
                         </p>
@@ -657,16 +686,24 @@
                     
                     <div class="summary-section">
                         <div class="summary-item">
-                            <span class="summary-label">Client</span>
-                            <span class="summary-value" id="summary-client">-</span>
+                            <span class="summary-label">Goal</span>
+                            <span class="summary-value" id="summary-goal">None</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Patient</span>
+                            <span class="summary-value" id="summary-patient">-</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Date</span>
-                            <span class="summary-value" id="summary-date">{{ "now"|date('m/d/Y') }}</span>
+                            <span class="summary-value" id="summary-date">{{ "now"|date('Y-m-d') }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Status</span>
+                            <span class="summary-value" id="summary-status">Planned</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Type</span>
-                            <span class="rest-tag">Rest Day</span>
+                            <span class="rest-tag" id="summary-type">Rest Day</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Duration</span>
@@ -688,7 +725,7 @@
                         </div>
                     </div>
                     
-                    <div class="alert alert-warning border-0 bg-yellow-50 mt-3">
+                    <div class="alert alert-warning border-0" style="background-color: #fff7e6; color: #996600; margin-top: 15px;">
                         <i class="fas fa-exclamation-triangle"></i>
                         <small>Avoid scheduling intense workouts before or after rest days</small>
                     </div>
@@ -708,7 +745,7 @@
         </div>
     </div>
 
-    <!-- Step 3: Review & Validation (ancienne étape 4) -->
+    <!-- Step 3: Review & Validation -->
     <div class="form-step" id="step-3-content">
         <div class="form-card rest-day-card">
             <div class="form-card-header">
@@ -716,11 +753,11 @@
                 <p class="text-muted mb-0 mt-2">Review all information before scheduling the rest day</p>
             </div>
             
-            <div class="alert alert-success border-0 bg-green-50 mb-4">
+            <div class="alert alert-success border-0" style="background-color: #e6ffe6; color: #006600; margin-bottom: 20px;">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-bed fa-2x me-3 rest-icon"></i>
+                    <i class="fas fa-bed fa-2x me-3" style="color: #f59e0b;"></i>
                     <div>
-                        <h5 class="mb-1">Rest day scheduled!</h5>
+                        <h5 class="mb-1">Rest day ready!</h5>
                         <p class="mb-0">Your client's recovery is essential for long-term progress.</p>
                     </div>
                 </div>
@@ -728,18 +765,14 @@
             
             <div class="summary-grid">
                 <div class="summary-section">
-                    <h4><i class="fas fa-user me-2"></i> Client Information</h4>
+                    <h4><i class="fas fa-bullseye me-2"></i> Goal Information</h4>
                     <div class="summary-item">
-                        <span class="summary-label">Name</span>
-                        <span class="summary-value" id="final-client-name">-</span>
+                        <span class="summary-label">Goal</span>
+                        <span class="summary-value" id="final-goal-title">None</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Email</span>
-                        <span class="summary-value" id="final-client-email">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Recovery Status</span>
-                        <span class="rest-tag">Needs Rest</span>
+                        <span class="summary-label">Patient</span>
+                        <span class="summary-value" id="final-patient-name">-</span>
                     </div>
                 </div>
                 
@@ -754,12 +787,8 @@
                         <span class="summary-value" id="final-plan-date">-</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Type</span>
-                        <span class="summary-value" id="final-plan-type">Rest Day</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Goal</span>
-                        <span class="summary-value" id="final-plan-goal">-</span>
+                        <span class="summary-label">Status</span>
+                        <span class="summary-value" id="final-plan-status">Planned</span>
                     </div>
                 </div>
             </div>
@@ -782,35 +811,29 @@
                             <span class="summary-label">Activity Level</span>
                             <span class="summary-value">Rest</span>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Day Type</span>
-                            <span class="summary-value" id="final-plan-type-display">Rest Day</span>
-                        </div>
                     </div>
                 </div>
                 
                 <div class="mt-3">
                     <h6 class="fw-bold">Recommended Recovery Activities:</h6>
                     <div class="d-flex flex-wrap gap-2 mt-2">
-                        <span class="badge bg-light text-dark border">Light Walking</span>
-                        <span class="badge bg-light text-dark border">Stretching</span>
-                        <span class="badge bg-light text-dark border">Foam Rolling</span>
-                        <span class="badge bg-light text-dark border">Hydration Focus</span>
-                        <span class="badge bg-light text-dark border">Quality Sleep</span>
-                        <span class="badge bg-light text-dark border">Active Recovery</span>
+                        <span class="badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 6px 12px;">Light Walking</span>
+                        <span class="badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 6px 12px;">Stretching</span>
+                        <span class="badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 6px 12px;">Foam Rolling</span>
+                        <span class="badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 6px 12px;">Hydration Focus</span>
+                        <span class="badge" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 6px 12px;">Quality Sleep</span>
                     </div>
                 </div>
 
-                <!-- Instructions Preview -->
-                <div class="mt-4 p-3 rounded-lg bg-gray-50">
+                <div class="mt-4 p-3 rounded-lg" style="background-color: #f8fafc;">
                     <h6 class="fw-bold mb-2">Recovery Instructions:</h6>
                     <p id="final-plan-notes" class="text-gray-600 mb-0">
-                        {{ form.notes.vars.value ?: 'No specific instructions provided.' }}
+                        No specific instructions provided.
                     </p>
                 </div>
             </div>
             
-            <div class="alert alert-info border-0 bg-blue-50 mt-4">
+            <div class="alert alert-info border-0 mt-4" style="background-color: #e6f7ff; color: #006699;">
                 <i class="fas fa-bell"></i>
                 <strong>Reminder:</strong> Your client will receive a notification about their scheduled rest day.
             </div>
@@ -827,43 +850,68 @@
             </button>
         </div>
     </div>
+    <div style="display: none;">
+    {{ form_widget(form.goal) }}
+    {{ form_widget(form.exercices) }}
+</div>
     
-   
+    {{ form_end(form) }}
 </div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
     <script>
         $(document).ready(function() {
-            // Data
-            const usersData = {
-                1: { name: 'John Doe', email: 'john@email.com' },
-                2: { name: 'Mary Smith', email: 'mary@email.com' },
-                3: { name: 'Peter Johnson', email: 'peter@email.com' }
-            };
-            
             const goalsData = {
-                {% if form.goal.vars.choices %}
-                    {% for goal in form.goal.vars.choices %}
-                {{ goal.value }}: "{{ goal.label|e('js') }}",
+                {% if coachGoals is defined and coachGoals|length > 0 %}
+                    {% for goal in coachGoals %}
+                {{ goal.id }}: {
+                    title: "{{ goal.title|e('js') }}",
+                    patientName: "{{ goal.patientName|e('js') }}"
+                },
                     {% endfor %}
                 {% endif %}
             };
             
-            let selectedUser = null;
+            let selectedGoal = null;
             
-            // Step Management - maintenant 3 étapes
+            $('.form-step').hide();
+            $('#step-1-content').show();
+            
             $('.pro-step').on('click', function() {
                 const step = $(this).data('step');
                 goToStep(step);
             });
             
+            function getCurrentStep() {
+                const visibleStep = $('.form-step:visible').attr('id');
+                return parseInt(visibleStep.replace('step-', '').replace('-content', ''));
+            }
+            
             $('.next-step-btn').on('click', function() {
                 const nextStep = $(this).data('next');
+                const currentStep = getCurrentStep();
+                
+                if (currentStep === 1 && !selectedGoal) {
+                    if (!confirm('No goal selected. Continue with general rest day?')) {
+                        return;
+                    }
+                }
+                
+                if (currentStep === 2) {
+                    if (!$('#{{ form.titre.vars.id }}').val()) {
+                        alert('Please enter a title for the rest day');
+                        return;
+                    }
+                    if (!$('#{{ form.date.vars.id }}').val()) {
+                        alert('Please select a date for the rest day');
+                        return;
+                    }
+                }
+                
                 goToStep(nextStep);
             });
             
@@ -873,7 +921,6 @@
             });
             
             function goToStep(step) {
-                // Update stepper
                 $('.pro-step').removeClass('active completed');
                 $(`.pro-step[data-step="${step}"]`).addClass('active');
                 
@@ -881,11 +928,9 @@
                     $(`.pro-step[data-step="${i}"]`).addClass('completed');
                 }
                 
-                // Show content
-                $('.form-step').removeClass('active');
-                $(`#step-${step}-content`).addClass('active');
+                $('.form-step').hide();
+                $(`#step-${step}-content`).show();
                 
-                // Update summaries
                 if (step === 2) {
                     updateSummary();
                 } else if (step === 3) {
@@ -893,70 +938,64 @@
                 }
             }
             
-            // Client selection
-            $('.user-card').on('click', function() {
-                const userId = $(this).data('user-id');
-                $('.user-card').removeClass('selected');
+            $('.goal-card, .no-goal-card').on('click', function() {
+                $('.goal-card, .no-goal-card').removeClass('selected');
                 $(this).addClass('selected');
                 
-                selectedUser = userId;
-                const user = usersData[userId];
-                $('#selected-user').val(user.name);
-                $('#summary-client').text(user.name);
-                $('#final-client-name').text(user.name);
-                $('#final-client-email').text(user.email);
+                const goalId = $(this).data('goal-id');
+                selectedGoal = goalId;
+                $('#selected-goal').val(goalId);
+                
+                if (goalId && goalsData[goalId]) {
+                    const goal = goalsData[goalId];
+                    $('#summary-goal').text(goal.title);
+                    $('#summary-patient').text(goal.patientName);
+                } else {
+                    $('#summary-goal').text('General Rest Day');
+                    $('#summary-patient').text('-');
+                }
             });
             
-            // Update summary
             function updateSummary() {
                 const date = $('#{{ form.date.vars.id }}').val();
                 if (date) {
                     $('#summary-date').text(date);
                 }
                 
-                // Auto-fill title if empty
-                if (!$('#{{ form.titre.vars.id }}').val()) {
-                    $('#{{ form.titre.vars.id }}').val('Rest Day');
-                }
-                
-                // Update notes preview
-                const notes = $('#{{ form.notes.vars.id }}').val();
-                $('#final-plan-notes').text(notes || 'No specific instructions provided.');
+                const status = $('#{{ form.status.vars.id }} option:selected').text();
+                $('#summary-status').text(status);
             }
             
-            // Update final summary
             function updateFinalSummary() {
-                // Client info
-                if (selectedUser) {
-                    const user = usersData[selectedUser];
-                    $('#final-client-name').text(user.name);
-                    $('#final-client-email').text(user.email);
+                if (selectedGoal && goalsData[selectedGoal]) {
+                    const goal = goalsData[selectedGoal];
+                    $('#final-goal-title').text(goal.title);
+                    $('#final-patient-name').text(goal.patientName);
+                } else {
+                    $('#final-goal-title').text('General Rest Day');
+                    $('#final-patient-name').text('-');
                 }
                 
-                // Plan info
                 $('#final-plan-title').text($('#{{ form.titre.vars.id }}').val() || 'Rest Day');
                 $('#final-plan-date').text($('#{{ form.date.vars.id }}').val() || '-');
                 
-                // Status/Type
-                const statusText = $('#rest-status option:selected').text();
-                $('#final-plan-type').text(statusText || 'Rest Day');
-                $('#final-plan-type-display').text(statusText || 'Rest Day');
+                const status = $('#{{ form.status.vars.id }} option:selected').text();
+                $('#final-plan-status').text(status);
                 
-                // Goal
-                const goalId = $('#{{ form.goal.vars.id }}').val();
-                $('#final-plan-goal').text(goalsData[goalId] || '-');
-                
-                // Update notes preview
                 const notes = $('#{{ form.notes.vars.id }}').val();
                 $('#final-plan-notes').text(notes || 'No specific instructions provided.');
             }
             
-            // Event listeners
             $('#{{ form.date.vars.id }}').on('change', function() {
                 const date = $(this).val();
                 if (date) {
                     $('#summary-date').text(date);
                 }
+            });
+            
+            $('#{{ form.status.vars.id }}').on('change', function() {
+                const status = $(this).val();
+                $('#summary-status').text($(this).find('option:selected').text());
             });
             
             $('#{{ form.titre.vars.id }}').on('input', function() {
@@ -969,47 +1008,37 @@
                 $('#final-plan-notes').text($(this).val() || 'No specific instructions provided.');
             });
             
-            $('#rest-status').on('change', function() {
-                $('#final-plan-type').text($(this).find('option:selected').text());
-                $('#final-plan-type-display').text($(this).find('option:selected').text());
-            });
-            
-            // Form submission
             $('#rest-day-form').on('submit', function(e) {
-                e.preventDefault();
-                
-                // Validation
-                if (!selectedUser) {
-                    alert('Please select a client');
-                    goToStep(1);
-                    return;
+                if (!$('#{{ form.titre.vars.id }}').val()) {
+                    e.preventDefault();
+                    alert('Please enter a title for the rest day');
+                    goToStep(2);
+                    return false;
                 }
                 
                 if (!$('#{{ form.date.vars.id }}').val()) {
+                    e.preventDefault();
                     alert('Please select a date for the rest day');
                     goToStep(2);
-                    return;
+                    return false;
                 }
                 
-                // Set default title if empty
-                if (!$('#{{ form.titre.vars.id }}').val()) {
-                    $('#{{ form.titre.vars.id }}').val('Rest Day');
-                }
-                
-                // Ensure calories and duree_min are 0
-                $('#{{ form.calories.vars.id }}').val('0');
-                $('#{{ form.duree_min.vars.id }}').val('0');
-                
-                // Show confirmation
-                if (confirm('Are you sure you want to schedule this rest day?')) {
-                    this.submit();
-                }
+                return true;
             });
             
-            // Initialize
-            updateSummary();
+            const today = new Date().toISOString().split('T')[0];
+            if (!$('#{{ form.date.vars.id }}').val()) {
+                $('#{{ form.date.vars.id }}').val(today);
+            }
             
-            // Set initial values for hidden fields
+            $('#summary-date').text($('#{{ form.date.vars.id }}').val() || today);
+            $('#final-plan-date').text($('#{{ form.date.vars.id }}').val() || today);
+            
+            if (!$('#{{ form.titre.vars.id }}').val()) {
+                $('#{{ form.titre.vars.id }}').val('Rest Day');
+            }
+            
+            // Initialiser les champs cachés
             $('#{{ form.calories.vars.id }}').val('0');
             $('#{{ form.duree_min.vars.id }}').val('0');
         });

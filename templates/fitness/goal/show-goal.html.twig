@@ -223,7 +223,9 @@
             <!-- Goals List -->
             <div id="goalsListContainer">
                 {% if goals is not empty %}
-                    {% for goal in goals %}
+                    {% for item in goalsWithCoach %}
+                        {% set goal = item.goal %}
+                        {% set coach = item.coach %}
                         {% set daysLeft = date(goal.endDate).diff(date()).days %}
                         {% set progress = goal.getProgress() %}
                         {% set progress = progress is defined ? progress : 0 %}
@@ -308,6 +310,49 @@
                                             </div>
                                             <p class="text-gray-600 mb-6 line-clamp-2 leading-relaxed">{{ goal.getDescription() }}</p>
                                             
+                                            <!-- Coach Information - NEW SECTION -->
+                                            {% if coach %}
+                                            <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                                                <div class="flex items-center gap-4">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                                            {{ coach.firstName|first }}{{ coach.lastName|first }}
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center gap-2 mb-1">
+                                                            <span class="text-sm font-semibold text-purple-700 uppercase tracking-wider">Coach</span>
+                                                            <span class="px-2 py-0.5 bg-purple-200 text-purple-800 text-xs rounded-full">Assigned</span>
+                                                        </div>
+                                                        <h4 class="font-bold text-gray-900">{{ coach.firstName }} {{ coach.lastName }}</h4>
+                                                        <div class="flex items-center gap-3 mt-1 text-sm">
+                                                            <span class="text-gray-600 flex items-center gap-1">
+                                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                                                </svg>
+                                                                {{ coach.email }}
+                                                            </span>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% elseif goal.getCoachId() %}
+                                            <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                                                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm text-gray-500">Coach ID: {{ goal.getCoachId() }}</p>
+                                                        <p class="text-xs text-amber-600">Coach information unavailable</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            
                                             <!-- BARRE DE PROGRESSION COLORÉE SELON LE NIVEAU -->
                                             <div class="mb-6">
                                                 <div class="flex items-center justify-between mb-3">
@@ -335,32 +380,8 @@
                                                     </div>
                                                     
                                                     <!-- Indicateur de position -->
-                                                    <div class="absolute top-1/2 transform -translate-y-1/2 w-3 h-3 bg-green-500 rounded-full border-2 {{ progressTextColor }} shadow-lg" 
+                                                    <div class="absolute top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full border-2 {{ progressTextColor }} shadow-lg" 
                                                          style="left: calc({{ progress }}% - 6px);"></div>
-                                                </div>
-                                                
-                                                <!-- Légende des couleurs -->
-                                                <div class="flex justify-between text-xs text-gray-500 mt-3 px-1">
-                                                    <div class="flex items-center gap-1">
-                                                        <div class="w-2 h-2 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full"></div>
-                                                        <span>0-29%</span>
-                                                    </div>
-                                                    <div class="flex items-center gap-1">
-                                                        <div class="w-2 h-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
-                                                        <span>30-49%</span>
-                                                    </div>
-                                                    <div class="flex items-center gap-1">
-                                                        <div class="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
-                                                        <span>50-69%</span>
-                                                    </div>
-                                                    <div class="flex items-center gap-1">
-                                                        <div class="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
-                                                        <span>70-89%</span>
-                                                    </div>
-                                                    <div class="flex items-center gap-1">
-                                                        <div class="w-2 h-2 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"></div>
-                                                        <span>90-100%</span>
-                                                    </div>
                                                 </div>
                                             </div>
                                             
@@ -396,7 +417,25 @@
                                 <!-- Action Buttons -->
                                 <div class="flex items-center gap-3">
                                     <div class="flex flex-col sm:flex-row gap-3">
-                                        <button onclick="showGoalDetails('{{ goal.id }}', '{{ goal.getTitle()|e('js') }}', '{{ goal.getDescription()|e('js') }}', {{ progress }}, '{{ goal.endDate|date('M d, Y') }}', {{ daysLeft }}, '{{ goal.getStatus() }}')"
+                                        <button onclick='showGoalDetails(
+                                            "{{ goal.id }}", 
+                                            "{{ goal.getTitle()|e('js') }}", 
+                                            "{{ goal.getDescription()|e('js') }}", 
+                                            {{ progress }}, 
+                                            "{{ goal.endDate|date('M d, Y') }}", 
+                                            {{ daysLeft }}, 
+                                            "{{ goal.getStatus() }}",
+                                            {% if coach %}
+                                            {
+                                                firstName: "{{ coach.firstName|e('js') }}",
+                                                lastName: "{{ coach.lastName|e('js') }}",
+                                                email: "{{ coach.email|e('js') }}",
+                                                specialization: "{{ coach.specialization|default('')|e('js') }}"
+                                            }
+                                            {% else %}
+                                            null
+                                            {% endif %}
+                                        )'
                                                 class="group/btn relative px-5 py-3 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
                                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -473,52 +512,8 @@
 </div>
 
 <script>
-// Filtre et recherche
-document.addEventListener('DOMContentLoaded', function() {
-    const statusFilter = document.getElementById('statusFilter');
-    const searchInput = document.getElementById('searchInput');
-    const goalItems = document.querySelectorAll('.goal-item');
-    const goalsCount = document.getElementById('goalsCount');
-    
-    function updateFilter() {
-        const statusValue = statusFilter.value;
-        const searchValue = searchInput.value.toLowerCase();
-        let visibleCount = 0;
-        
-        goalItems.forEach(item => {
-            const status = item.getAttribute('data-status');
-            const title = item.getAttribute('data-title');
-            const description = item.getAttribute('data-description');
-            
-            const statusMatch = !statusValue || status === statusValue;
-            const searchMatch = !searchValue || 
-                               title.includes(searchValue) || 
-                               description.includes(searchValue);
-            
-            if (statusMatch && searchMatch) {
-                item.style.display = '';
-                visibleCount++;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-        
-        if (goalsCount) {
-            goalsCount.textContent = `${visibleCount} goal${visibleCount !== 1 ? 's' : '' } found`;
-        }
-    }
-    
-    if (statusFilter) {
-        statusFilter.addEventListener('change', updateFilter);
-    }
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', updateFilter);
-    }
-});
-
-// Modern Modal avec animations
-function showGoalDetails(goalId, title, description, progress, endDate, daysLeft, status) {
+// Mettre à jour la fonction showGoalDetails pour inclure les infos du coach
+function showGoalDetails(goalId, title, description, progress, endDate, daysLeft, status, coach) {
     const modal = document.getElementById('goalDetailsModal');
     const modalContent = document.getElementById('modalContent');
     
@@ -562,6 +557,38 @@ function showGoalDetails(goalId, title, description, progress, endDate, daysLeft
         statusText = 'In Progress';
         statusIcon = '🚀';
         statusBg = 'bg-gradient-to-r from-blue-500 to-cyan-500';
+    }
+    
+    // Créer le contenu du modal avec les infos du coach
+    let coachHtml = '';
+    if (coach) {
+        coachHtml = `
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-semibold text-gray-900">Assigned Coach</h4>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                        ${coach.firstName.charAt(0)}${coach.lastName.charAt(0)}
+                    </div>
+                    <div class="flex-1">
+                        <h5 class="font-bold text-gray-900 text-lg">${coach.firstName} ${coach.lastName}</h5>
+                        <p class="text-gray-600 flex items-center gap-1 mt-1">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            ${coach.email}
+                        </p>
+                        ${coach.specialization ? `<span class="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">${coach.specialization}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
     }
     
     // Créer le contenu moderne du modal
@@ -615,6 +642,9 @@ function showGoalDetails(goalId, title, description, progress, endDate, daysLeft
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Coach Card (if exists) -->
+                    ${coachHtml}
                     
                     <!-- Progress Card -->
                     <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg">
@@ -715,7 +745,7 @@ function showGoalDetails(goalId, title, description, progress, endDate, daysLeft
                         class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-all duration-300 hover:shadow-lg">
                     Close
                 </button>
-                <a href="/goals/${goalId}/edit"
+                <a href="/goal/update/${goalId}"
                    class="px-6 py-3 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -763,6 +793,50 @@ document.addEventListener('keydown', function(event) {
 document.getElementById('goalDetailsModal').addEventListener('click', function(event) {
     if (event.target === this) {
         closeModal();
+    }
+});
+
+// Filtre et recherche
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    const goalItems = document.querySelectorAll('.goal-item');
+    const goalsCount = document.getElementById('goalsCount');
+    
+    function updateFilter() {
+        const statusValue = statusFilter.value;
+        const searchValue = searchInput.value.toLowerCase();
+        let visibleCount = 0;
+        
+        goalItems.forEach(item => {
+            const status = item.getAttribute('data-status');
+            const title = item.getAttribute('data-title');
+            const description = item.getAttribute('data-description');
+            
+            const statusMatch = !statusValue || status === statusValue;
+            const searchMatch = !searchValue || 
+                               title.includes(searchValue) || 
+                               description.includes(searchValue);
+            
+            if (statusMatch && searchMatch) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        if (goalsCount) {
+            goalsCount.textContent = `${visibleCount} goal${visibleCount !== 1 ? 's' : '' } found`;
+        }
+    }
+    
+    if (statusFilter) {
+        statusFilter.addEventListener('change', updateFilter);
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', updateFilter);
     }
 });
 </script>

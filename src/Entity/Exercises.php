@@ -101,6 +101,10 @@ class Exercises
     #[ORM\ManyToMany(targetEntity: DailyPlan::class, mappedBy: 'exercices')]
     private Collection $dailyPlans;
 
+    #[ORM\ManyToOne(inversedBy: 'exercises')]
+    #[ORM\JoinColumn(referencedColumnName: 'uuid')]
+    private ?User $User = null;
+
     public function __construct()
     {
         $this->dailyPlans = new ArrayCollection();
@@ -337,5 +341,17 @@ class Exercises
     public function __toString(): string
     {
         return $this->name ?? '';
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->User;
+    }
+
+    public function setUser(?User $User): static
+    {
+        $this->User = $User;
+
+        return $this;
     }
 }

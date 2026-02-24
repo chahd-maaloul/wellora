@@ -38,24 +38,24 @@ class DailyPlanType extends AbstractType
                 ],
                 'required' => true,
             ])
-            
-            ->add('status', ChoiceType::class, [
-                'label' => 'Statut',
-                'choices' => [
-                    'Planifié' => 'planned',
-                    'En cours' => 'in_progress',
-                    'Terminé' => 'completed',
-                    'Annulé' => 'cancelled',
-                    'Reporté' => 'postponed',
+          ->add('status', ChoiceType::class, [
+                'label' => 'Status',
+                // Utiliser les choices passés via l'option status_choices, ou les choices par défaut
+                'choices' => $options['status_choices'] ?? [
+                    '🔵 Planned' => 'planned',
+                    '🟢 In Progress' => 'in_progress',
+                    '✅ Completed' => 'completed',
+                    '❌ Cancelled' => 'cancelled',
+                    '⏱️ Postponed' => 'postponed',
+                    '😴 Rest Day' => 'rest',
+                    '🚶 Active Rest' => 'active_rest',
+                    '💤 Complete Rest' => 'complete_rest',
                 ],
-                'attr' => [
-                    'class' => 'form-select',
-                ],
+                'attr' => ['class' => 'form-select'],
                 'required' => true,
-                'placeholder' => '-- Sélectionner un statut --',
             ])
             
-            ->add('notes', TextareaType::class, [
+             ->add('notes', TextareaType::class, [
                 'label' => 'Notes',
                 'required' => false,
                 'attr' => [
@@ -101,6 +101,7 @@ class DailyPlanType extends AbstractType
             ->add('exercices', EntityType::class, [
                 'label' => 'Exercices',
                 'class' => Exercises::class,
+                
                 'choice_label' => function(Exercises $exercise) {
                     return sprintf('%s (%s - %s)', 
                         $exercise->getName(), 
@@ -114,7 +115,7 @@ class DailyPlanType extends AbstractType
                     'class' => 'form-select select2-multiple',
                     'data-placeholder' => 'Sélectionnez les exercices',
                 ],
-                'required' => true,
+                'required' => false,
                 'by_reference' => false,
                 'help' => 'Sélectionnez plusieurs exercices pour ce plan quotidien',
                 'query_builder' => function(\Doctrine\ORM\EntityRepository $er) {

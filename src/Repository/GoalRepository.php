@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Repository;
-
+use App\Entity\Coach;
 use App\Entity\Goal;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -31,6 +31,19 @@ class GoalRepository extends ServiceEntityRepository
     //        ;
     //    }
 
+    /**
+     * Find active goals (status 'PENDING' or 'in progress')
+     */
+    public function findActiveGoals(): array
+    {
+        return $this->createQueryBuilder('g')
+            ->where('g.status IN (:statuses)')
+            ->setParameter('statuses', ['PENDING', 'in progress'])
+            ->orderBy('g.title', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    public function findOneBySomeField($value): ?Goal
     //    {
     //        return $this->createQueryBuilder('g')
@@ -40,4 +53,14 @@ class GoalRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+
+public function findGoalsByCoach(Coach $coach): array
+{
+    return $this->createQueryBuilder('g')
+        ->where('g.coachId = :coachId')
+        ->setParameter('coachId', (string) $coach->getId())
+        ->getQuery()
+        ->getResult();
+}
 }

@@ -667,7 +667,7 @@ function dailyPlanManager() {
         deletePlan(planId) {
             if (confirm('Are you sure you want to delete this plan?')) {
                 fetch(`/delete/${planId}`, {
-                    method: 'GET',
+                    method: 'Post',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'

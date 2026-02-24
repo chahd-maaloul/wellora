@@ -1,3 +1,4 @@
+import './bootstrap.js';
 // assets/app.js
 import './app.css';
 import '../assets/styles/accessibility.css';

@@ -70,7 +70,7 @@ class DoctorController extends AbstractController
      * Doctor Dashboard - Main entry point for physicians
      */
     #[Route('/dashboard', name: 'doctor_dashboard')]
-    public function dashboard(): Response
+    public function dashboard1(): Response
     {
         $stats = [
             'totalPatients' => 156,
