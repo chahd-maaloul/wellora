@@ -24,6 +24,7 @@ class NutritionAIService
     private ?int $userId;
     private array $userProfile = [];
     private ?NutritionGoal $currentGoal = null;
+    private TunisianPriceService $priceService;
     
     // Food databases (comprehensive local data)
     private array $foodDatabase = [];
@@ -33,6 +34,7 @@ class NutritionAIService
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
+        $this->priceService = new TunisianPriceService();
         $this->initializeFoodDatabase();
         $this->initializeNutritionKnowledge();
     }
@@ -107,6 +109,8 @@ class NutritionAIService
             'seasonal' => $this->handleSeasonal($message),
             'progress' => $this->handleProgress(),
             'recommendations' => $this->handleRecommendations($message),
+            'grocery_list' => $this->handleGroceryList($message),
+            'product_info' => $this->handleProductInfo($message),
             default => $this->handleDefault($message),
         };
     }
@@ -116,6 +120,28 @@ class NutritionAIService
      */
     private function detectIntent(string $message): string
     {
+        // FIRST: Check if message contains any product name from our database
+        $allPrices = $this->priceService->getAllPrices();
+        foreach ($allPrices as $name => $data) {
+            if (stripos($message, strtolower($name)) !== false) {
+                return 'product_info';
+            }
+        }
+        
+        // Also check for generic food keywords that might indicate product query
+        $foodKeywords = ['aliment', 'manger', 'mange', 'nourriture', 'produit', 'acheter', 'prix', 'calorie'];
+        foreach ($foodKeywords as $keyword) {
+            if (strpos($message, $keyword) !== false) {
+                // Check if there's any other product-like word
+                $commonFoods = ['poulet', 'viande', 'poisson', 'legume', 'fruit', 'lait', 'fromage', 'oeuf', 'pain', 'riz', 'pate', 'tomate', 'pomme', 'banane', 'orange', 'thon', 'boeuf'];
+                foreach ($commonFoods as $food) {
+                    if (stripos($message, $food) !== false) {
+                        return 'product_info';
+                    }
+                }
+            }
+        }
+        
         // Intent patterns
         $patterns = [
             'greeting' => ['bonjour', 'salut', 'hello', 'hi', 'hey', 'coucou', 'bjr', 'slt', 'wesh', 'good morning', 'good evening'],
@@ -145,6 +171,8 @@ class NutritionAIService
             'seasonal' => ['été', 'hiver', 'printemps', 'automne', 'saison', 'seasonal', 'de saison'],
             'progress' => ['progrès', 'progress', 'évolution', 'résultat', 'comment je vais', 'statut'],
             'recommendations' => ['conseil', 'conseils', 'recommande', 'suggestion', 'tips', 'advice'],
+            'grocery_list' => ['courses', 'liste', 'acheter', 'marche', 'epicerie', 'grocery', 'shopping'],
+            'product_info' => ['info produit', 'informations', 'produit', 'nutriments', 'vitamines', 'prix'],
         ];
         
         foreach ($patterns as $intent => $keywords) {
@@ -165,7 +193,24 @@ class NutritionAIService
         $goalInfo = $this->userProfile ? $this->formatGoalSummary() : "\n\n💡 Définissez vos objectifs pour des recommandations personnalisées!";
         
         return [
-            'message' => "Bonjour! 🌟 Je suis votre assistant nutritionnel WellCare AI.\n\nJe suis là pour vous aider à atteindre vos objectifs santé{$goalInfo}\n\n**Mes domaines d'expertise:**\n\n🍳 **Recettes** - Suggestions personnalisées\n📅 **Planification** - Menus semaine\n⚖️ **Minuteur** - Perte de poids\n💪 **Muscle** - Prise de masse\n🌱 **Régimes** - Vegan, Keto...\n🏃 **Sport** - Performance\n🌊 **Hydratation** - Eau quotidienne\n💊 **Analyse** - Valeurs nutritives\n❤️é** - Diabète, cœur **Sant...\n\nQue souhaitez-vous découvrir?",
+            'message' => "🌟═══════════════════════════════════\n" .
+            "   WELL CARE AI - ASSISTANT\n" .
+            "═══════════════════════════════════\n\n" .
+            "Bonjour! Je suis votre assistant nutritionnel.\n" .
+            "Je suis là pour vous aider à atteindre vos objectifs santé{$goalInfo}\n\n" .
+            "📋 **Mes domaines d'expertise:**\n\n" .
+            "🍳  Recettes    → Suggestions personnalisées\n" .
+            "📅  Planning    → Menus de la semaine\n" .
+            "⚖️  Poids       → Perte de poids\n" .
+            "💪  Muscle      → Prise de masse\n" .
+            "🌱  Régimes     → Vegan, Keto\n" .
+            "🏃  Sport       → Performance\n" .
+            "💧  Eau         → Hydratation\n" .
+            "📊  Analyse     → Valeurs nutritives\n" .
+            "❤️  Santé       → Diabète, cœur\n\n" .
+            "🛒  **Courses**  → Liste avec prix\n" .
+            "🍎  **Produits** → Info produit\n\n" .
+            "Tapez votre demande ou utilisez les boutons ci-dessus!",
             'meals' => [],
             'quickActions' => $this->getQuickActions(),
         ];
@@ -431,6 +476,128 @@ class NutritionAIService
     {
         return [
             'message' => "💡 **Recommandations personnalisées**\n\n" . ($this->generatePersonalizedRecommendations()),
+            'meals' => [],
+        ];
+    }
+    
+    private function handleGroceryList(string $message): array
+    {
+        // Get grocery items with prices
+        $groceryItems = $this->priceService->getAllPrices();
+        
+        // Build a beautiful response with prices in Tunisian format
+        $response = "🛒═══════════════════════════════════\n";
+        $response .= "   LISTE DE COURSES - PRIX TUNISIE\n";
+        $response .= "═══════════════════════════════════\n\n";
+        $response .= "📌 *Prix moyens du marché tunisien*\n\n";
+        
+        $categories = $this->priceService->getCategories();
+        
+        foreach ($categories as $category) {
+            $response .= "📁 **$category**\n";
+            $response .= "────────────────────────────────\n";
+            $items = $this->priceService->getItemsByCategory($category);
+            
+            // Show up to 6 items per category
+            $count = 0;
+            foreach ($items as $name => $data) {
+                if ($count >= 6) {
+                    $response .= "  ➕ ... et plus\n";
+                    break;
+                }
+                $price = $this->priceService->formatPrice($data['price']);
+                $response .= "  • $name: $price / {$data['unit']}\n";
+                $count++;
+            }
+            $response .= "\n";
+        }
+        
+        $response .= "═══════════════════════════════════\n";
+        $response .= "💡 Créez votre liste personnalisée:\n";
+        $response .= "   👉 [Liste de courses](http://127.0.0.1:8000/nutrition/grocery-list)\n\n";
+        $response .= "📥 PDF: [Télécharger](http://127.0.0.1:8000/nutrition/grocery-list/pdf)\n";
+        
+        return [
+            'message' => $response,
+            'meals' => [],
+        ];
+    }
+    
+    private function handleProductInfo(string $message): array
+    {
+        // Extract product name - be more flexible, search entire message
+        $allPrices = $this->priceService->getAllPrices();
+        $foundProducts = [];
+        
+        // Search for any product name in the message
+        foreach ($allPrices as $name => $data) {
+            if (stripos($message, strtolower($name)) !== false) {
+                $foundProducts[$name] = $data;
+            }
+        }
+        
+        // If no specific product found, check for general nutrition keywords
+        if (empty($foundProducts)) {
+            if ($this->containsAny($message, ['calories', 'nutriment', 'vitamine', 'proteine', 'gras', 'sucre', 'fiber', 'lipide'])) {
+                return $this->handleNutritionInfo($message);
+            }
+            
+            // Show general grocery list
+            return $this->handleGroceryList($message);
+        }
+        
+        $response = "🍎═══════════════════════════════════\n";
+        $response .= "   INFORMATIONS PRODUIT\n";
+        $response .= "═══════════════════════════════════\n\n";
+        
+        foreach ($foundProducts as $name => $data) {
+            $price = $this->priceService->formatPrice($data['price']);
+            $calories = $data['calories'] ?? 0;
+            
+            $response .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+            $response .= "🍽️  **$name**\n\n";
+            $response .= "   📦 Catégorie: {$data['category']}\n";
+            $response .= "   💰 Prix: $price / {$data['unit']}\n";
+            $response .= "   🔥 Calories: $calories kcal/100g\n";
+            $response .= "\n";
+        }
+        $response .= "═══════════════════════════════════\n";
+        
+        return [
+            'message' => $response,
+            'meals' => [],
+        ];
+    }
+    
+    private function handleNutritionInfo(string $message): array
+    {
+        $response = "📊 **Informations nutritionnelles**\n\n";
+        
+        if ($this->containsAny($message, ['calories', 'combien'])) {
+            $response .= "Calories par 100g:\n";
+            $response .= "• Fruits: 30-80 kcal\n";
+            $response .= "• Viandes: 150-300 kcal\n";
+            $response .= "• Legumes: 15-50 kcal\n";
+            $response .= "• Produits laitiers: 40-150 kcal\n";
+        }
+        
+        if ($this->containsAny($message, ['proteine', 'protein'])) {
+            $response .= "\nProteines:\n";
+            $response .= "• Poulet: 31g\n";
+            $response .= "• Poisson: 20-25g\n";
+            $response .= "• Oeufs: 13g\n";
+            $response .= "• Legumineuses: 8-10g\n";
+        }
+        
+        if ($this->containsAny($message, ['gras', 'fat', 'lipide'])) {
+            $response .= "\nMatieres grasses:\n";
+            $response .= "• Huiles: 100g\n";
+            $response .= "• Beurre: 81g\n";
+            $response .= "• Avocat: 15g\n";
+        }
+        
+        return [
+            'message' => $response,
             'meals' => [],
         ];
     }

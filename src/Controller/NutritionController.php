@@ -21,6 +21,7 @@ use App\Repository\AiConversationRepository;
 use App\Service\NutritionAIService;
 use App\Service\GroceryListPdfService;
 use App\Service\TunisianPriceService;
+use App\Service\OllamaService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,11 +34,13 @@ class NutritionController extends AbstractController
 {
     private $entityManager;
     private NutritionAIService $aiService;
+    private ?OllamaService $ollamaService;
 
-    public function __construct(EntityManagerInterface $entityManager, NutritionAIService $aiService)
+    public function __construct(EntityManagerInterface $entityManager, NutritionAIService $aiService, ?OllamaService $ollamaService = null)
     {
         $this->entityManager = $entityManager;
         $this->aiService = $aiService;
+        $this->ollamaService = $ollamaService;
     }
 
     private function getUserId(): int
@@ -1410,6 +1413,18 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         $suggestedMeals = $request->getSession()->get('ai_suggested_meals', []);
         $weeklyPlan = $request->getSession()->get('ai_weekly_plan', null);
         
+        // If no conversation in session, load from database
+        if (empty($conversation)) {
+            $recentConversations = $conversationRepository->findBy(['userId' => $userId], ['createdAt' => 'DESC'], 20);
+            $conversation = [];
+            foreach ($recentConversations as $conv) {
+                $conversation[] = ['role' => 'user', 'content' => $conv->getUserMessage()];
+                $conversation[] = ['role' => 'assistant', 'content' => $conv->getAiResponse()];
+            }
+            // Reverse to show oldest first
+            $conversation = array_reverse($conversation);
+        }
+        
         // Initialize AI Service with user ID
         $this->aiService->setUserId($userId);
         
@@ -1427,9 +1442,25 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         }
         
         if ($userMessage) {
-            // Use the new AI Service for processing
-            $responseData = $this->aiService->processMessage($userMessage, $conversation);
-            $aiResponse = $responseData['message'];
+            // Try to use Ollama (AI) if available, otherwise fall back to local AI
+            $useOllama = $this->ollamaService && $this->ollamaService->isAvailable();
+            
+            if ($useOllama) {
+                // Use intelligent Ollama AI
+                $ollamaResponse = $this->ollamaService->chat($userMessage, $conversation);
+                if ($ollamaResponse['success']) {
+                    $aiResponse = $ollamaResponse['message'];
+                } else {
+                    // Fall back to local AI
+                    $responseData = $this->aiService->processMessage($userMessage, $conversation);
+                    $aiResponse = $responseData['message'];
+                }
+            } else {
+                // Use local AI Service
+                $responseData = $this->aiService->processMessage($userMessage, $conversation);
+                $aiResponse = $responseData['message'];
+            }
+            
             $suggestedMeals = $responseData['meals'] ?? [];
             $weeklyPlan = $responseData['weeklyPlan'] ?? null;
             
@@ -1734,6 +1765,42 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         }
         
         return $this->redirectToRoute('nutrition_ai_history');
+    }
+
+    #[Route('/ai-view/{id}', name: 'ai_view')]
+    public function aiViewConversation(int $id, Request $request, AiConversationRepository $conversationRepository): Response
+    {
+        $userId = $this->getUserId();
+        
+        // Get all conversations up to this one
+        $conversation = $conversationRepository->findOneBy(['id' => $id, 'userId' => $userId]);
+        
+        if ($conversation) {
+            // Get all conversations from the beginning up to this one
+            $allConversations = $conversationRepository->findBy(
+                ['userId' => $userId],
+                ['createdAt' => 'ASC'],
+                null,
+                null
+            );
+            
+            // Build conversation array up to this point
+            $sessionConversation = [];
+            foreach ($allConversations as $conv) {
+                $sessionConversation[] = ['role' => 'user', 'content' => $conv->getUserMessage()];
+                $sessionConversation[] = ['role' => 'assistant', 'content' => $conv->getAiResponse()];
+                
+                // Stop if we've reached the target conversation
+                if ($conv->getId() == $id) {
+                    break;
+                }
+            }
+            
+            // Save to session
+            $request->getSession()->set('ai_conversation', $sessionConversation);
+        }
+        
+        return $this->redirectToRoute('nutrition_ai_assistant');
     }
 
     #[Route('/ai-clear-history', name: 'ai_clear_history')]
