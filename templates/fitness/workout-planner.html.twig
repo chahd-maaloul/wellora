@@ -1,3 +1,5 @@
+{# templates/fitness/workout-planner.html.twig #}
+
 {% extends 'layouts/app.html.twig' %}
 
 {% block title %}{{ 'Workout Planner - WellCare Connect' }}{% endblock %}
@@ -5,12 +7,57 @@
 {% block stylesheets %}
     {{ parent() }}
     {{ encore_entry_link_tags('fitness') }}
+    <style>
+        .calendar-container {
+            transition: all 0.3s ease;
+        }
+        .calendar-day-cell {
+            min-height: 120px;
+            position: relative;
+        }
+        .calendar-week-cell {
+            min-height: 80px;
+        }
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .calendar-toolbar {
+            transition: all 0.3s ease;
+        }
+        .month-view .calendar-grid {
+            grid-template-columns: repeat(7, 1fr);
+        }
+        .week-view .calendar-grid {
+            grid-template-columns: repeat(7, 1fr);
+        }
+        .day-view .calendar-grid {
+            grid-template-columns: 1fr;
+        }
+        .time-slots {
+            border-right: 1px solid #e5e7eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            .time-slots {
+                border-right-color: #4b5563;
+            }
+        }
+        .goal-badge {
+            transition: all 0.2s ease;
+        }
+        .goal-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     {{ encore_entry_script_tags('fitness') }}
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 {% endblock %}
 
 {% block body %}
@@ -20,7 +67,7 @@
         <div class="px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <a href="{{ path('fitness_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <a href="{{ path('fitness_dashboard') }}{{ goal ? '?goal=' ~ goal.id : '' }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                         <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
                     </a>
                     <div>
@@ -29,18 +76,70 @@
                             {{ 'Workout Planner' }}
                         </h1>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ 'Plan and schedule your weekly workouts' }}
+                            {% if goal %}
+                                {{ 'Plan for goal:' }} <span class="font-medium text-wellcare-500">{{ goal.title }}</span>
+                            {% else %}
+                                {{ 'Plan and schedule your weekly workouts' }}
+                            {% endif %}
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button @click="openQuickAdd()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                        <i class="fas fa-plus"></i>
-                        {{ 'Quick Add' }}
-                    </button>
-                    <button @click="toggleView()" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <i class="fas" :class="calendarView === 'month' ? 'fa-calendar-week' : 'fa-calendar'"></i>
-                    </button>
+                    <!-- Goal Selector -->
+                    {% if goals is defined and goals|length > 0 %}
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <i class="fas fa-bullseye text-wellcare-500"></i>
+                            <span>{{ goal ? goal.title : 'Select Goal' }}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 z-10 w-64 mt-2 bg-white border border-gray-200 shadow-lg dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                            <div class="p-2">
+                                {% for g in goals %}
+                                <a href="{{ path('fitness_planner', {'goal': g.id}) }}" 
+                                   class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 {{ goal and goal.id == g.id ? 'bg-gray-50 dark:bg-gray-700' : '' }}">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center
+                                        {% if g.category == 'weight_loss' %}bg-blue-100 dark:bg-blue-900/30
+                                        {% elseif g.category == 'strength' %}bg-purple-100 dark:bg-purple-900/30
+                                        {% elseif g.category == 'endurance' %}bg-green-100 dark:bg-green-900/30
+                                        {% else %}bg-gray-100 dark:bg-gray-700{% endif %}">
+                                        <i class="fas 
+                                            {% if g.category == 'weight_loss' %}fa-weight-scale text-blue-500
+                                            {% elseif g.category == 'strength' %}fa-dumbbell text-purple-500
+                                            {% elseif g.category == 'endurance' %}fa-heart-pulse text-green-500
+                                            {% else %}fa-bullseye text-gray-500{% endif %}">
+                                        </i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ g.title|slice(0, 25) }}{% if g.title|length > 25 %}...{% endif %}</p>
+                                        <p class="text-xs text-gray-500">{{ g.progress }}% complete</p>
+                                    </div>
+                                    {% if goal and goal.id == g.id %}
+                                    <i class="fas fa-check text-wellcare-500"></i>
+                                    {% endif %}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex items-center gap-2">
+                        <button @click="previousPeriod()" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-gray-600 fas fa-chevron-left dark:text-gray-400"></i>
+                        </button>
+                        <button @click="nextPeriod()" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-gray-600 fas fa-chevron-right dark:text-gray-400"></i>
+                        </button>
+                        <button @click="goToToday()" class="px-3 py-1 text-sm font-medium transition-colors rounded-lg text-wellcare-600 dark:text-wellcare-400 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/30">
+                            {{ 'Today' }}
+                        </button>
+                        <select x-model="selectedView" @change="changeView()" class="px-3 py-1 text-sm text-gray-700 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-wellcare-500 focus:border-wellcare-500">
+                            <option value="month">{{ 'Month' }}</option>
+                            <option value="week">{{ 'Week' }}</option>
+                            <option value="day">{{ 'Day' }}</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -50,85 +149,247 @@
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
             <!-- Main Calendar -->
             <div class="lg:col-span-3">
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 calendar-container" :class="calendarView + '-view'">
                     <!-- Calendar Header -->
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center justify-between mb-6 calendar-toolbar">
                         <div class="flex items-center gap-4">
-                            <button @click="previousMonth()" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="text-gray-600 fas fa-chevron-left dark:text-gray-400"></i>
-                            </button>
-                            <h2 class="text-xl font-bold text-gray-900 dark:text-white" x-text="currentMonthYear"></h2>
-                            <button @click="nextMonth()" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <i class="text-gray-600 fas fa-chevron-right dark:text-gray-400"></i>
-                            </button>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="goToToday()" class="px-3 py-1 text-sm font-medium transition-colors rounded-lg text-wellcare-600 dark:text-wellcare-400 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/30">
-                                {{ 'Today' }}
-                            </button>
-                            <select x-model="selectedView" @change="changeView()" class="text-sm text-gray-700 border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-wellcare-500 focus:border-wellcare-500">
-                                <option value="month">{{ 'Month' }}</option>
-                                <option value="week">{{ 'Week' }}</option>
-                                <option value="day">{{ 'Day' }}</option>
-                            </select>
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white" x-text="currentPeriodTitle"></h2>
+                            {% if goal %}
+                            <span class="px-3 py-1 text-xs font-medium rounded-full bg-wellcare-100 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                                <i class="fas fa-bullseye mr-1"></i>{{ goal.title }}
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <!-- Calendar Grid -->
-                    <div class="grid grid-cols-7 gap-1 mb-2">
-                        {% for day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
-                        <div class="py-2 text-sm font-medium text-center text-gray-500 dark:text-gray-400">{{ day }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="grid grid-cols-7 gap-1">
-                        <template x-for="(day, index) in calendarDays" :key="index">
-                            <div 
-                                @click="selectDay(day)"
-                                class="p-2 transition-all duration-200 border rounded-lg cursor-pointer min-h-24"
-                                :class="{
-                                    'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-wellcare-500': !day.isCurrentMonth,
-                                    'bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-500 dark:border-wellcare-500': day.isToday,
-                                    'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600': day.isSelected
-                                }">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span 
-                                        class="text-sm font-medium"
+                    <!-- Month View -->
+                    <template x-if="calendarView === 'month'">
+                        <div>
+                            <!-- Day headers -->
+                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                {% for day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
+                                <div class="py-2 text-sm font-medium text-center text-gray-500 dark:text-gray-400">{{ day }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Days grid -->
+                            <div class="grid grid-cols-7 gap-1">
+                                <template x-for="(day, index) in monthDays" :key="index">
+                                    <div 
+                                        @click="selectDay(day)"
+                                        class="p-2 transition-all duration-200 border rounded-lg cursor-pointer calendar-day-cell"
                                         :class="{
-                                            'text-gray-400 dark:text-gray-500': !day.isCurrentMonth,
-                                            'text-wellcare-600 dark:text-wellcare-400 font-bold': day.isToday,
-                                            'text-gray-900 dark:text-white': day.isCurrentMonth && !day.isToday
-                                        }"
-                                        x-text="day.date"></span>
-                                    <span 
-                                        class="flex items-center justify-center w-6 h-6 text-xs rounded-full"
-                                        :class="{
-                                            'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400': day.workoutsCompleted > 0,
-                                            'bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400': day.workoutsCompleted === 0 && day.hasWorkout
-                                        }"
-                                        x-show="day.hasWorkout || day.workoutsCompleted > 0"
-                                        x-text="day.workoutsCompleted > 0 ? day.workoutsCompleted : ''">
-                                    </span>
-                                </div>
-                                <div class="space-y-1">
-                                    <template x-for="workout in day.workouts.slice(0, 2)">
-                                        <div 
-                                            class="p-1 text-xs truncate rounded"
-                                            :class="{
-                                                'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': workout.type === 'completed',
-                                                'bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-400': workout.type === 'scheduled',
-                                                'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': workout.type === 'rest'
-                                            }"
-                                            x-text="workout.name">
+                                            'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-wellcare-500': !day.isCurrentMonth,
+                                            'bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-500 dark:border-wellcare-500': day.isToday,
+                                            'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600': day.isSelected
+                                        }">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span 
+                                                class="text-sm font-medium"
+                                                :class="{
+                                                    'text-gray-400 dark:text-gray-500': !day.isCurrentMonth,
+                                                    'text-wellcare-600 dark:text-wellcare-400 font-bold': day.isToday,
+                                                    'text-gray-900 dark:text-white': day.isCurrentMonth && !day.isToday
+                                                }"
+                                                x-text="day.date.getDate()"></span>
+                                            <span 
+                                                class="flex items-center justify-center w-6 h-6 text-xs rounded-full"
+                                                :class="{
+                                                    'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400': day.workoutsCompleted > 0,
+                                                    'bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400': day.workoutsCompleted === 0 && day.hasWorkout,
+                                                    'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400': day.isRestDay
+                                                }"
+                                                x-show="day.hasWorkout || day.isRestDay"
+                                                x-text="day.workoutsCompleted > 0 ? day.workoutsCompleted : ''">
+                                            </span>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <template x-for="plan in day.plans.slice(0, 2)">
+                                                <div 
+                                                    class="p-1 text-xs truncate rounded"
+                                                    :class="{
+                                                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': plan.status === 'completed',
+                                                        'bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-400': plan.status === 'scheduled' || plan.status === 'planned',
+                                                        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': plan.status === 'in_progress',
+                                                        'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': plan.isRestDay
+                                                    }"
+                                                    x-text="plan.title">
+                                                </div>
+                                            </template>
+                                            <div x-show="day.plans.length > 2" class="text-xs text-gray-500 dark:text-gray-400">
+                                                +<span x-text="day.plans.length - 2"></span> {{ 'more' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Week View -->
+                    <template x-if="calendarView === 'week'">
+                        <div>
+                            <!-- Week header -->
+                            <div class="grid grid-cols-8 gap-1 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <div class="py-2 text-sm font-medium text-center text-gray-500 dark:text-gray-400">{{ 'Time' }}</div>
+                                <template x-for="(day, index) in weekDays" :key="index">
+                                    <div class="py-2 text-center"
+                                         :class="{
+                                             'text-gray-900 dark:text-white': !isToday(day.date),
+                                             'text-wellcare-600 dark:text-wellcare-400 font-bold': isToday(day.date)
+                                         }">
+                                        <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                            <span x-text="day.date.toLocaleDateString('en-US', { weekday: 'short' })"></span>
+                                        </div>
+                                        <div class="flex items-center justify-center w-8 h-8 mx-auto rounded-full"
+                                             :class="{
+                                                 'bg-gray-100 dark:bg-gray-700': !isToday(day.date),
+                                                 'bg-wellcare-500 text-white': isToday(day.date)
+                                             }">
+                                            <span x-text="day.date.getDate()"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- Time slots grid -->
+                            <div class="relative" style="height: 720px;">
+                                <!-- Time labels -->
+                                <div class="absolute left-0 top-0 w-16 h-full border-r border-gray-200 dark:border-gray-700">
+                                    <template x-for="hour in hours" :key="hour">
+                                        <div class="h-12 flex items-center justify-end pr-3">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400" 
+                                                  x-text="formatHour(hour)"></span>
                                         </div>
                                     </template>
-                                    <div x-show="day.workouts.length > 2" class="text-xs text-gray-500 dark:text-gray-400">
-                                        +<span x-text="day.workouts.length - 2"></span> {{ 'more' }}
+                                </div>
+                                
+                                <!-- Days columns -->
+                                <div class="ml-16 grid grid-cols-7 h-full">
+                                    <template x-for="(day, dayIndex) in weekDays" :key="dayIndex">
+                                        <div class="border-l border-gray-100 dark:border-gray-800 relative">
+                                            <!-- Time slots -->
+                                            <template x-for="hour in hours" :key="hour">
+                                                <div 
+                                                    @click="openAddModalAtTime(day.date, hour)"
+                                                    class="h-12 border-t border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 relative"
+                                                    :class="{
+                                                        'bg-gray-50 dark:bg-gray-800/30': hour % 2 === 0
+                                                    }">
+                                                </div>
+                                            </template>
+                                            
+                                            <!-- Workout plans -->
+                                            <template x-for="plan in day.plans" :key="plan.id">
+                                                <div 
+                                                    @click.stop="editPlan(plan)"
+                                                    class="absolute left-1 right-1 p-2 text-xs rounded-lg shadow-sm border cursor-pointer transition-all hover:shadow-md"
+                                                    :class="{
+                                                        'bg-green-100 dark:bg-green-900/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200': plan.status === 'completed',
+                                                        'bg-wellcare-100 dark:bg-wellcare-900/60 border-wellcare-200 dark:border-wellcare-800 text-wellcare-800 dark:text-wellcare-200': plan.status === 'scheduled' || plan.status === 'planned',
+                                                        'bg-yellow-100 dark:bg-yellow-900/60 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200': plan.status === 'in_progress',
+                                                        'bg-purple-100 dark:bg-purple-900/60 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-200': plan.isRestDay
+                                                    }"
+                                                    :style="'top: ' + (getPlanTopPosition(plan)) + 'px; height: ' + (getPlanHeight(plan)) + 'px;'">
+                                                    <div class="font-medium truncate" x-text="plan.title"></div>
+                                                    <div class="flex items-center justify-between mt-1">
+                                                        <span class="text-xs opacity-75" x-text="plan.duration + ' min'"></span>
+                                                        <template x-if="plan.exercises > 0">
+                                                            <span class="text-xs opacity-75" x-text="plan.exercises + ' ex'"></span>
+                                                        </template>
+                                                    </div>
+                                                    {% if goal %}
+                                                    <div class="absolute top-1 right-1">
+                                                        <i class="fas fa-bullseye text-wellcare-400 text-xs"></i>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            <!-- Legend -->
+                            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <div class="flex flex-wrap items-center gap-4 text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded bg-wellcare-100 dark:bg-wellcare-900/60"></div>
+                                        <span class="text-gray-600 dark:text-gray-400">Planned</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded bg-green-100 dark:bg-green-900/60"></div>
+                                        <span class="text-gray-600 dark:text-gray-400">Completed</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/60"></div>
+                                        <span class="text-gray-600 dark:text-gray-400">In Progress</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded bg-purple-100 dark:bg-purple-900/60"></div>
+                                        <span class="text-gray-600 dark:text-gray-400">Rest Day</span>
                                     </div>
                                 </div>
                             </div>
-                        </template>
-                    </div>
+                        </div>
+                    </template>
+
+                    <!-- Day View -->
+                    <template x-if="calendarView === 'day'">
+                        <div>
+                            <!-- Day header -->
+                            <div class="mb-4 text-center">
+                                <div class="text-lg font-semibold text-gray-900 dark:text-white" x-text="selectedDayLabel"></div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ 'Schedule for the day' }}</div>
+                            </div>
+                            
+                            <!-- Time slots -->
+                            <div class="relative" style="height: 720px;">
+                                <!-- Time labels -->
+                                <div class="absolute left-0 top-0 w-16 h-full border-r border-gray-200 dark:border-gray-700">
+                                    <template x-for="hour in hours" :key="hour">
+                                        <div class="h-12 flex items-center justify-end pr-3">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400" 
+                                                  x-text="formatHour(hour)"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <!-- Day column -->
+                                <div class="ml-16 relative h-full">
+                                    <template x-for="hour in hours" :key="hour">
+                                        <div 
+                                            @click="openAddModalAtTime(selectedDay.date, hour)"
+                                            class="h-12 border-t border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                            :class="{'bg-gray-50 dark:bg-gray-800/30': hour % 2 === 0}">
+                                        </div>
+                                    </template>
+                                    
+                                    <!-- Workout plans -->
+                                    <template x-for="plan in selectedDayPlans" :key="plan.id">
+                                        <div 
+                                            @click.stop="editPlan(plan)"
+                                            class="absolute left-1 right-1 p-2 text-xs rounded-lg shadow-sm border cursor-pointer transition-all hover:shadow-md"
+                                            :class="{
+                                                'bg-green-100 dark:bg-green-900/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200': plan.status === 'completed',
+                                                'bg-wellcare-100 dark:bg-wellcare-900/60 border-wellcare-200 dark:border-wellcare-800 text-wellcare-800 dark:text-wellcare-200': plan.status === 'scheduled' || plan.status === 'planned',
+                                                'bg-yellow-100 dark:bg-yellow-900/60 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200': plan.status === 'in_progress',
+                                                'bg-purple-100 dark:bg-purple-900/60 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-200': plan.isRestDay
+                                            }"
+                                            :style="'top: ' + (getPlanTopPosition(plan)) + 'px; height: ' + (getPlanHeight(plan)) + 'px;'">
+                                            <div class="font-medium truncate" x-text="plan.title"></div>
+                                            <div class="flex items-center justify-between mt-1">
+                                                <span class="text-xs opacity-75" x-text="plan.duration + ' min'"></span>
+                                                <template x-if="plan.exercises > 0">
+                                                    <span class="text-xs opacity-75" x-text="plan.exercises + ' ex'"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Weekly Summary -->
@@ -185,7 +446,7 @@
                 <div class="sticky p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 top-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-semibold text-gray-900 dark:text-white" x-text="selectedDayLabel"></h3>
-                        <button @click="openQuickAdd()" class="text-wellcare-500 hover:text-wellcare-600">
+                        <button @click="openQuickAdd()" class="text-wellcare-500 hover:text-wellcare-600" title="Add workout for this day">
                             <i class="text-xl fas fa-plus-circle"></i>
                         </button>
                     </div>
@@ -202,61 +463,64 @@
                         </div>
                     </div>
 
+                    <!-- Goal Info -->
+                    {% if goal %}
+                    <div class="mb-4 p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20 border border-wellcare-200 dark:border-wellcare-800">
+                        <p class="text-xs text-wellcare-600 dark:text-wellcare-400 mb-1">
+                            <i class="fas fa-bullseye mr-1"></i>Current Goal
+                        </p>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ goal.title }}</p>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-xs text-gray-500">Progress</span>
+                            <span class="text-xs font-medium text-wellcare-600">{{ goal.progress }}%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-gray-200 rounded-full mt-1">
+                            <div class="h-1.5 rounded-full bg-wellcare-500" style="width: {{ goal.progress }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Workouts List -->
-                    <div class="mb-4 space-y-3">
-                        <template x-for="workout in selectedDayWorkouts" :key="workout.id">
+                    <div class="mb-4 space-y-3 max-h-96 overflow-y-auto">
+                        <template x-for="plan in selectedDayPlans" :key="plan.id">
                             <div 
-                                @click="editWorkout(workout)"
+                                @click="editPlan(plan)"
                                 class="p-3 transition-colors border border-gray-100 rounded-lg cursor-pointer dark:border-gray-700 hover:border-wellcare-500">
                                 <div class="flex items-center justify-between mb-2">
                                     <span 
                                         class="px-2 py-1 text-xs font-medium rounded"
                                         :class="{
-                                            'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': workout.type === 'completed',
-                                            'bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-400': workout.type === 'scheduled',
-                                            'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': workout.type === 'rest'
+                                            'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': plan.status === 'completed',
+                                            'bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-400': plan.status === 'scheduled' || plan.status === 'planned',
+                                            'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400': plan.status === 'in_progress',
+                                            'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': plan.isRestDay
                                         }"
-                                        x-text="workout.typeLabel"></span>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400" x-text="workout.time"></span>
+                                        x-text="plan.statusLabel"></span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400" x-text="plan.duration + ' min'"></span>
                                 </div>
-                                <h4 class="font-medium text-gray-900 dark:text-white" x-text="workout.name"></h4>
-                                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="workout.exercises + ' exercises'"></p>
+                                <h4 class="font-medium text-gray-900 dark:text-white" x-text="plan.title"></h4>
+                                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="plan.exercises + ' exercises'"></p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 line-clamp-2" x-text="plan.notes"></p>
+                            </div>
+                        </template>
+                        
+                        <template x-if="selectedDayPlans.length === 0">
+                            <div class="text-center py-8">
+                                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full dark:bg-gray-700">
+                                    <i class="text-gray-400 fas fa-calendar-plus"></i>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">No workouts scheduled</p>
+                                <button @click="openQuickAdd()" class="mt-2 text-xs text-wellcare-500 hover:text-wellcare-600">
+                                    + Add workout
+                                </button>
                             </div>
                         </template>
                     </div>
 
-                    <!-- Rest Day Info -->
-                    <div x-show="selectedDayDetails.isRestDay" class="p-4 border border-orange-200 rounded-lg bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800">
-                        <div class="flex items-center gap-3">
-                            <i class="text-xl text-orange-500 fas fa-bed"></i>
-                            <div>
-                                <h4 class="font-medium text-orange-800 dark:text-orange-200">{{ 'Rest Day' }}</h4>
-                                <p class="text-sm text-orange-600 dark:text-orange-400">{{ 'Active recovery recommended' }}</p>
-                            </div>
-                        </div>
-                        <div class="mt-3 space-y-2">
-                            <p class="text-sm text-orange-700 dark:text-orange-300">
-                                <i class="mr-2 fas fa-walking"></i>{{ 'Light walking: 20-30 min' }}
-                            </p>
-                            <p class="text-sm text-orange-700 dark:text-orange-300">
-                                <i class="mr-2 fas fa-expand"></i>{{ 'Stretching routine' }}
-                            </p>
-                            <p class="text-sm text-orange-700 dark:text-orange-300">
-                                <i class="mr-2 fas fa-swimmer"></i>{{ 'Light swimming (optional)' }}
-                            </p>
-                        </div>
-                    </div>
-
                     <!-- Quick Actions -->
                     <div class="pt-4 space-y-2 border-t border-gray-100 dark:border-gray-700">
-                        <button @click="markAllComplete()" class="flex items-center justify-center w-full gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
-                            <i class="fas fa-check-double"></i>
-                            {{ 'Mark All Complete' }}
-                        </button>
-                        <button @click="copyToNextWeek()" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <i class="fas fa-copy"></i>
-                            {{ 'Copy to Next Week' }}
-                        </button>
+                        
+                        
                     </div>
                 </div>
             </div>
@@ -270,61 +534,68 @@
             
             <div class="relative z-10 w-full max-w-lg p-6 bg-white shadow-xl dark:bg-gray-800 rounded-xl">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="modalMode === 'add' ? '{{ 'Add Workout' }}' : '{{ 'Edit Workout' }}'"></h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white" x-text="modalMode === 'add' ? 'Add Workout' : 'Edit Workout'"></h3>
                     <button @click="showModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <i class="text-xl fas fa-times"></i>
                     </button>
                 </div>
 
                 <form @submit.prevent="saveWorkout()" class="space-y-4">
+                    {% if goal %}
+                    <input type="hidden" name="goalId" value="{{ goal.id }}">
+                    {% endif %}
+                    
                     <div>
-                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Workout Name' }}</label>
-                        <input type="text" x-model="workoutForm.name" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500" placeholder="e.g., Upper Body Strength">
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Workout Name *</label>
+                        <input type="text" x-model="workoutForm.title" required class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500" placeholder="e.g., Upper Body Strength">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Type' }}</label>
-                            <select x-model="workoutForm.type" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
-                                <option value="strength">{{ 'Strength' }}</option>
-                                <option value="cardio">{{ 'Cardio' }}</option>
-                                <option value="flexibility">{{ 'Flexibility' }}</option>
-                                <option value="hiit">{{ 'HIIT' }}</option>
-                                <option value="rest">{{ 'Rest Day' }}</option>
-                            </select>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Date *</label>
+                            <input type="date" x-model="workoutForm.date" required class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
                         </div>
                         <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Duration (min)' }}</label>
-                            <input type="number" x-model="workoutForm.duration" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500" placeholder="45">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Time' }}</label>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
                             <input type="time" x-model="workoutForm.time" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Intensity' }}</label>
-                            <select x-model="workoutForm.intensity" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
-                                <option value="low">{{ 'Low' }}</option>
-                                <option value="medium">{{ 'Medium' }}</option>
-                                <option value="high">{{ 'High' }}</option>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Duration (min) *</label>
+                            <input type="number" x-model="workoutForm.duration" required class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500" placeholder="45">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <select x-model="workoutForm.status" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                <option value="planned">Planned</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'Notes' }}</label>
+                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
                         <textarea x-model="workoutForm.notes" rows="3" class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500" placeholder="Any special instructions or notes..."></textarea>
                     </div>
 
+                    {% if goal %}
+                    <div class="p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                        <p class="text-xs text-wellcare-600 dark:text-wellcare-400">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            This workout will be linked to goal: <strong>{{ goal.title }}</strong>
+                        </p>
+                    </div>
+                    {% endif %}
+
                     <div class="flex gap-3 pt-4">
                         <button type="button" @click="showModal = false" class="flex-1 px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                            {{ 'Cancel' }}
+                            Cancel
                         </button>
                         <button type="submit" class="flex-1 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                            {{ 'Save Workout' }}
+                            Save Workout
                         </button>
                     </div>
                 </form>
@@ -332,10 +603,10 @@
         </div>
     </div>
 
-    <!-- Emergency Stop Button -->
+    <!-- Quick Add Button -->
     <div class="fixed bottom-6 right-6">
-        <button @click="emergencyStop()" class="flex items-center justify-center text-white transition-all duration-200 bg-red-500 rounded-full shadow-lg w-14 h-14 hover:bg-red-600 hover:scale-110">
-            <i class="text-xl fas fa-stop"></i>
+        <button @click="openQuickAdd()" class="flex items-center justify-center text-white transition-all duration-200 bg-wellcare-500 rounded-full shadow-lg w-14 h-14 hover:bg-wellcare-600 hover:scale-110">
+            <i class="text-xl fas fa-plus"></i>
         </button>
     </div>
 </div>
@@ -346,206 +617,441 @@ document.addEventListener('alpine:init', () => {
         darkMode: false,
         calendarView: 'month',
         selectedView: 'month',
-        currentMonth: new Date().getMonth(),
-        currentYear: new Date().getFullYear(),
+        currentDate: new Date(),
         selectedDay: null,
         showModal: false,
         modalMode: 'add',
         
-        weeklyStats: {
-            scheduled: 5,
-            completed: 3,
-            minutes: 180,
-            restDays: 2
-        },
-
+        // Données réelles de Symfony
+        dailyPlans: {{ dailyPlans|default([])|json_encode|raw }},
+        weeklyStats: {{ weeklyStats|default({
+            scheduled: 0,
+            completed: 0,
+            minutes: 0,
+            restDays: 0,
+            calories: 0
+        })|json_encode|raw }},
+        
+        // Goal ID from URL (passed from Symfony)
+        goalId: {{ goal ? goal.id : 'null' }},
+        
         selectedDayDetails: {
-            duration: 45,
-            calories: 320,
+            duration: 0,
+            calories: 0,
             isRestDay: false
         },
 
         selectedDayLabel: 'Select a Day',
-
-        selectedDayWorkouts: [],
+        selectedDayPlans: [],
+        monthDays: [],
+        weekDays: [],
+        hours: Array.from({length: 12}, (_, i) => i + 7), // 7 AM to 6 PM
 
         workoutForm: {
             id: null,
-            name: '',
-            type: 'strength',
-            duration: 45,
+            title: '',
+            date: '',
             time: '08:00',
-            intensity: 'medium',
-            notes: ''
+            duration: 45,
+            notes: '',
+            status: 'planned'
         },
 
-        calendarDays: [],
+        // Fonction utilitaire pour formater une date en YYYY-MM-DD sans décalage
+        formatDateToLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        },
 
         init() {
             this.darkMode = localStorage.getItem('theme') === 'dark';
+            
+            // Initialiser la date courante
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            this.currentDate = today;
+            
             this.generateCalendar();
             
             // Set selected day to today
-            this.selectDay(this.calendarDays.find(d => d.isToday) || this.calendarDays[10]);
+            this.selectedDay = {
+                date: today,
+                dateStr: this.formatDateToLocal(today),
+                isCurrentMonth: true,
+                isToday: true,
+                isSelected: true
+            };
+            
+            this.updateSelectedDay();
         },
 
-        get currentMonthYear() {
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            return months[this.currentMonth] + ' ' + this.currentYear;
+        // Getters pour les titres de période
+        get currentPeriodTitle() {
+            if (this.calendarView === 'month') {
+                return this.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else if (this.calendarView === 'week') {
+                const startOfWeek = this.getStartOfWeek(this.currentDate);
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(endOfWeek.getDate() + 6);
+                return startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + 
+                       ' - ' + 
+                       endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } else {
+                return this.selectedDay.date.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+            }
         },
 
+        // Génération du calendrier
         generateCalendar() {
-            const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-            const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+            if (this.calendarView === 'month') {
+                this.generateMonthView();
+            } else if (this.calendarView === 'week') {
+                this.generateWeekView();
+            }
+        },
+
+        generateMonthView() {
+            const year = this.currentDate.getFullYear();
+            const month = this.currentDate.getMonth();
+            
+            const firstDay = new Date(year, month, 1);
+            firstDay.setHours(0, 0, 0, 0);
+            const lastDay = new Date(year, month + 1, 0);
+            lastDay.setHours(0, 0, 0, 0);
             const startPadding = firstDay.getDay();
             
-            this.calendarDays = [];
+            this.monthDays = [];
             
-            // Previous month padding
-            const prevMonthLastDay = new Date(this.currentYear, this.currentMonth, 0).getDate();
+            // Jours du mois précédent
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
             for (let i = startPadding - 1; i >= 0; i--) {
-                this.calendarDays.push({
-                    date: prevMonthLastDay - i,
-                    isCurrentMonth: false,
-                    isToday: false,
-                    isSelected: false,
-                    hasWorkout: Math.random() > 0.7,
-                    workoutsCompleted: 0,
-                    workouts: []
-                });
+                const dayDate = new Date(year, month - 1, prevMonthLastDay - i);
+                dayDate.setHours(0, 0, 0, 0);
+                this.monthDays.push(this.createDayObject(dayDate, false));
             }
             
-            // Current month
+            // Jours du mois courant
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
             for (let i = 1; i <= lastDay.getDate(); i++) {
-                const hasWorkout = Math.random() > 0.3;
-                const workoutsCompleted = hasWorkout && Math.random() > 0.5 ? Math.floor(Math.random() * 3) + 1 : 0;
-                
-                this.calendarDays.push({
-                    date: i,
-                    isCurrentMonth: true,
-                    isToday: today.getDate() === i && today.getMonth() === this.currentMonth && today.getFullYear() === this.currentYear,
-                    isSelected: false,
-                    hasWorkout: hasWorkout,
-                    workoutsCompleted: workoutsCompleted,
-                    workouts: hasWorkout ? [
-                        { id: 1, name: 'Morning Cardio', type: workoutsCompleted > 0 ? 'completed' : 'scheduled', typeLabel: workoutsCompleted > 0 ? 'Completed' : 'Scheduled', time: '07:00', exercises: 6 }
-                    ] : []
-                });
+                const dayDate = new Date(year, month, i);
+                dayDate.setHours(0, 0, 0, 0);
+                this.monthDays.push(this.createDayObject(dayDate, true, dayDate.getTime() === today.getTime()));
             }
             
-            // Next month padding
-            const remaining = 42 - this.calendarDays.length;
+            // Jours du mois suivant
+            const remaining = 42 - this.monthDays.length;
             for (let i = 1; i <= remaining; i++) {
-                this.calendarDays.push({
-                    date: i,
-                    isCurrentMonth: false,
-                    isToday: false,
-                    isSelected: false,
-                    hasWorkout: Math.random() > 0.8,
-                    workoutsCompleted: 0,
-                    workouts: []
+                const dayDate = new Date(year, month + 1, i);
+                dayDate.setHours(0, 0, 0, 0);
+                this.monthDays.push(this.createDayObject(dayDate, false));
+            }
+        },
+
+        generateWeekView() {
+            const startOfWeek = this.getStartOfWeek(this.currentDate);
+            this.weekDays = [];
+            
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(startOfWeek);
+                dayDate.setDate(startOfWeek.getDate() + i);
+                dayDate.setHours(0, 0, 0, 0);
+                this.weekDays.push({
+                    date: dayDate,
+                    dateStr: this.formatDateToLocal(dayDate),
+                    plans: this.getPlansForDate(this.formatDateToLocal(dayDate))
                 });
             }
         },
 
-        previousMonth() {
-            if (this.currentMonth === 0) {
-                this.currentMonth = 11;
-                this.currentYear--;
+        createDayObject(date, isCurrentMonth, isToday = false) {
+            const dateStr = this.formatDateToLocal(date);
+            const plans = this.getPlansForDate(dateStr);
+            const hasWorkout = plans.length > 0;
+            const workoutsCompleted = plans.filter(p => p.status === 'completed').length;
+            const isRestDay = !hasWorkout || plans.every(p => p.isRestDay);
+            
+            return {
+                date: date,
+                dateStr: dateStr,
+                isCurrentMonth: isCurrentMonth,
+                isToday: isToday,
+                isSelected: false,
+                isRestDay: isRestDay,
+                hasWorkout: hasWorkout,
+                workoutsCompleted: workoutsCompleted,
+                plans: plans
+            };
+        },
+
+        getPlansForDate(dateStr) {
+            // Filtrer les plans par date et par goal si sélectionné
+            return this.dailyPlans.filter(plan => {
+                if (plan.date !== dateStr) return false;
+                if (this.goalId && plan.goalId && plan.goalId !== this.goalId) return false;
+                return true;
+            }).map(plan => ({
+                ...plan,
+                statusLabel: this.getStatusLabel(plan.status),
+                isRestDay: plan.exercises === 0
+            }));
+        },
+
+        getStartOfWeek(date) {
+            const start = new Date(date);
+            const day = start.getDay();
+            const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+            start.setDate(diff);
+            start.setHours(0, 0, 0, 0);
+            return start;
+        },
+
+        getStatusLabel(status) {
+            const labels = {
+                'planned': 'Planned',
+                'in_progress': 'In Progress',
+                'completed': 'Completed',
+                'cancelled': 'Cancelled'
+            };
+            return labels[status] || status;
+        },
+
+        isToday(date) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            date.setHours(0, 0, 0, 0);
+            return date.getTime() === today.getTime();
+        },
+
+        formatHour(hour) {
+            return hour <= 12 ? `${hour} AM` : `${hour - 12} PM`;
+        },
+
+        getPlanTopPosition(plan) {
+            // Convertir l'heure en position (par défaut 8h = 0px)
+            const hour = 8; // À améliorer avec l'heure réelle du plan
+            return (hour - 7) * 48; // 48px par heure (12px * 4)
+        },
+
+        getPlanHeight(plan) {
+            // Hauteur basée sur la durée (48px par heure)
+            return Math.max(48, Math.round(plan.duration / 60 * 48));
+        },
+
+        // Navigation
+        previousPeriod() {
+            if (this.calendarView === 'month') {
+                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+            } else if (this.calendarView === 'week') {
+                this.currentDate.setDate(this.currentDate.getDate() - 7);
             } else {
-                this.currentMonth--;
+                this.currentDate.setDate(this.currentDate.getDate() - 1);
             }
+            this.currentDate.setHours(0, 0, 0, 0);
             this.generateCalendar();
         },
 
-        nextMonth() {
-            if (this.currentMonth === 11) {
-                this.currentMonth = 0;
-                this.currentYear++;
+        nextPeriod() {
+            if (this.calendarView === 'month') {
+                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+            } else if (this.calendarView === 'week') {
+                this.currentDate.setDate(this.currentDate.getDate() + 7);
             } else {
-                this.currentMonth++;
+                this.currentDate.setDate(this.currentDate.getDate() + 1);
             }
+            this.currentDate.setHours(0, 0, 0, 0);
             this.generateCalendar();
         },
 
         goToToday() {
             const today = new Date();
-            this.currentMonth = today.getMonth();
-            this.currentYear = today.getFullYear();
+            today.setHours(0, 0, 0, 0);
+            this.currentDate = today;
+            this.selectedDay = {
+                date: today,
+                dateStr: this.formatDateToLocal(today),
+                isCurrentMonth: true,
+                isToday: true,
+                isSelected: true
+            };
             this.generateCalendar();
+            this.updateSelectedDay();
         },
 
         changeView() {
             this.calendarView = this.selectedView;
+            this.generateCalendar();
         },
 
-        toggleView() {
-            const views = ['month', 'week', 'day'];
-            const currentIndex = views.indexOf(this.calendarView);
-            this.calendarView = views[(currentIndex + 1) % views.length];
-            this.selectedView = this.calendarView;
-        },
-
+        // Sélection de jour
         selectDay(day) {
-            this.calendarDays.forEach(d => d.isSelected = false);
-            day.isSelected = true;
+            if (this.calendarView === 'month') {
+                this.monthDays.forEach(d => d.isSelected = false);
+                day.isSelected = true;
+            }
+            
             this.selectedDay = day;
-            
+            this.updateSelectedDay();
+        },
+
+        updateSelectedDay() {
             const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            this.selectedDayLabel = months[this.currentMonth] + ' ' + day.date + ', ' + this.currentYear;
+            this.selectedDayLabel = months[this.selectedDay.date.getMonth()] + ' ' + 
+                                   this.selectedDay.date.getDate() + ', ' + 
+                                   this.selectedDay.date.getFullYear();
             
-            this.selectedDayWorkouts = day.workouts.length > 0 ? day.workouts : [
-                { id: 1, name: 'Quick HIIT', type: 'scheduled', typeLabel: 'Scheduled', time: '08:00', exercises: 8 },
-                { id: 2, name: 'Core Work', type: 'scheduled', typeLabel: 'Scheduled', time: '08:45', exercises: 5 }
-            ];
+            const dateStr = this.formatDateToLocal(this.selectedDay.date);
+            this.selectedDayPlans = this.getPlansForDate(dateStr);
+            
+            // Calculer les totaux pour la journée
+            const totalDuration = this.selectedDayPlans.reduce((sum, plan) => sum + (plan.duration || 0), 0);
+            const totalCalories = this.selectedDayPlans.reduce((sum, plan) => sum + (plan.calories || 0), 0);
             
             this.selectedDayDetails = {
-                duration: 60,
-                calories: 450,
-                isRestDay: false
+                duration: totalDuration,
+                calories: totalCalories,
+                isRestDay: this.selectedDay.isRestDay
             };
         },
 
+        // Modals
         openQuickAdd() {
             this.modalMode = 'add';
+            const today = this.formatDateToLocal(new Date());
             this.workoutForm = {
                 id: null,
-                name: '',
-                type: 'strength',
-                duration: 45,
+                title: '',
+                date: this.selectedDay ? this.selectedDay.dateStr : today,
                 time: '08:00',
-                intensity: 'medium',
-                notes: ''
+                duration: 45,
+                notes: '',
+                status: 'planned'
             };
             this.showModal = true;
         },
 
-        editWorkout(workout) {
-            this.modalMode = 'edit';
-            this.workoutForm = { ...workout };
+        openAddModalAtTime(date, hour) {
+            this.modalMode = 'add';
+            const dateStr = this.formatDateToLocal(date);
+            const timeStr = hour.toString().padStart(2, '0') + ':00';
+            
+            this.workoutForm = {
+                id: null,
+                title: '',
+                date: dateStr,
+                time: timeStr,
+                duration: 45,
+                notes: '',
+                status: 'planned'
+            };
             this.showModal = true;
         },
 
-        saveWorkout() {
-            // Save logic here
+        editPlan(plan) {
+            // Rediriger vers la page d'édition avec le goalId si présent
+            let url = `/coach/daily-plans/${plan.id}/edit`;
+            if (this.goalId) {
+                url += `?goal=${this.goalId}`;
+            }
+            window.location.href = url;
+        },
+
+        async saveWorkout() {
+            try {
+                const formData = new FormData();
+                formData.append('title', this.workoutForm.title);
+                formData.append('date', this.workoutForm.date);
+                formData.append('duration', this.workoutForm.duration);
+                formData.append('notes', this.workoutForm.notes);
+                formData.append('status', this.workoutForm.status);
+                
+                // Ajouter le goalId si présent
+                if (this.goalId) {
+                    formData.append('goalId', this.goalId);
+                }
+                
+                const url = this.workoutForm.id ? 
+                    `/coach/daily-plans/${this.workoutForm.id}/edit` : 
+                    '/coach/daily-plan/new';
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving workout plan');
+            }
+            
             this.showModal = false;
         },
 
         markAllComplete() {
+            if (!this.selectedDayPlans.length) {
+                alert('No workouts to mark as complete');
+                return;
+            }
+            
+            this.selectedDayPlans.forEach(plan => {
+                if (plan.status !== 'completed') {
+                    fetch(`/coach/daily-plans/${plan.id}/complete`, {
+                        method: 'POST'
+                    });
+                }
+            });
+            
             alert('All workouts for this day marked as complete!');
+            window.location.reload();
         },
 
         copyToNextWeek() {
-            alert('Workouts copied to next week!');
-        },
-
-        emergencyStop() {
-            if (confirm('Are you experiencing any discomfort? This will pause your current workout.')) {
-                window.location.href = '/emergency';
+            if (!this.selectedDayPlans.length) {
+                alert('No workouts to copy');
+                return;
             }
+            
+            const nextWeekDate = new Date(this.selectedDay.date);
+            nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+            const nextWeekDateStr = this.formatDateToLocal(nextWeekDate);
+            
+            this.selectedDayPlans.forEach(plan => {
+                const formData = new FormData();
+                formData.append('title', plan.title + ' (Copy)');
+                formData.append('date', nextWeekDateStr);
+                formData.append('duration', plan.duration);
+                formData.append('notes', plan.notes);
+                formData.append('status', 'planned');
+                
+                if (this.goalId) {
+                    formData.append('goalId', this.goalId);
+                }
+                
+                fetch('/coach/daily-plan/new', {
+                    method: 'POST',
+                    body: formData
+                });
+            });
+            
+            alert('Workouts copied to next week!');
+            window.location.reload();
         }
     }));
 });
+
+
 </script>
 {% endblock %}

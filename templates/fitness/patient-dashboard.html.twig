@@ -1,10 +1,279 @@
+{# templates/fitness/patient-dashboard.html.twig #}
+
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}{{ 'Fitness Dashboard - WellCare Connect' }}{% endblock %}
+{% block title %}Fitness Dashboard - WellCare Connect{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
     {{ encore_entry_link_tags('fitness') }}
+    <style>
+        /* Exercise popup */
+        .exercise-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .exercise-popup.active {
+            display: flex;
+        }
+        
+        .exercise-popup-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .exercise-details {
+            padding: 2rem;
+        }
+        
+        .exercise-video {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .exercise-video iframe,
+        .exercise-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .close-popup {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            color: white;
+            font-size: 1.25rem;
+        }
+        
+        .close-popup:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Exercise card style */
+        .exercise-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .exercise-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Goal tabs - AMÉLIORÉ */
+        .goal-tab {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background-color: white;
+        }
+        
+        .goal-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .goal-tab.active {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.05);
+            transform: scale(1.02);
+        }
+        
+        .dark .goal-tab {
+            background-color: #1f2937;
+        }
+        
+        .dark .goal-tab.active {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-color: #10b981;
+        }
+        
+        .goal-progress-ring {
+            transition: stroke-dashoffset 0.5s;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .today-plan {
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+        }
+        
+        .dark .empty-state-icon {
+            background-color: #374151;
+        }
+        
+        /* Scrollbar styling */
+        .exercise-popup-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .exercise-popup-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 0 16px 16px 0;
+        }
+        
+        .exercise-popup-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .exercise-popup-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .dark .exercise-popup-content::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        .dark .exercise-popup-content::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+        
+        /* Exercise info grid */
+        .exercise-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .exercise-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .exercise-info-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .exercise-info-value {
+            font-weight: 500;
+            color: #111827;
+        }
+        
+        .dark .exercise-info-label {
+            color: #9ca3af;
+        }
+        
+        .dark .exercise-info-value {
+            color: #f3f4f6;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .notification.success {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .notification.error {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .notification.info {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Goal dashboard transitions */
+        .goal-dashboard {
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .goal-dashboard[style*="display: block"] {
+            opacity: 1;
+        }
+        
+        .goal-dashboard[style*="display: none"] {
+            opacity: 0;
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
@@ -14,6 +283,16 @@
 
 {% block body %}
 <div x-data="fitnessDashboard()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Exercise details popup -->
+    <div id="exercisePopup" class="exercise-popup">
+        <div class="exercise-popup-content fade-in">
+            <button class="close-popup" onclick="closeExercisePopup()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="exercisePopupContent"></div>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4">
@@ -24,653 +303,882 @@
                         {{ 'Fitness Dashboard' }}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {{ 'Track your workouts, goals, and progress' }}
+                        {{ currentDate }} • {{ goals|length }} active goal{{ goals|length > 1 ? 's' : '' }}
                     </p>
                 </div>
                 <div class="flex items-center gap-4">
-                    <!-- Theme Toggle -->
                     <button @click="toggleTheme()" class="p-2 text-gray-600 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
                         <i class="fas" :class="darkMode ? 'fa-sun' : 'fa-moon'"></i>
                     </button>
-                    <!-- Notifications -->
-                    <button class="relative p-2 text-gray-600 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
-                        <i class="fas fa-bell"></i>
-                        <span class="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full">3</span>
-                    </button>
-                    <!-- User Profile -->
-                    <div class="flex items-center gap-3">
-                        <img src="{{ asset('build/images/logo-icon.svg') }}" alt="Profile" class="object-cover w-10 h-10 rounded-full">
-                        <div class="hidden md:block">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ app.user.firstName|default('Patient') }} {{ app.user.lastName|default('') }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Premium Member</p>
-                        </div>
-                    </div>
+                    <a href="{{ path('fitness_goals_plans') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-wellcare-600 transition-colors bg-wellcare-50 rounded-lg dark:bg-wellcare-900/20 dark:text-wellcare-400 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30">
+                        <i class="fas fa-calendar-alt"></i>
+                        All Plans
+                    </a>
+                    <a href="{{ path('fitness_goal_new') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fas fa-plus"></i> New Goal
+                    </a>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="p-6">
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-            <!-- Left Column - Main Content -->
-            <div class="space-y-6 lg:col-span-3">
-                <!-- Quick Stats Row -->
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <!-- Activity Streak -->
-                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Activity Streak' }}</p>
-                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ streak.days|default(0) }}</p>
-                                <p class="mt-1 text-xs text-green-500 dark:text-green-400">
-                                    <i class="mr-1 fas fa-fire"></i>{{ 'days in a row' }}
-                                </p>
-                            </div>
-                            <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full dark:bg-orange-900/30">
-                                <i class="text-xl text-orange-500 fas fa-fire"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Weekly Minutes -->
-                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Weekly Minutes' }}</p>
-                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ weeklyStats.minutes|default(0) }}</p>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
-                                    <div class="bg-wellcare-500 h-1.5 rounded-full" style="width: {{ min(((weeklyStats.minutes|default(0) / weeklyStats.target|default(150)) * 100), 100) }}%"></div>
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ 'of' }} {{ weeklyStats.target|default(150) }} {{ 'min' }}</p>
-                            </div>
-                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                <i class="text-xl fas fa-stopwatch text-wellcare-500"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Calories Burned -->
-                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Calories Burned' }}</p>
-                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ dailyStats.caloriesBurned|default(0) }}</p>
-                                <p class="mt-1 text-xs text-green-500 dark:text-green-400">
-                                    <i class="mr-1 fas fa-arrow-up"></i>{{ '+' ~ dailyStats.caloriesChange|default(0) }}%
-                                </p>
-                            </div>
-                            <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full dark:bg-red-900/30">
-                                <i class="text-xl text-red-500 fas fa-fire"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Workouts Completed -->
-                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Workouts This Week' }}</p>
-                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ weeklyStats.workoutsCompleted|default(0) }}</p>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    <i class="mr-1 text-green-500 fas fa-check-circle"></i>{{ weeklyStats.targetWorkouts|default(5) }} {{ 'target' }}
-                                </p>
-                            </div>
-                            <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full dark:bg-green-900/30">
-                                <i class="text-xl text-green-500 fas fa-check"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Today's Workout Section -->
-                <div class="overflow-hidden bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                        <div>
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                <i class="mr-2 fas fa-calendar-day text-wellcare-500"></i>
-                                {{ "Today's Workout" }}
-                            </h2>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'now'|date('l, d/m/Y') }}</p>
-                        </div>
-                        <span class="px-3 py-1 text-sm font-medium rounded-full {{ todayWorkout.completed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-wellcare-100 text-wellcare-700 dark:bg-wellcare-900/30 dark:text-wellcare-400' }}">
-                            {{ todayWorkout.completed ? 'Terminé' : 'À faire' }}
-                        </span>
-                    </div>
-                    
-                    <div class="p-6">
-                        {% if todayWorkout %}
-                        <div class="flex items-center gap-4 mb-4">
-                            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                <i class="fas fa-clock"></i>
-                                <span>{{ todayWorkout.duration|default(45) }} {{ 'min' }}</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                <i class="fas fa-list"></i>
-                                <span>{{ todayWorkout.exercises|length|default(0) }} {{ 'exercises' }}</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                <i class="fas fa-fire"></i>
-                                <span>~{{ todayWorkout.calories|default(300) }} {{ 'kcal' }}</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-3">
-                            {% for exercise in todayWorkout.exercises|default([]) %}
-                            <div class="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-700 rounded-lg {{ exercise.completed ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/50' }}">
-                                <button 
-                                    @click="toggleExercise({{ loop.index0 }})"
-                                    class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 {{ exercise.completed ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500' }}">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <div class="flex-1">
-                                    <h4 class="font-medium text-gray-900 dark:text-white">{{ exercise.name|default('Exercise') }}</h4>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ exercise.sets|default(3) }} {{ 'sets' }} × {{ exercise.reps|default(10) }} {{ 'reps' }}
-                                        {% if exercise.weight %}| {{ exercise.weight }} kg{% endif %}
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400">{{ exercise.duration|default(5) }} {{ 'min' }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ exercise.rpe|default(7) }}/10 RPE</p>
-                                </div>
-                                <button class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
-                                    <i class="text-xl fas fa-play-circle"></i>
-                                </button>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        {% if not todayWorkout.completed %}
-                        <button @click="completeWorkout()" class="flex items-center justify-center w-full gap-2 px-4 py-3 mt-4 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                            <i class="fas fa-check-circle"></i>
-                            {{ 'Terminer l\'entraînement' }}
-                        </button>
-                        {% endif %}
-                        {% else %}
-                        <div class="py-8 text-center">
-                            <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-700">
-                                <i class="text-2xl text-gray-400 fas fa-dumbbell"></i>
-                            </div>
-                            <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">{{ 'Rest Day!' }}</h3>
-                            <p class="text-gray-500 dark:text-gray-400">{{ 'Take a break and recover. Your body needs rest to grow stronger.' }}</p>
-                            <button class="px-4 py-2 mt-4 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                                <i class="mr-2 fas fa-plus"></i>{{ 'Add Quick Workout' }}
-                            </button>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Weekly Overview & Performance Chart -->
-                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <!-- Weekly Calendar -->
-                    <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                <i class="mr-2 fas fa-calendar-week text-wellcare-500"></i>
-                                {{ 'This Week' }}
-                            </h2>
-                            <a href="{{ path('fitness_planner') }}" class="flex items-center gap-1 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                {{ 'View Calendar' }} <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        
-                        <div class="grid grid-cols-7 gap-2">
-                            {% for day in weekDays %}
-                            <div class="text-center">
-                                <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{{ day.name|slice(0, 3) }}</p>
-                                <div 
-                                    class="relative h-16 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 {{ day.hasWorkout ? (day.completed ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-500' : 'bg-wellcare-100 dark:bg-wellcare-900/30 border-2 border-wellcare-500') : 'bg-gray-100 dark:bg-gray-700 border-2 border-transparent' }}">
-                                    <div class="absolute inset-0 flex items-center justify-center">
-                                        {% if day.completed %}
-                                        <i class="text-xl text-green-500 fas fa-check-circle"></i>
-                                        {% elseif day.hasWorkout %}
-                                        <i class="fas fa-dumbbell text-wellcare-500"></i>
-                                        {% else %}
-                                        <span class="text-sm text-gray-400">{{ day.name|slice(0, 1) }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Performance Chart -->
-                    <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                <i class="mr-2 fas fa-chart-line text-wellcare-500"></i>
-                                {{ 'Volume Load' }}
-                            </h2>
-                            <select class="text-sm text-gray-700 border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-wellcare-500 focus:border-wellcare-500">
-                                <option>{{ 'This Week' }}</option>
-                                <option>{{ 'Last Week' }}</option>
-                                <option>{{ 'This Month' }}</option>
-                            </select>
-                        </div>
-                        <div class="h-48">
-                            <canvas id="performanceChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Goals & Achievements Row -->
-                <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <!-- Goals Progress -->
-                    <div class="p-6 bg-white border border-gray-100 shadow-sm lg:col-span-2 dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                <i class="mr-2 fas fa-trophy text-wellcare-500"></i>
-                                {{ 'Goal Progress' }}
-                            </h2>
-                            <a href="{{ path('fitness_analytics') }}" class="flex items-center gap-1 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                {{ 'View All' }} <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            {% for goal in fitnessGoals|default([]) %}
-                            <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h4 class="font-medium text-gray-900 dark:text-white">{{ goal.name }}</h4>
-                                    <span class="text-sm font-medium {{ goal.progress >= 100 ? 'text-green-500' : 'text-wellcare-600 dark:text-wellcare-400' }}">
-                                        {{ goal.progress }}%
-                                    </span>
-                                </div>
-                                <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-600">
-                                    <div 
-                                        class="h-2 rounded-full transition-all duration-500 {{ goal.progress >= 100 ? 'bg-green-500' : 'bg-wellcare-500' }}" 
-                                        style="width: {{ goal.progress }}%">
-                                    </div>
-                                </div>
-                                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                    {{ goal.remaining|default(0) }} {{ 'remaining' }} | {{ goal.deadline|default('7 days left') }}
-                                </p>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Recovery Score -->
-                    <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                <i class="mr-2 fas fa-heartbeat text-wellcare-500"></i>
-                                {{ 'Recovery' }}
-                            </h2>
-                            <a href="{{ path('fitness_analytics') }}" class="flex items-center gap-1 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                {{ 'Details' }} <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        
-                        <div class="mb-4 text-center">
-                            <div class="relative w-32 h-32 mx-auto">
-                                <svg class="w-full h-full transform -rotate-90">
-                                    <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="8" fill="none" class="text-gray-200 dark:text-gray-600"/>
-                                    <circle 
-                                        cx="64" cy="64" r="56" 
-                                        stroke="currentColor" 
-                                        stroke-width="8" 
-                                        fill="none"
-                                        class="{{ recovery.ready ? 'text-green-500' : 'text-orange-500' }}"
-                                        stroke-dasharray="{{ 352 }}"
-                                        stroke-dashoffset="{{ 352 - (352 * recovery.score|default(75) / 100) }}"
-                                        stroke-linecap="round"/>
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <div>
-                                        <p class="text-3xl font-bold {{ recovery.ready ? 'text-green-500' : 'text-orange-500' }}">{{ recovery.score|default(75) }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Recovery Score' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-500 dark:text-gray-400">{{ 'Sleep Quality' }}</span>
-                                <span class="font-medium {{ recovery.sleepQuality >= 7 ? 'text-green-500' : 'text-orange-500' }}">{{ recovery.sleepQuality|default(7) }}/10</span>
-                            </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-500 dark:text-gray-400">{{ 'Muscle Readiness' }}</span>
-                                <span class="font-medium {{ recovery.muscleReadiness >= 7 ? 'text-green-500' : 'text-orange-500' }}">{{ recovery.muscleReadiness|default(8) }}/10</span>
-                            </div>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-500 dark:text-gray-400">{{ 'Training Load' }}</span>
-                                <span class="font-medium text-wellcare-600 dark:text-wellcare-400">{{ recovery.trainingLoad|default(65) }}%</span>
-                            </div>
-                        </div>
-                        
-                        <div class="pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
-                            <p class="text-sm text-center {{ recovery.ready ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400' }}">
-                                <i class="fas {{ recovery.ready ? 'fa-check-circle' : 'fa-exclamation-circle' }} mr-1"></i>
-                                {{ recovery.ready ? 'Ready for intense workout!' : 'Consider light activity today' }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Badges -->
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                            <i class="mr-2 fas fa-medal text-wellcare-500"></i>
-                            {{ 'Recent Achievements' }}
-                        </h2>
-                        <a href="#" class="flex items-center gap-1 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                            {{ 'View All Badges' }} <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-4">
-                        {% for badge in recentBadges|default([]) %}
-                        <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                            <div class="w-12 h-12 rounded-full flex items-center justify-center {{ badge.color|default('bg-yellow-100 dark:bg-yellow-900/30') }}">
-                                <i class="fas {{ badge.icon|default('fa-trophy') }} {{ badge.iconColor|default('text-yellow-500') }}"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-900 dark:text-white">{{ badge.name }}</h4>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ badge.description }}</p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column - Sidebar -->
-            <div class="space-y-6 lg:col-span-1">
-                <!-- Coach Card -->
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 fas fa-user-tie text-wellcare-500"></i>
-                        {{ 'Your Coach' }}
-                    </h3>
-                    
-                    <div class="flex items-center gap-3 mb-4">
-                        <img src="{{ asset('build/images/logo-icon.svg') }}" alt="Coach" class="object-cover w-12 h-12 rounded-full">
-                        <div>
-                            <p class="font-medium text-gray-900 dark:text-white">{{ coach.name|default('Coach Sarah') }}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Certified Personal Trainer</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-2 mb-4">
-                        <button class="flex items-center justify-center flex-1 gap-2 px-3 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                            <i class="fas fa-comment"></i>
-                            {{ 'Message' }}
-                        </button>
-                        <button class="px-3 py-2 text-sm font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <i class="fas fa-video"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="p-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
-                        <p class="text-sm text-wellcare-700 dark:text-wellcare-300">
-                            <i class="mr-1 fas fa-lightbulb"></i>
-                            {{ "Don't forget your stretching routine after today's workout!" }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 fas fa-bolt text-wellcare-500"></i>
-                        {{ 'Quick Actions' }}
-                    </h3>
-                    
-                    <div class="space-y-3">
-                        <a href="{{ path('fitness_log') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-900/30">
-                                <i class="text-green-500 fas fa-plus-circle"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ 'Log Workout' }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Record completed exercises' }}</p>
-                            </div>
-                        </a>
-                        
-                        <a href="{{ path('fitness_library') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg dark:bg-blue-900/30">
-                                <i class="text-blue-500 fas fa-book-open"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ 'Exercise Library' }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Browse exercises with videos' }}</p>
-                            </div>
-                        </a>
-                        
-                        <a href="{{ path('fitness_analytics') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg dark:bg-purple-900/30">
-                                <i class="text-purple-500 fas fa-chart-bar"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ 'View Analytics' }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Track your progress' }}</p>
-                            </div>
-                        </a>
-                        
-                        <a href="{{ path('fitness_coach') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg dark:bg-orange-900/30">
-                                <i class="text-orange-500 fas fa-paper-plane"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ 'Send Feedback' }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Share your workout video' }}</p>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Upcoming Schedule -->
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 fas fa-calendar-alt text-wellcare-500"></i>
-                        {{ 'Upcoming Workouts' }}
-                    </h3>
-                    
-                    <div class="space-y-3">
-                        {% for workout in upcomingWorkouts|default([]) %}
-                        <div class="p-3 border border-gray-100 rounded-lg dark:border-gray-700">
-                            <div class="flex items-center justify-between mb-1">
-                                <p class="font-medium text-gray-900 dark:text-white">{{ workout.title }}</p>
-                                <span class="text-xs text-wellcare-600 dark:text-wellcare-400">{{ workout.day }}</span>
-                            </div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ workout.time }} | {{ workout.duration }} min</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <a href="{{ path('fitness_planner') }}" class="block mt-4 text-sm font-medium text-center text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                        {{ 'View Full Schedule' }}
-                    </a>
-                </div>
-
-                <!-- Medical Alerts -->
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 text-red-500 fas fa-heartbeat"></i>
-                        {{ 'Health Alerts' }}
-                    </h3>
-                    
-                    <div class="space-y-3">
-                        <div class="p-3 border border-yellow-200 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
-                            <div class="flex items-start gap-3">
-                                <i class="mt-1 text-yellow-500 fas fa-exclamation-triangle"></i>
-                                <div>
-                                    <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">{{ 'HR Zone Warning' }}</p>
-                                    <p class="text-xs text-yellow-600 dark:text-yellow-400">{{ 'Stay below 150 bpm during cardio' }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="p-3 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
-                            <div class="flex items-start gap-3">
-                                <i class="mt-1 text-blue-500 fas fa-info-circle"></i>
-                                <div>
-                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-200">{{ 'Doctor Approved' }}</p>
-                                    <p class="text-xs text-blue-600 dark:text-blue-400">{{ 'Your program is medically cleared' }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {% for message in app.flashes('success') %}
+        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            <i class="fas fa-check-circle mr-2"></i>
+            {{ message }}
         </div>
-    </main>
+    {% endfor %}
 
-    <!-- Emergency Stop Button (Medical Safety) -->
-    <div class="fixed bottom-6 right-6">
-        <button @click="emergencyStop()" class="flex items-center justify-center text-white transition-all duration-200 bg-red-500 rounded-full shadow-lg w-14 h-14 hover:bg-red-600 hover:scale-110">
-            <i class="text-xl fas fa-stop"></i>
-        </button>
+    {% for message in app.flashes('error') %}
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <main class="p-6">
+        {% if goals|length > 0 %}
+           <!-- Goal Selector Dropdown -->
+ <div class="mb-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+    <div class="p-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <i class="mr-2 fas fa-bullseye text-wellcare-500"></i>
+                Your Goals
+            </h2>
+            <span class="text-xs text-gray-500">{{ goals|length }} active</span>
+        </div>
+        
+        <select 
+            id="goal-select"
+            onchange="switchGoal(this.value)"
+            class="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500"
+        >
+            {% for goal in goals %}
+            <option value="{{ goal.id }}" {{ loop.first ? 'selected' : '' }}>
+                {{ goal.title }} ({{ goal.progress }}% - {{ goal.category|replace({'_': ' '})|title }})
+            </option>
+            {% endfor %}
+        </select>
     </div>
 </div>
 
+            <!-- Goal Dashboards -->
+            {% for goal in goals %}
+            <div id="goal-{{ goal.id }}" class="goal-dashboard" style="{{ not loop.first ? 'display: none;' : '' }}">
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-6 md:grid-cols-4">
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Progress' }}</p>
+                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ goal.progress }}%</p>
+                                <p class="mt-1 text-xs text-wellcare-500 dark:text-wellcare-400">
+                                    <i class="mr-1 fas fa-arrow-up"></i>
+                                    {% if goal.stats.days_total > 0 %}
+                                        {{ goal.stats.completed_workout_days }}/{{ goal.stats.days_total }} days
+                                    {% else %}
+                                        0/0 days
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <i class="text-xl fas fa-chart-line text-wellcare-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Plans' }}</p>
+                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ goal.stats.total_plans }}</p>
+                                <p class="mt-1 text-xs text-green-500 dark:text-green-400">
+                                    <i class="mr-1 fas fa-check-circle"></i>{{ goal.stats.completed_plans }} completed
+                                </p>
+                            </div>
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                <i class="text-xl fas fa-calendar-check text-blue-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Minutes' }}</p>
+                                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ goal.stats.total_duration }}</p>
+                                <p class="mt-1 text-xs text-green-500 dark:text-green-400">
+                                    <i class="mr-1 fas fa-clock"></i>total
+                                </p>
+                            </div>
+                            <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full dark:bg-green-900/30">
+                                <i class="text-xl fas fa-stopwatch text-green-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ 'Time Left' }}</p>
+                                <p class="mt-1 text-2xl font-bold {{ goal.daysLeft < 7 ? 'text-red-500' : 'text-gray-900 dark:text-white' }}">
+                                    {% if goal.daysLeft > 0 %}
+                                        {{ goal.daysLeft }}d
+                                    {% elseif goal.daysLeft == 0 %}
+                                        Last day!
+                                    {% elseif goal.daysLeft < 0 %}
+                                        {{ -goal.daysLeft }}d overdue
+                                    {% else %}
+                                        ∞
+                                    {% endif %}
+                                </p>
+                                {% if goal.endDate %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Until {{ goal.endDate|date('M d') }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full dark:bg-red-900/30">
+                                <i class="text-xl fas fa-hourglass-half text-red-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+                    <!-- Left Column - Main Content -->
+                    <div class="space-y-6 lg:col-span-3">
+                        <!-- Goal Header -->
+                        <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                            <div class="p-6">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <div class="flex items-center gap-3 mb-3">
+                                            <span class="px-3 py-1 text-xs font-medium rounded-full
+                                                {% if goal.category == 'weight_loss' %}bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400
+                                                {% elseif goal.category == 'strength' %}bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400
+                                                {% elseif goal.category == 'endurance' %}bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400
+                                                {% elseif goal.category == 'flexibility' %}bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400
+                                                {% else %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400{% endif %}">
+                                                {{ goal.category|replace({'_': ' '})|title }}
+                                            </span>
+                                            <span class="px-3 py-1 text-xs font-medium rounded-full
+                                                {% if goal.status == 'in progress' %}bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400
+                                                {% elseif goal.status == 'PENDING' %}bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400
+                                                {% endif %}">
+                                                {{ goal.status|upper }}
+                                            </span>
+                                        </div>
+                                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ goal.title }}</h2>
+                                        {% if goal.description %}
+                                            <p class="text-gray-600 dark:text-gray-400">{{ goal.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{{ path('fitness_goals_plans', {'id': goal.id}) }}" 
+                                       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-lg transition-colors">
+                                        <i class="fas fa-eye"></i>
+                                        View All Plans ({{ goal.stats.total_plans }})
+                                    </a>
+                                </div>
+
+                                <!-- Progress Bar -->
+                                <div class="mt-6">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</span>
+                                        <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400">{{ goal.progress }}%</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-gray-200 rounded-full dark:bg-gray-700">
+                                        <div class="h-3 rounded-full bg-wellcare-500" style="width: {{ goal.progress }}%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Goal Details -->
+                                <div class="grid grid-cols-2 gap-4 mt-6 md:grid-cols-4">
+                                    {% if goal.targetValue and goal.currentValue %}
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Target</p>
+                                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {{ goal.currentValue }}/{{ goal.targetValue }} {{ goal.unit }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Start Date</p>
+                                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {{ goal.startDate|date('M d, Y') }}
+                                        </p>
+                                    </div>
+                                    
+                                    {% if goal.endDate %}
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">End Date</p>
+                                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {{ goal.endDate|date('M d, Y') }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Plans</p>
+                                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {{ goal.stats.completed_plans }}/{{ goal.stats.total_plans }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Plan - SECTION MODIFIÉE -->
+<div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <i class="mr-2 fas fa-calendar-day text-wellcare-500"></i>
+            Today's Plan
+        </h2>
+        <div class="flex items-center gap-3">
+            {% if goal.todayPlan %}
+                <span class="px-3 py-1 text-sm font-medium rounded-full status-badge
+                    {% if goal.todayPlan.status == 'completed' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                    {% elseif goal.todayPlan.isRestDay %}bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400
+                    {% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}"
+                    id="today-status-badge-{{ goal.id }}">
+                    {{ goal.todayPlan.isRestDay ? 'Rest Day' : goal.todayPlan.status|title }}
+                </span>
+            {% endif %}
+            <a href="{{ path('fitness_goals_plans', {'id': goal.id}) }}" 
+               class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-lg transition-colors">
+                <i class="fas fa-eye"></i>
+                All Plans
+            </a>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        {% if goal.todayPlan %}
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ goal.todayPlan.titre }}</h3>
+                {% if goal.todayPlan.notes %}
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">{{ goal.todayPlan.notes }}</p>
+                {% endif %}
+            </div>
+
+            {% if goal.todayPlan.exercices|length > 0 %}
+                <div class="space-y-3">
+                    {% for exercise in goal.todayPlan.exercices %}
+                        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700/50 exercise-card" 
+                             onclick="showExercisePopup({{ exercise|json_encode|e('html_attr') }})">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center justify-center w-10 h-10 bg-white rounded-lg dark:bg-gray-600">
+                                        {% if exercise.videoFileName %}
+                                            <i class="text-lg text-green-500 fas fa-video"></i>
+                                        {% else %}
+                                            <i class="text-lg text-wellcare-500 fas fa-dumbbell"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">{{ exercise.name }}</h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            {% if exercise.sets and exercise.reps %}
+                                                {{ exercise.sets }} sets × {{ exercise.reps }} reps
+                                            {% endif %}
+                                            {% if exercise.duration %}
+                                                | {{ exercise.duration }} min
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                                    {{ exercise.category }}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- ===== BOUTON COMPLETE POUR AUJOURD'HUI ===== -->
+            {% if goal.todayPlan and not goal.todayPlan.isRestDay and goal.todayPlan.status != 'completed' %}
+                <form class="complete-today-plan" data-plan-id="{{ goal.todayPlan.id }}" data-goal-id="{{ goal.id }}">
+                    <button type="submit" 
+                            class="mt-4 flex items-center justify-center w-full gap-2 px-4 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fas fa-check-circle"></i>
+                        Mark as Completed
+                    </button>
+                </form>
+            {% elseif goal.todayPlan.status == 'completed' %}
+                <button disabled 
+                        class="mt-4 flex items-center justify-center w-full gap-2 px-4 py-3 font-medium text-white bg-gray-400 rounded-lg cursor-not-allowed">
+                    <i class="fas fa-check"></i>
+                    Already Completed
+                </button>
+            {% endif %}
+            
+            {% if goal.todayPlan.isRestDay %}
+                <div class="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
+                    <i class="fas fa-bed text-orange-500 mr-2"></i>
+                    <span class="text-orange-700 dark:text-orange-400">Today is a rest day. No workout needed.</span>
+                </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-8">
+                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-700">
+                    <i class="text-2xl text-gray-400 fas fa-calendar-plus"></i>
+                </div>
+                <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">No Workout Today</h3>
+                <p class="text-gray-500 dark:text-gray-400">Rest day or no plan scheduled for this goal.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+                        <!-- Weekly Plans -->
+                        <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fas fa-calendar-week text-wellcare-500"></i>
+                                    Weekly Plans
+                                </h2>
+                                <a href="{{ path('fitness_planner') }}?goal={{ goal.id }}" class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:underline">
+                                    View All
+                                </a>
+                            </div>
+                            
+                            <div class="p-6">
+                                <div class="space-y-3">
+                                    {% if goal.weeklyPlans|length > 0 %}
+                                        {% for plan in goal.weeklyPlans %}
+                                            <div class="p-4 border border-gray-100 rounded-lg dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 {% if plan.date|date('Y-m-d') == 'now'|date('Y-m-d') %} today-plan {% endif %}">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center {{ plan.status == 'completed' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700' }}">
+                                                            <i class="{{ plan.status == 'completed' ? 'fas fa-check text-green-500' : 'fas fa-dumbbell text-gray-500' }}"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h4 class="font-medium text-gray-900 dark:text-white">{{ plan.titre }}</h4>
+                                                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                                {{ plan.date|date('l, F j') }}
+                                                                {% if plan.date|date('Y-m-d') == 'now'|date('Y-m-d') %}
+                                                                    <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Today</span>
+                                                                {% endif %}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ plan.status == 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' }}">
+                                                            {{ plan.status|replace({'_': ' '})|title }}
+                                                        </span>
+                                                        <p class="mt-1 text-sm text-gray-500">{{ plan.exercices|length }} exercises</p>
+                                                    </div>
+                                                </div>
+                                                {% if plan.notes %}
+                                                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ plan.notes|slice(0, 100) }}{% if plan.notes|length > 100 %}...{% endif %}</p>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-center text-gray-500 dark:text-gray-400 py-4">No plans scheduled for this week</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Sidebar -->
+                    <div class="space-y-6 lg:col-span-1">
+                        <!-- Quick Actions -->
+                        <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                            <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-bolt text-wellcare-500"></i>
+                                Quick Actions
+                            </h3>
+                            
+                            <div class="space-y-3">
+                                <a href="{{ path('exercises_show') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                                        <i class="text-wellcare-500 fas fa-search"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">Search exercise</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">By name or category</p>
+                                    </div>
+                                </a>
+                                
+                                <a href="{{ path('fitness_planner') }}?goal={{ goal.id }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                        <i class="text-green-500 fas fa-plus-circle"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">New plan</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">For this goal</p>
+                                    </div>
+                                </a>
+                                
+                                <a href="{{ path('fitness_goal_edit', {id: goal.id}) }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                                        <i class="text-blue-500 fas fa-edit"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">Edit goal</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Update details</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Recent Exercises -->
+                        <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                            <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-history text-wellcare-500"></i>
+                                Recent Exercises
+                            </h3>
+                            
+                            <div class="space-y-3">
+                                {% for exercise in recentExercises|slice(0, 5) %}
+                                    <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                                         onclick="showExercisePopup({{ exercise|json_encode|e('html_attr') }})">
+                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                                            <i class="text-wellcare-500 fas fa-dumbbell"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-900 dark:text-white">{{ exercise.name }}</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ exercise.category }}</p>
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ exercise.duration }}min</span>
+                                    </div>
+                                {% else %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-2">No recent exercises</p>
+                                {% endfor %}
+                            </div>
+                            
+                            <a href="{{ path('exercises_show') }}" class="block mt-4 text-sm font-medium text-center text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
+                                Exercise Library
+                            </a>
+                        </div>
+
+                        <!-- Popular Categories -->
+                        <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                            <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-tags text-wellcare-500"></i>
+                                Categories
+                            </h3>
+                            
+                            <div class="flex flex-wrap gap-2">
+                                {% for category in popularCategories %}
+                                    <span class="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                        {{ category.name }} ({{ category.count }})
+                                    </span>
+                                {% else %}
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">No categories available</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty State - No Goals -->
+            <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 p-12 text-center">
+                <div class="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-700">
+                    <i class="text-3xl text-gray-400 fas fa-bullseye"></i>
+                </div>
+                <h2 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">No Active Goals</h2>
+                <p class="mb-6 text-gray-500 dark:text-gray-400">Start your fitness journey by creating your first goal.</p>
+                <a href="{{ path('fitness_goal_new') }}" class="inline-flex items-center gap-2 px-6 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="fas fa-plus"></i> Create Your First Goal
+                </a>
+            </div>
+        {% endif %}
+    </main>
+</div>
 <script>
+// Store current exercise data globally
+let currentExerciseData = null;
+
+
+
+// Alpine.js component
 document.addEventListener('alpine:init', () => {
     Alpine.data('fitnessDashboard', () => ({
         darkMode: false,
-        streak: {
-            days: 12,
-            best: 21
-        },
-        weeklyStats: {
-            minutes: 180,
-            target: 200,
-            workoutsCompleted: 4,
-            targetWorkouts: 5
-        },
-        dailyStats: {
-            caloriesBurned: 450,
-            caloriesChange: 12
-        },
-        recovery: {
-            score: 78,
-            ready: true,
-            sleepQuality: 8,
-            muscleReadiness: 8,
-            trainingLoad: 65
-        },
-        todayWorkout: {
-            completed: false,
-            duration: 45,
-            exercises: [
-                { name: 'Warm-up', sets: 1, reps: 5, duration: 5, rpe: 3, completed: true },
-                { name: 'Push-ups', sets: 3, reps: 12, weight: 0, duration: 8, rpe: 6, completed: false },
-                { name: 'Squats', sets: 3, reps: 15, weight: 20, duration: 10, rpe: 7, completed: false },
-                { name: 'Plank', sets: 3, reps: 1, duration: 6, rpe: 5, completed: false },
-                { name: 'Cool-down', sets: 1, reps: 5, duration: 5, rpe: 2, completed: false }
-            ]
-        },
-        fitnessGoals: [
-            { name: 'Weekly Workout Goal', progress: 80, remaining: 1, deadline: '2 days left' },
-            { name: 'Weight Loss Target', progress: 65, remaining: 3.5, deadline: '3 weeks left' },
-            { name: 'Strength Building', progress: 45, remaining: 15, deadline: '6 weeks left' }
-        ],
-        recentBadges: [
-            { name: 'Week Warrior', icon: 'fa-fire', color: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-500', description: '7 day workout streak' },
-            { name: 'Early Bird', icon: 'fa-sun', color: 'bg-yellow-100 dark:bg-yellow-900/30', iconColor: 'text-yellow-500', description: '10 morning workouts' },
-            { name: 'Iron Will', icon: 'fa-dumbbell', color: 'bg-gray-100 dark:bg-gray-700', iconColor: 'text-gray-500', description: 'Lifted 1000kg total' }
-        ],
-        coach: {
-            name: 'Coach Sarah'
-        },
-        upcomingWorkouts: [
-            { name: 'Upper Body Strength', day: 'Tomorrow', time: '08:00', duration: 45 },
-            { name: 'Cardio Session', day: 'Thursday', time: '07:30', duration: 30 },
-            { name: 'Yoga Flow', day: 'Saturday', time: '09:00', duration: 60 }
-        ],
-        weekDays: [
-            { name: 'Mon', date: 27, hasWorkout: true, completed: true },
-            { name: 'Tue', date: 28, hasWorkout: true, completed: true },
-            { name: 'Wed', date: 29, hasWorkout: true, completed: true },
-            { name: 'Thu', date: 30, hasWorkout: true, completed: false },
-            { name: 'Fri', date: 31, hasWorkout: false, completed: false },
-            { name: 'Sat', date: 1, hasWorkout: true, completed: false },
-            { name: 'Sun', date: 2, hasWorkout: false, completed: false }
-        ],
 
         init() {
             this.darkMode = localStorage.getItem('theme') === 'dark';
-            this.initChart();
+            
+            // Listen for escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeExercisePopup();
+                }
+            });
         },
 
         toggleTheme() {
             this.darkMode = !this.darkMode;
             localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
             document.documentElement.classList.toggle('dark', this.darkMode);
-        },
-
-        toggleExercise(index) {
-            this.todayWorkout.exercises[index].completed = !this.todayWorkout.exercises[index].completed;
-        },
-
-        completeWorkout() {
-            this.todayWorkout.exercises.forEach(ex => ex.completed = true);
-            this.todayWorkout.completed = true;
-        },
-
-        emergencyStop() {
-            if (confirm('Are you experiencing any discomfort? This will pause your current workout.')) {
-                // Emergency stop logic
-                window.location.href = '/emergency';
-            }
-        },
-
-        initChart() {
-            this.$nextTick(() => {
-                const ctx = document.getElementById('performanceChart');
-                if (ctx) {
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                            datasets: [{
-                                label: 'Volume (kg)',
-                                data: [12000, 15000, 13500, 18000, 16000, 14000, 17000],
-                                borderColor: 'rgb(0, 167, 144)',
-                                backgroundColor: 'rgba(0, 167, 144, 0.1)',
-                                fill: true,
-                                tension: 0.4,
-                                pointRadius: 4,
-                                pointHoverRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: {
-                                        color: 'rgba(156, 163, 175, 0.1)'
-                                    },
-                                    ticks: {
-                                        callback: function(value) {
-                                            return value / 1000 + 'k';
-                                        }
-                                    }
-                                },
-                                x: {
-                                    grid: {
-                                        display: false
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            });
         }
     }));
+});
+
+// ===== FONCTION POUR CHANGER DE GOAL =====
+(function() {
+    window.switchGoal = function(goalId) {
+        console.log('Switching to goal:', goalId);
+        
+        // Cacher tous les dashboards
+        const dashboards = document.querySelectorAll('.goal-dashboard');
+        dashboards.forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // Afficher le dashboard sélectionné
+        const selected = document.getElementById(`goal-${goalId}`);
+        if (selected) {
+            selected.style.display = 'block';
+        }
+        
+        // Mettre à jour les onglets
+        const tabs = document.querySelectorAll('.goal-tab');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-goal-id') == goalId) {
+                tab.classList.add('active');
+            }
+        });
+        
+        // Mettre à jour l'URL
+        const url = new URL(window.location);
+        url.searchParams.set('goal', goalId);
+        window.history.pushState({}, '', url);
+        
+        // Sauvegarder dans localStorage
+        localStorage.setItem('activeGoalId', goalId);
+    };
+
+    // Initialisation au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlGoalId = urlParams.get('goal');
+        const savedGoalId = localStorage.getItem('activeGoalId');
+        
+        let goalToActivate = urlGoalId || savedGoalId;
+        
+        if (goalToActivate) {
+            const tabExists = document.querySelector(`.goal-tab[data-goal-id="${goalToActivate}"]`);
+            if (tabExists) {
+                setTimeout(() => window.switchGoal(goalToActivate), 100);
+            } else {
+                const firstTab = document.querySelector('.goal-tab');
+                if (firstTab) {
+                    const firstGoalId = firstTab.getAttribute('data-goal-id');
+                    window.switchGoal(firstGoalId);
+                }
+            }
+        } else {
+            const firstTab = document.querySelector('.goal-tab');
+            if (firstTab) {
+                const firstGoalId = firstTab.getAttribute('data-goal-id');
+                window.switchGoal(firstGoalId);
+            }
+        }
+    });
+})();
+
+// Function to display exercise popup
+function showExercisePopup(exerciseData) {
+    try {
+        if (typeof exerciseData === 'string') {
+            exerciseData = JSON.parse(exerciseData);
+        }
+        
+        currentExerciseData = exerciseData;
+        
+        const popup = document.getElementById('exercisePopup');
+        const content = document.getElementById('exercisePopupContent');
+        
+        if (!popup || !content) return;
+        
+        // Build video HTML
+        let videoHtml = '';
+        const videoSource = exerciseData.videoUrl || exerciseData.videoFileName;
+        
+        if (videoSource) {
+            if (videoSource.includes('youtube.com') || videoSource.includes('youtu.be')) {
+                let videoId = '';
+                const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                const match = videoSource.match(regExp);
+                
+                if (match && match[7] && match[7].length === 11) {
+                    videoId = match[7];
+                } else if (videoSource.includes('youtu.be/')) {
+                    videoId = videoSource.split('youtu.be/')[1]?.split('?')[0];
+                }
+                
+                if (videoId) {
+                    videoHtml = `
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Exercise Demo</h3>
+                            <div class="exercise-video">
+                                <iframe 
+                                    src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1" 
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (exerciseData.videoFileName) {
+                videoHtml = `
+                    <div class="mb-6">
+                        <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Exercise Demo</h3>
+                        <div class="exercise-video">
+                            <video controls>
+                                <source src="/uploads/exercises/videos/${exerciseData.videoFileName}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            videoHtml = `
+                <div class="mb-6">
+                    <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Exercise Demo</h3>
+                    <div class="exercise-video">
+                        <div class="flex flex-col items-center justify-center h-full p-6 bg-gray-100 dark:bg-gray-800">
+                            <i class="mb-4 text-5xl text-gray-400 fas fa-video-slash"></i>
+                            <p class="text-gray-600 dark:text-gray-400">No video demonstration available</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Build exercise information
+        const exerciseInfoHtml = `
+            <div class="exercise-info-grid">
+                <div class="exercise-info-item">
+                    <span class="exercise-info-label">Category</span>
+                    <span class="exercise-info-value">${exerciseData.category || 'Not specified'}</span>
+                </div>
+                <div class="exercise-info-item">
+                    <span class="exercise-info-label">Difficulty</span>
+                    <span class="exercise-info-value">${exerciseData.difficulty_level || 'Medium'}</span>
+                </div>
+                ${exerciseData.duration ? `
+                <div class="exercise-info-item">
+                    <span class="exercise-info-label">Duration</span>
+                    <span class="exercise-info-value">${exerciseData.duration} minutes</span>
+                </div>
+                ` : ''}
+                ${exerciseData.calories ? `
+                <div class="exercise-info-item">
+                    <span class="exercise-info-label">Calories</span>
+                    <span class="exercise-info-value">${exerciseData.calories} kcal</span>
+                </div>
+                ` : ''}
+                ${exerciseData.sets && exerciseData.reps ? `
+                <div class="exercise-info-item">
+                    <span class="exercise-info-label">Sets & Reps</span>
+                    <span class="exercise-info-value">${exerciseData.sets} sets × ${exerciseData.reps} reps</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        // Build the complete popup content
+        const popupHtml = `
+            <div class="exercise-details">
+                <h2 class="mb-4 text-3xl font-bold text-gray-900 dark:text-white">${exerciseData.name || 'Exercise Details'}</h2>
+                
+                ${videoHtml}
+                
+                ${exerciseInfoHtml}
+                
+                ${exerciseData.description ? `
+                <div class="mb-6">
+                    <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Description</h3>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-gray-700 dark:text-gray-300">${escapeHtml(exerciseData.description)}</p>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="flex gap-3 mt-8">
+                    <button onclick="closeExercisePopup()" 
+                            class="flex-1 px-4 py-3 font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="fas fa-times mr-2"></i>Close
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        content.innerHTML = popupHtml;
+        popup.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Click outside to close
+        setTimeout(() => {
+            popup.onclick = function(e) {
+                if (e.target === popup) {
+                    closeExercisePopup();
+                }
+            };
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error showing exercise popup:', error);
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Function to close popup
+function closeExercisePopup() {
+    const popup = document.getElementById('exercisePopup');
+    if (popup) {
+        popup.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        popup.onclick = null;
+    }
+}
+
+// Simple notification function
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="mr-3 fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease-in-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+// ===== CODE POUR LE BOUTON "TODAY'S PLAN" =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Gérer les formulaires "Complete Today's Plan"
+    const todayPlanForms = document.querySelectorAll('.complete-today-plan');
+    
+    todayPlanForms.forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const planId = this.dataset.planId;
+            const goalId = this.dataset.goalId;
+            const button = this.querySelector('button');
+            const originalButtonHtml = button.innerHTML;
+            
+            // Désactiver le bouton
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            
+            try {
+                const response = await fetch(`/fitness/daily-plan/${planId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 1. Mettre à jour le badge de statut
+                    const statusBadge = document.getElementById(`today-status-badge-${goalId}`);
+                    if (statusBadge) {
+                        statusBadge.className = 'px-3 py-1 text-sm font-medium rounded-full status-badge bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                        statusBadge.textContent = 'Completed';
+                    }
+                    
+                    // 2. Remplacer le bouton par un bouton désactivé
+                    const parentDiv = button.parentElement;
+                    const disabledButton = document.createElement('button');
+                    disabledButton.disabled = true;
+                    disabledButton.className = 'mt-4 flex items-center justify-center w-full gap-2 px-4 py-3 font-medium text-white bg-gray-400 rounded-lg cursor-not-allowed';
+                    disabledButton.innerHTML = '<i class="fas fa-check mr-2"></i>Already Completed';
+                    parentDiv.replaceChild(disabledButton, button);
+                    
+                    // 3. Mettre à jour la progression dans les statistiques
+                    updateDashboardProgress(goalId, data.progress, data.stats);
+                    
+                    // 4. Notification
+                    showNotification('🎉 Great job! Plan completed!', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+                showNotification('Error completing plan', 'error');
+            }
+        });
+    });
+    
+    function updateDashboardProgress(goalId, progress, stats) {
+        // Mettre à jour le pourcentage dans le dashboard
+        const goalDashboard = document.getElementById(`goal-${goalId}`);
+        if (goalDashboard) {
+            const progressElements = goalDashboard.querySelectorAll('.text-wellcare-600');
+            progressElements.forEach(el => {
+                if (el.textContent.includes('%')) {
+                    el.textContent = progress + '%';
+                }
+            });
+            
+            // Mettre à jour la barre de progression
+            const progressBar = goalDashboard.querySelector('.bg-wellcare-500');
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+            
+            // Mettre à jour les statistiques de plans
+            const statsElements = goalDashboard.querySelectorAll('.grid-cols-2 .text-2xl');
+            if (statsElements.length >= 2 && stats) {
+                // Mettre à jour completed/total
+                statsElements[0].textContent = stats.completed || 0;
+                statsElements[1].textContent = stats.total || 0;
+            }
+        }
+    }
+    
+    // Fonction de notification (si pas déjà présente)
+    if (typeof window.showNotification !== 'function') {
+        window.showNotification = function(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="mr-3 fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease-in-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        };
+    }
 });
 </script>
 {% endblock %}

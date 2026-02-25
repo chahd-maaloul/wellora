@@ -18,9 +18,10 @@ class PasswordResetService
         private EntityManagerInterface $entityManager,
         private MailerInterface $mailer,
         private UserPasswordHasherInterface $passwordHasher,
-        private string $noreplyAddress = 'zeidimohamedtaher13@gmail.com',
-        private string $appBaseUrl = 'http://localhost:8000'
-    ) {}
+        private string $noreplyAddress = 'zeidimohamedtaher13@gmail.com'
+    ) {
+        $this->appBaseUrl = $_ENV['APP_URL'] ?? 'http://localhost:8000';
+    }
 
     /**
      * Generate a password reset token and send email

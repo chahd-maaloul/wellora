@@ -1,0 +1,87 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Generate My Program with AI{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center gap-4">
+                <a href="{{ path('fitness_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-robot text-wellcare-500"></i>
+                        Describe Your Goal to the AI
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        The AI will create a personalized program for you
+                    </p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6 max-w-3xl mx-auto">
+        {% if not isHealthy %}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                <div class="flex items-center gap-3">
+                    <i class="text-red-500 fas fa-exclamation-triangle"></i>
+                    <p class="text-red-700 dark:text-red-400">
+                        ⚠️ The AI service is currently unavailable.
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 p-6">
+            <form method="post" action="{{ path('patient_ai_generate_program') }}">
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Describe your goal in a few sentences:
+                    </label>
+                    <textarea 
+                        name="user_request" 
+                        rows="8" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500"
+                        placeholder="Examples:&#10;• I want to lose 10 kg in 3 months, I'm a beginner, I can do 3 sessions per week&#10;• I want to build muscle, intermediate level, 4 sessions/week for 2 months&#10;• I want to improve my endurance to run a half marathon"
+                        required
+                    ></textarea>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Be specific: goal, desired duration, your level, constraints...
+                    </p>
+                </div>
+
+                <button 
+                    type="submit" 
+                    class="w-full px-6 py-3 bg-wellcare-500 text-white rounded-lg hover:bg-wellcare-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    {% if not isHealthy %}disabled{% endif %}
+                >
+                    <i class="fas fa-magic"></i>
+                    Generate My Personalized Program
+                </button>
+            </form>
+        </div>
+
+        <div class="mt-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+                How It Works
+            </h2>
+            <div class="space-y-3 text-gray-600 dark:text-gray-300">
+                <p>1️⃣ <strong>You describe your goal</strong> in natural language</p>
+                <p>2️⃣ <strong>The AI analyzes</strong> your request (goal, level, duration...)</p>
+                <p>3️⃣ <strong>The AI generates</strong> a complete program:</p>
+                <ul class="ml-8 list-disc">
+                    <li>A main goal</li>
+                    <li>Daily sessions for each week</li>
+                    <li>Exercises adapted to your level</li>
+                </ul>
+                <p>4️⃣ <strong>The program is saved</strong> and you can track it</p>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

@@ -1,20 +1,51 @@
-
 services:
-###> doctrine/doctrine-bundle ###
   database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    image: postgres:16-alpine
+    container_name: wellora-database-1
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_DB: app
+      POSTGRES_PASSWORD: '!ChangeMe!'
+      POSTGRES_USER: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d app -U app"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    ports:
+      - "61618:5432"
     volumes:
       - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+
+  mysql:
+    image: mysql:8.0
+    container_name: wellora-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wellora
+      MYSQL_USER: wellora_user
+      MYSQL_PASSWORD: wellora_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+  mercure:
+    image: dunglas/mercure
+    container_name: wellora-mercure-1
+    ports:
+      - "61619:80"
+    environment:
+      SERVER_NAME: ':80'
+      MERCURE_PUBLISHER_JWT_KEY: '!ChangeThisMercureHubJWTSecretKey!'
+      MERCURE_SUBSCRIBER_JWT_KEY: '!ChangeThisMercureHubJWTSecretKey!'
+      CORS_ALLOWED_ORIGINS: 'http://127.0.0.1:8000 http://localhost:8000'
+      ALLOW_ANONYMOUS: '1'
+      PUBLISH_ALLOWED_ORIGINS: 'http://127.0.0.1:8000 http://localhost:8000'
+      # 👇 AJOUTEZ CES VARIABLES
+      DEBUG: '1'
+      SERVER_NAMES: ':80'
 
 volumes:
-###> doctrine/doctrine-bundle ###
   database_data:
-###< doctrine/doctrine-bundle ###
+  mysql_data:
