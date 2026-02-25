@@ -1,0 +1,363 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Admin Dashboard - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8" x-data="adminDashboard()" x-init="init()">
+    <div class="px-4 mx-auto max-w-7xl">
+        
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white">Admin Dashboard</h1>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">Overview of WellCare Connect platform</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button @click="refreshData()" class="p-2 text-gray-600 transition-colors bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <i class="fas fa-sync-alt" :class="{'fa-spin': isLoading}"></i>
+                </button>
+                <a href="/admin/settings" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-cog"></i>Settings
+                </a>
+            </div>
+        </div>
+        
+        {# Stats Cards #}
+        <div class="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl dark:bg-blue-900/30">
+                        <i class="text-2xl text-blue-600 fas fa-users"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total Users</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.totalUsers }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center mt-3 text-sm">
+                    <span class="flex items-center text-green-500">
+                        <i class="mr-1 fas fa-arrow-up"></i>12%
+                    </span>
+                    <span class="ml-2 text-gray-500">vs last month</span>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl dark:bg-green-900/30">
+                        <i class="text-2xl text-green-600 fas fa-user-md"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Doctors</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.totalMedecins }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center mt-3 text-sm">
+                    <span class="flex items-center text-green-500">
+                        <i class="mr-1 fas fa-arrow-up"></i>5%
+                    </span>
+                    <span class="ml-2 text-gray-500">vs last month</span>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30">
+                        <i class="text-2xl fas fa-user-clock text-amber-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Pending Verifications</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.pendingVerifications }}</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="/admin/verifications" class="text-sm text-wellcare-600 hover:text-wellcare-500">Review now →</a>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-xl dark:bg-purple-900/30">
+                        <i class="text-2xl text-purple-600 fas fa-euro-sign"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Revenue (Month)</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.revenueThisMonth|number_format(0, ',', ' ') }} DT</p>
+                    </div>
+                </div>
+                <div class="flex items-center mt-3 text-sm">
+                    <span class="flex items-center text-green-500">
+                        <i class="mr-1 fas fa-arrow-up"></i>8%
+                    </span>
+                    <span class="ml-2 text-gray-500">vs last month</span>
+                </div>
+            </div>
+        </div>
+        
+        {# Main Content Grid #}
+        <div class="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-3">
+            {# Pending Professional Verifications #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-xl lg:col-span-2">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Pending Professional Verifications</h2>
+                    <span class="px-3 py-1 text-xs font-medium text-white rounded-full bg-amber-500">{{ pendingProfessionals|length }} pending</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-sm text-left text-gray-500 dark:text-gray-400">
+                                <th class="pb-3 font-medium">Professional</th>
+                                <th class="pb-3 font-medium">Specialty</th>
+                                <th class="pb-3 font-medium">License #</th>
+                                <th class="pb-3 font-medium">Request Date</th>
+                                <th class="pb-3 font-medium text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            {% for professional in pendingProfessionals %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center justify-center w-10 h-10 bg-gray-200 rounded-full dark:bg-gray-600">
+                                            <span class="text-sm font-medium text-gray-600 dark:text-gray-300">{{ professional.name|first }}</span>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900 dark:text-white">{{ professional.name }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4">
+                                    <span class="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">{{ professional.specialty }}</span>
+                                </td>
+                                <td class="py-4 text-sm text-gray-600 dark:text-gray-400">{{ professional.licenseNumber }}</td>
+                                <td class="py-4 text-sm text-gray-600 dark:text-gray-400">{{ professional.requestDate }}</td>
+                                <td class="py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @click="viewDiploma('{{ professional.diplomaUrl }}')" class="p-2 text-gray-400 transition-colors hover:text-blue-500" title="View Diploma">
+                                            <i class="fas fa-file-alt"></i>
+                                        </button>
+                                        <button @click="verifyProfessional({{ professional.id }})" class="p-2 text-gray-400 transition-colors hover:text-green-500" title="Verify">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button @click="rejectProfessional({{ professional.id }})" class="p-2 text-gray-400 transition-colors hover:text-red-500" title="Reject">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if pendingProfessionals|length == 0 %}
+                <div class="py-8 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
+                        <i class="text-2xl text-gray-400 fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">All caught up!</h3>
+                    <p class="text-gray-500 dark:text-gray-400">No pending verifications at this time.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            {# Recent Activity #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Recent Activity</h2>
+                    <button @click="refreshActivities()" class="text-sm text-wellcare-600 hover:text-wellcare-500">View all</button>
+                </div>
+                
+                <div class="space-y-4">
+                    {% for activity in recentActivities %}
+                    <div class="flex items-start gap-4 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full dark:bg-gray-700">
+                            <i class="fas {{ activity.icon }} {{ activity.color }}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-gray-900 dark:text-white">
+                                <span class="font-medium">{{ activity.user }}</span>
+                                <span class="text-gray-500"> - {{ activity.message }}</span>
+                            </p>
+                            <p class="mt-1 text-xs text-gray-400">{{ activity.time }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        {# Second Row #}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {# User Distribution Chart #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">User Distribution</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Patients</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-blue-500 rounded-full" style="width: {{ (stats.totalPatients / stats.totalUsers * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ stats.totalPatients }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Doctors</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-green-500 rounded-full" style="width: {{ (stats.totalMedecins / stats.totalUsers * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ stats.totalMedecins }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Coaches</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full bg-purple-500 rounded-full" style="width: {{ (stats.totalCoaches / stats.totalUsers * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ stats.totalCoaches }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Nutritionists</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
+                                <div class="h-full rounded-full bg-amber-500" style="width: {{ (stats.totalNutritionists / stats.totalUsers * 100)|round }}%"></div>
+                            </div>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ stats.totalNutritionists }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {# System Alerts #}
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white">System Alerts</h2>
+                    <span class="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full">{{ systemAlerts|length }} alerts</span>
+                </div>
+                
+                <div class="space-y-3">
+                    {% for alert in systemAlerts %}
+                    <div class="flex items-start gap-3 p-3 rounded-lg {% if alert.type == 'warning' %}bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800{% else %}bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800{% endif %}">
+                        <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg {% if alert.type == 'warning' %}bg-amber-100 dark:bg-amber-900/30{% else %}bg-blue-100 dark:bg-blue-900/30{% endif %}">
+                            <i class="fas {% if alert.type == 'warning' %}fa-exclamation-triangle text-amber-500{% else %}fa-info-circle text-blue-500{% endif %}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-900 dark:text-white">{{ alert.message }}</p>
+                            <p class="mt-1 text-xs text-gray-500">{{ alert.time }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if systemAlerts|length == 0 %}
+                    <div class="py-6 text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 mb-3 bg-green-100 rounded-full dark:bg-green-900/30">
+                            <i class="text-xl text-green-500 fas fa-check"></i>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">All systems operational</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {# Quick Actions #}
+                <div class="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="/admin/users" class="flex items-center gap-2 p-3 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="text-blue-500 fas fa-users"></i>
+                            Manage Users
+                        </a>
+                        <a href="/admin/verifications" class="flex items-center gap-2 p-3 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="text-green-500 fas fa-user-check"></i>
+                            Verify Prof.
+                        </a>
+                        <a href="/admin/analytics" class="flex items-center gap-2 p-3 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="text-purple-500 fas fa-chart-bar"></i>
+                            View Analytics
+                        </a>
+                        <a href="/admin/settings" class="flex items-center gap-2 p-3 text-sm font-medium text-gray-700 transition-colors bg-gray-100 rounded-lg dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <i class="text-gray-500 fas fa-cog"></i>
+                            Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+function adminDashboard() {
+    return {
+        isLoading: false,
+        
+        init() {
+            console.log('Admin Dashboard initialized');
+        },
+        
+        refreshData() {
+            this.isLoading = true;
+            // Simulate loading
+            setTimeout(() => {
+                this.isLoading = false;
+            }, 1000);
+        },
+        
+        refreshActivities() {
+            console.log('Refreshing activities...');
+        },
+        
+        viewDiploma(url) {
+            window.open(url, '_blank');
+        },
+        
+        verifyProfessional(id) {
+            if (confirm('Are you sure you want to verify this professional?')) {
+                // TODO: Call API to verify
+                console.log('Verifying professional:', id);
+            }
+        },
+        
+        rejectProfessional(id) {
+            if (confirm('Are you sure you want to reject this professional?')) {
+                // TODO: Call API to reject
+                console.log('Rejecting professional:', id);
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

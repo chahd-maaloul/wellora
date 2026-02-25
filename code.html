@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WellCare - Notes Cliniques</title>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-light: #dbeafe;
+            --secondary: #059669;
+            --secondary-light: #d1fae5;
+            --accent: #7c3aed;
+            --accent-light: #ede9fe;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --soap-s: #3b82f6;
+            --soap-o: #10b981;
+            --soap-a: #f59e0b;
+            --soap-p: #ef4444;
+            --soap-s-bg: #eff6ff;
+            --soap-o-bg: #ecfdf5;
+            --soap-a-bg: #fffbeb;
+            --soap-p-bg: #fef2f2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: var(--gray-800);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            color: var(--gray-600);
+            font-size: 16px;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .patient-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--gray-200);
+        }
+
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .patient-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .patient-info h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .patient-id {
+            color: var(--gray-500);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: var(--secondary-light);
+            color: var(--secondary);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .notes-history {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--gray-200);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .note-item {
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .note-item:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-300);
+        }
+
+        .note-item.active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .note-date {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-bottom: 4px;
+        }
+
+        .note-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+        }
+
+        .note-summary {
+            font-size: 12px;
+            color: var(--gray-600);
+            line-height: 1.4;
+        }
+
+        .quick-actions {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--gray-200);
+        }
+
+        .quick-actions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .quick-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--gray-700);
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .quick-action-btn:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-300);
+            transform: translateY(-1px);
+        }
+
+        .quick-action-btn i {
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .right-column {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--gray-200);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .editor-header {
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .editor-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 8px;
+        }
+
+        .editor-meta {
+            color: var(--gray-500);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .editor-meta::before {
+            content: "•";
+            color: var(--gray-400);
+        }
+
+        .soap-section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .badge-s { background: var(--soap-s); }
+        .badge-o { background: var(--soap-o); }
+        .badge-a { background: var(--soap-a); }
+        .badge-p { background: var(--soap-p); }
+
+        .section-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--gray-700);
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.2s;
+            background: var(--gray-50);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .chief-complaint-section .form-control {
+            border-color: var(--gray-400);
+            background: var(--gray-100);
+            font-size: 16px;
+            padding: 16px;
+        }
+
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .vital-input label {
+            display: block;
+            font-size: 12px;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .bp-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bp-input {
+            flex: 1;
+        }
+
+        .bp-separator {
+            color: var(--gray-400);
+            font-weight: 500;
+        }
+
+        .diagnoses-section {
+            margin-bottom: 24px;
+        }
+
+        .diagnoses-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .diagnosis-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--soap-a-bg);
+            color: var(--soap-a);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .diagnosis-tag button {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .diagnosis-input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .diagnosis-input {
+            flex: 1;
+        }
+
+        .btn-add {
+            background: var(--soap-a);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-add:hover {
+            background: #d97706;
+        }
+
+        .medications-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title-large {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title-large i {
+            color: var(--soap-p);
+        }
+
+        .btn-add-large {
+            background: var(--soap-p);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn-add-large:hover {
+            background: #dc2626;
+        }
+
+        .medication-card {
+            background: var(--soap-p-bg);
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--soap-p);
+        }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-delete:hover {
+            background: #b91c1c;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-grid-full {
+            grid-column: span 2;
+        }
+
+        .example-text {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        .lab-tests-section {
+            margin-bottom: 32px;
+        }
+
+        .exam-card {
+            background: var(--soap-p-bg);
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .followup-section {
+            background: var(--gray-50);
+            border: 2px solid var(--gray-300);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .followup-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 20px;
+        }
+
+        .followup-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .treatment-plan-section .form-control {
+            min-height: 150px;
+            background: var(--soap-p-bg);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--gray-100);
+            border: 2px dashed var(--gray-300);
+            border-radius: 16px;
+            color: var(--gray-500);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        .json-output {
+            background: var(--gray-900);
+            color: #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            margin-top: 24px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e3a8a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .right-column {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .vitals-grid,
+            .form-grid,
+            .followup-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .diagnosis-input-group {
+                flex-direction: column;
+            }
+            
+            .btn-add {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        
+
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Patient Card -->
+            <div class="patient-card">
+                <div class="patient-header">
+                    <div class="patient-avatar">JD</div>
+                    <div class="patient-info">
+                        <h2>Jean Dupont</h2>
+                        <p class="patient-id">PAT-2024-001</p>
+                        <span class="status-badge">Actif</span>
+                    </div>
+                </div>
+                
+                <!-- Chief Complaint -->
+                <div class="form-group chief-complaint-section">
+                    <label class="form-label">Motif de consultation</label>
+                    <input type="text" class="form-control" id="chiefComplaint" placeholder="Décrivez le motif principal de la consultation..." value="fffk">
+                </div>
+            </div>
+
+            <!-- Notes History -->
+            <div class="notes-history">
+                <h3 class="section-title">Historique des notes</h3>
+                <div class="notes-list">
+                    <div class="note-item active" onclick="selectNote(this)">
+                        <div class="note-date">09/02/2026</div>
+                        <div class="note-title">Nouvelle Note SOAP</div>
+                        <div class="note-summary">fffk</div>
+                    </div>
+                    <div class="note-item" onclick="selectNote(this)">
+                        <div class="note-date">09/02/2026</div>
+                        <div class="note-title">Nouvelle Note SOAP</div>
+                        <div class="note-summary">3ot3ot</div>
+                    </div>
+                    <div class="note-item" onclick="selectNote(this)">
+                        <div class="note-date">15/01/2024</div>
+                        <div class="note-title">Note SOAP</div>
+                        <div class="note-summary">Fatigue et soif excessive</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3 class="section-title">Actions rapides</h3>
+                <div class="quick-actions-list">
+                    <button class="quick-action-btn" onclick="addMedicationCard()">
+                        <i class="fas fa-prescription"></i>
+                        <span>Nouvelle ordonnance</span>
+                    </button>
+                    <button class="quick-action-btn" onclick="addExamCard()">
+                        <i class="fas fa-flask"></i>
+                        <span>Ordonnance labo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Editor -->
+        <div class="right-column">
+            <!-- Editor Header -->
+            <div class="editor-header">
+                <h1 class="editor-title">Nouvelle Note SOAP</h1>
+                <div class="editor-meta">
+                    <span>09/02/2026</span>
+                    <span>• Dr. Martin</span>
+                </div>
+            </div>
+
+            <!-- Subjective (S) -->
+            <div class="soap-section">
+                <div class="section-header">
+                    <div class="section-badge badge-s">S</div>
+                    <h2 class="section-label">Subjectif</h2>
+                </div>
+                <textarea class="form-control" id="subjective" placeholder="Symptômes rapportés par le patient, antécédents, histoire de la maladie...">vick<ch! vick<ch!</textarea>
+            </div>
+
+            <!-- Objective (O) -->
+            <div class="soap-section">
+                <div class="section-header">
+                    <div class="section-badge badge-o">O</div>
+                    <h2 class="section-label">Objectif</h2>
+                </div>
+                
+                <!-- Vitals -->
+                <div class="vitals-grid">
+                    <div class="vital-input">
+                        <label>Tension (mmHg)</label>
+                        <div class="bp-input-group">
+                            <input type="text" class="form-control bp-input" id="bpSystolic" value="120">
+                            <span class="bp-separator">/</span>
+                            <input type="text" class="form-control bp-input" id="bpDiastolic" value="80">
+                        </div>
+                    </div>
+                    <div class="vital-input">
+                        <label>Pouls (bpm)</label>
+                        <input type="text" class="form-control" id="pulse" value="72">
+                    </div>
+                    <div class="vital-input">
+                        <label>Température (°C)</label>
+                        <input type="text" class="form-control" id="temperature" value="37">
+                    </div>
+                    <div class="vital-input">
+                        <label>SpO2 (%)</label>
+                        <input type="text" class="form-control" id="spo2" value="99">
+                    </div>
+                </div>
+
+                <textarea class="form-control" id="objective" placeholder="Examen physique, signes vitaux, résultats d'examens observables..."></textarea>
+            </div>
+
+            <!-- Assessment (A) -->
+            <div class="soap-section">
+                <div class="section-header">
+                    <div class="section-badge badge-a">A</div>
+                    <h2 class="section-label">Évaluation</h2>
+                </div>
+                
+                <!-- Diagnoses -->
+                <div class="diagnoses-section">
+                    <label class="form-label">Diagnostics (CIM-10)</label>
+                    <div class="diagnoses-tags" id="diagnosesTags">
+                        <div class="diagnosis-tag">
+                            2222222
+                            <button onclick="removeDiagnosis(this)">×</button>
+                        </div>
+                    </div>
+                    <div class="diagnosis-input-group">
+                        <input type="text" class="form-control diagnosis-input" id="newDiagnosis" placeholder="Code CIM-10 ou description...">
+                        <button class="btn-add" onclick="addDiagnosis()">Ajouter</button>
+                    </div>
+                </div>
+
+                <textarea class="form-control" id="assessment" placeholder="Interprétation des données, diagnostic différentiel, gravité..."></textarea>
+            </div>
+
+            <!-- Plan (P) -->
+            <div class="soap-section">
+                <div class="section-header">
+                    <div class="section-badge badge-p">P</div>
+                    <h2 class="section-label">Plan</h2>
+                </div>
+
+                <!-- Medications -->
+                <div class="medications-section">
+                    <h3 class="section-title-large">
+                        <i class="fas fa-prescription"></i>
+                        Ordonnance Médicamenteuse
+                    </h3>
+                    <button class="btn-add-large" onclick="addMedicationCard()">
+                        <i class="fas fa-plus"></i>
+                        Ajouter un médicament
+                    </button>
+
+                    <div id="medicationsContainer">
+                        <!-- Medication Card 1 -->
+                        <div class="medication-card">
+                            <div class="card-header">
+                                <h4 class="card-title">Médicament 1</h4>
+                                <button class="btn-delete" onclick="removeMedication(this)">
+                                    <i class="fas fa-trash"></i>
+                                    Supprimer
+                                </button>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Diagnostic associé</label>
+                                    <select class="form-control medication-diagnosis">
+                                        <option value="">Sélectionner un diagnostic</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nom du médicament</label>
+                                    <input type="text" class="form-control medication-name" placeholder="ex: Metformine" value="QL%QM">
+                                    <div class="example-text">ex: Metformine</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Dosage</label>
+                                    <input type="text" class="form-control medication-dosage" placeholder="ex: 850mg" value="500">
+                                    <div class="example-text">ex: 850mg</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Forme</label>
+                                    <select class="form-control medication-form">
+                                        <option value="comprimé" selected>Comprimé</option>
+                                        <option value="gélule">Gélule</option>
+                                        <option value="sirop">Sirop</option>
+                                        <option value="pommade">Pommade</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fréquence</label>
+                                    <select class="form-control medication-frequency">
+                                        <option value="1x/jour" selected>1 fois par jour</option>
+                                        <option value="2x/jour">2 fois par jour</option>
+                                        <option value="3x/jour">3 fois par jour</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Durée du traitement</label>
+                                    <input type="text" class="form-control medication-duration" placeholder="ex: 7 jours, 1 mois" value="JOURS">
+                                    <div class="example-text">ex: 7 jours, 1 mois</div>
+                                </div>
+                                <div class="form-group form-grid-full">
+                                    <label class="form-label">Instructions particulières</label>
+                                    <textarea class="form-control medication-instructions" placeholder="ex: Prendre pendant les repas, à jeun, éviter l'alcool...">CLJ%VQNL%VN</textarea>
+                                    <div class="example-text">ex: Prendre pendant les repas, à jeun, éviter l'alcool...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="emptyMedications" class="empty-state" style="display: none;">
+                        <i class="fas fa-prescription-bottle-alt"></i>
+                        <p>Aucun médicament prescrit</p>
+                    </div>
+                </div>
+
+                <!-- Lab Tests -->
+                <div class="lab-tests-section">
+                    <h3 class="section-title-large">
+                        <i class="fas fa-flask"></i>
+                        Examens Complémentaires
+                    </h3>
+                    <button class="btn-add-large" onclick="addExamCard()">
+                        <i class="fas fa-plus"></i>
+                        Ajouter un examen
+                    </button>
+
+                    <div id="examsContainer">
+                        <!-- Exam Card 1 -->
+                        <div class="exam-card">
+                            <div class="card-header">
+                                <h4 class="card-title">Examen 1</h4>
+                                <button class="btn-delete" onclick="removeExam(this)">
+                                    <i class="fas fa-trash"></i>
+                                    Supprimer
+                                </button>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Type d'examen</label>
+                                    <select class="form-control exam-type">
+                                        <option value="scanner" selected>Scanner</option>
+                                        <option value="radiographie">Radiographie</option>
+                                        <option value="irm">IRM</option>
+                                        <option value="echographie">Échographie</option>
+                                    </select>
+                                    <div class="example-text">Sélectionner un type</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nom de l'examen</label>
+                                    <input type="text" class="form-control exam-name" placeholder="ex: NFS, Radiographie thoracique" value="XVQVFD">
+                                    <div class="example-text">ex: NFS, Radiographie thoracique</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date demandée</label>
+                                    <input type="date" class="form-control exam-requested-date" value="2026-02-09">
+                                    <div class="example-text">ex: 09/02/2026</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date de réalisation</label>
+                                    <input type="date" class="form-control exam-performed-date">
+                                    <div class="example-text">jj/mm/aaaa</div>
+                                </div>
+                                <div class="form-group form-grid-full">
+                                    <label class="form-label">Résultat</label>
+                                    <textarea class="form-control exam-result" placeholder="Saisir le résultat de l'examen...">VVVFQVF</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Statut</label>
+                                    <select class="form-control exam-status">
+                                        <option value="prescrit" selected>Prescrit</option>
+                                        <option value="en_attente">En attente</option>
+                                        <option value="realise">Réalisé</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Fichier résultat</label>
+                                    <div class="form-control" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px;">
+                                        <input type="text" class="exam-file" placeholder="Nom du fichier..." style="border: none; flex: 1; background: transparent; outline: none;">
+                                        <button style="background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                    </div>
+                                    <div class="example-text">.PDF</div>
+                                </div>
+                                <div class="form-group form-grid-full">
+                                    <label class="form-label">Notes additionnelles</label>
+                                    <textarea class="form-control exam-notes" placeholder="Notes complémentaires sur l'examen...">C<JSVKV</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="emptyExams" class="empty-state" style="display: none;">
+                        <i class="fas fa-flask"></i>
+                        <p>Aucun examen demandé</p>
+                    </div>
+                </div>
+
+                <!-- Treatment Plan -->
+                <div class="treatment-plan-section">
+                    <label class="form-label">Plan de traitement général</label>
+                    <textarea class="form-control" id="plan" placeholder="Traitement global, recommandations, suivi, référencement...">"JS VJDV"</textarea>
+                </div>
+
+                <!-- Follow-up -->
+                <div class="followup-section">
+                    <h3>Prochain rendez-vous</h3>
+                    <div class="followup-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" id="followUpDate" value="2026-02-16">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select class="form-control" id="followUpType">
+                                <option value="consultation">Consultation</option>
+                                <option value="control" selected>Contrôle</option>
+                                <option value="results">Résultats</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Priorité</label>
+                            <select class="form-control" id="followUpPriority">
+                                <option value="routine">Routine</option>
+                                <option value="urgent" selected>Urgent</option>
+                                <option value="asap">Dès que possible</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JSON Output -->
+            <div id="jsonOutput" class="json-output">
+                Le JSON apparaîtra ici...
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="generateJSON()">
+                    <i class="fas fa-file-code"></i>
+                    Générer JSON
+                </button>
+                <button class="btn btn-secondary" onclick="saveNote()">
+                    <i class="fas fa-save"></i>
+                    Enregistrer
+                </button>
+                <button class="btn btn-danger" onclick="resetForm()">
+                    <i class="fas fa-redo"></i>
+                    Réinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let noteCounter = 1;
+        let examCounter = 1;
+
+        // Fonctions de l'interface
+        function selectNote(element) {
+            document.querySelectorAll('.note-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+        }
+
+        function addDiagnosis() {
+            const input = document.getElementById('newDiagnosis');
+            const value = input.value.trim();
+            
+            if (!value) {
+                alert('Veuillez saisir un diagnostic');
+                return;
+            }
+            
+            const tagsContainer = document.getElementById('diagnosesTags');
+            const tag = document.createElement('div');
+            tag.className = 'diagnosis-tag';
+            tag.innerHTML = `
+                ${value}
+                <button onclick="removeDiagnosis(this)">×</button>
+            `;
+            tagsContainer.appendChild(tag);
+            input.value = '';
+            
+            // Mettre à jour les select de diagnostic dans les médicaments
+            updateDiagnosisSelects();
+        }
+
+        function removeDiagnosis(button) {
+            button.closest('.diagnosis-tag').remove();
+            updateDiagnosisSelects();
+        }
+
+        function updateDiagnosisSelects() {
+            const diagnoses = [];
+            document.querySelectorAll('.diagnosis-tag').forEach(tag => {
+                const text = tag.textContent.replace('×', '').trim();
+                if (text) diagnoses.push(text);
+            });
+            
+            document.querySelectorAll('.medication-diagnosis').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Sélectionner un diagnostic</option>';
+                diagnoses.forEach(dx => {
+                    const option = document.createElement('option');
+                    option.value = dx;
+                    option.textContent = dx;
+                    select.appendChild(option);
+                });
+                select.value = currentValue;
+            });
+        }
+
+        function addMedicationCard() {
+            const container = document.getElementById('medicationsContainer');
+            const emptyState = document.getElementById('emptyMedications');
+            emptyState.style.display = 'none';
+            
+            noteCounter++;
+            const card = document.createElement('div');
+            card.className = 'medication-card';
+            card.innerHTML = `
+                <div class="card-header">
+                    <h4 class="card-title">Médicament ${noteCounter}</h4>
+                    <button class="btn-delete" onclick="removeMedication(this)">
+                        <i class="fas fa-trash"></i>
+                        Supprimer
+                    </button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Diagnostic associé</label>
+                        <select class="form-control medication-diagnosis">
+                            <option value="">Sélectionner un diagnostic</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nom du médicament</label>
+                        <input type="text" class="form-control medication-name" placeholder="ex: Metformine">
+                        <div class="example-text">ex: Metformine</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dosage</label>
+                        <input type="text" class="form-control medication-dosage" placeholder="ex: 850mg">
+                        <div class="example-text">ex: 850mg</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Forme</label>
+                        <select class="form-control medication-form">
+                            <option value="comprimé" selected>Comprimé</option>
+                            <option value="gélule">Gélule</option>
+                            <option value="sirop">Sirop</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fréquence</label>
+                        <select class="form-control medication-frequency">
+                            <option value="1x/jour" selected>1 fois par jour</option>
+                            <option value="2x/jour">2 fois par jour</option>
+                            <option value="3x/jour">3 fois par jour</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Durée du traitement</label>
+                        <input type="text" class="form-control medication-duration" placeholder="ex: 7 jours, 1 mois">
+                        <div class="example-text">ex: 7 jours, 1 mois</div>
+                    </div>
+                    <div class="form-group form-grid-full">
+                        <label class="form-label">Instructions particulières</label>
+                        <textarea class="form-control medication-instructions" placeholder="ex: Prendre pendant les repas, à jeun, éviter l'alcool..."></textarea>
+                        <div class="example-text">ex: Prendre pendant les repas, à jeun, éviter l'alcool...</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+            updateDiagnosisSelects();
+        }
+
+        function removeMedication(button) {
+            const card = button.closest('.medication-card');
+            card.remove();
+            
+            const container = document.getElementById('medicationsContainer');
+            const emptyState = document.getElementById('emptyMedications');
+            if (container.children.length === 0) {
+                emptyState.style.display = 'block';
+            }
+        }
+
+        function addExamCard() {
+            const container = document.getElementById('examsContainer');
+            const emptyState = document.getElementById('emptyExams');
+            emptyState.style.display = 'none';
+            
+            examCounter++;
+            const card = document.createElement('div');
+            card.className = 'exam-card';
+            card.innerHTML = `
+                <div class="card-header">
+                    <h4 class="card-title">Examen ${examCounter}</h4>
+                    <button class="btn-delete" onclick="removeExam(this)">
+                        <i class="fas fa-trash"></i>
+                        Supprimer
+                    </button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Type d'examen</label>
+                        <select class="form-control exam-type">
+                            <option value="scanner" selected>Scanner</option>
+                            <option value="radiographie">Radiographie</option>
+                            <option value="irm">IRM</option>
+                        </select>
+                        <div class="example-text">Sélectionner un type</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nom de l'examen</label>
+                        <input type="text" class="form-control exam-name" placeholder="ex: NFS, Radiographie thoracique">
+                        <div class="example-text">ex: NFS, Radiographie thoracique</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date demandée</label>
+                        <input type="date" class="form-control exam-requested-date" value="${new Date().toISOString().split('T')[0]}">
+                        <div class="example-text">ex: ${new Date().toLocaleDateString('fr-FR')}</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date de réalisation</label>
+                        <input type="date" class="form-control exam-performed-date">
+                        <div class="example-text">jj/mm/aaaa</div>
+                    </div>
+                    <div class="form-group form-grid-full">
+                        <label class="form-label">Résultat</label>
+                        <textarea class="form-control exam-result" placeholder="Saisir le résultat de l'examen..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Statut</label>
+                        <select class="form-control exam-status">
+                            <option value="prescrit" selected>Prescrit</option>
+                            <option value="en_attente">En attente</option>
+                            <option value="realise">Réalisé</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fichier résultat</label>
+                        <div class="form-control" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px;">
+                            <input type="text" class="exam-file" placeholder="Nom du fichier..." style="border: none; flex: 1; background: transparent; outline: none;">
+                            <button style="background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                                <i class="fas fa-upload"></i>
+                            </button>
+                        </div>
+                        <div class="example-text">.PDF</div>
+                    </div>
+                    <div class="form-group form-grid-full">
+                        <label class="form-label">Notes additionnelles</label>
+                        <textarea class="form-control exam-notes" placeholder="Notes complémentaires sur l'examen..."></textarea>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        function removeExam(button) {
+            const card = button.closest('.exam-card');
+            card.remove();
+            
+            const container = document.getElementById('examsContainer');
+            const emptyState = document.getElementById('emptyExams');
+            if (container.children.length === 0) {
+                emptyState.style.display = 'block';
+            }
+        }
+
+        // Fonction pour générer le JSON - CORRIGÉE
+        function generateJSON() {
+            try {
+                // Récupérer toutes les données
+                const data = {
+                    patient: {
+                        name: "Jean Dupont",
+                        patientId: "PAT-2024-001",
+                        status: "Actif"
+                    },
+                    consultation: {
+                        date: "2026-02-09",
+                        doctor: "Dr. Martin",
+                        chiefComplaint: document.getElementById('chiefComplaint').value || "",
+                        subjective: document.getElementById('subjective').value || "",
+                        objective: document.getElementById('objective').value || "",
+                        assessment: document.getElementById('assessment').value || "",
+                        plan: document.getElementById('plan').value || "",
+                        vitals: {
+                            bloodPressure: {
+                                systolic: document.getElementById('bpSystolic')?.value || "120",
+                                diastolic: document.getElementById('bpDiastolic')?.value || "80"
+                            },
+                            pulse: document.getElementById('pulse')?.value || "72",
+                            temperature: document.getElementById('temperature')?.value || "37",
+                            spo2: document.getElementById('spo2')?.value || "99"
+                        }
+                    },
+                    diagnoses: [],
+                    medications: [],
+                    labTests: [],
+                    followUp: {
+                        date: document.getElementById('followUpDate')?.value || "2026-02-16",
+                        type: document.getElementById('followUpType')?.value || "control",
+                        priority: document.getElementById('followUpPriority')?.value || "urgent"
+                    },
+                    metadata: {
+                        generatedAt: new Date().toISOString(),
+                        source: "WellCare Notes Cliniques",
+                        version: "1.0"
+                    }
+                };
+
+                // Récupérer les diagnostics
+                document.querySelectorAll('.diagnosis-tag').forEach(tag => {
+                    const text = tag.textContent.replace('×', '').trim();
+                    if (text) {
+                        data.diagnoses.push(text);
+                    }
+                });
+
+                // Récupérer les médicaments
+                document.querySelectorAll('.medication-card').forEach((card, index) => {
+                    const medication = {
+                        medicationNumber: index + 1,
+                        associatedDiagnosis: card.querySelector('.medication-diagnosis')?.value || "",
+                        name: card.querySelector('.medication-name')?.value || "",
+                        dosage: card.querySelector('.medication-dosage')?.value || "",
+                        form: card.querySelector('.medication-form')?.value || "comprimé",
+                        frequency: card.querySelector('.medication-frequency')?.value || "1x/jour",
+                        duration: card.querySelector('.medication-duration')?.value || "",
+                        instructions: card.querySelector('.medication-instructions')?.value || ""
+                    };
+                    data.medications.push(medication);
+                });
+
+                // Récupérer les examens
+                document.querySelectorAll('.exam-card').forEach((card, index) => {
+                    const exam = {
+                        examNumber: index + 1,
+                        type: card.querySelector('.exam-type')?.value || "scanner",
+                        name: card.querySelector('.exam-name')?.value || "",
+                        requestedDate: card.querySelector('.exam-requested-date')?.value || "",
+                        performedDate: card.querySelector('.exam-performed-date')?.value || "",
+                        result: card.querySelector('.exam-result')?.value || "",
+                        status: card.querySelector('.exam-status')?.value || "prescrit",
+                        file: card.querySelector('.exam-file')?.value || "",
+                        notes: card.querySelector('.exam-notes')?.value || ""
+                    };
+                    data.labTests.push(exam);
+                });
+
+                // Afficher le JSON
+                const jsonOutput = document.getElementById('jsonOutput');
+                jsonOutput.textContent = JSON.stringify(data, null, 2);
+                jsonOutput.style.display = 'block';
+
+                // Copier dans le presse-papier
+                navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+                    .then(() => {
+                        alert('JSON généré et copié dans le presse-papier !');
+                    })
+                    .catch(err => {
+                        console.error('Erreur lors de la copie:', err);
+                        alert('JSON généré, mais erreur lors de la copie: ' + err.message);
+                    });
+
+                console.log('JSON généré:', data);
+                return data;
+
+            } catch (error) {
+                console.error('Erreur lors de la génération JSON:', error);
+                alert('Erreur lors de la génération JSON: ' + error.message);
+                return null;
+            }
+        }
+
+        function saveNote() {
+            const data = generateJSON();
+            if (data) {
+                alert('Note sauvegardée avec succès !\n\nJSON généré et copié dans le presse-papier.');
+                console.log('Note sauvegardée:', data);
+                
+                // Ici vous pourriez ajouter une requête AJAX pour sauvegarder sur le serveur
+                // fetch('/api/notes', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(data)
+                // });
+            }
+        }
+
+        function resetForm() {
+            if (confirm('Voulez-vous vraiment réinitialiser le formulaire ?')) {
+                // Réinitialiser les champs principaux
+                document.getElementById('chiefComplaint').value = '';
+                document.getElementById('subjective').value = '';
+                document.getElementById('objective').value = '';
+                document.getElementById('assessment').value = '';
+                document.getElementById('plan').value = '';
+                
+                // Réinitialiser les signes vitaux
+                document.getElementById('bpSystolic').value = '120';
+                document.getElementById('bpDiastolic').value = '80';
+                document.getElementById('pulse').value = '72';
+                document.getElementById('temperature').value = '37';
+                document.getElementById('spo2').value = '99';
+                
+                // Réinitialiser les diagnostics
+                document.getElementById('diagnosesTags').innerHTML = '';
+                document.getElementById('newDiagnosis').value = '';
+                
+                // Réinitialiser les médicaments
+                document.getElementById('medicationsContainer').innerHTML = '';
+                document.getElementById('emptyMedications').style.display = 'block';
+                noteCounter = 0;
+                
+                // Réinitialiser les examens
+                document.getElementById('examsContainer').innerHTML = '';
+                document.getElementById('emptyExams').style.display = 'block';
+                examCounter = 0;
+                
+                // Réinitialiser le suivi
+                document.getElementById('followUpDate').value = '';
+                document.getElementById('followUpType').value = 'control';
+                document.getElementById('followUpPriority').value = 'urgent';
+                
+                // Cacher le JSON
+                document.getElementById('jsonOutput').style.display = 'none';
+                
+                alert('Formulaire réinitialisé !');
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mettre à jour les selects de diagnostic
+            updateDiagnosisSelects();
+            
+            // Permettre l'ajout de diagnostic avec la touche Entrée
+            document.getElementById('newDiagnosis').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addDiagnosis();
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

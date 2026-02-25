@@ -3,15 +3,177 @@
 
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}{{ 'Dossier Médical'|trans }} - <span x-text="patient.name"></span> - WellCare Connect{% endblock %}
+{% block title %}{{ 'Dossier Médical'|trans }} - {{ patient_data.name|default('Patient') }} - WellCare Connect{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('build/analytics.css') }}">
+    <style>[x-cloak] { display: none !important; }</style>
 {% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="patientChart()" x-init="init()">
+{% set consultation = consultation|default(null) %}
+{% set ordonnances = ordonnances|default([]) %}
+{% set examens = examens|default([]) %}
+
+{% set vitals = consultation.vitals|default({}) %}
+
+{# If patient_data is not provided by controller, use defaults #}
+{% if patient_data is not defined %}
+    {% set patient_data = {
+        id: consultation.id|default('P001'),
+        name: consultation.reason_for_visit|default('Patient'),
+        fileNumber: 'CONS-' ~ (consultation.id|default('--')),
+        avatar: 'https://ui-avatars.com/api/?name=' ~ (consultation.reason_for_visit|default('Patient')|url_encode) ~ '&background=00A790&color=fff',
+        status: 'stable',
+        healthScore: 85,
+        lastVisitDate: '--',
+        conditions: [],
+        birthDate: '--',
+        bloodType: '--',
+        height: 0,
+        weight: 0,
+        phone: '--',
+        email: '--',
+        address: '--',
+        allergies: [],
+        medications: []
+    } %}
+{% endif %}
+
+{% set treatment = treatment|default({
+    adherence: 0,
+    goals: [],
+    followUps: []
+}) %}
+
+{# Use vital_signs from controller if available, otherwise use defaults #}
+{% if vital_signs is not defined %}
+    {% set vital_signs = [
+        { date: '10/02/2026', time: '09:00', bloodPressure: '120/80', heartRate: 72, temperature: 36.6, weight: 75, height: 175, spo2: 98 },
+        { date: '09/02/2026', time: '08:30', bloodPressure: '118/78', heartRate: 70, temperature: 36.5, weight: 75, height: 175, spo2: 98 },
+        { date: '08/02/2026', time: '09:15', bloodPressure: '122/82', heartRate: 75, temperature: 36.7, weight: 76, height: 175, spo2: 97 }
+    ] %}
+{% endif %}
+
+{# Use timeline_data from controller if available, otherwise build from consultation #}
+{% if timeline_data is not defined %}
+    {% set timeline_data = [] %}
+    {# Add consultation to timeline #}
+    {% if consultation %}
+        {% set timeline_data = timeline_data|merge([{
+            id: consultation.id,
+            type: 'symptom',
+            typeLabel: 'Consultation',
+            title: consultation.reason_for_visit|default('Consultation'),
+            description: consultation.symptoms_description|default(consultation.notes|default('Pas de description')),
+            date: consultation.date_consultation|default('N/A'),
+            severity: consultation.status == 'emergency' ? 5 : 2
+        }]) %}
+    {% endif %}
+{% endif %}
+
+{% set symptoms_data = [] %}
+{% if consultation and consultation.symptoms_description %}
+    {% set symptoms_data = symptoms_data|merge([{
+        id: 1,
+        name: consultation.reason_for_visit|default('Symptôme'),
+        date: consultation.date_consultation|default('N/A'),
+        intensity: 5,
+        status: consultation.status == 'completed' ? 'resolved' : 'active',
+        description: consultation.symptoms_description
+    }]) %}
+{% endif %}
+
+{# Use medications_data from controller if available, otherwise build from ordonnances #}
+{% if medications_data is not defined %}
+    {% set medications_data = [] %}
+    {% for ord in ordonnances %}
+        {% set medications_data = medications_data|merge([{
+            id: ord.id,
+            name: ord.medicament|default('Médicament'),
+            dosage: ord.dosage|default('--'),
+            frequency: ord.frequency|default('--'),
+            active: true
+        }]) %}
+        {% set timeline_data = timeline_data|merge([{
+            id: 'MED-' ~ ord.id,
+            type: 'medication',
+            typeLabel: 'Traitement',
+            title: 'Prescription: ' ~ (ord.medicament|default('Médicament')),
+            description: ord.dosage ~ ' - ' ~ (ord.instructions|default('')),
+            date: ord.date_ordonnance|default('N/A')
+        }]) %}
+    {% endfor %}
+{% endif %}
+
+{% if examens_data is not defined %}
+    {% for exam in examens %}
+        {% set timeline_data = timeline_data|merge([{
+            id: 'EXAM-' ~ exam.id,
+            type: 'lab',
+            typeLabel: 'Examen',
+            title: exam.nom_examen|default(exam.type_examen|default('Examen')),
+            description: exam.resultat|default('En attente'),
+            date: exam.date_examen|default('N/A')
+        }]) %}
+    {% endfor %}
+{% endif %}
+
+{# Sort timeline by date descending #}
+{% set timeline_data = timeline_data|sort((a, b) => (b.date == 'N/A' ? '1970-01-01' : b.date) <=> (a.date == 'N/A' ? '1970-01-01' : a.date)) %}
+
+{# Current consultation data - use from controller if available #}
+{% if consultation_data is not defined %}
+    {% set consultation_data = {
+        id: null,
+        date: 'N/A',
+        time: '',
+        reasonForVisit: null,
+        symptomsDescription: null,
+        diagnoses: [],
+        assessment: null,
+        plan: null,
+        notes: null,
+        status: null,
+        soapNotes: {},
+        appointmentMode: null,
+        consultationType: null,
+        duration: null,
+        location: null,
+    } %}
+{% endif %}
+
+{% set all_consultations = all_consultations|default([]) %}
+{% set symptoms_data = symptoms_data|default([]) %}
+{% set treatment_data = treatment_data|default({adherence: 0, goals: [], followUps: []}) %}
+
+{# Store data in window object to avoid HTML attribute encoding issues #}
+<script>
+    window.__patientChartData = {
+        patient: {{ patient_data|json_encode|raw }},
+        vitalSigns: {{ vital_signs|json_encode|raw }},
+        timeline: {{ timeline_data|json_encode|raw }},
+        medications: {{ medications_data|json_encode|raw }},
+        currentConsultation: {{ consultation_data|json_encode|raw }},
+        allConsultations: {{ all_consultations|json_encode|raw }},
+        symptoms: {{ symptoms_data|json_encode|raw }},
+        treatment: {{ treatment_data|json_encode|raw }}
+    };
+</script>
+
+<div class="min-h-full bg-gray-50 dark:bg-gray-950"
+     x-data="patientChart(window.__patientChartData.patient)"
+     x-init="
+        vitalSigns = window.__patientChartData.vitalSigns;
+        timeline = window.__patientChartData.timeline;
+        medications = window.__patientChartData.medications;
+        currentConsultation = window.__patientChartData.currentConsultation;
+        allConsultations = window.__patientChartData.allConsultations;
+        symptoms = window.__patientChartData.symptoms;
+        treatment = window.__patientChartData.treatment;
+     "
+     x-cloak>
     {# Patient Header #}
     <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -49,7 +211,7 @@
                 
                 <div class="flex items-center gap-3">
                     <a 
-                        href="/doctor/patients"
+                        href="/health/doctor/patients"
                         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
                     >
                         <i class="fa-solid fa-arrow-left"></i>
@@ -230,6 +392,14 @@
                     <div class="border-b border-gray-200 dark:border-gray-700">
                         <nav class="flex -mb-px">
                             <button 
+                                @click="activeTab = 'consultation'"
+                                :class="activeTab === 'consultation' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
+                                class="px-6 py-4 text-sm font-medium transition-colors border-b-2"
+                            >
+                                <i class="mr-2 fa-solid fa-stethoscope"></i>
+                                {{ 'Consultation'|trans }}
+                            </button>
+                            <button 
                                 @click="activeTab = 'timeline'"
                                 :class="activeTab === 'timeline' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
                                 class="px-6 py-4 text-sm font-medium transition-colors border-b-2"
@@ -265,6 +435,236 @@
                     </div>
 
                     <div class="p-6">
+                        {# Consultation Tab #}
+                        <div x-show="activeTab === 'consultation'" x-transition>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-stethoscope text-wellcare-500"></i>
+                                    {{ 'Détails de la consultation'|trans }}
+                                </h3>
+                                <span class="px-3 py-1 text-sm font-medium rounded-full"
+                                      :class="getStatusBadgeClass(currentConsultation.status)"
+                                      x-text="getStatusLabel(currentConsultation.status)">
+                                </span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                {# Consultation Info #}
+                                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                        <i class="mr-2 fa-solid fa-info-circle text-wellcare-500"></i>
+                                        {{ 'Informations générales'|trans }}
+                                    </h4>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Date'|trans }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="currentConsultation.date"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Heure'|trans }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="currentConsultation.time"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Durée'|trans }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="currentConsultation.duration ? currentConsultation.duration + ' min' : '--'"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Type'|trans }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="currentConsultation.consultationType || '--'"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Mode'|trans }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="currentConsultation.appointmentMode || '--'"></span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Lieu'|trans }}</span>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="currentConsultation.location || '--'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {# Reason for Visit #}
+                                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                                    <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                        <i class="mr-2 fa-solid fa-comment-medical text-wellcare-500"></i>
+                                        {{ 'Motif de consultation'|trans }}
+                                    </h4>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300" x-text="currentConsultation.reasonForVisit || 'Non spécifié'"></p>
+                                </div>
+                            </div>
+                            
+                            {# Symptoms Description #}
+                            <div class="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800" x-show="currentConsultation.symptomsDescription">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-notes-medical text-amber-500"></i>
+                                    {{ 'Description des symptômes'|trans }}
+                                </h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.symptomsDescription"></p>
+                            </div>
+                            
+                            {# Diagnoses #}
+                            <div class="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800" x-show="currentConsultation.diagnoses && currentConsultation.diagnoses.length > 0">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-disease text-red-500"></i>
+                                    {{ 'Diagnostics'|trans }}
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="diagnosis in currentConsultation.diagnoses" :key="diagnosis">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                            <i class="mr-1.5 fa-solid fa-circle text-xs"></i>
+                                            <span x-text="diagnosis"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                            
+                            {# SOAP Notes #}
+                            <div class="mt-4" x-show="currentConsultation.soapNotes && Object.keys(currentConsultation.soapNotes).length > 0">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-clipboard-list text-wellcare-500"></i>
+                                    {{ 'Notes SOAP'|trans }}
+                                </h4>
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20" x-show="currentConsultation.soapNotes?.subjective">
+                                        <h5 class="mb-2 text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase">{{ 'Subjectif'|trans }}</h5>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.soapNotes?.subjective"></p>
+                                    </div>
+                                    <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900/20" x-show="currentConsultation.soapNotes?.objective">
+                                        <h5 class="mb-2 text-xs font-semibold text-green-700 dark:text-green-400 uppercase">{{ 'Objectif'|trans }}</h5>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.soapNotes?.objective"></p>
+                                    </div>
+                                    <div class="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20" x-show="currentConsultation.soapNotes?.assessment">
+                                        <h5 class="mb-2 text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase">{{ 'Évaluation'|trans }}</h5>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.soapNotes?.assessment"></p>
+                                    </div>
+                                    <div class="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20" x-show="currentConsultation.soapNotes?.plan">
+                                        <h5 class="mb-2 text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase">{{ 'Plan'|trans }}</h5>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.soapNotes?.plan"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {# Assessment #}
+                            <div class="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800" x-show="currentConsultation.assessment">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-user-doctor text-wellcare-500"></i>
+                                    {{ 'Évaluation médicale'|trans }}
+                                </h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.assessment"></p>
+                            </div>
+                            
+                            {# Plan #}
+                            <div class="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800" x-show="currentConsultation.plan">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-list-check text-wellcare-500"></i>
+                                    {{ 'Plan de traitement'|trans }}
+                                </h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.plan"></p>
+                            </div>
+                            
+                            {# Notes #}
+                            <div class="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800" x-show="currentConsultation.notes">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-pen text-gray-500"></i>
+                                    {{ 'Notes additionnelles'|trans }}
+                                </h4>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line" x-text="currentConsultation.notes"></p>
+                            </div>
+
+                            {% if examens_data is defined and examens_data|length > 0 %}
+                                <div class="mt-6">
+                                    <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                        <i class="mr-2 fa-solid fa-flask text-wellcare-500"></i>
+                                        {{ 'Examens'|trans }}
+                                    </h4>
+                                    <div class="space-y-4">
+                                        {% for exam in examens_data %}
+                                            <div class="p-4 border border-gray-200 rounded-lg bg-white dark:bg-gray-900 dark:border-gray-800">
+                                                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                                    <div>
+                                                        <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                            {{ exam.name|default(exam.type|default('Examen')) }}
+                                                        </p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                            {{ exam.date|default('N/A') }} â€¢ {{ exam.status|default('prescrit')|capitalize }}
+                                                        </p>
+                                                    </div>
+                                                    {% if exam.resultFile %}
+                                                        <a class="text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300"
+                                                           href="{{ asset(exam.resultFile) }}" target="_blank" rel="noopener">
+                                                            <i class="mr-1 fa-solid fa-file-pdf"></i>
+                                                            {{ 'Voir PDF'|trans }}
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="mt-3 text-sm text-gray-700 dark:text-gray-300">
+                                                    <span class="font-medium">{{ 'RÃ©sultat'|trans }}:</span>
+                                                    {{ exam.result|default('En attente') }}
+                                                </div>
+                                                <form method="post" action="{{ path('doctor_examens_analysis', { id: exam.id }) }}" class="mt-4 space-y-3">
+                                                    <div>
+                                                        <label class="block text-xs font-semibold text-gray-500 uppercase">{{ 'Analyse'|trans }}</label>
+                                                        <textarea name="doctor_analysis" rows="3" class="w-full mt-1 text-sm border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">{{ exam.doctorAnalysis|default('') }}</textarea>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs font-semibold text-gray-500 uppercase">{{ 'Traitement'|trans }}</label>
+                                                        <textarea name="doctor_treatment" rows="3" class="w-full mt-1 text-sm border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">{{ exam.doctorTreatment|default('') }}</textarea>
+                                                    </div>
+                                                    <div>
+                                                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700">
+                                                            <i class="mr-1 fa-solid fa-save"></i>
+                                                            {{ 'Enregistrer'|trans }}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            {# All Consultations List #}
+                            <div class="mt-6" x-show="allConsultations && allConsultations.length > 0">
+                                <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-2 fa-solid fa-history text-wellcare-500"></i>
+                                    {{ 'Historique des consultations'|trans }}
+                                </h4>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                        <thead class="bg-gray-100 dark:bg-gray-800">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ 'Date'|trans }}</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ 'Motif'|trans }}</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ 'Statut'|trans }}</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ 'Actions'|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                            <template x-for="cons in allConsultations" :key="cons.id">
+                                                <tr :class="cons.isCurrent ? 'bg-wellcare-50 dark:bg-wellcare-900/20' : ''">
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white" x-text="cons.date + ' ' + cons.time"></td>
+                                                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-white" x-text="cons.reasonForVisit || 'N/A'"></td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                                              :class="getStatusBadgeClass(cons.status)"
+                                                              x-text="getStatusLabel(cons.status)">
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <a :href="'/health/doctor/patient/' + cons.id + '/chart'"
+                                                           class="text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 dark:hover:text-wellcare-300 text-sm">
+                                                            <i class="mr-1 fa-solid fa-eye"></i>
+                                                            {{ 'Voir'|trans }}
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
                         {# Timeline Tab #}
                         <div x-show="activeTab === 'timeline'" x-transition>
                             <div class="flex items-center justify-between mb-4">
@@ -329,7 +729,7 @@
                             </div>
                             
                             <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-                                <template x-for="vital in vitalSigns" :key="vital.type">
+                                <template x-for="vital in vitalsCards" :key="vital.type">
                                     <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700" :class="vital.alert ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800' : 'bg-white dark:bg-gray-800'">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="text-sm text-gray-500 dark:text-gray-400" x-text="vital.label"></span>
@@ -357,9 +757,7 @@
                         <div x-show="activeTab === 'symptoms'" x-transition style="display: none;">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Suivi des symptômes'|trans }}</h3>
-                                <button @click="openAddSymptomModal()" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600">
-                                    <i class="mr-2 fa-solid fa-plus"></i>{{ 'Ajouter'|trans }}
-                                </button>
+                                {# bouton supprimé #}
                             </div>
                             <div class="mb-6 h-80">
                                 <canvas id="symptomsChart"></canvas>
@@ -405,9 +803,7 @@
                         <div x-show="activeTab === 'treatment'" x-transition style="display: none;">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Plan de traitement'|trans }}</h3>
-                                <button @click="openAddTreatmentModal()" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700 dark:bg-wellcare-500 dark:hover:bg-wellcare-600">
-                                    <i class="mr-2 fa-solid fa-plus"></i>{{ 'Modifier'|trans }}
-                                </button>
+                                {# bouton supprimé #}
                             </div>
                             
                             <div class="space-y-6">
@@ -421,7 +817,7 @@
                                                 <span class="font-medium text-gray-900 dark:text-white" x-text="treatment.adherence + '%'"></span>
                                             </div>
                                             <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                                                <div class="h-2 transition-all duration-500 rounded-full bg-wellcare-500" :style="`width: ${treatment.adherence}%`"></div>
+                                                <div class="h-2 transition-all duration-500 rounded-full bg-wellcare-500" :style="{ width: treatment.adherence + '%' }"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -478,8 +874,9 @@
     </div>
 </div>
 
+{% endblock %}
+
 {% block javascripts %}
     {{ parent() }}
-    <script src="{{ asset('build/doctor-dashboard.js') }}"></script>
-{% endblock %}
+    {# doctor-dashboard.js is already imported in app.js - no need to load it again #}
 {% endblock %}
