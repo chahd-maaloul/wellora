@@ -3,19 +3,13 @@ framework:
     notifier:
         texter_transports:
             twilio: '%env(TWILIO_DSN)%'
+        chatter_transports:
+            mercure: '%env(MERCURE_DSN)%'
         
         # Email notifications are handled via the mailer component
         # Configure MAILER_DSN in .env for email delivery
         
-        channel_policy:
-            urgent: ['sms', 'email']
-            high: ['email']
-            medium: ['email']
-framework:
-    notifier:
-        chatter_transports:
-            mercure: '%env(MERCURE_DSN)%'
-        texter_transports:
+    
         channel_policy:
             # use chat/slack, chat/telegram, sms/twilio or sms/nexmo
             urgent: ['email']

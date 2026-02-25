@@ -1451,7 +1451,26 @@ class DoctorController extends AbstractController
     #[Route('/availability/settings/load', name: 'doctor_availability_settings_load', methods: ['GET'])]
     public function loadAvailabilitySettings(): JsonResponse
     {
-        $user = $this->getUser();
+        try {
+            $user = $this->getUser();
+            
+            // Check if user is a Medecin
+            if (!$user instanceof Medecin) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'Utilisateur non autorisé',
+                ], 403);
+            }
+            
+            // Get user UUID
+            $userUuid = $user->getUuid();
+            
+            if (!$userUuid) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'UUID non trouvé',
+                ], 400);
+            }
         
         // Default settings
         $settings = [
@@ -1464,8 +1483,8 @@ class DoctorController extends AbstractController
             'autoConfirmAppointments' => false,
         ];
         
-        // Load weekly schedule from database
-        $availabilities = $this->em->getRepository(DoctorAvailability::class)->findByMedecin($user);
+        // Load weekly schedule from database using UUID
+        $availabilities = $this->em->getRepository(DoctorAvailability::class)->findByMedecinUuid($userUuid);
         
         $daysMap = [
             'monday' => ['name' => 'Lundi', 'key' => 'monday'],
@@ -1512,8 +1531,8 @@ class DoctorController extends AbstractController
             }
         }
         
-        // Load locations from database
-        $locationEntities = $this->em->getRepository(DoctorLocation::class)->findByMedecin($user);
+        // Load locations from database using UUID
+        $locationEntities = $this->em->getRepository(DoctorLocation::class)->findByMedecinUuid($userUuid);
         $locations = [];
         foreach ($locationEntities as $loc) {
             $locations[] = [
@@ -1538,8 +1557,8 @@ class DoctorController extends AbstractController
             ];
         }
         
-        // Load leaves from database
-        $leaveEntities = $this->em->getRepository(DoctorLeave::class)->findUpcomingByMedecin($user);
+        // Load leaves from database using UUID
+        $leaveEntities = $this->em->getRepository(DoctorLeave::class)->findUpcomingByMedecinUuid($userUuid);
         $leaves = [];
         foreach ($leaveEntities as $leave) {
             $leaves[] = [
@@ -1561,19 +1580,35 @@ class DoctorController extends AbstractController
             'locations' => $locations,
             'leaves' => $leaves,
         ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Erreur: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     #[Route('/availability/settings/save', name: 'doctor_availability_settings_save', methods: ['POST'])]
     public function saveAvailabilitySettings(Request $request): JsonResponse
     {
         $user = $this->getUser();
+        
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
+        $userUuid = $user->getUuid();
         $data = json_decode($request->getContent(), true);
         
         // Save weekly schedule
         if (isset($data['weeklySchedule'])) {
             foreach ($data['weeklySchedule'] as $dayData) {
                 $availability = $this->em->getRepository(DoctorAvailability::class)
-                    ->findByMedecinAndDay($user, $dayData['key']);
+                    ->findByMedecinUuidAndDay($userUuid, $dayData['key']);
                 
                 if (!$availability) {
                     $availability = new DoctorAvailability();
@@ -1603,6 +1638,15 @@ class DoctorController extends AbstractController
     public function addLocation(Request $request): JsonResponse
     {
         $user = $this->getUser();
+        
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
         $data = json_decode($request->getContent(), true);
         
         $location = new DoctorLocation();
@@ -1634,6 +1678,15 @@ class DoctorController extends AbstractController
     public function requestLeave(Request $request): JsonResponse
     {
         $user = $this->getUser();
+        
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
         $data = json_decode($request->getContent(), true);
         
         $leave = new DoctorLeave();
@@ -1675,6 +1728,14 @@ class DoctorController extends AbstractController
     {
         $user = $this->getUser();
         
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
         $leave = $this->em->getRepository(DoctorLeave::class)->find($id);
         
         if (!$leave) {
@@ -1711,7 +1772,16 @@ class DoctorController extends AbstractController
     {
         $user = $this->getUser();
         
-        $substitutes = $this->em->getRepository(DoctorSubstitution::class)->findAvailableSubstitutes($user);
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
+        $userUuid = $user->getUuid();
+        $substitutes = $this->em->getRepository(DoctorSubstitution::class)->findAvailableSubstitutesByUuid($userUuid);
         
         $data = [];
         foreach ($substitutes as $substitute) {
@@ -1734,6 +1804,15 @@ class DoctorController extends AbstractController
     public function assignSubstitute(Request $request): JsonResponse
     {
         $user = $this->getUser();
+        
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
         $data = json_decode($request->getContent(), true);
         
         $substituteUuid = $data['substituteUuid'] ?? null;
@@ -1800,6 +1879,14 @@ class DoctorController extends AbstractController
     {
         $user = $this->getUser();
         
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
         $substitution = $this->em->getRepository(DoctorSubstitution::class)->find($id);
         
         if (!$substitution) {
@@ -1832,7 +1919,16 @@ class DoctorController extends AbstractController
     {
         $user = $this->getUser();
         
-        $substitutions = $this->em->getRepository(DoctorSubstitution::class)->findByMedecin($user);
+        // Check if user is a Medecin
+        if (!$user instanceof Medecin) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur non autorisé',
+            ], 403);
+        }
+        
+        $userUuid = $user->getUuid();
+        $substitutions = $this->em->getRepository(DoctorSubstitution::class)->findByMedecinUuid($userUuid);
         
         $data = [];
         foreach ($substitutions as $sub) {

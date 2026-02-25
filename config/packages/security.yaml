@@ -48,9 +48,14 @@ security:
         - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
         - { path: ^/reset-password, roles: PUBLIC_ACCESS }
         - { path: ^/access-denied, roles: PUBLIC_ACCESS }
-        - { path: ^/api/, roles: PUBLIC_ACCESS }
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/health/accessible, roles: PUBLIC_ACCESS }
+        
+        # Appointment API requires authentication (must be before general /api/ rule)
+        - { path: ^/appointment/api/, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        
+        # Public API routes (for AI model, etc.)
+        - { path: ^/api/, roles: PUBLIC_ACCESS }
         
         # Admin only routes
         - { path: ^/admin, roles: ROLE_ADMIN }
@@ -64,7 +69,7 @@ security:
         # Protected routes (any authenticated user)
         - { path: ^/dashboard, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
         - { path: ^/profile, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST, ROLE_ADMIN] }
-        - { path: ^/appointments, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        - { path: ^/appointment, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
         - { path: ^/health, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
         - { path: ^/nutrition, roles: [ROLE_PATIENT, ROLE_NUTRITIONIST] }
         - { path: ^/teleconsultation, roles: [ROLE_PATIENT, ROLE_MEDECIN] }

@@ -106,15 +106,7 @@
                     </h3>
                     
                     <div class="space-y-2 max-h-80 overflow-y-auto">
-                        <button
-                            @click="filterByGoal(null)"
-                            :class="{'bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-600 dark:text-wellcare-400': selectedGoal === null, 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300': selectedGoal !== null}"
-                            class="flex items-center justify-between w-full p-3 transition-colors rounded-lg">
-                            <div class="flex items-center gap-3">
-                                <i class="fas fa-layer-group"></i>
-                                <span>All Goals</span>
-                            </div>
-                        </button>
+                        
                         
                         {% for goal in userGoals %}
                         <button

@@ -680,6 +680,86 @@
         </div>
     </div>
 
+    {# Substitute Doctor Selection Modal #}
+    <div x-show="showSubstituteModal" 
+         x-cloak
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50" @click="showSubstituteModal = false"></div>
+        <div class="relative w-full max-w-lg p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <i class="mr-2 fa-solid fa-user-doctor text-wellcare-500"></i>
+                    {{ "Sélectionner un médecin remplaçant"|trans }}
+                </h3>
+                <button @click="showSubstituteModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    {{ "Choisissez un médecin qui vous remplacera pendant vos absences."|trans }}
+                </p>
+            </div>
+            
+            <div class="max-h-80 overflow-y-auto space-y-2 mb-4">
+                <template x-if="availableSubstitutes.length === 0">
+                    <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+                        <i class="mb-2 text-3xl fa-solid fa-user-slash"></i>
+                        <p>{{ "Aucun médecin disponible"|trans }}</p>
+                    </div>
+                </template>
+                
+                <template x-for="doctor in availableSubstitutes" :key="doctor.uuid">
+                    <div 
+                        @click="selectedSubstituteUuid = doctor.uuid"
+                        :class="selectedSubstituteUuid === doctor.uuid ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'"
+                        class="p-3 border-2 rounded-lg cursor-pointer transition-all"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <i class="fa-solid fa-user-doctor text-wellcare-600 dark:text-wellcare-400"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900 dark:text-white">
+                                    Dr. <span x-text="doctor.firstName"></span> <span x-text="doctor.lastName"></span>
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="doctor.specialite || 'Médecine Générale'"></p>
+                            </div>
+                            <div x-show="selectedSubstituteUuid === doctor.uuid" class="text-wellcare-500">
+                                <i class="fa-solid fa-check-circle text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button 
+                    @click="showSubstituteModal = false; selectedSubstituteUuid = null;"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                    {{ "Annuler"|trans }}
+                </button>
+                <button 
+                    @click="confirmSubstitute()"
+                    :disabled="!selectedSubstituteUuid"
+                    :class="selectedSubstituteUuid ? 'bg-wellcare-500 hover:bg-wellcare-600' : 'bg-gray-300 cursor-not-allowed'"
+                    class="px-4 py-2 text-sm font-medium text-white rounded-lg"
+                >
+                    <i class="mr-2 fa-solid fa-check"></i>
+                    {{ "Confirmer"|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     {# Toast Notification #}
     <div x-show="showToast" 
          x-cloak

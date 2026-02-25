@@ -19,16 +19,90 @@ class PatientAIController extends AbstractController
     ) {}
 
     #[Route('/generate', name: 'patient_ai_generate_form')]
-    public function generateForm(): Response
-    {
-        // Vérifier que le service Python est accessible
-        $isHealthy = $this->aiPythonService->healthCheck();
+public function generateForm(): Response
+{
+    // Vérifier que le service Python est accessible
+    $isHealthy = $this->aiPythonService->healthCheck();
+    
+    // Si le service n'est pas accessible, essayer de le lancer
+    if (!$isHealthy) {
+        $pythonAiPath = dirname(__DIR__, 2) . '/python-ai';
+        $pythonScript = $pythonAiPath . '/app.py';
         
-        return $this->render('patient/ai_generate_form.html.twig', [
-            'isHealthy' => $isHealthy
-        ]);
+        // Vérifications de débogage
+        $debug = [];
+        $debug[] = "Chemin Python-AI: " . $pythonAiPath;
+        $debug[] = "Script existe: " . (file_exists($pythonScript) ? 'OUI' : 'NON');
+        
+        // Vérifier si Python est installé
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $pythonCheck = shell_exec('where python 2>&1');
+            $debug[] = "Python trouvé: " . ($pythonCheck ? $pythonCheck : 'NON');
+        } else {
+            $pythonCheck = shell_exec('which python3 2>&1');
+            $debug[] = "Python3 trouvé: " . ($pythonCheck ? $pythonCheck : 'NON');
+        }
+        
+        // Vérifier si le port 5000 est déjà utilisé
+        $connection = @fsockopen('localhost', 5000, $errno, $errstr, 1);
+        if ($connection) {
+            $debug[] = "Port 5000 déjà utilisé!";
+            fclose($connection);
+        } else {
+            $debug[] = "Port 5000 libre, tentative de lancement...";
+            
+            // Créer un fichier de log pour voir les erreurs
+            $logFile = $pythonAiPath . '/startup.log';
+            
+            // Lancer le serveur Python avec redirection des erreurs
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $command = sprintf(
+                    'cd /d %s && start /B python app.py > %s 2>&1',
+                    $pythonAiPath,
+                    $logFile
+                );
+                pclose(popen($command, 'r'));
+            } else {
+                $command = sprintf(
+                    'cd %s && nohup python3 app.py > %s 2>&1 &',
+                    $pythonAiPath,
+                    $logFile
+                );
+                exec($command);
+            }
+            
+            sleep(3); // Attendre le démarrage
+            
+            // Vérifier le fichier de log
+            if (file_exists($logFile)) {
+                $logContent = file_get_contents($logFile);
+                $debug[] = "Contenu du log: " . substr($logContent, 0, 500);
+            }
+            
+            // Revérifier si le service est maintenant accessible
+            $isHealthy = $this->aiPythonService->healthCheck();
+            
+            if ($isHealthy) {
+                $this->addFlash('success', '✅ Service IA démarré avec succès!');
+            } else {
+                $this->addFlash('warning', '⚠️ Échec du démarrage. Vérifiez les logs.');
+                
+                // Essayer de lancer manuellement en premier plan pour voir l'erreur
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    $manualCommand = sprintf('cd /d %s && python app.py', $pythonAiPath);
+                    $debug[] = "Commande manuelle: " . $manualCommand;
+                }
+            }
+        }
+        
+        // Ajouter les infos de débogage à la session
+        $this->addFlash('debug', $debug);
     }
-
+    
+    return $this->render('patient/ai_generate_form.html.twig', [
+        'isHealthy' => $isHealthy
+    ]);
+}
     #[Route('/generate/program', name: 'patient_ai_generate_program', methods: ['POST'])]
     public function generateProgram(Request $request): Response
     {

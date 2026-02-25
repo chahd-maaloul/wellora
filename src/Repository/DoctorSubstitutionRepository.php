@@ -31,6 +31,21 @@ class DoctorSubstitutionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find by medecin UUID
+     * @return DoctorSubstitution[]
+     */
+    public function findByMedecinUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('s')
+            ->innerJoin('s.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->setParameter('uuid', $uuid)
+            ->orderBy('s.startDate', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return DoctorSubstitution[]
      */
     public function findActiveSubstitutionsForMedecin(Medecin $medecin): array
@@ -40,6 +55,25 @@ class DoctorSubstitutionRepository extends ServiceEntityRepository
             ->andWhere('s.endDate >= :today')
             ->andWhere('s.status = :accepted')
             ->setParameter('medecin', $medecin)
+            ->setParameter('today', new \DateTime())
+            ->setParameter('accepted', DoctorSubstitution::STATUS_ACCEPTED)
+            ->orderBy('s.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Find active substitutions by medecin UUID
+     * @return DoctorSubstitution[]
+     */
+    public function findActiveSubstitutionsForMedecinUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('s')
+            ->innerJoin('s.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->andWhere('s.endDate >= :today')
+            ->andWhere('s.status = :accepted')
+            ->setParameter('uuid', $uuid)
             ->setParameter('today', new \DateTime())
             ->setParameter('accepted', DoctorSubstitution::STATUS_ACCEPTED)
             ->orderBy('s.startDate', 'ASC')
@@ -63,6 +97,23 @@ class DoctorSubstitutionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find pending requests for substitute by UUID
+     * @return DoctorSubstitution[]
+     */
+    public function findPendingRequestsForSubstituteUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('s')
+            ->innerJoin('s.substitute', 'm')
+            ->where('m.uuid = :uuid')
+            ->andWhere('s.status = :pending')
+            ->setParameter('uuid', $uuid)
+            ->setParameter('pending', DoctorSubstitution::STATUS_PENDING)
+            ->orderBy('s.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Get all available doctors for substitution (excluding the current doctor)
      * @return Medecin[]
      */
@@ -75,7 +126,23 @@ class DoctorSubstitutionRepository extends ServiceEntityRepository
             ->andWhere('m.isActive = true')
             ->setParameter('exclude', $excludeMedecin)
             ->orderBy('m.firstName', 'ASC')
-            ->addOrderBy('m.lastName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Get all available doctors for substitution by UUID
+     * @return Medecin[]
+     */
+    public function findAvailableSubstitutesByUuid(string $excludeUuid): array
+    {
+        return $this->getEntityManager()
+            ->getRepository(Medecin::class)
+            ->createQueryBuilder('m')
+            ->where('m.uuid != :excludeUuid')
+            ->andWhere('m.isActive = true')
+            ->setParameter('excludeUuid', $excludeUuid)
+            ->orderBy('m.firstName', 'ASC')
             ->getQuery()
             ->getResult();
     }

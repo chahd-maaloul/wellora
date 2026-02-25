@@ -80,7 +80,7 @@ class Notificationrdv
         return $this->sent_at;
     }
 
-    public function setSentAt(\DateTime $sent_at): static
+    public function setSentAt(?\DateTime $sent_at): static
     {
         $this->sent_at = $sent_at;
 

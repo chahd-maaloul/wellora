@@ -64,9 +64,47 @@ document.addEventListener('alpine:init', () => {
         
         init() {
             this.generateTimeSlots();
-            this.loadAppointments();
+            this.loadAppointmentsFromAPI();
             this.startClock();
             this.initDragAndDrop();
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        date: apt.date,
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+                // Fallback to simulated data
+                this.loadAppointments();
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
         },
         
         startClock() {
@@ -381,7 +419,45 @@ document.addEventListener('alpine:init', () => {
         
         init() {
             this.generateWeekDays();
-            this.loadAppointments();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        date: apt.date,
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+                // Fallback to simulated data
+                this.loadAppointments();
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
         },
         
         getWeekStart(date) {
@@ -413,7 +489,7 @@ document.addEventListener('alpine:init', () => {
         },
         
         loadAppointments() {
-            // Simulated week appointments
+            // Simulated week appointments - used as fallback
             this.appointments = [
                 // Monday
                 { id: 'W001', patientId: 'P001', patientName: 'Marie Dupont', type: 'newPatient', date: this.weekDays[0]?.date, time: '09:00', duration: 45, location: 'clinic', status: 'scheduled' },
@@ -436,6 +512,44 @@ document.addEventListener('alpine:init', () => {
                 { id: 'W010', patientId: 'P010', patientName: 'Thomas Girard', type: 'followUp', date: this.weekDays[4]?.date, time: '09:00', duration: 30, location: 'clinic', status: 'scheduled' },
                 { id: 'W011', patientId: 'P011', patientName: 'Sophie Martin', type: 'newPatient', date: this.weekDays[4]?.date, time: '10:00', duration: 45, location: 'clinic', status: 'scheduled' },
             ];
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        date: apt.date,
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+                // Fallback to simulated data
+                this.loadAppointments();
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
         },
         
         getAppointmentsForDay(day) {
@@ -1056,6 +1170,9 @@ document.addEventListener('alpine:init', () => {
         // Substitution
         substituteDoctor: null,
         autoAssignSubstitute: false,
+        availableSubstitutes: [],
+        showSubstituteModal: false,
+        selectedSubstituteUuid: null,
         
         // Stats
         weeklyStats: {
@@ -1298,8 +1415,40 @@ document.addEventListener('alpine:init', () => {
         
         // Substitution
         selectSubstitute() {
-            // Open doctor selection modal
-            this.substituteDoctor = { name: 'Dr. Ahmed Ben Ali', specialty: 'Médecine Générale' };
+            // Load available doctors from database and open modal
+            fetch('/health/doctor/availability/substitutes')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.substitutes) {
+                        this.availableSubstitutes = data.substitutes;
+                        this.showSubstituteModal = true;
+                    } else {
+                        this.showToastMessage('Erreur lors du chargement des médecins', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading substitutes:', error);
+                    this.showToastMessage('Erreur de connexion', 'error');
+                });
+        },
+        
+        confirmSubstitute() {
+            if (!this.selectedSubstituteUuid) {
+                this.showToastMessage('Veuillez sélectionner un médecin', 'error');
+                return;
+            }
+            
+            const selected = this.availableSubstitutes.find(s => s.uuid === this.selectedSubstituteUuid);
+            if (selected) {
+                this.substituteDoctor = {
+                    uuid: selected.uuid,
+                    name: 'Dr. ' + selected.firstName + ' ' + selected.lastName,
+                    specialty: selected.specialite || 'Médecine Générale'
+                };
+                this.showSubstituteModal = false;
+                this.selectedSubstituteUuid = null;
+                this.showToastMessage('Médecin remplaçant sélectionné');
+            }
         },
         
         removeSubstitute() {
@@ -1584,3 +1733,149 @@ document.addEventListener('keydown', (e) => {
         // Close any open modals
     }
 });
+
+// Global doctorSchedule function for templates that use x-data="doctorSchedule"
+function doctorSchedule() {
+    return {
+        // State
+        currentWeekStart: getWeekStart(new Date()),
+        selectedDate: null,
+        selectedAppointment: null,
+        showAppointmentModal: false,
+        viewMode: 'week',
+        pendingCount: 0,
+        
+        // Locations
+        locations: [
+            { id: 'clinic', name: 'Cabinet Principal', color: '#00A790' },
+            { id: 'hospital', name: 'Hôpital Central', color: '#6366f1' },
+            { id: 'telehealth', name: 'Téléconsultation', color: '#10b981' },
+        ],
+        selectedLocation: 'all',
+        
+        // Week days
+        weekDays: [],
+        hours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+        
+        // Appointments data
+        appointments: [],
+        
+        init() {
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+            this.loadPendingCount();
+        },
+        
+        generateWeekDays() {
+            this.weekDays = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(this.currentWeekStart);
+                date.setDate(date.getDate() + i);
+                this.weekDays.push({
+                    date: date.toISOString().split('T')[0],
+                    dateObj: date,
+                    dayName: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+                    dayNumber: date.getDate(),
+                    month: date.toLocaleDateString('fr-FR', { month: 'short' }),
+                    isToday: date.toDateString() === new Date().toDateString(),
+                    isWeekend: date.getDay() === 0 || date.getDay() === 6,
+                });
+            }
+        },
+        
+        getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        date: apt.date,
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+            }
+        },
+        
+        async loadPendingCount() {
+            try {
+                const response = await fetch('/appointment/api/doctor/pending');
+                const data = await response.json();
+                if (data.success) {
+                    this.pendingCount = data.count;
+                }
+            } catch (error) {
+                console.error('Failed to load pending count:', error);
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
+        },
+        
+        getAppointmentsForDay(date) {
+            if (!date) return [];
+            return this.appointments.filter(apt => apt.date === date);
+        },
+        
+        get weekRange() {
+            if (this.weekDays.length === 0) return '';
+            const start = this.weekDays[0];
+            const end = this.weekDays[6];
+            const startStr = start.dayNumber + ' ' + start.month;
+            const endStr = end.dayNumber + ' ' + end.month;
+            return `${startStr} - ${endStr}`;
+        },
+        
+        previousWeek() {
+            this.currentWeekStart.setDate(this.currentWeekStart.getDate() - 7);
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        nextWeek() {
+            this.currentWeekStart.setDate(this.currentWeekStart.getDate() + 7);
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        goToCurrentWeek() {
+            this.currentWeekStart = this.getWeekStart(new Date());
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        openAppointmentDetails(appointment) {
+            this.selectedAppointment = appointment;
+            this.showAppointmentModal = true;
+        },
+    };
+}
+
+// Make doctorSchedule available globally
+window.doctorSchedule = doctorSchedule;

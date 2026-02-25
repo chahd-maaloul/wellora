@@ -697,36 +697,79 @@ class HealthController extends AbstractController
     }
 
     /**
-     * Medical Records - Affiche l'historique médical du patient
+     * Medical Records - Affiche l'historique médical du patient connecté
      */
     #[Route('/records', name: 'health_records', methods: ['GET'])]
-    public function records(): Response
+    public function records(EntityManagerInterface $em): Response
     {
-        $records = [
-            [
-                'id' => 1,
+        $user = $this->getUser();
+        
+        // Vérifier que l'utilisateur est un patient
+        if (!$user instanceof Patient) {
+            $this->addFlash('error', 'Accès patient requis.');
+            return $this->render('health/records.html.twig', [
+                'records' => [],
+            ]);
+        }
+        
+        // Récupérer les consultations du patient
+        $consultations = $em->getRepository(Consultation::class)
+            ->createQueryBuilder('c')
+            ->where('c.patient = :patient')
+            ->setParameter('patient', $user)
+            ->orderBy('c.date_consultation', 'DESC')
+            ->addOrderBy('c.time_consultation', 'DESC')
+            ->getQuery()
+            ->getResult();
+        
+        $records = [];
+        foreach ($consultations as $consultation) {
+            $medecin = $consultation->getMedecin();
+            $doctorName = $medecin ? 'Dr. ' . $medecin->getFirstName() . ' ' . $medecin->getLastName() : '-';
+            
+            // Construire le résumé à partir des données de consultation
+            $summary = $consultation->getReasonForVisit() ?? 'Consultation médicale';
+            if ($consultation->getAssessment()) {
+                $summary = $consultation->getAssessment();
+            }
+            
+            $records[] = [
+                'id' => $consultation->getId(),
                 'type' => 'consultation',
-                'title' => 'Consultation générale',
-                'doctor' => 'Dr. Sophie Martin',
-                'date' => new \DateTime('-30 days'),
-                'summary' => 'Examen de routine, tout va bien',
-            ],
-            [
-                'id' => 2,
+                'title' => $consultation->getReasonForVisit() ?? 'Consultation du ' . ($consultation->getDateConsultation() ? $consultation->getDateConsultation()->format('d/m/Y') : '-'),
+                'doctor' => $doctorName,
+                'date' => $consultation->getDateConsultation() ?? new \DateTime(),
+                'summary' => $summary,
+                'status' => $consultation->getStatus(),
+            ];
+        }
+        
+        // Ajouter les résultats d'examens laboratoire
+        $examens = $em->getRepository(Examens::class)
+            ->createQueryBuilder('e')
+            ->innerJoin('e.consultation', 'c')
+            ->where('c.patient = :patient')
+            ->setParameter('patient', $user)
+            ->orderBy('e.date_examen', 'DESC')
+            ->getQuery()
+            ->getResult();
+        
+        foreach ($examens as $examen) {
+            $records[] = [
+                'id' => $examen->getId(),
                 'type' => 'lab_result',
-                'title' => 'Analyse de sang complète',
-                'date' => new \DateTime('-15 days'),
-                'summary' => 'Tous les résultats dans les normes',
-            ],
-            [
-                'id' => 3,
-                'type' => 'consultation',
-                'title' => 'Consultation cardiologie',
-                'doctor' => 'Dr. Ahmed Ben Ali',
-                'date' => new \DateTime('-7 days'),
-                'summary' => 'Électrocardiogramme normal',
-            ],
-        ];
+                'title' => $examen->getTypeExamen() ?? 'Examen de laboratoire',
+                'doctor' => '-',
+                'date' => $examen->getDateExamen() ?? new \DateTime(),
+                'summary' => $examen->getResultat() ?? 'Résultat en attente',
+                'status' => $examen->getStatus(),
+            ];
+        }
+        
+        // Trier tous les enregistrements par date décroissante
+        usort($records, function ($a, $b) {
+            return $b['date'] <=> $a['date'];
+        });
 
         return $this->render('health/records.html.twig', [
             'records' => $records,
@@ -734,24 +777,53 @@ class HealthController extends AbstractController
     }
 
     /**
-     * Prescriptions - Affiche les ordonnances du patient
+     * Prescriptions - Affiche les ordonnances du patient connecté
      */
     #[Route('/prescriptions', name: 'health_prescriptions', methods: ['GET'])]
     public function prescriptions(EntityManagerInterface $em): Response
     {
-        $rows = $em->getRepository(Ordonnance::class)->findBy([], ['date_ordonnance' => 'DESC']);
+        $user = $this->getUser();
+        
+        // Vérifier que l'utilisateur est un patient
+        if (!$user instanceof Patient) {
+            $this->addFlash('error', 'Accès patient requis.');
+            return $this->render('health/prescriptions.html.twig', [
+                'prescriptions' => [],
+            ]);
+        }
+        
+        // Récupérer les ordonnances du patient via les consultations
+        $ordonnances = $em->getRepository(Ordonnance::class)
+            ->createQueryBuilder('o')
+            ->innerJoin('o.consultation', 'c')
+            ->where('c.patient = :patient')
+            ->setParameter('patient', $user)
+            ->orderBy('o.date_ordonnance', 'DESC')
+            ->getQuery()
+            ->getResult();
+        
         $prescriptions = [];
-        foreach ($rows as $ordonnance) {
-            $consultation = $ordonnance->getIdConsultation();
+        foreach ($ordonnances as $ordonnance) {
+            $consultation = $ordonnance->getConsultation();
             $consultationStatus = $consultation ? strtolower((string) $consultation->getStatus()) : '';
             $status = in_array($consultationStatus, ['termine', 'completed', 'done'], true) ? 'completed' : 'active';
+            
+            // Récupérer le nom du médecin
+            $doctorName = '-';
+            if ($ordonnance->getPrescribedBy()) {
+                $doctor = $ordonnance->getPrescribedBy();
+                $doctorName = 'Dr. ' . $doctor->getFirstName() . ' ' . $doctor->getLastName();
+            } elseif ($consultation && $consultation->getMedecin()) {
+                $doctor = $consultation->getMedecin();
+                $doctorName = 'Dr. ' . $doctor->getFirstName() . ' ' . $doctor->getLastName();
+            }
 
             $prescriptions[] = [
                 'id' => $ordonnance->getId(),
                 'medication' => $ordonnance->getMedicament(),
                 'dosage' => $ordonnance->getDosage(),
                 'duration' => $ordonnance->getDureeTraitement(),
-                'doctor' => '-',
+                'doctor' => $doctorName,
                 'date' => $ordonnance->getDateOrdonnance(),
                 'status' => $status,
             ];

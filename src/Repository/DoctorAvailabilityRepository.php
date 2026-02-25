@@ -30,12 +30,39 @@ class DoctorAvailabilityRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Find by medecin UUID
+     * @return DoctorAvailability[]
+     */
+    public function findByMedecinUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('a')
+            ->innerJoin('a.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->setParameter('uuid', $uuid)
+            ->orderBy('FIELD(a.dayOfWeek, \'monday\', \'tuesday\', \'wednesday\', \'thursday\', \'friday\', \'saturday\', \'sunday\')', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findByMedecinAndDay(Medecin $medecin, string $dayOfWeek): ?DoctorAvailability
     {
         return $this->createQueryBuilder('a')
             ->where('a.medecin = :medecin')
             ->andWhere('a.dayOfWeek = :day')
             ->setParameter('medecin', $medecin)
+            ->setParameter('day', $dayOfWeek)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findByMedecinUuidAndDay(string $uuid, string $dayOfWeek): ?DoctorAvailability
+    {
+        return $this->createQueryBuilder('a')
+            ->innerJoin('a.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->andWhere('a.dayOfWeek = :day')
+            ->setParameter('uuid', $uuid)
             ->setParameter('day', $dayOfWeek)
             ->getQuery()
             ->getOneOrNullResult();

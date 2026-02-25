@@ -8,6 +8,7 @@ use App\Entity\Patient;
 use App\Entity\User;
 use App\Repository\ConsultationRepository;
 use App\Repository\MedecinRepository;
+use App\Service\NotificationrdvService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -328,7 +329,7 @@ class AppointmentController extends AbstractController
      * Statut initial: 'pending'
      */
     #[Route('/create', name: 'appointment_create', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function create(Request $request, EntityManagerInterface $entityManager, NotificationrdvService $notificationService): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         
@@ -353,8 +354,15 @@ class AppointmentController extends AbstractController
         
         // Set the current logged-in user as the patient
         $currentUser = $this->getUser();
+        error_log('Current user class: ' . ($currentUser ? get_class($currentUser) : 'null'));
+        error_log('Current user ID: ' . ($currentUser ? $currentUser->getUuid() : 'null'));
+        error_log('Is Patient instance: ' . ($currentUser instanceof Patient ? 'yes' : 'no'));
+        
         if ($currentUser instanceof Patient) {
             $consultation->setPatient($currentUser);
+            error_log('Patient set successfully: ' . $currentUser->getFullName());
+        } else {
+            error_log('WARNING: Current user is NOT a Patient - appointment will not be linked to patient!');
         }
         
         // Set the doctor if doctorId is provided
@@ -400,25 +408,34 @@ class AppointmentController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Format de date invalide'], 400);
         }
         
-        // Heure
+        // Heure - Store time without date context to avoid timezone issues
         if (!empty($data['selectedTime'])) {
             try {
-                $time = \DateTime::createFromFormat('h:i A', $data['selectedTime']);
+                // Parse time and create a DateTime object with only time information
+                $timeString = $data['selectedTime'];
+                
+                // Try different formats
+                $time = \DateTime::createFromFormat('h:i A', $timeString);
                 if (!$time) {
-                    $time = \DateTime::createFromFormat('H:i', $data['selectedTime']);
+                    $time = \DateTime::createFromFormat('H:i', $timeString);
                 }
                 if (!$time) {
-                    $time = new \DateTime($data['selectedTime']);
+                    $time = \DateTime::createFromFormat('H:i:s', $timeString);
                 }
                 
                 if ($time) {
-                    $consultation->setTimeConsultation($time);
+                    // Extract only the time portion and create a new DateTime with today's date
+                    // This ensures consistent timezone handling
+                    $timeOnly = $time->format('H:i:s');
+                    $consultation->setTimeConsultation(new \DateTime($timeOnly));
+                } else {
+                    $consultation->setTimeConsultation(new \DateTime('09:00:00'));
                 }
             } catch (\Exception $e) {
-                $consultation->setTimeConsultation(new \DateTime('09:00'));
+                $consultation->setTimeConsultation(new \DateTime('09:00:00'));
             }
         } else {
-            $consultation->setTimeConsultation(new \DateTime('09:00'));
+            $consultation->setTimeConsultation(new \DateTime('09:00:00'));
         }
         
         // Durée
@@ -450,6 +467,14 @@ class AppointmentController extends AbstractController
         try {
             $entityManager->persist($consultation);
             $entityManager->flush();
+            
+            // Envoyer la confirmation par email/SMS
+            try {
+                $notificationService->envoyerConfirmation($consultation);
+                error_log('📧 Notification de confirmation envoyée');
+            } catch (\Exception $e) {
+                error_log('⚠️ Erreur notification: ' . $e->getMessage());
+            }
             
             error_log('✅ Rendez-vous créé ID: ' . $consultation->getId() . ' - Statut: pending');
             
@@ -604,10 +629,31 @@ class AppointmentController extends AbstractController
     #[Route('/api/appointments', name: 'api_appointments', methods: ['GET'])]
     public function getAppointments(ConsultationRepository $consultationRepository, EntityManagerInterface $entityManager): JsonResponse
     {
-        // Use DQL to eagerly load the medecin relationship
-        $dql = 'SELECT c, m FROM App\Entity\Consultation c LEFT JOIN c.medecin m';
-        $query = $entityManager->createQuery($dql);
-        $consultations = $query->getResult();
+        // Get the current logged-in user (patient)
+        $user = $this->getUser();
+        
+        error_log('=== getAppointments API called ===');
+        error_log('User class: ' . ($user ? get_class($user) : 'null'));
+        error_log('User UUID: ' . ($user ? $user->getUuid() : 'null'));
+        error_log('Is Patient: ' . ($user instanceof \App\Entity\Patient ? 'yes' : 'no'));
+        
+        // Build query with patient filter
+        $qb = $entityManager->createQueryBuilder();
+        $qb->select('c', 'm')
+           ->from('App\Entity\Consultation', 'c')
+           ->leftJoin('c.medecin', 'm');
+        
+        // Filter by patient if user is logged in as Patient
+        if ($user instanceof \App\Entity\Patient) {
+            $qb->where('c.patient = :patient')
+               ->setParameter('patient', $user);
+            error_log('Filtering by patient UUID: ' . $user->getUuid());
+        } else {
+            error_log('WARNING: Not filtering by patient - user is not a Patient instance');
+        }
+        
+        $consultations = $qb->getQuery()->getResult();
+        error_log('Found ' . count($consultations) . ' consultations');
         
         $upcoming = [];
         $past = [];
@@ -643,7 +689,7 @@ class AppointmentController extends AbstractController
                 'month' => $date ? $date->format('M') : '',
                 'day' => $date ? $date->format('d') : '',
                 'weekday' => $date ? $date->format('D') : '',
-                'time' => $time ? $time->format('h:i A') : '',
+                'time' => $time ? $time->format('H:i') : '',
                 'duration' => $consultation->getDuration() . ' min',
                 'type' => $consultation->getAppointmentMode() ?? 'in-person',
                 'location' => $consultation->getLocation(),
@@ -832,13 +878,36 @@ class AppointmentController extends AbstractController
 
     /**
      * API: PLANNING MÉDECIN - RENDEZ-VOUS ACCEPTÉS - CORRIGÉ
-     * UNIQUEMENT les rendez-vous avec statut 'accepted'
+     * UNIQUEMENT les rendez-vous avec statut 'accepted' pour le médecin connecté
      */
     #[Route('/api/doctor/accepted', name: 'api_doctor_accepted', methods: ['GET'])]
-    public function getAcceptedAppointments(ConsultationRepository $consultationRepository): JsonResponse
+    public function getAcceptedAppointments(ConsultationRepository $consultationRepository, EntityManagerInterface $entityManager): JsonResponse
     {
-        // ✅ UTILISATION DE LA MÉTHODE DU REPOSITORY
-        $acceptedAppointments = $consultationRepository->findAcceptedOrderedByDate();
+        // Get the current logged-in doctor
+        $user = $this->getUser();
+        error_log('=== getAcceptedAppointments API ===');
+        error_log('User class: ' . ($user ? get_class($user) : 'null'));
+        error_log('User UUID: ' . ($user ? $user->getUuid() : 'null'));
+        
+        // Build query with doctor filter
+        $qb = $entityManager->createQueryBuilder();
+        $qb->select('c', 'p')
+           ->from('App\Entity\Consultation', 'c')
+           ->leftJoin('c.patient', 'p')
+           ->where('c.status = :status')
+           ->setParameter('status', 'accepted')
+           ->orderBy('c.date_consultation', 'ASC')
+           ->addOrderBy('c.time_consultation', 'ASC');
+        
+        // Filter by doctor if user is a Medecin
+        if ($user instanceof \App\Entity\Medecin) {
+            $qb->andWhere('c.medecin = :medecin')
+               ->setParameter('medecin', $user);
+            error_log('Filtering by medecin UUID: ' . $user->getUuid());
+        }
+        
+        $acceptedAppointments = $qb->getQuery()->getResult();
+        error_log('Found ' . count($acceptedAppointments) . ' accepted appointments');
         
         $appointments = [];
         foreach ($acceptedAppointments as $consultation) {

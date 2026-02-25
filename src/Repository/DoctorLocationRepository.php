@@ -30,6 +30,21 @@ class DoctorLocationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Find by medecin UUID
+     * @return DoctorLocation[]
+     */
+    public function findByMedecinUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('l')
+            ->innerJoin('l.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->setParameter('uuid', $uuid)
+            ->orderBy('l.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(DoctorLocation $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);

@@ -31,6 +31,21 @@ class DoctorLeaveRepository extends ServiceEntityRepository
     }
 
     /**
+     * Find by medecin UUID
+     * @return DoctorLeave[]
+     */
+    public function findByMedecinUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('l')
+            ->innerJoin('l.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->setParameter('uuid', $uuid)
+            ->orderBy('l.startDate', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return DoctorLeave[]
      */
     public function findUpcomingByMedecin(Medecin $medecin): array
@@ -40,6 +55,25 @@ class DoctorLeaveRepository extends ServiceEntityRepository
             ->andWhere('l.endDate >= :today')
             ->andWhere('l.status != :cancelled')
             ->setParameter('medecin', $medecin)
+            ->setParameter('today', new \DateTime())
+            ->setParameter('cancelled', DoctorLeave::STATUS_CANCELLED)
+            ->orderBy('l.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Find upcoming by medecin UUID
+     * @return DoctorLeave[]
+     */
+    public function findUpcomingByMedecinUuid(string $uuid): array
+    {
+        return $this->createQueryBuilder('l')
+            ->innerJoin('l.medecin', 'm')
+            ->where('m.uuid = :uuid')
+            ->andWhere('l.endDate >= :today')
+            ->andWhere('l.status != :cancelled')
+            ->setParameter('uuid', $uuid)
             ->setParameter('today', new \DateTime())
             ->setParameter('cancelled', DoctorLeave::STATUS_CANCELLED)
             ->orderBy('l.startDate', 'ASC')

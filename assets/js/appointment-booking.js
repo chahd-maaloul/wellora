@@ -816,6 +816,7 @@ function patientDashboard() {
         upcomingAppointments: [],
         pendingAppointments: [],
         completedAppointments: [],
+        pastAppointments: [],
         cancelledAppointments: [],
         
         // Counts
@@ -834,6 +835,8 @@ function patientDashboard() {
         cancellationReason: '',
         reviewRating: 5,
         reviewComment: '',
+        reviewDoctorName: '',
+        reviewText: '',
         
         // Loading state
         loading: false,
@@ -864,6 +867,7 @@ function patientDashboard() {
                 this.upcomingAppointments = data.upcoming || [];
                 this.pendingAppointments = data.pending || [];
                 this.completedAppointments = data.past || [];
+                this.pastAppointments = data.past || [];
                 this.cancelledAppointments = data.cancelled || [];
                 
                 // Update counts

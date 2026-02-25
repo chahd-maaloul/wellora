@@ -10,15 +10,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Notifier\Message\SmsMessage;
-use Symfony\Component\Notifier\TexterInterface;
 use Twig\Environment;
 
 class NotificationrdvService
 {
     public function __construct(
         private MailerInterface $mailer,
-        private TexterInterface $texter,
         private EntityManagerInterface $em,
         private Environment $twig,
         private LoggerInterface $logger,
@@ -90,38 +87,16 @@ class NotificationrdvService
     }
 
     /**
-     * Envoi d'un SMS via Symfony Notifier
+     * Envoi d'un SMS via Symfony Notifier (non configuré)
      */
     private function envoyerSMS(string $to, string $message, Consultation $consultation, string $type): void
     {
-        try {
-            // Formater le numéro (ajouter indicatif si nécessaire)
-            $to = $this->formatNumero($to);
-            
-            // Créer le message SMS
-            $sms = new SmsMessage($to, $message, $this->smsFrom);
-            
-            // Envoyer via le transport configuré
-            $sentMessage = $this->texter->send($sms);
-            
-            // Journaliser le succès
-            $this->logNotification($consultation, 'sms', $to, $message, 'envoye', $type);
-            
-            $this->logger->info('SMS envoyé avec succès', [
-                'consultation_id' => $consultation->getId(),
-                'type' => $type,
-                'message_id' => $sentMessage->getMessageId()
-            ]);
-            
-        } catch (\Exception $e) {
-            // Journaliser l'erreur
-            $this->logNotification($consultation, 'sms', $to, $message, 'echec', $type, $e->getMessage());
-            
-            $this->logger->error('Échec envoi SMS', [
-                'consultation_id' => $consultation->getId(),
-                'erreur' => $e->getMessage()
-            ]);
-        }
+        // SMS non configuré - journaliser seulement
+        $this->logger->info('SMS non envoyé (service non configuré)', [
+            'consultation_id' => $consultation->getId(),
+            'type' => $type,
+            'phone' => $to
+        ]);
     }
 
     /**
