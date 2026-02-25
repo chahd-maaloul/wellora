@@ -7,20 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-             --primary-color: #00b894;      /* vert principal (comme le bouton) */
---primary-hover: #00997a;      /* hover plus foncé */
---secondary-color: #00d1a0;    /* accent clair */
-
---success-color: #00c896;
-
---light-bg: #f0fdfa;           /* fond très léger mint */
---border-color: #ccfbf1;
-
---text-primary: #0f172a;
---text-secondary: #64748b;
-
---shadow: 0 4px 6px rgba(0, 184, 148, 0.15);
---shadow-hover: 0 10px 15px rgba(0, 184, 148, 0.25);
+            --primary-color: #00b894;
+            --primary-hover: #00997a;
+            --secondary-color: #00d1a0;
+            --success-color: #00c896;
+            --light-bg: #f0fdfa;
+            --border-color: #ccfbf1;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --shadow: 0 4px 6px rgba(0, 184, 148, 0.15);
+            --shadow-hover: 0 10px 15px rgba(0, 184, 148, 0.25);
         }
 
         body {
@@ -34,13 +30,12 @@
             padding: 20px;
         }
 
-        /* Header */
         .pro-header {
             background: white;
             border-radius: 16px;
             padding: 24px 32px;
             margin-bottom: 24px;
-            box-shadow: var(--card-shadow);
+            box-shadow: var(--shadow);
             border-left: 4px solid var(--primary-color);
         }
 
@@ -55,7 +50,6 @@
             font-size: 0.95rem;
         }
 
-        /* Stepper */
         .pro-stepper {
             display: flex;
             justify-content: space-between;
@@ -80,6 +74,7 @@
             z-index: 2;
             text-align: center;
             flex: 1;
+            cursor: pointer;
         }
 
         .pro-step-circle {
@@ -103,7 +98,7 @@
             background: var(--primary-color);
             border-color: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
             transform: scale(1.05);
         }
 
@@ -125,7 +120,6 @@
             color: var(--primary-color);
         }
 
-        /* Form Steps */
         .form-step {
             display: none;
             animation: slideIn 0.4s ease-out;
@@ -146,20 +140,19 @@
             display: block;
         }
 
-        /* Form Cards */
         .form-card {
             background: white;
             border-radius: 16px;
             padding: 32px;
             margin-bottom: 24px;
-            box-shadow: var(--card-shadow);
+            box-shadow: var(--shadow);
             border: 1px solid #f1f5f9;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .form-card:hover {
             transform: translateY(-2px);
-            box-shadow: var(--hover-shadow);
+            box-shadow: var(--shadow-hover);
         }
 
         .form-card-header {
@@ -182,15 +175,14 @@
             font-size: 1.2rem;
         }
 
-        /* User Cards */
-        .user-select-grid {
+        .goal-select-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
 
-        .user-card {
+        .goal-card {
             background: white;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
@@ -201,7 +193,7 @@
             overflow: hidden;
         }
 
-        .user-card:before {
+        .goal-card:before {
             content: '';
             position: absolute;
             top: 0;
@@ -212,26 +204,26 @@
             transition: all 0.3s ease;
         }
 
-        .user-card:hover {
+        .goal-card:hover {
             border-color: var(--primary-color);
             transform: translateY(-2px);
-            box-shadow: var(--hover-shadow);
+            box-shadow: var(--shadow-hover);
         }
 
-        .user-card:hover:before {
+        .goal-card:hover:before {
             background: var(--primary-color);
         }
 
-        .user-card.selected {
+        .goal-card.selected {
             border-color: var(--primary-color);
             background: linear-gradient(135deg, #f6f6f6 0%, #ffffff 100%);
         }
 
-        .user-card.selected:before {
+        .goal-card.selected:before {
             background: var(--primary-color);
         }
 
-        .user-avatar {
+        .goal-icon {
             width: 56px;
             height: 56px;
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -241,59 +233,61 @@
             justify-content: center;
             color: white;
             font-size: 1.4rem;
-            font-weight: 700;
             margin-bottom: 16px;
         }
 
-        .user-info h5 {
+        .goal-info h5 {
             margin: 0 0 4px 0;
             color: #1e293b;
             font-weight: 600;
         }
 
-        .user-info p {
-            color: #64748b;
+        .goal-info .patient-name {
+            color: var(--primary-color);
             font-size: 0.9rem;
-            margin: 0 0 8px 0;
-        }
-
-        .user-stats {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .user-stat {
-            background: #f1f5f9;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: #475569;
+            font-weight: 500;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 4px;
         }
 
-        /* Form Controls */
+        .goal-progress {
+            margin-top: 12px;
+        }
+
+        .progress {
+            height: 8px;
+            background-color: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.3s ease;
+        }
+
         .form-control, .form-select, .select2-container--default .select2-selection--multiple {
             border: 2px solid #e2e8f0;
             border-radius: 10px;
             padding: 12px 16px;
             font-size: 0.95rem;
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+            outline: none;
         }
 
         .select2-container--default.select2-container--focus .select2-selection--multiple {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
         }
 
-        /* Stats Cards */
         .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -328,7 +322,6 @@
             font-weight: 500;
         }
 
-        /* Exercises List */
         .exercises-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -341,42 +334,15 @@
             border: 2px solid #e2e8f0;
             border-radius: 12px;
             padding: 20px;
-            cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .exercise-card:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: transparent;
-            transition: all 0.3s ease;
-        }
-
-        .exercise-card:hover {
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: var(--hover-shadow);
-        }
-
-        .exercise-card.selected {
-            border-color: var(--primary-color);
-            background: linear-gradient(135deg, #f5f7ff 0%, #f0f4ff 100%);
-        }
-
-        .exercise-card.selected:before {
-            background: var(--primary-color);
-        }
-
         .exercise-icon {
             width: 56px;
             height: 56px;
-            background: linear-gradient(135deg, var(--info-color), var(--primary-color));
+            background: linear-gradient(135deg, #6366f1, var(--primary-color));
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -396,6 +362,7 @@
             display: flex;
             gap: 12px;
             margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         .exercise-tag {
@@ -429,7 +396,6 @@
             color: #64748b;
         }
 
-        /* Summary */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -441,7 +407,7 @@
             background: white;
             border-radius: 12px;
             padding: 24px;
-            box-shadow: var(--card-shadow);
+            box-shadow: var(--shadow);
         }
 
         .summary-section h4 {
@@ -475,7 +441,6 @@
             font-size: 1rem;
         }
 
-        /* Buttons */
         .btn-pro {
             padding: 12px 28px;
             border-radius: 10px;
@@ -486,6 +451,7 @@
             align-items: center;
             gap: 8px;
             border: none;
+            cursor: pointer;
         }
 
         .btn-pro-primary {
@@ -495,7 +461,7 @@
 
         .btn-pro-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.3);
             color: white;
         }
 
@@ -521,7 +487,6 @@
             color: white;
         }
 
-        /* Navigation */
         .form-navigation {
             display: flex;
             justify-content: space-between;
@@ -531,7 +496,40 @@
             border-top: 2px solid #f1f5f9;
         }
 
-        /* Responsive */
+        .no-goal-card {
+            background: white;
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .no-goal-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .no-goal-card.selected {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, #f6f6f6 0%, #ffffff 100%);
+        }
+
+        .no-goal-icon {
+            width: 56px;
+            height: 56px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 1.4rem;
+            margin: 0 auto 16px;
+        }
+
         @media (max-width: 768px) {
             .pro-stepper {
                 flex-direction: column;
@@ -542,7 +540,7 @@
                 display: none;
             }
             
-            .user-select-grid {
+            .goal-select-grid {
                 grid-template-columns: 1fr;
             }
             
@@ -559,7 +557,6 @@
 
 {% block body %}
 <div class="pro-container">
-    <!-- Header -->
     <div class="pro-header">
         <div class="d-flex justify-content-between align-items-start">
             <div>
@@ -573,13 +570,12 @@
         </div>
     </div>
 
-    <!-- Stepper -->
     <div class="pro-stepper">
         <div class="pro-step active" data-step="1">
             <div class="pro-step-circle">
-                <i class="fas fa-user"></i>
+                <i class="fas fa-bullseye"></i>
             </div>
-            <div class="pro-step-label">Client</div>
+            <div class="pro-step-label">Goal</div>
         </div>
         <div class="pro-step" data-step="2">
             <div class="pro-step-circle">
@@ -601,44 +597,59 @@
         </div>
     </div>
 
-    <!-- Form -->
     {{ form_start(form, {'attr': {'class': 'needs-validation', 'id': 'daily-plan-form'}}) }}
     
-    <!-- Step 1: Client Selection -->
     <div class="form-step active" id="step-1-content">
         <div class="form-card">
             <div class="form-card-header">
-                <h3><i class="fas fa-user-circle"></i> Select Client</h3>
-                <p class="text-muted mb-0 mt-2">Choose the client for whom you're creating this plan</p>
+                <h3><i class="fas fa-bullseye"></i> Select Goal</h3>
+                <p class="text-muted mb-0 mt-2">Choose the goal you want to work on (or create a general plan)</p>
             </div>
             
-            <div class="user-select-grid">
-                {% for i in 1..3 %}
-                <div class="user-card" data-user-id="{{ i }}">
-                    <div class="user-avatar">
-                        {{ ['J', 'M', 'P'][i-1] }}
+            <div class="goal-select-grid">
+                {% for goal in coachGoals %}
+                <div class="goal-card" data-goal-id="{{ goal.id }}" data-goal-title="{{ goal.title }}" data-patient-name="{{ goal.patientName }}">
+                    <div class="goal-icon">
+                        <i class="fas fa-bullseye"></i>
                     </div>
-                    <div class="user-info">
-                        <h5>{{ ['John Doe', 'Mary Smith', 'Peter Johnson'][i-1] }}</h5>
-                        <p>{{ ['john@email.com', 'mary@email.com', 'peter@email.com'][i-1] }}</p>
-                        <div class="user-stats">
-                            <span class="user-stat">
-                                <i class="fas fa-calendar"></i> 3 active plans
-                            </span>
-                            <span class="user-stat bg-success text-white">
-                                <i class="fas fa-check"></i> Active
-                            </span>
+                    <div class="goal-info">
+                        <h5>{{ goal.title }}</h5>
+                        <div class="patient-name">
+                            <i class="fas fa-user"></i> {{ goal.patientName }}
+                        </div>
+                        <div class="goal-progress">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="text-muted">Progress</small>
+                                <small class="text-muted">{{ goal.progress }}%</small>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: {{ goal.progress }}%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                {% else %}
+                <div class="col-12 text-center py-4">
+                    <p class="text-muted">No goals assigned to you yet.</p>
+                </div>
                 {% endfor %}
+                
+                <div class="no-goal-card" data-goal-id="">
+                    <div class="no-goal-icon">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="goal-info text-center">
+                        <h5>General Plan</h5>
+                        <p class="text-muted small">Create a plan without a specific goal</p>
+                    </div>
+                </div>
             </div>
             
-            <input type="hidden" name="selected_user" id="selected-user">
+            <input type="hidden" name="selected_goal" id="selected-goal">
             
-            <div class="alert alert-info border-0 bg-blue-50">
+            <div class="alert alert-info border-0" style="background-color: #e6f7ff; color: #006699;">
                 <i class="fas fa-info-circle"></i>
-                <strong>Note:</strong> The client will receive a notification when the plan is created.
+                <strong>Note:</strong> Only goals assigned to you are shown. Select a goal to automatically associate the plan with the patient.
             </div>
         </div>
         
@@ -651,7 +662,6 @@
         </div>
     </div>
 
-    <!-- Step 2: Plan Details -->
     <div class="form-step" id="step-2-content">
         <div class="row">
             <div class="col-lg-8">
@@ -666,13 +676,15 @@
                             <label class="form-label fw-bold">Plan Title *</label>
                             {{ form_widget(form.titre, {'attr': {
                                 'class': 'form-control',
-                                'placeholder': 'Ex: Monday Morning Cardio Program'
+                                'placeholder': 'Ex: Monday Morning Cardio Program',
+                                'required': 'required'
                             }}) }}
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Date *</label>
                             {{ form_widget(form.date, {'attr': {
-                                'class': 'form-control'
+                                'class': 'form-control',
+                                'required': 'required'
                             }}) }}
                         </div>
                     </div>
@@ -681,12 +693,6 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Status</label>
                             {{ form_widget(form.status, {'attr': {
-                                'class': 'form-select'
-                            }}) }}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Associated Goal</label>
-                            {{ form_widget(form.goal, {'attr': {
                                 'class': 'form-select'
                             }}) }}
                         </div>
@@ -711,12 +717,16 @@
                     
                     <div class="summary-section">
                         <div class="summary-item">
-                            <span class="summary-label">Client</span>
-                            <span class="summary-value" id="summary-client">-</span>
+                            <span class="summary-label">Goal</span>
+                            <span class="summary-value" id="summary-goal">None</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Patient</span>
+                            <span class="summary-value" id="summary-patient">-</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Date</span>
-                            <span class="summary-value" id="summary-date">{{ "now"|date('m/d/Y') }}</span>
+                            <span class="summary-value" id="summary-date">{{ "now"|date('Y-m-d') }}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Exercises</span>
@@ -732,7 +742,7 @@
                         </div>
                     </div>
                     
-                    <div class="alert alert-warning border-0 bg-yellow-50 mt-3">
+                    <div class="alert alert-warning border-0" style="background-color: #fff7e6; color: #996600; margin-top: 15px;">
                         <i class="fas fa-exclamation-triangle"></i>
                         <small>Fields marked with * are required</small>
                     </div>
@@ -752,7 +762,6 @@
         </div>
     </div>
 
-    <!-- Step 3: Exercises Selection -->
     <div class="form-step" id="step-3-content">
         <div class="row">
             <div class="col-lg-8">
@@ -771,7 +780,6 @@
                     </div>
                     
                     <div class="exercises-grid" id="exercises-preview">
-                        <!-- Exercises will be dynamically added here -->
                         <div class="col-12 text-center py-5">
                             <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No exercises selected</h5>
@@ -823,7 +831,7 @@
                         </div>
                     </div>
                     
-                    <div class="alert alert-success border-0 bg-green-50 mt-3">
+                    <div class="alert alert-success border-0" style="background-color: #e6ffe6; color: #006600; margin-top: 15px;">
                         <i class="fas fa-lightbulb"></i>
                         <small>Totals are automatically calculated from selected exercises</small>
                     </div>
@@ -843,7 +851,6 @@
         </div>
     </div>
 
-    <!-- Step 4: Review & Validation -->
     <div class="form-step" id="step-4-content">
         <div class="form-card">
             <div class="form-card-header">
@@ -851,7 +858,7 @@
                 <p class="text-muted mb-0 mt-2">Review all information before creating the plan</p>
             </div>
             
-            <div class="alert alert-success border-0 bg-green-50 mb-4">
+            <div class="alert alert-success border-0" style="background-color: #e6ffe6; color: #006600; margin-bottom: 20px;">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-check-circle fa-2x me-3"></i>
                     <div>
@@ -863,18 +870,14 @@
             
             <div class="summary-grid">
                 <div class="summary-section">
-                    <h4><i class="fas fa-user me-2"></i> Client Information</h4>
+                    <h4><i class="fas fa-bullseye me-2"></i> Goal Information</h4>
                     <div class="summary-item">
-                        <span class="summary-label">Name</span>
-                        <span class="summary-value" id="final-client-name">-</span>
+                        <span class="summary-label">Goal</span>
+                        <span class="summary-value" id="final-goal-title">None</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Email</span>
-                        <span class="summary-value" id="final-client-email">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Status</span>
-                        <span class="badge bg-success">Active</span>
+                        <span class="summary-label">Patient</span>
+                        <span class="summary-value" id="final-patient-name">-</span>
                     </div>
                 </div>
                 
@@ -913,21 +916,15 @@
                             <span class="summary-label">Total Calories</span>
                             <span class="summary-value" id="final-total-calories">0 cal</span>
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Average Intensity</span>
-                            <span class="summary-value">Medium</span>
-                        </div>
                     </div>
                 </div>
                 
-                <div id="final-exercises-list" class="mt-3">
-                    <!-- Exercises list will be added here -->
-                </div>
+                <div id="final-exercises-list" class="mt-3"></div>
             </div>
             
-            <div class="alert alert-info border-0 bg-blue-50 mt-4">
+            <div class="alert alert-info border-0" style="background-color: #e6f7ff; color: #006699; margin-top: 20px;">
                 <i class="fas fa-bell"></i>
-                <strong>Notification:</strong> A notification will be sent to the client when the plan is created.
+                <strong>Notification:</strong> The client will be able to see this plan in their dashboard.
             </div>
         </div>
         
@@ -942,12 +939,11 @@
             </button>
         </div>
     </div>
-    
+     <div style="display: none;">
+        {{ form_widget(form.goal) }}
+        {{ form_rest(form) }}  <!-- Affiche tous les champs restants (s'ils existent) -->
+    </div>
     {{ form_end(form) }}
-</div>
-
-
-       
 </div>
 {% endblock %}
 
@@ -958,49 +954,94 @@
     
     <script>
         $(document).ready(function() {
-            // Initialize Select2
+            // Récupérer les IDs des exercices du coach depuis le tableau PHP
+            const coachExerciseIds = [
+                {% for exercise in exercises %}
+                    {{ exercise.id }},
+                {% endfor %}
+            ];
+            
+            // Filtrer les options du select pour ne garder que celles du coach
+            $('.exercises-select option').each(function() {
+                const optionValue = $(this).val();
+                if (optionValue && !coachExerciseIds.includes(parseInt(optionValue))) {
+                    $(this).remove(); // Supprimer les exercices qui ne sont pas du coach
+                }
+            });
+            
+            // Initialiser Select2
             $('.exercises-select').select2({
                 theme: 'default',
                 placeholder: 'Search for exercises...',
                 width: '100%',
-                allowClear: true,
-                language: {
-                    noResults: function() {
-                        return "No exercises found";
-                    }
-                }
+                allowClear: true
             });
             
-            // Data
+            // Construire les données des exercices à partir des exercices du coach
             const exercisesData = {
-                {% for exercise in form.exercices.vars.choices %}
-                {{ exercise.value }}: {
-                    name: "{{ exercise.label|split(' - ')[0]|e('js') }}",
-                    duration: {{ exercise.data.duration ?? 0 }},
-                    calories: {{ exercise.data.calories ?? 0 }},
-                    category: "{{ exercise.data.category ?? 'General' }}",
-                    difficulty: "{{ exercise.data.difficultyLevel ?? 'Medium' }}"
+                {% for exercise in exercises %}
+                {{ exercise.id }}: {
+                    name: "{{ exercise.name|e('js') }}",
+                    duration: {{ exercise.duration ?? 0 }},
+                    calories: {{ exercise.calories ?? 0 }},
+                    category: "{{ exercise.category ?? 'General'|e('js') }}",
+                    difficulty: "{{ exercise.difficultyLevel ?? 'Medium'|e('js') }}"
                 },
                 {% endfor %}
             };
             
-            const usersData = {
-                1: { name: 'John Doe', email: 'john@email.com' },
-                2: { name: 'Mary Smith', email: 'mary@email.com' },
-                3: { name: 'Peter Johnson', email: 'peter@email.com' }
+            // Données des goals
+            const goalsData = {
+                {% for goal in coachGoals %}
+                {{ goal.id }}: {
+                    title: "{{ goal.title|e('js') }}",
+                    patientName: "{{ goal.patientName|e('js') }}",
+                    progress: {{ goal.progress }}
+                },
+                {% endfor %}
             };
             
-            let selectedUser = null;
-            let selectedExercises = [];
+            let selectedGoal = null;
             
-            // Step Management
+            // Gestion des étapes
+            $('.form-step').hide();
+            $('#step-1-content').show();
+            
             $('.pro-step').on('click', function() {
                 const step = $(this).data('step');
                 goToStep(step);
             });
             
+            function getCurrentStep() {
+                const visibleStep = $('.form-step:visible').attr('id');
+                return parseInt(visibleStep.replace('step-', '').replace('-content', ''));
+            }
+            
             $('.next-step-btn').on('click', function() {
                 const nextStep = $(this).data('next');
+                const currentStep = getCurrentStep();
+                
+                if (currentStep === 1 && !selectedGoal) {
+                    if (!confirm('No goal selected. Continue with general plan?')) {
+                        return;
+                    }
+                }
+                
+                if (currentStep === 2) {
+                    if (!$('#{{ form.titre.vars.id }}').val()) {
+                        alert('Please enter a plan title');
+                        return;
+                    }
+                }
+                
+                if (currentStep === 3) {
+                    const exercises = $('.exercises-select').val() || [];
+                    if (exercises.length === 0) {
+                        alert('Please select at least one exercise');
+                        return;
+                    }
+                }
+                
                 goToStep(nextStep);
             });
             
@@ -1010,7 +1051,6 @@
             });
             
             function goToStep(step) {
-                // Update stepper
                 $('.pro-step').removeClass('active completed');
                 $(`.pro-step[data-step="${step}"]`).addClass('active');
                 
@@ -1018,11 +1058,9 @@
                     $(`.pro-step[data-step="${i}"]`).addClass('completed');
                 }
                 
-                // Show content
-                $('.form-step').removeClass('active');
-                $(`#step-${step}-content`).addClass('active');
+                $('.form-step').hide();
+                $(`#step-${step}-content`).show();
                 
-                // Update summaries
                 if (step === 2) {
                     updateSummary();
                 } else if (step === 4) {
@@ -1030,23 +1068,28 @@
                 }
             }
             
-            // Client selection
-            $('.user-card').on('click', function() {
-                const userId = $(this).data('user-id');
-                $('.user-card').removeClass('selected');
+            // Sélection des goals
+            $('.goal-card, .no-goal-card').on('click', function() {
+                $('.goal-card, .no-goal-card').removeClass('selected');
                 $(this).addClass('selected');
                 
-                selectedUser = userId;
-                const user = usersData[userId];
-                $('#selected-user').val(user.name);
-                $('#summary-client').text(user.name);
-                $('#final-client-name').text(user.name);
-                $('#final-client-email').text(user.email);
+                const goalId = $(this).data('goal-id');
+                selectedGoal = goalId;
+                $('#selected-goal').val(goalId);
+                
+                if (goalId && goalsData[goalId]) {
+                    const goal = goalsData[goalId];
+                    $('#summary-goal').text(goal.title);
+                    $('#summary-patient').text(goal.patientName);
+                } else {
+                    $('#summary-goal').text('General Plan');
+                    $('#summary-patient').text('-');
+                }
             });
             
-            // Calculate totals
+            // Calcul des totaux
             function calculateTotals() {
-                selectedExercises = $('.exercises-select').val() || [];
+                const selectedExercises = $('.exercises-select').val() || [];
                 let totalDuration = 0;
                 let totalCalories = 0;
                 let exercisesHTML = '';
@@ -1062,7 +1105,7 @@
                         totalCalories += exerciseCalories;
                         
                         exercisesHTML += `
-                            <div class="exercise-card" data-exercise-id="${id}">
+                            <div class="exercise-card">
                                 <div class="exercise-icon">
                                     <i class="fas fa-dumbbell"></i>
                                 </div>
@@ -1088,53 +1131,51 @@
                     }
                 });
                 
-                // Update statistics
                 $('#total-duration').text(totalDuration);
                 $('#total-calories').text(Math.round(totalCalories));
                 $('#summary-exercises-count').text(selectedExercises.length);
                 $('#summary-duration').text(totalDuration + ' min');
                 $('#summary-calories').text(Math.round(totalCalories) + ' cal');
                 
-                // Update form fields
                 $('.total-duration-field').val(totalDuration);
                 $('.total-calories-field').val(Math.round(totalCalories));
                 
-                // Update preview
-                $('#exercises-preview').html(
-                    exercisesHTML || 
-                    `<div class="col-12 text-center py-5">
-                        <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No exercises selected</h5>
-                        <p class="text-muted">Start typing in the field above to search for exercises</p>
-                    </div>`
-                );
+                if (selectedExercises.length > 0) {
+                    $('#exercises-preview').html(exercisesHTML);
+                } else {
+                    $('#exercises-preview').html(`
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No exercises selected</h5>
+                            <p class="text-muted">Start typing in the field above to search for exercises</p>
+                        </div>
+                    `);
+                }
             }
             
-            // Update summary
             function updateSummary() {
                 $('#summary-date').text($('#{{ form.date.vars.id }}').val());
             }
             
-            // Update final summary
             function updateFinalSummary() {
-                // Client info
-                if (selectedUser) {
-                    const user = usersData[selectedUser];
-                    $('#final-client-name').text(user.name);
-                    $('#final-client-email').text(user.email);
+                if (selectedGoal && goalsData[selectedGoal]) {
+                    const goal = goalsData[selectedGoal];
+                    $('#final-goal-title').text(goal.title);
+                    $('#final-patient-name').text(goal.patientName);
+                } else {
+                    $('#final-goal-title').text('General Plan');
+                    $('#final-patient-name').text('-');
                 }
                 
-                // Plan info
                 $('#final-plan-title').text($('#{{ form.titre.vars.id }}').val() || '-');
                 $('#final-plan-date').text($('#{{ form.date.vars.id }}').val() || '-');
                 $('#final-plan-status').text($('#{{ form.status.vars.id }} option:selected').text() || '-');
                 
-                // Statistics
+                const selectedExercises = $('.exercises-select').val() || [];
                 $('#final-total-exercises').text(selectedExercises.length);
                 $('#final-total-duration').text($('#total-duration').text() + ' min');
                 $('#final-total-calories').text($('#total-calories').text() + ' cal');
                 
-                // Exercises list
                 let finalListHTML = '';
                 selectedExercises.forEach(function(id) {
                     const exercise = exercisesData[id];
@@ -1152,13 +1193,13 @@
                     }
                 });
                 
-                $('#final-exercises-list').html(
-                    finalListHTML || 
-                    '<div class="text-center py-3"><p class="text-muted">No exercises selected</p></div>'
-                );
+                if (finalListHTML) {
+                    $('#final-exercises-list').html(finalListHTML);
+                } else {
+                    $('#final-exercises-list').html('<div class="text-center py-3"><p class="text-muted">No exercises selected</p></div>');
+                }
             }
             
-            // Event listeners
             $('.exercises-select').on('change', calculateTotals);
             
             $('#{{ form.date.vars.id }}').on('change', function() {
@@ -1168,35 +1209,34 @@
                 }
             });
             
-            // Form submission
             $('#daily-plan-form').on('submit', function(e) {
-                e.preventDefault();
-                
-                // Validation
-                if (!selectedUser) {
-                    alert('Please select a client');
-                    goToStep(1);
-                    return;
-                }
-                
                 if (!$('#{{ form.titre.vars.id }}').val()) {
+                    e.preventDefault();
                     alert('Please enter a plan title');
                     goToStep(2);
-                    return;
+                    return false;
                 }
                 
-                if (selectedExercises.length === 0) {
+                const exercises = $('.exercises-select').val() || [];
+                if (exercises.length === 0) {
+                    e.preventDefault();
                     alert('Please select at least one exercise');
                     goToStep(3);
-                    return;
+                    return false;
                 }
                 
-                // Submit form
-                this.submit();
+                return true;
             });
             
-            // Initialize
+            // Initialisation
             calculateTotals();
+            
+            if (!$('#{{ form.date.vars.id }}').val()) {
+                const today = new Date().toISOString().split('T')[0];
+                $('#{{ form.date.vars.id }}').val(today);
+                $('#summary-date').text(today);
+            }
         });
     </script>
+
 {% endblock %}

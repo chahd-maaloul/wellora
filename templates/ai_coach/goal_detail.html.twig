@@ -1,0 +1,674 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}🤖 AI Analysis - {{ goal.title }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    :root {
+        --white: #ffffff;
+        --off-white: #f9fafb;
+        --green-primary: #10b981;
+        --green-dark: #059669;
+        --green-light: #d1fae5;
+        --green-soft: #ecfdf5;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-600: #4b5563;
+        --gray-800: #1f2937;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+        --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.1);
+        --shadow-xl: 0 20px 30px -10px rgba(0,0,0,0.15);
+    }
+
+   body {
+    font-family: 'Inter', sans-serif;
+    background: #f9fafb;  /* gray-50 */
+    min-height: 100vh;
+}
+
+.dark body {
+    background: #111827;  /* gray-900 */
+}
+
+    /* Cards */
+    .card-elegant {
+        background: var(--white);
+        border-radius: 32px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(16, 185, 129, 0.1);
+        transition: all 0.4s ease;
+        overflow: hidden;
+    }
+
+    .card-elegant:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--green-light);
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-custom {
+        background: transparent;
+        padding: 16px 0;
+        margin-bottom: 24px;
+    }
+
+    .breadcrumb-custom a {
+        color: var(--gray-600);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .breadcrumb-custom a:hover {
+        color: var(--green-primary);
+    }
+
+    .breadcrumb-custom .active {
+        color: var(--green-primary);
+        font-weight: 600;
+    }
+
+    /* Patient Header */
+    .patient-header {
+        background: var(--white);
+        border-radius: 32px;
+        padding: 32px;
+        margin-bottom: 32px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-100);
+    }
+
+    .patient-avatar-large {
+        width: 80px;
+        height: 80px;
+        background: var(--green-soft);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 24px;
+        flex-shrink: 0;
+    }
+
+    .patient-avatar-large span {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--green-primary);
+    }
+
+    .patient-title h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--gray-800);
+        margin-bottom: 8px;
+    }
+
+    .patient-tags {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .tag {
+        padding: 6px 18px;
+        border-radius: 100px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .tag-category {
+        background: var(--green-soft);
+        color: var(--green-primary);
+    }
+
+    .tag-email {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Advice Card */
+    .advice-card {
+        background: var(--green-soft);
+        border-radius: 28px;
+        padding: 32px;
+        margin-bottom: 32px;
+        border-left: 6px solid var(--green-primary);
+        box-shadow: var(--shadow-md);
+    }
+
+    .advice-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .advice-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--white);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .advice-icon i {
+        font-size: 2rem;
+        color: var(--green-primary);
+    }
+
+    .advice-header h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .advice-text {
+        font-size: 1.2rem;
+        line-height: 1.7;
+        color: var(--gray-800);
+        white-space: pre-line;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .metric-card {
+        background: var(--white);
+        border-radius: 28px;
+        padding: 28px;
+        text-align: center;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-100);
+        transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--green-light);
+    }
+
+    .metric-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--green-primary);
+        line-height: 1.2;
+        margin-bottom: 8px;
+    }
+
+    .metric-label {
+        font-size: 1rem;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .metric-sub {
+        font-size: 0.9rem;
+        color: var(--gray-400);
+    }
+
+    /* Details Grid */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .detail-item {
+        background: var(--gray-50);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid var(--gray-100);
+        transition: all 0.3s ease;
+    }
+
+    .detail-item:hover {
+        background: var(--green-soft);
+        transform: translateX(5px);
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .detail-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .status-badge {
+        padding: 4px 16px;
+        border-radius: 100px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-completed {
+        background: var(--green-soft);
+        color: var(--green-primary);
+    }
+
+    .status-progress {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-pending {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    /* Sidebar */
+    .sidebar-card {
+        background: var(--white);
+        border-radius: 32px;
+        padding: 32px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-100);
+        margin-bottom: 24px;
+    }
+
+    .sidebar-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sidebar-title i {
+        color: var(--green-primary);
+    }
+
+    /* Form */
+    .form-modern {
+        background: var(--gray-50);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid var(--gray-100);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 18px;
+        border: 1px solid var(--gray-200);
+        background: var(--white);
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .form-control-modern:focus {
+        outline: none;
+        border-color: var(--green-primary);
+        box-shadow: 0 0 0 4px var(--green-light);
+    }
+
+    .form-select-modern {
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 18px;
+        border: 1px solid var(--gray-200);
+        background: var(--white);
+        cursor: pointer;
+    }
+
+    .btn-primary-modern {
+        width: 100%;
+        padding: 16px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, var(--green-primary), #34d399);
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: none;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn-primary-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px -8px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Action Buttons */
+    .action-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-action-modern {
+        padding: 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 1px solid transparent;
+    }
+
+    .btn-refresh {
+        background: var(--gray-50);
+        color: var(--gray-800);
+        border-color: var(--gray-200);
+    }
+
+    .btn-refresh:hover {
+        background: var(--gray-100);
+        transform: translateY(-2px);
+    }
+
+    .btn-generate {
+        background: var(--green-primary);
+        color: white;
+        box-shadow: 0 8px 16px -4px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-generate:hover {
+        background: var(--green-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px -4px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-view {
+        background: var(--green-soft);
+        color: var(--green-primary);
+    }
+
+    .btn-view:hover {
+        background: var(--green-light);
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 992px) {
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .patient-header .d-flex {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .patient-avatar-large {
+            margin: 0 auto 20px;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .patient-tags {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-5 px-4">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom" aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent p-0">
+            <li class="breadcrumb-item">
+                <a href="{{ path('ai_coach_dashboard') }}">
+                    <i class="fas fa-home me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Detailed Analysis</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- Main Column -->
+        <div class="col-lg-8">
+            <!-- Patient Header -->
+            <div class="patient-header">
+                <div class="d-flex align-items-start">
+                    <div class="patient-avatar-large">
+                        <span>{{ goal.patient.email|first|upper }}</span>
+                    </div>
+                    <div class="patient-title flex-grow-1">
+                        <h1>{{ goal.title }}</h1>
+                        <div class="patient-tags">
+                            <span class="tag tag-category">
+                                <i class="fas fa-tag me-2"></i>{{ goal.category }}
+                            </span>
+                            <span class="tag tag-email">
+                                <i class="fas fa-user me-2"></i>{{ goal.patient.email }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Advice Card -->
+            <div class="advice-card">
+                <div class="advice-header">
+                    <div class="advice-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>AI Intelligence Analysis</h3>
+                </div>
+                <div class="advice-text">
+                    {{ result.advice }}
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value">{{ result.metrics.daysSinceStart }}</div>
+                    <div class="metric-label">Days</div>
+                    <div class="metric-sub">Since {{ goal.startDate|date('d/m/Y') }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{{ result.metrics.expectedProgress }}%</div>
+                    <div class="metric-label">Expected</div>
+                    <div class="metric-sub">Based on 33%/month</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{{ goal.progress }}%</div>
+                    <div class="metric-label">Actual</div>
+                    <div class="metric-sub">{{ goal.currentValue ?? 0 }} / {{ goal.targetValue ?? 100 }} {{ goal.unit }}</div>
+                </div>
+            </div>
+
+            <!-- Goal Details -->
+            <div class="card-elegant p-4">
+                <h3 class="mb-4" style="font-weight: 700; color: var(--gray-800);">
+                    <i class="fas fa-chart-pie me-2" style="color: var(--green-primary);"></i>
+                    Goal Details
+                </h3>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Difficulty Level</div>
+                        <div class="detail-value">{{ goal.difficultyLevel ?? 'Not defined' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Sessions per week</div>
+                        <div class="detail-value">{{ goal.sessionsPerWeek ?? 'Not defined' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Session duration</div>
+                        <div class="detail-value">{{ goal.sessionDuration ?? 'Not defined' }} min</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Start date</div>
+                        <div class="detail-value">{{ goal.startDate|date('d/m/Y') }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">End date</div>
+                        <div class="detail-value">{{ goal.endDate ? goal.endDate|date('d/m/Y') : 'Not defined' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            {% if goal.status == 'completed' %}
+                                <span class="status-badge status-completed">Completed</span>
+                            {% elseif goal.status == 'in progress' %}
+                                <span class="status-badge status-progress">In Progress</span>
+                            {% else %}
+                                <span class="status-badge status-pending">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Coach Notes Form -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <i class="fas fa-edit"></i>
+                    Coach Notes
+                </h3>
+                
+                <form method="post" action="{{ path('ai_coach_update_notes', {'id': goal.id}) }}" class="form-modern">
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-sticky-note"></i>
+                            Personal Notes
+                        </label>
+                        <textarea 
+                            name="coachNotes" 
+                            class="form-control-modern" 
+                            rows="5" 
+                            placeholder="Write your observations...">{{ goal.coachNotes }}</textarea>
+                        <small class="text-muted mt-2 d-block">
+                            <i class="fas fa-info-circle me-1"></i>
+                            These notes will be used by AI
+                        </small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-star"></i>
+                            Patient Satisfaction
+                        </label>
+                        <select name="patientSatisfaction" class="form-select-modern">
+                            <option value="">Not evaluated</option>
+                            {% for i in 1..5 %}
+                                <option value="{{ i }}" {% if goal.patientSatisfaction == i %}selected{% endif %}>
+                                    {% for j in 1..i %}⭐{% endfor %} ({{ i }}/5)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary-modern">
+                        <i class="fas fa-save me-2"></i>
+                        Save
+                    </button>
+                </form>
+            </div>
+
+            <!-- AI Actions -->
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">
+                    <i class="fas fa-robot"></i>
+                    AI Actions
+                </h3>
+                
+                <div class="action-grid">
+                    <a href="{{ path('ai_coach_analyze_goal', {'id': goal.id}) }}" class="btn-action-modern btn-refresh">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Refresh Analysis
+                    </a>
+                    
+                    <a href="{{ path('ai_coach_generate_personalized_plan', {'id': goal.id}) }}" class="btn-action-modern btn-generate">
+                        <i class="fas fa-dumbbell me-2"></i>
+                        GENERATE PERSONALIZED PLAN
+                    </a>
+                    
+                    {% if goal.exercisePlans|length > 0 %}
+                        <a href="{{ path('ai_coach_view_personalized_plan', {'id': goal.id}) }}" class="btn-action-modern btn-view">
+                            <i class="fas fa-eye me-2"></i>
+                            View Existing Plan
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // FadeIn animation
+    const elements = document.querySelectorAll('.patient-header, .advice-card, .metric-card, .card-elegant, .sidebar-card');
+    elements.forEach((el, index) => {
+        el.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.1}s`;
+        el.style.opacity = '0';
+    });
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

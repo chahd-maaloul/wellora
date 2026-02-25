@@ -47,9 +47,9 @@ class GoalType extends AbstractType
                 'label' => 'Statut',
                 'required' => true,
                 'choices' => [
-                     'Pending' => 'PENDING',
-                    'In Progress' => 'in progress',
-                    'Completed' => 'completed',
+                     'PENDING' => 'PENDING',
+                    'in progress' => 'in progress',
+                    'completed' => 'completed',
                 ],
                 'data' => 'PENDING',
             ])
@@ -87,10 +87,9 @@ class GoalType extends AbstractType
                 'label' => 'Niveau de difficulté',
                 'required' => false,
                 'choices' => [
-                    'Facile' => 'easy',
-                    'Moyen' => 'medium',
-                    'Difficile' => 'hard',
-                    'Expert' => 'expert',
+                    'Beginner' => 'Beginner',
+                    'Intermediate' => 'Intermediate',
+                    'Advanced' => 'Advanced',
                 ],
             ])
             
@@ -99,9 +98,12 @@ class GoalType extends AbstractType
                 'label' => 'Public cible',
                 'required' => false,
                 'choices' => [
-                    'Débutant' => 'beginner',
-                    'Intermédiaire' => 'intermediate',
-                    'Avancé' => 'advanced',
+                    'General' => 'General',
+                    'Weight Loss' => 'Weight Loss',
+                    'Muscle Gain' => 'Muscle Gain',
+                    'Endurance' => 'Endurance',
+                    'Flexibility' => 'Flexibility',
+                    'Rehabilitation' => 'Rehabilitation',
                 ],
             ])
             
@@ -158,10 +160,10 @@ class GoalType extends AbstractType
                 'label' => 'Fréquence',
                 'required' => false,
                 'choices' => [
-                    'Quotidien' => 'daily',
-                    'Hebdomadaire' => 'weekly',
-                    'Bi-hebdomadaire' => 'bi_weekly',
-                    'Mensuel' => 'monthly',
+                    'Daily' => 'Daily',
+                    'Weekly' => 'Weekly',
+                    'Monthly' => 'Monthly',
+                    'Custom' => 'Custom',
                 ],
             ])
             ->add('sessionsPerWeek', IntegerType::class, [
@@ -210,13 +212,33 @@ class GoalType extends AbstractType
                 'label' => 'Objectif calories quotidien',
                 'required' => false,
                 'attr' => ['min' => 500, 'max' => 5000, 'placeholder' => 'Ex: 2000'],
-            ]);
+            ])
+
+           ->add('coachId',TextType::class, [
+            'required' => false,
+            'mapped' => true, // Important : true car le champ existe dans l'entité
+            'attr' => [
+                'id' => 'goal_coachId',
+                'class' => 'coach-field'
+            ]
+        ])
+        ;
     }
+
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => Goal::class,
+            'coaches' => [],
         ]);
     }
+    private function getAvailableCoaches($options)
+{
+    // Cette méthode sera appelée avec les options du formulaire
+    // Vous devez passer les coachs depuis le contrôleur
+    return $options['coaches'] ?? [];
+}
+
+
 }

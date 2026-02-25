@@ -14,6 +14,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use App\Entity\Goal;
 
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
@@ -252,4 +253,34 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
     }
+    public function findAllCoaches(): array
+{
+    // Utilisation de la méthode findByRole existante avec l'enum UserRole
+    return $this->findByRole(UserRole::COACH);
+}
+   public function findAllpatients(): array
+{
+    // Utilisation de la méthode findByRole existante avec l'enum UserRole
+    return $this->findByRole(UserRole::PATIENT);
+}
+// src/Repository/UserRepository.php
+public function findPatientsByCoach(Coach $coach): array
+{
+    // Récupérer tous les objectifs du coach
+    $goals = $this->getEntityManager()
+        ->getRepository(Goal::class)
+        ->findGoalsByCoach($coach);
+    
+    // Organiser par patient et filtrer
+    $patients = [];
+    foreach ($goals as $goal) {
+        $patient = $goal->getPatient();
+        if ($patient && !in_array($patient, $patients, true)) {
+            $patient->coachGoals = array_filter($goals, fn($g) => $g->getPatient() === $patient);
+            $patients[] = $patient;
+        }
+    }
+    
+    return $patients;
+}
 }

@@ -39,11 +39,11 @@ class Goal
     private ?string $category = null;   
 
     #[ORM\Column(length: 20)]
-        #[Assert\NotBlank(message: "Le statut de l'objectif est requis.")]
-        #[Assert\Choice(
-            choices: ['PENDING', 'in progress', 'completed'],
-            message: "Le statut doit être l'une des suivantes : PENDING, in progress, completed."
-        )]
+    #[Assert\NotBlank(message: "Le statut de l'objectif est requis.")]
+    #[Assert\Choice(
+        choices: ['PENDING', 'in progress', 'completed'],
+        message: "Le statut doit être l'une des suivantes : PENDING, in progress, completed."
+    )]
     private ?string $status = 'PENDING';
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
@@ -69,7 +69,6 @@ class Goal
     private ?string $relevant = null;
 
     // 3. Engagement utilisateur
-    #[ORM\Column(type: Types::BOOLEAN)]
     private ?bool $userCommitment = false;
 
     // 4. Niveau de difficulté
@@ -149,6 +148,14 @@ class Goal
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\Positive]
     private ?int $height = null;
+#[ORM\Column(type: Types::TEXT, nullable: true)]
+private ?string $aiCoachAdvice = null;  // Conseil généré par l'IA pour le coach
+
+#[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+private ?\DateTimeInterface $lastAiAnalysis = null;  // Date de la dernière analyse
+
+#[ORM\Column(type: Types::JSON, nullable: true)]
+private ?array $aiMetrics = null; 
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\PositiveOrZero(message: "Calories target must be zero or positive")]
@@ -161,12 +168,33 @@ class Goal
     #[ORM\OneToMany(targetEntity: DailyPlan::class, mappedBy: 'goal')]
     private Collection $dailyplan;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+private ?string $coachNotes = null;
+/**
+ * @var Collection<int, ExercisePlan>
+ */
+#[ORM\OneToMany(targetEntity: ExercisePlan::class, mappedBy: 'goal', cascade: ['persist', 'remove'])]
+private Collection $exercisePlans;
+#[ORM\Column(type: Types::INTEGER, nullable: true)]
+private ?int $patientSatisfaction = null;
+#[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'goals')]
+#[ORM\JoinColumn(
+    referencedColumnName: 'uuid', // Indique que la clé étrangère pointe vers 'uuid' de la table users
+    nullable: false               // Empêche d'avoir un Goal sans User
+)]
+private ?User $patient = null;
+
+#[ORM\Column(length: 255)]
+
+private ?string $coachId = null;
     public function __construct()
     {
         $this->dailyplan = new ArrayCollection();
         $this->date = new \DateTime();
         $this->startDate = new \DateTime();
         $this->status = 'PENDING';
+        $this->aiMetrics = null; 
+        $this->exercisePlans = new ArrayCollection();
     }
 
     #[Assert\Callback]
@@ -537,4 +565,138 @@ class Goal
 
         return $this;
     }
+
+    public function getPatient(): ?User
+    {
+        return $this->patient;
+    }
+
+    public function setPatient(?User $patient): static
+    {
+        $this->patient = $patient;
+
+        return $this;
+    }
+
+    public function getCoachId(): ?string
+    {
+        return $this->coachId;
+    }
+
+    public function setCoachId(string $coachId): static
+    {
+        $this->coachId = $coachId;
+
+        return $this;
+    }
+    // Ajoute avec les autres getters/setters
+public function getAiCoachAdvice(): ?string
+{
+    return $this->aiCoachAdvice;
+}
+
+public function setAiCoachAdvice(?string $aiCoachAdvice): self
+{
+    $this->aiCoachAdvice = $aiCoachAdvice;
+    return $this;
+}
+
+public function getLastAiAnalysis(): ?\DateTimeInterface
+{
+    return $this->lastAiAnalysis;
+}
+
+public function setLastAiAnalysis(?\DateTimeInterface $lastAiAnalysis): self
+{
+    $this->lastAiAnalysis = $lastAiAnalysis;
+    return $this;
+}
+
+public function getAiMetrics(): ?array  // ← Ajoute ? devant array
+{
+    return $this->aiMetrics;
+}
+
+public function setAiMetrics(?array $aiMetrics): self  // ← Ajoute ? devant array
+{
+    $this->aiMetrics = $aiMetrics;
+    return $this;
+}
+public function getCoachNotes(): ?string
+{
+    return $this->coachNotes;
+}
+
+public function setCoachNotes(?string $coachNotes): self
+{
+    $this->coachNotes = $coachNotes;
+    return $this;
+}
+
+public function getPatientSatisfaction(): ?int
+{
+    return $this->patientSatisfaction;
+}
+
+public function setPatientSatisfaction(?int $patientSatisfaction): self
+{
+    $this->patientSatisfaction = $patientSatisfaction;
+    return $this;
+}
+/**
+ * @return Collection<int, ExercisePlan>
+ */
+public function getExercisePlans(): Collection
+{
+    return $this->exercisePlans;
+}
+
+public function addExercisePlan(ExercisePlan $exercisePlan): static
+{
+    if (!$this->exercisePlans->contains($exercisePlan)) {
+        $this->exercisePlans->add($exercisePlan);
+        $exercisePlan->setGoal($this);
+    }
+    return $this;
+}
+
+public function removeExercisePlan(ExercisePlan $exercisePlan): static
+{
+    if ($this->exercisePlans->removeElement($exercisePlan)) {
+        if ($exercisePlan->getGoal() === $this) {
+            $exercisePlan->setGoal(null);
+        }
+    }
+    return $this;
+}
+/**
+ * Calcule la progression basée sur les plans créés jusqu'à aujourd'hui
+ */
+public function calculateProgressFromPlans(): float
+{
+    $today = new \DateTime();
+    $today->setTime(0, 0, 0);
+    
+    $totalPlansCreated = 0;
+    $completedPlans = 0;
+    
+    foreach ($this->getDailyplan() as $plan) {
+        $planDate = $plan->getDate();
+        
+        // Ne compter que les plans dont la date est passée ou aujourd'hui
+        if ($planDate <= $today) {
+            $totalPlansCreated++;
+            
+            if ($plan->getStatus() === 'completed') {
+                $completedPlans++;
+            }
+        }
+    }
+    
+    if ($totalPlansCreated === 0) {
+        return 0;
+    }
+    
+    return round(($completedPlans / $totalPlansCreated) * 100, 1);
+}
 }

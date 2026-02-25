@@ -15,6 +15,10 @@ framework:
         # Session cookie lifetime: 1 hour
         cookie_lifetime: 3600
 
+    # Router configuration for subdirectory deployment
+    router:
+        default_uri: '%env(APP_URL)%'
+
     #esi: true
     #fragments: true
     php_errors:

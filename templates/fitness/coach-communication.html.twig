@@ -1,10 +1,94 @@
+{# templates/chat/patient.html.twig #}
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}{{ 'Coach Communication - WellCare Connect' }}{% endblock %}
+{% block title %}Coach Communication{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
     {{ encore_entry_link_tags('fitness') }}
+    <style>
+        .chat-messages {
+            scroll-behavior: smooth;
+            height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        .message-enter {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .conversation-item.active {
+            background-color: rgba(37, 99, 235, 0.1);
+            border-left: 3px solid #3b82f6;
+        }
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .typing-indicator span {
+            width: 6px;
+            height: 6px;
+            background-color: #9CA3AF;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        
+        /* Styles pour les toasts */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+        }
+        
+        .toast {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            border-left: 4px solid #3b82f6;
+            transition: all 0.3s ease;
+        }
+        
+        .dark .toast {
+            background: #1f2937;
+            color: white;
+        }
+
+        .toast-success { border-left-color: #10b981; }
+        .toast-warning { border-left-color: #f59e0b; }
+        .toast-error { border-left-color: #ef4444; }
+        
+        /* Indicateur de nouveau message */
+        .new-message-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
@@ -13,7 +97,44 @@
 {% endblock %}
 
 {% block body %}
-<div x-data="coachCommunication()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+{{ stream_notifications(['/notifications/' ~ app.user.uuid]) }}
+
+<div x-data="patientCommunication()" 
+     x-init="init()" 
+     class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    
+    <!-- Conteneur de toasts -->
+    <div class="fixed bottom-4 right-4 z-50 w-80 space-y-2">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-show="toast.visible"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="translate-y-2 opacity-0"
+                 x-transition:enter-end="translate-y-0 opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 p-4"
+                 :class="{
+                     'border-wellcare-500': !toast.type,
+                     'border-green-500': toast.type === 'success',
+                     'border-yellow-500': toast.type === 'warning',
+                     'border-red-500': toast.type === 'error'
+                 }">
+                
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900 dark:text-white" x-text="toast.title"></h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1" x-text="toast.message"></p>
+                        <p class="text-xs text-gray-400 mt-1" x-text="toast.time"></p>
+                    </div>
+                    <button @click="toast.visible = false" class="ml-2 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-6 py-4">
@@ -25,18 +146,70 @@
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
                             <i class="mr-2 fas fa-comment-dots text-wellcare-500"></i>
-                            {{ 'Coach Communication' }}
+                            Coach Communication
                         </h1>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ 'Connect with your fitness coach' }}
+                            Connect with your fitness coach
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button @click="openNewMessage()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                        <i class="fas fa-plus"></i>
-                        {{ 'New Message' }}
-                    </button>
+                    <div class="relative">
+                        <button @click="showNotifications = !showNotifications" class="relative p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
+                            <i class="fas fa-bell"></i>
+                            <span x-show="totalUnread > 0" 
+                                  x-text="totalUnread"
+                                  class="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full"></span>
+                        </button>
+                        
+                        <!-- Panneau de notifications -->
+                        <div x-show="showNotifications" 
+                             @click.away="showNotifications = false"
+                             x-transition
+                             class="absolute right-0 z-50 mt-2 bg-white rounded-lg shadow-lg w-80 dark:bg-gray-800">
+                            
+                            <div class="p-3 font-medium border-b dark:border-gray-700 flex justify-between">
+                                <span>Notifications</span>
+                                <span x-show="notifications.length > 0" 
+                                      class="text-xs text-wellcare-500" 
+                                      x-text="notifications.length + ' nouvelle(s)'"></span>
+                            </div>
+                            
+                            <div class="max-h-96 overflow-y-auto">
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <div @click="if(notif.conversationId) { selectConversation(conversations.find(c => c.id === notif.conversationId)); } showNotifications = false; notif.read = true" 
+                                         class="p-3 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-700"
+                                         :class="{'bg-wellcare-50 dark:bg-wellcare-900/20': !notif.read}">
+                                        
+                                        <div class="flex gap-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="flex items-center justify-center w-10 h-10 rounded-full"
+                                                     :class="notif.read ? 'bg-gray-200 dark:bg-gray-600' : 'bg-wellcare-100 dark:bg-wellcare-900/30'">
+                                                    <i class="fas fa-comment" 
+                                                       :class="notif.read ? 'text-gray-500' : 'text-wellcare-500'"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium" 
+                                                   :class="notif.read ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'" 
+                                                   x-text="notif.title"></p>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400" x-text="notif.message"></p>
+                                                <p class="text-xs text-gray-400 mt-1" x-text="notif.time"></p>
+                                            </div>
+                                            <div x-show="!notif.read" class="w-2 h-2 bg-wellcare-500 rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                                
+                                <template x-if="notifications.length === 0">
+                                    <div class="p-4 text-center text-gray-500">
+                                        <i class="mb-2 text-4xl fas fa-bell-slash"></i>
+                                        <p>Aucune notification</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -46,71 +219,98 @@
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
             <!-- Conversations List -->
             <div class="lg:col-span-1">
-                <div class="overflow-hidden bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+                <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
                     <div class="p-4 border-b border-gray-100 dark:border-gray-700">
-                        <input 
-                            type="text" 
-                            x-model="searchQuery"
-                            placeholder="{{ 'Search conversations...' }}"
-                            class="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                        <div class="relative">
+                            <i class="absolute left-3 top-3 text-gray-400 fas fa-search"></i>
+                            <input 
+                                type="text" 
+                                x-model="searchQuery"
+                                @input="filterConversations()"
+                                placeholder="Search conversations..."
+                                class="w-full px-4 py-2 pl-10 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                        </div>
                     </div>
                     
                     <div class="divide-y divide-gray-100 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
-                        {% for conversation in conversations %}
-                        <button 
-                            @click="selectConversation('{{ conversation.name|e('js') }}')"
-                            :class="{'bg-wellcare-50 dark:bg-wellcare-900/20': selectedConversation === '{{ conversation.name|e('js') }}', 'hover:bg-gray-50 dark:hover:bg-gray-700/50': true }"
-                            class="flex items-center w-full gap-3 p-4 transition-colors">
-                            <div class="relative">
-                                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                    <span class="font-medium text-wellcare-600 dark:text-wellcare-400">{{ conversation.name|first }}</span>
+                        <template x-for="conversation in filteredConversations" :key="conversation.id">
+                            <button 
+                                @click="selectConversation(conversation)"
+                                :class="{
+                                    'active': selectedConversation?.id === conversation.id,
+                                    'bg-wellcare-50 dark:bg-wellcare-900/20': selectedConversation?.id === conversation.id,
+                                    'hover:bg-gray-50 dark:hover:bg-gray-700': true
+                                }"
+                                class="flex items-center w-full gap-3 p-4 transition-colors">
+                                <div class="relative">
+                                    <div class="flex items-center justify-center w-12 h-12 rounded-full"
+                                         :class="conversation.unread > 0 ? 'ring-2 ring-wellcare-500 new-message-indicator' : 'bg-wellcare-100 dark:bg-wellcare-900/30'">
+                                        <span class="font-medium" 
+                                              :class="conversation.unread > 0 ? 'text-wellcare-500' : 'text-wellcare-600 dark:text-wellcare-400'"
+                                              x-text="conversation.avatar"></span>
+                                    </div>
+                                    <span x-show="conversation.online" 
+                                          class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full dark:border-gray-800"></span>
                                 </div>
-                                {% if conversation.online %}
-                                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full dark:border-gray-800"></span>
-                                {% endif %}
-                            </div>
-                            <div class="flex-1 min-w-0 text-left">
-                                <div class="flex items-center justify-between">
-                                    <p class="font-medium text-gray-900 truncate dark:text-white">{{ conversation.name }}</p>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ conversation.time }}</span>
+                                <div class="flex-1 min-w-0 text-left">
+                                    <div class="flex items-center justify-between">
+                                        <p class="font-medium text-gray-900 truncate dark:text-white" 
+                                           :class="{'font-bold': conversation.unread > 0}"
+                                           x-text="conversation.name"></p>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400" x-text="conversation.time"></span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 truncate dark:text-gray-400" 
+                                       :class="{'font-semibold text-gray-900 dark:text-white': conversation.unread > 0}"
+                                       x-text="conversation.lastMessage"></p>
+                                    <div x-show="conversation.goalTitle" class="flex items-center gap-1 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full"
+                                              :class="{
+                                                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': conversation.goalStatus === 'completed',
+                                                  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': conversation.goalStatus === 'in progress',
+                                                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400': conversation.goalStatus === 'PENDING'
+                                              }">
+                                            <i class="mr-1 fas fa-flag-checkered"></i>
+                                            <span x-text="conversation.goalTitle"></span>
+                                        </span>
+                                    </div>
                                 </div>
-                                <p class="text-sm text-gray-500 truncate dark:text-gray-400">{{ conversation.lastMessage }}</p>
+                                <span x-show="conversation.unread > 0" 
+                                      class="flex items-center justify-center w-5 h-5 text-xs text-white rounded-full bg-wellcare-500" 
+                                      x-text="conversation.unread"></span>
+                            </button>
+                        </template>
+                        
+                        <template x-if="filteredConversations.length === 0">
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="mb-2 text-4xl fas fa-comment-slash"></i>
+                                <p>No conversations found</p>
                             </div>
-                            {% if conversation.unread > 0 %}
-                            <span class="flex items-center justify-center w-5 h-5 text-xs text-white rounded-full bg-wellcare-500">{{ conversation.unread }}</span>
-                            {% endif %}
-                        </button>
-                        {% endfor %}
+                        </template>
                     </div>
                 </div>
 
-                <!-- Video Consultation -->
-                <div class="p-6 mt-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 fas fa-video text-wellcare-500"></i>
-                        {{ 'Video Consultation' }}
-                    </h3>
-                    
-                    <div class="p-4 mb-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                <span class="font-medium text-wellcare-600 dark:text-wellcare-400">S</span>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">Coach Sarah</p>
-                                <p class="text-xs text-green-500">{{ 'Available Now' }}</p>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Next scheduled: Tomorrow 10:00 AM' }}</p>
+                <!-- Quick Stats -->
+                <div class="mt-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-chart-bar text-wellcare-500"></i>
+                            Message Stats
+                        </h2>
                     </div>
-                    
-                    <button class="flex items-center justify-center w-full gap-2 px-4 py-2 font-medium text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
-                        <i class="fas fa-video"></i>
-                        {{ 'Join Consultation' }}
-                    </button>
-                    <button class="w-full px-4 py-2 mt-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        {{ 'Schedule New' }}
-                    </button>
+                    <div class="p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Unread Messages</span>
+                            <span class="font-semibold text-wellcare-500" x-text="totalUnread"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Online Coach</span>
+                            <span class="font-semibold text-green-500" x-text="onlineCount"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Total Conversations</span>
+                            <span class="font-semibold text-gray-900 dark:text-white" x-text="conversations.length"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -118,280 +318,719 @@
             <div class="lg:col-span-3">
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 h-[calc(100vh-200px)] flex flex-col">
                     <!-- Chat Header -->
-                    <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                    <span x-text="selectedConversation ? selectedConversation.charAt(0) : ''" class="font-medium text-wellcare-600 dark:text-wellcare-400"></span>
+                    <template x-if="selectedConversation">
+                        <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center gap-3">
+                                <div class="relative">
+                                    <div class="flex items-center justify-center w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+                                        <span class="font-medium text-wellcare-600 dark:text-wellcare-400" x-text="selectedConversation.avatar"></span>
+                                    </div>
+                                    <span x-show="selectedConversation.online" 
+                                          class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full dark:border-gray-800"></span>
                                 </div>
-                                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full dark:border-gray-800"></span>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white" x-text="selectedConversation.name"></p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-xs" 
+                                           :class="selectedConversation.online ? 'text-green-500' : 'text-gray-400'" 
+                                           x-text="selectedConversation.online ? 'Online' : 'Offline'"></p>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p x-text="selectedConversation" class="font-medium text-gray-900 dark:text-white"></p>
-                                <p class="text-xs text-green-500">{{ 'Online' }}</p>
+                            <div class="flex items-center gap-2">
+                                <span x-show="selectedConversation.goalTitle" 
+                                      class="px-3 py-1 text-sm text-wellcare-700 bg-wellcare-100 rounded-full">
+                                    <i class="mr-1 fas fa-flag-checkered"></i>
+                                    <span x-text="selectedConversation.goalTitle"></span>
+                                </span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
-                                <i class="fas fa-phone"></i>
-                            </button>
-                            <button class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
-                                <i class="fas fa-video"></i>
-                            </button>
-                            <button class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                        </div>
-                    </div>
+                    </template>
 
-                    <!-- Messages -->
-                    <div class="flex-1 p-4 space-y-4 overflow-y-auto">
-                        {% for message in messages|default([
-                            {sender: 'coach', text: 'Hi! I reviewed your workout log from yesterday. Great job on the form for those squats!', time: '10:30 AM', date: 'Today'},
-                            {sender: 'patient', text: 'Thank you! I focused on keeping my chest up like you suggested.', time: '10:32 AM', date: 'Today'},
-                            {sender: 'coach', text: 'I can see the improvement. Let\'s add 5lbs next session. Also, don\'t forget your stretching routine after cardio days.', time: '10:35 AM', date: 'Today'},
-                            {sender: 'coach', text: 'I uploaded a video demonstrating the hip flexor stretch we discussed. Please review it before your next session.', time: '10:36 AM', date: 'Today'},
-                            {sender: 'patient', text: 'Perfect, I\'ll check it out. Should I continue with the same cardio intensity?', time: '10:40 AM', date: 'Today'},
-                            {sender: 'coach', text: 'Yes, keep it at the current level for now. We\'ll reassess after two more weeks. Your heart rate recovery is improving nicely!', time: '10:42 AM', date: 'Today'}
-                        ]) %}
-                        <div class="flex {{ message.sender == 'patient' ? 'justify-end' : 'justify-start' }}">
-                            <div class="max-w-[70%] {{ message.sender == 'patient' ? 'bg-wellcare-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' }} rounded-2xl px-4 py-3">
-                                <p class="text-sm">{{ message.text }}</p>
-                                <p class="text-xs mt-1 {{ message.sender == 'patient' ? 'text-wellcare-200' : 'text-gray-500 dark:text-gray-400' }}">{{ message.time }}</p>
+                    <!-- Messages Container -->
+                    <div id="messages-container" class="flex-1 p-4 space-y-4 overflow-y-auto chat-messages">
+                        <template x-if="!selectedConversation">
+                            <div class="flex items-center justify-center h-full">
+                                <div class="text-center">
+                                    <i class="mb-4 text-6xl fas fa-comment-dots text-gray-300 dark:text-gray-600"></i>
+                                    <p class="text-gray-500 dark:text-gray-400">Select a conversation to start chatting</p>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <template x-if="messages.length === 0 && selectedConversation">
+                            <div class="flex items-center justify-center h-full">
+                                <p class="text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</p>
+                            </div>
+                        </template>
+                        
+                        <template x-for="(message, index) in messages" :key="message.id">
+                            <div>
+                                <div x-show="index === 0 || messages[index-1].date !== message.date" 
+                                     class="flex items-center justify-center my-4">
+                                    <span class="px-3 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-400" 
+                                          x-text="message.date === new Date().toISOString().split('T')[0] ? 'Today' : message.date"></span>
+                                </div>
+                                
+                                <div :class="{'flex justify-end': message.sender === 'me', 'flex justify-start': message.sender !== 'me'}" 
+                                     class="mb-4 message-enter">
+                                    
+                                    <template x-if="message.sender !== 'me'">
+                                        <div class="flex items-start gap-3 max-w-[70%]">
+                                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 flex-shrink-0">
+                                                <span class="text-xs font-medium text-wellcare-600 dark:text-wellcare-400" x-text="selectedConversation?.avatar"></span>
+                                            </div>
+                                            <div>
+                                                <div class="p-3 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                                    <p class="text-sm text-gray-900 dark:text-white" x-text="message.content"></p>
+                                                </div>
+                                                <p class="mt-1 text-xs text-gray-400" x-text="message.time"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    
+                                    <template x-if="message.sender === 'me'">
+                                        <div class="flex items-start justify-end gap-3 max-w-[70%] ml-auto">
+                                            <div class="text-right">
+                                                <div class="p-3 text-white rounded-lg bg-wellcare-500">
+                                                    <p class="text-sm" x-text="message.content"></p>
+                                                </div>
+                                                <p class="mt-1 text-xs text-gray-400" x-text="message.time"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- Indicateur de frappe -->
+                        <div x-show="typingIn[selectedConversation?.id]" class="flex justify-start">
+                            <div class="flex items-center gap-2 p-3 bg-gray-100 rounded-lg dark:bg-gray-700">
+                                <div class="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                                <span class="text-sm text-gray-500">typing...</span>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
 
                     <!-- Message Input -->
-                    <div class="p-4 border-t border-gray-100 dark:border-gray-700">
-                        <form @submit.prevent="sendMessage()" class="flex items-end gap-3">
-                            <div class="flex-1">
-                                <textarea 
-                                    x-model="newMessage"
-                                    @keydown.enter.prevent="sendMessage()"
-                                    placeholder="{{ 'Type your message...' }}"
-                                    rows="1"
-                                    class="w-full px-4 py-2 text-gray-900 border border-gray-300 resize-none dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500"
-                                    ></textarea>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
-                                    <i class="fas fa-paperclip"></i>
-                                </button>
-                                <button type="button" class="p-2 text-gray-400 transition-colors hover:text-wellcare-500">
-                                    <i class="fas fa-image"></i>
-                                </button>
-                                <button type="submit" class="p-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <template x-if="selectedConversation">
+                        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+                            <form @submit.prevent="sendMessage()" class="flex items-end gap-3">
+                                <div class="flex-1">
+                                    <textarea 
+                                        x-model="newMessage"
+                                        @keydown.enter.prevent="sendMessage()"
+                                        @input="handleTyping()"
+                                        placeholder="Type your message... (Enter to send)"
+                                        rows="1"
+                                        class="w-full px-4 py-2 text-gray-900 border border-gray-300 resize-none dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500"></textarea>
+                                </div>
+                                <button type="submit" 
+                                        :disabled="!newMessage.trim()"
+                                        class="p-3 text-white transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        :class="newMessage.trim() ? 'bg-wellcare-500 hover:bg-wellcare-600' : 'bg-gray-400'">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
-                            </div>
-                        </form>
-                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                            {{ 'Press Enter to send, Shift+Enter for new line' }}
-                        </p>
-                    </div>
+                            </form>
+                        </div>
+                    </template>
                 </div>
-            </div>
-        </div>
-
-        <!-- Form Feedback Section -->
-        <div class="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-2">
-            <!-- Video Uploads for Review -->
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                    <i class="mr-2 fas fa-video text-wellcare-500"></i>
-                    {{ 'Form Check Videos' }}
-                </h3>
-                
-                <div class="space-y-4">
-                    {% for video in formVideos|default([
-                        {name: 'Squat Form Check', date: '2 days ago', status: 'reviewed', feedback: 'Great depth! Focus on keeping knees tracking over toes.', thumbnail: ''},
-                        {name: 'Deadlift Setup', date: '1 week ago', status: 'reviewed', feedback: 'Excellent bracing. Your back position has improved significantly.', thumbnail: ''},
-                        {name: 'Bench Press', date: '2 weeks ago', status: 'pending', feedback: null, thumbnail: ''}
-                    ]) %}
-                    <div class="p-4 border border-gray-100 rounded-lg dark:border-gray-700">
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center justify-center w-20 bg-gray-100 rounded-lg h-14 dark:bg-gray-700">
-                                <i class="text-xl text-gray-400 fas fa-play-circle"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 dark:text-white">{{ video.name }}</h4>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ video.date }}</p>
-                            </div>
-                            <span class="px-3 py-1 text-xs font-medium rounded-full {{ video.status == 'reviewed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' }}">
-                                {{ video.status == 'reviewed' ? 'Reviewed' : 'Pending Review' }}
-                            </span>
-                        </div>
-                        {% if video.feedback %}
-                        <div class="p-3 mt-3 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
-                            <p class="text-sm text-wellcare-700 dark:text-wellcare-300">
-                                <i class="mr-2 fas fa-comment-medical"></i>{{ video.feedback }}
-                            </p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-                
-                <button class="flex items-center justify-center w-full gap-2 p-4 mt-4 text-gray-500 transition-colors border-2 border-gray-300 border-dashed dark:border-gray-600 rounded-xl dark:text-gray-400 hover:border-wellcare-500 hover:text-wellcare-500">
-                    <i class="text-xl fas fa-cloud-upload-alt"></i>
-                    {{ 'Upload New Video for Review' }}
-                </button>
-            </div>
-
-            <!-- Coach Announcements -->
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                    <i class="mr-2 fas fa-bullhorn text-wellcare-500"></i>
-                    {{ 'Coach Announcements' }}
-                </h3>
-                
-                <div class="space-y-4">
-                    <div class="p-4 border rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20 border-wellcare-200 dark:border-wellcare-800">
-                        <div class="flex items-start gap-3">
-                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
-                                <i class="fas fa-info-circle text-wellcare-500"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-wellcare-800 dark:text-wellcare-200">{{ 'Updated Workout Schedule' }}</h4>
-                                <p class="mt-1 text-sm text-wellcare-700 dark:text-wellcare-300">
-                                    {{ 'I\'ve updated your weekly workout plan starting next Monday. The focus will shift slightly toward building more functional strength. Check your calendar for the new exercises!' }}
-                                </p>
-                                <p class="mt-2 text-xs text-wellcare-500">{{ '2 days ago' }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                        <div class="flex items-start gap-3">
-                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-gray-100 rounded-full dark:bg-gray-600">
-                                <i class="text-gray-500 fas fa-lightbulb"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-900 dark:text-white">{{ 'Weekly Tip: Recovery' }}</h4>
-                                <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                                    {{ 'Remember to prioritize sleep this week. Aim for 7-9 hours to maximize your training adaptations. Your recovery score has been slightly lower than usual.' }}
-                                </p>
-                                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ '1 week ago' }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Program Adjustments -->
-        <div class="p-6 mt-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-            <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">
-                <i class="mr-2 fas fa-sliders-h text-wellcare-500"></i>
-                {{ 'Program Adjustments' }}
-            </h3>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="text-sm text-left text-gray-500 dark:text-gray-400">
-                            <th class="pb-3 font-medium">{{ 'Date' }}</th>
-                            <th class="pb-3 font-medium">{{ 'Adjustment Type' }}</th>
-                            <th class="pb-3 font-medium">{{ 'Exercise' }}</th>
-                            <th class="pb-3 font-medium">{{ 'Change' }}</th>
-                            <th class="pb-3 font-medium">{{ 'Reason' }}</th>
-                            <th class="pb-3 font-medium">{{ 'Status' }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        {% for adjustment in programAdjustments|default([
-                            {date: 'Today', type: 'Weight Increase', exercise: 'Bench Press', change: '+5 lbs', reason: 'Progressive overload', status: 'approved'},
-                            {date: 'Yesterday', type: 'Exercise Swap', exercise: 'Leg Press', change: '→ Bulgarian Split Squat', reason: 'Better for knee rehab', status: 'approved'},
-                            {date: '3 days ago', type: 'Volume Decrease', exercise: 'Deadlift', change: '4x6 → 3x5', reason: 'Recovery management', status: 'approved'},
-                            {date: '1 week ago', type: 'Intensity Increase', exercise: 'Overhead Press', change: '+2.5 lbs', reason: 'Strength building', status: 'applied'}
-                        ]) %}
-                        <tr>
-                            <td class="py-3 text-sm text-gray-900 dark:text-white">{{ adjustment.date }}</td>
-                            <td class="py-3 text-sm text-gray-600 dark:text-gray-300">{{ adjustment.type }}</td>
-                            <td class="py-3 text-sm font-medium text-gray-900 dark:text-white">{{ adjustment.exercise }}</td>
-                            <td class="py-3 text-sm text-wellcare-600 dark:text-wellcare-400">{{ adjustment.change }}</td>
-                            <td class="py-3 text-sm text-gray-500 dark:text-gray-400">{{ adjustment.reason }}</td>
-                            <td class="py-3">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ adjustment.status == 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' }}">
-                                    {{ adjustment.status }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
         </div>
     </main>
-
-    <!-- Emergency Stop Button -->
-    <div class="fixed bottom-6 right-6">
-        <button @click="emergencyStop()" class="flex items-center justify-center text-white transition-all duration-200 bg-red-500 rounded-full shadow-lg w-14 h-14 hover:bg-red-600 hover:scale-110">
-            <i class="text-xl fas fa-stop"></i>
-        </button>
-    </div>
 </div>
 
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('coachCommunication', () => ({
-        darkMode: false,
+function patientCommunication() {
+    return {
+        // Données
+        conversations: {{ conversations|json_encode|raw }},
+        filteredConversations: [],
+        selectedConversation: null,
+        messages: [],
         searchQuery: '',
-        selectedConversation: 'Coach Sarah',
         newMessage: '',
-
-        conversations: [
-            { name: 'Coach Sarah', lastMessage: 'Great progress on your squat form!', time: '2h ago', unread: 2, online: true },
-            { name: 'Dr. Ahmed', lastMessage: 'Your medical clearance is approved', time: '1d ago', unread: 0, online: false },
-            { name: 'Nutrition Coach', lastMessage: "Let's review your meal plan", time: '2d ago', unread: 0, online: true }
-        ],
-
-        messages: [
-            { sender: 'coach', text: "Hi! I reviewed your workout log from yesterday. Great job on the form for those squats!", time: '10:30 AM' },
-            { sender: 'patient', text: 'Thank you! I focused on keeping my chest up like you suggested.', time: '10:32 AM' },
-            { sender: 'coach', text: "I can see the improvement. Let's add 5lbs next session. Also, don't forget your stretching routine after cardio days.", time: '10:35 AM' },
-            { sender: 'coach', text: "I uploaded a video demonstrating the hip flexor stretch we discussed. Please review it before your next session.", time: '10:36 AM' },
-            { sender: 'patient', text: 'Perfect, I\'ll check it out. Should I continue with the same cardio intensity?', time: '10:40 AM' },
-            { sender: 'coach', text: 'Yes, keep it at the current level for now. We\'ll reassess after two more weeks. Your heart rate recovery is improving nicely!', time: '10:42 AM' }
-        ],
-
-        formVideos: [
-            { name: 'Squat Form Check', date: '2 days ago', status: 'reviewed', feedback: 'Great depth! Focus on keeping knees tracking over toes.' },
-            { name: 'Deadlift Setup', date: '1 week ago', status: 'reviewed', feedback: 'Excellent bracing. Your back position has improved significantly.' },
-            { name: 'Bench Press', date: '2 weeks ago', status: 'pending', feedback: null }
-        ],
-
+        showNotifications: false,
+        totalUnread: 0,
+        onlineCount: 0,
+        typingIn: {},
+        typingTimeout: null,
+        pollingInterval: null,
+        messageCheckInterval: null,
+        unreadCheckInterval: null,
+        notifications: [],
+        toasts: [],
+        lastMessageIds: {}, // Pour suivre les derniers messages par conversation
+        
+        // Initialisation
         init() {
-            this.darkMode = localStorage.getItem('theme') === 'dark';
+            console.log('🚀 Initialisation du chat patient...');
+            this.filteredConversations = this.conversations;
+            
+            // Initialiser les IDs des derniers messages
+            this.conversations.forEach(conv => {
+                this.lastMessageIds[conv.id] = null;
+            });
+            
+            this.calculateStats();
+            
+            // Écouter les notifications Mercure
+            this.setupMercureListener();
+            
+            // Démarrer le polling intensif (toutes les 2 secondes)
+            this.startPolling();
+            
+            // Vérification des messages pour la conversation active
+            this.startMessageCheck();
+            
+            // Vérification des messages non lus
+            this.startUnreadCheck();
+            
+            // Afficher un toast de bienvenue
+            setTimeout(() => {
+                this.showToast({
+                    title: 'Bienvenue',
+                    message: 'Communication avec votre coach est prête',
+                    type: 'success'
+                });
+            }, 1000);
         },
-
-        selectConversation(name) {
-            this.selectedConversation = name;
+        
+        // Configuration de l'écouteur Mercure
+        setupMercureListener() {
+            document.addEventListener('mercure:message', (event) => {
+                const data = event.detail;
+                console.log('📩 Message Mercure reçu:', data);
+                
+                if (data && data.type === 'new_message') {
+                    this.handleNewMessage(data);
+                }
+            });
+            
+            // Tester la connexion Mercure
+            fetch('http://localhost:61619/.well-known/mercure', { mode: 'no-cors' })
+                .then(() => console.log('✅ Serveur Mercure accessible'))
+                .catch(err => console.log('⚠️ Serveur Mercure inaccessible (mode polling activé)'));
         },
-
-        sendMessage() {
-            if (this.newMessage.trim()) {
-                this.messages.push({
-                    sender: 'patient',
-                    text: this.newMessage,
+        
+        // Gérer un nouveau message
+        handleNewMessage(data) {
+            const conversationId = data.conversationId;
+            const messageContent = data.message?.content || data.notification?.message || 'Message reçu';
+            const senderName = data.notification?.sender || 'Coach';
+            
+            // Trouver la conversation
+            const conversation = this.conversations.find(c => c.id === conversationId);
+            if (!conversation) return;
+            
+            // Mettre à jour le compteur de messages non lus
+            if (!this.selectedConversation || this.selectedConversation.id !== conversationId) {
+                conversation.unread = (conversation.unread || 0) + 1;
+                
+                // Afficher le toast
+                this.showToast({
+                    title: `Nouveau message de ${conversation.name}`,
+                    message: messageContent.substring(0, 100) + (messageContent.length > 100 ? '...' : ''),
+                    conversationId: conversationId,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    type: 'info'
+                });
+                
+                // Ajouter à l'historique
+                this.addToHistory({
+                    title: `Message de ${conversation.name}`,
+                    message: messageContent.substring(0, 100) + (messageContent.length > 100 ? '...' : ''),
+                    sender: conversation.name,
+                    conversationId: conversationId,
                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 });
-                this.newMessage = '';
+            }
+            
+            // Mettre à jour le dernier message dans la liste
+            conversation.lastMessage = messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : '');
+            conversation.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Recharger les messages si c'est la conversation active
+            if (this.selectedConversation && this.selectedConversation.id === conversationId) {
+                this.loadMessages(conversationId, true);
+            }
+            
+            this.calculateStats();
+            this.filterConversations();
+        },
+        
+        // Démarrer le polling de secours
+        startPolling() {
+            // Vérifier les nouveaux messages toutes les 2 secondes
+            this.pollingInterval = setInterval(() => {
+                this.checkForNewMessages();
+            }, 2000);
+        },
+        
+        // Démarrer la vérification des messages pour la conversation active
+        startMessageCheck() {
+            this.messageCheckInterval = setInterval(() => {
+                if (this.selectedConversation) {
+                    this.checkConversationMessages();
+                }
+            }, 2000);
+        },
+        
+        // Démarrer la vérification des messages non lus
+        startUnreadCheck() {
+            this.unreadCheckInterval = setInterval(() => {
+                this.refreshUnreadCount();
+            }, 3000);
+        },
+        
+        // Vérifier les nouveaux messages dans une conversation spécifique
+        async checkConversationMessages() {
+            if (!this.selectedConversation) return;
+            
+            try {
+                const response = await fetch(`/chat/conversation/${this.selectedConversation.id}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                if (data.messages && data.messages.length > 0) {
+                    // Comparer avec les messages actuels
+                    const lastMessageId = this.messages.length > 0 ? this.messages[this.messages.length - 1].id : null;
+                    const newLastMessageId = data.messages[data.messages.length - 1].id;
+                    
+                    if (newLastMessageId !== lastMessageId) {
+                        console.log('📨 Nouveaux messages détectés dans la conversation active');
+                        
+                        // Préserver le statut 'me' pour nos propres messages
+                        const processedMessages = data.messages.map(msg => {
+                            if (msg.sender === 'patient') return { ...msg, sender: 'me' };
+                            return msg;
+                        });
+                        
+                        const oldLength = this.messages.length;
+                        this.messages = processedMessages;
+                        
+                        // Jouer un son si c'est un nouveau message de l'autre personne
+                        if (processedMessages.length > oldLength) {
+                            const newMessages = processedMessages.slice(oldLength);
+                            if (newMessages.some(m => m.sender !== 'me')) {
+                                this.playNotificationSound();
+                            }
+                        }
+                        
+                        // Scroll automatique si on était en bas
+                        const container = document.getElementById('messages-container');
+                        if (container) {
+                            const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
+                            if (isScrolledToBottom) {
+                                this.$nextTick(() => this.scrollToBottom());
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur vérification conversation:', error);
             }
         },
-
-        openNewMessage() {
-            alert('Open new message modal');
-        },
-
-        emergencyStop() {
-            if (confirm('Are you experiencing any discomfort?')) {
-                window.location.href = '/emergency';
+        
+        // Vérifier les nouveaux messages dans toutes les conversations
+        async checkForNewMessages() {
+            try {
+                // Pour chaque conversation, vérifier si elle a de nouveaux messages
+                for (let conv of this.conversations) {
+                    // Ignorer la conversation active (déjà vérifiée)
+                    if (this.selectedConversation && this.selectedConversation.id === conv.id) {
+                        continue;
+                    }
+                    
+                    try {
+                        const response = await fetch(`/chat/conversation/${conv.id}/last-message`);
+                        if (!response.ok) continue;
+                        
+                        const data = await response.json();
+                        
+                        // Vérifier si c'est un nouveau message
+                        if (data.id && this.lastMessageIds[conv.id] !== data.id) {
+                            console.log(`📨 Nouveau message dans conversation ${conv.id}:`, data);
+                            
+                            // Mettre à jour le dernier message connu
+                            this.lastMessageIds[conv.id] = data.id;
+                            
+                            // Incrémenter le compteur de messages non lus
+                            conv.unread = (conv.unread || 0) + 1;
+                            
+                            // Mettre à jour le dernier message affiché
+                            conv.lastMessage = data.content.substring(0, 50) + (data.content.length > 50 ? '...' : '');
+                            conv.time = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            
+                            // Afficher le toast
+                            this.showToast({
+                                title: `Nouveau message de ${conv.name}`,
+                                message: data.content.substring(0, 100) + (data.content.length > 100 ? '...' : ''),
+                                conversationId: conv.id,
+                                time: data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                type: 'info'
+                            });
+                            
+                            // Ajouter à l'historique
+                            this.addToHistory({
+                                title: `Message de ${conv.name}`,
+                                message: data.content.substring(0, 100) + (data.content.length > 100 ? '...' : ''),
+                                sender: conv.name,
+                                conversationId: conv.id,
+                                time: data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            });
+                            
+                            // Jouer le son
+                            this.playNotificationSound();
+                        }
+                    } catch (e) {
+                        // Ignorer les erreurs pour cette conversation
+                    }
+                }
+                
+                this.calculateStats();
+                this.filterConversations();
+                
+            } catch (error) {
+                console.error('Erreur lors de la vérification des messages:', error);
             }
+        },
+        
+        // Calculer les statistiques
+        calculateStats() {
+            this.totalUnread = this.conversations.reduce((sum, conv) => sum + (conv.unread || 0), 0);
+            this.onlineCount = this.conversations.filter(conv => conv.online).length;
+        },
+        
+        // Filtrer les conversations
+        filterConversations() {
+            if (!this.searchQuery) {
+                this.filteredConversations = [...this.conversations].sort((a, b) => {
+                    // Trier par date du dernier message (plus récent d'abord)
+                    if (a.time && b.time) {
+                        return b.time.localeCompare(a.time);
+                    }
+                    return b.time ? 1 : -1;
+                });
+                return;
+            }
+            const query = this.searchQuery.toLowerCase();
+            this.filteredConversations = this.conversations.filter(conv => 
+                conv.name.toLowerCase().includes(query) ||
+                (conv.goalTitle && conv.goalTitle.toLowerCase().includes(query))
+            );
+        },
+        
+        // Sélectionner une conversation
+        async selectConversation(conversation) {
+            if (!conversation) return;
+            
+            this.selectedConversation = conversation;
+            await this.loadMessages(conversation.id);
+            
+            // Marquer comme lu
+            const oldUnread = conversation.unread;
+            conversation.unread = 0;
+            this.calculateStats();
+            
+            // Mettre à jour le dernier message connu
+            if (this.messages.length > 0) {
+                this.lastMessageIds[conversation.id] = this.messages[this.messages.length - 1].id;
+            }
+            
+            // Marquer les notifications comme lues
+            this.notifications = this.notifications.map(n => {
+                if (n.conversationId === conversation.id) {
+                    return { ...n, read: true };
+                }
+                return n;
+            });
+            
+            // Si c'était un message non lu, jouer un son
+            if (oldUnread > 0) {
+                this.playNotificationSound();
+            }
+        },
+        
+        // Charger les messages
+        async loadMessages(conversationId, preserveScroll = false) {
+            try {
+                const response = await fetch(`/chat/conversation/${conversationId}`);
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement');
+                }
+                const data = await response.json();
+                
+                // Préserver le statut 'me' pour nos propres messages
+                const processedMessages = data.messages.map(msg => {
+                    if (msg.sender === 'patient') return { ...msg, sender: 'me' };
+                    return msg;
+                });
+                
+                const wasAtBottom = preserveScroll ? false : true;
+                const oldLength = this.messages.length;
+                
+                this.messages = processedMessages;
+                
+                // Mettre à jour le dernier message connu
+                if (this.messages.length > 0) {
+                    this.lastMessageIds[conversationId] = this.messages[this.messages.length - 1].id;
+                }
+                
+                // Jouer un son si de nouveaux messages sont arrivés
+                if (preserveScroll && processedMessages.length > oldLength) {
+                    const newMessages = processedMessages.slice(oldLength);
+                    if (newMessages.some(m => m.sender !== 'me')) {
+                        this.playNotificationSound();
+                    }
+                }
+                
+                this.$nextTick(() => {
+                    if (!preserveScroll) {
+                        this.scrollToBottom();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Erreur chargement messages:', error);
+                this.showToast({
+                    title: 'Erreur',
+                    message: 'Impossible de charger les messages',
+                    type: 'error'
+                });
+            }
+        },
+        
+        // Envoyer un message
+        async sendMessage() {
+            if (!this.newMessage.trim() || !this.selectedConversation) return;
+            
+            const content = this.newMessage;
+            this.newMessage = '';
+            
+            // Message temporaire
+            const tempMessage = {
+                id: 'temp-' + Date.now(),
+                sender: 'me',
+                content: content,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                date: new Date().toISOString().split('T')[0]
+            };
+            this.messages.push(tempMessage);
+            this.scrollToBottom();
+            
+            try {
+                const response = await fetch(`/chat/send/${this.selectedConversation.id}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'content=' + encodeURIComponent(content)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Erreur envoi');
+                }
+                
+                const data = await response.json();
+                data.date = new Date().toISOString().split('T')[0];
+                
+                // Remplacer le message temporaire
+                const index = this.messages.findIndex(m => m.id === tempMessage.id);
+                if (index !== -1) {
+                    this.messages[index] = data;
+                }
+                
+                // Mettre à jour le dernier message connu
+                this.lastMessageIds[this.selectedConversation.id] = data.id;
+                
+                // Mettre à jour la dernière conversation
+                const convIndex = this.conversations.findIndex(c => c.id === this.selectedConversation.id);
+                if (convIndex !== -1) {
+                    this.conversations[convIndex].lastMessage = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+                    this.conversations[convIndex].time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+                
+            } catch (error) {
+                console.error('Erreur envoi message:', error);
+                // Supprimer le message temporaire
+                this.messages = this.messages.filter(m => m.id !== tempMessage.id);
+                this.showToast({
+                    title: 'Erreur',
+                    message: 'Échec de l\'envoi du message',
+                    type: 'error'
+                });
+            }
+        },
+        
+        // Gérer la frappe
+        handleTyping() {
+            if (!this.selectedConversation) return;
+            
+            // Ici vous pourriez envoyer un signal "typing" au serveur
+            // Pour l'instant, on se contente de clear le timeout
+            clearTimeout(this.typingTimeout);
+            
+            this.typingTimeout = setTimeout(() => {
+                // Fin de la frappe
+            }, 1000);
+        },
+        
+        // Rafraîchir le compteur de messages non lus
+        async refreshUnreadCount() {
+            try {
+                const response = await fetch('/chat/unread/count');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                let hasChanges = false;
+                for (let conv of this.conversations) {
+                    const newUnread = data.byConversation[conv.id] || 0;
+                    if (conv.unread !== newUnread) {
+                        conv.unread = newUnread;
+                        hasChanges = true;
+                    }
+                }
+                
+                if (hasChanges) {
+                    this.calculateStats();
+                    this.filterConversations();
+                }
+                
+            } catch (error) {
+                console.error('Erreur rafraîchissement compteur:', error);
+            }
+        },
+        
+        // Ajouter à l'historique des notifications
+        addToHistory(data) {
+            if (!data || !data.message) return;
+            
+            // Éviter les doublons (dans les 5 secondes)
+            const exists = this.notifications.some(n => 
+                n.conversationId === data.conversationId && 
+                n.message === data.message &&
+                Math.abs(new Date() - new Date(n.time || Date.now())) < 5000
+            );
+            
+            if (!exists) {
+                this.notifications.unshift({
+                    id: 'notif-' + Date.now() + '-' + Math.random(),
+                    title: data.title || 'Nouveau message',
+                    message: data.message,
+                    sender: data.sender || 'Quelqu\'un',
+                    conversationId: data.conversationId,
+                    time: data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    read: false
+                });
+                
+                // Limiter à 50 notifications
+                if (this.notifications.length > 50) {
+                    this.notifications = this.notifications.slice(0, 50);
+                }
+                
+                // Mettre à jour le compteur
+                this.totalUnread = this.notifications.filter(n => !n.read).length;
+            }
+        },
+        
+        // Afficher un toast
+        showToast(data) {
+            if (!data) return;
+            
+            console.log('🍞 Affichage toast:', data);
+            
+            const id = 'toast-' + Date.now() + '-' + Math.random();
+            
+            this.toasts.push({
+                id: id,
+                title: data.title || 'Notification',
+                message: data.message || 'Nouvelle notification',
+                time: data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: data.type || 'info',
+                conversationId: data.conversationId,
+                visible: true
+            });
+            
+            // Disparaît après 5 secondes
+            setTimeout(() => {
+                const toast = this.toasts.find(t => t.id === id);
+                if (toast) toast.visible = false;
+                
+                // Supprimer complètement après l'animation
+                setTimeout(() => {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
+                }, 300);
+                
+            }, 5000);
+        },
+        
+        // Tester les notifications
+        testNotification() {
+            this.showToast({
+                title: 'Test de notification',
+                message: 'Ceci est un message de test - ' + new Date().toLocaleTimeString(),
+                type: 'success'
+            });
+            
+            this.addToHistory({
+                title: 'Test de notification',
+                message: 'Ceci est un message de test',
+                sender: 'Système',
+                conversationId: null,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            
+            // Ajouter aussi une notification de test
+            this.notifications.unshift({
+                id: 'test-' + Date.now(),
+                title: 'Test de notification',
+                message: 'Ceci est une notification de test',
+                sender: 'Système',
+                conversationId: null,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                read: false
+            });
+            
+            this.playNotificationSound();
+        },
+        
+        // Jouer un son de notification
+        playNotificationSound() {
+            try {
+                const audio = new Audio('/sounds/notification.mp3');
+                audio.volume = 0.3;
+                audio.play().catch(err => console.log('🔇 Son bloqué:', err));
+            } catch (error) {
+                console.log('🔇 Erreur son:', error);
+            }
+        },
+        
+        // Scroll vers le bas
+        scrollToBottom() {
+            const container = document.getElementById('messages-container');
+            if (container) {
+                container.scrollTo({
+                    top: container.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        },
+        
+        // Nettoyage
+        destroy() {
+            if (this.pollingInterval) clearInterval(this.pollingInterval);
+            if (this.messageCheckInterval) clearInterval(this.messageCheckInterval);
+            if (this.unreadCheckInterval) clearInterval(this.unreadCheckInterval);
         }
-    }));
-});
+    }
+}
 </script>
 {% endblock %}

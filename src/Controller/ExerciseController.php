@@ -18,7 +18,7 @@ class ExerciseController extends AbstractController
     {  
         $em = $m->getManager();  
         $exercise = new Exercises();  
-        
+         $exercise->setUser($this->getUser());
         $form = $this->createForm(ExerciseType::class, $exercise);
         $form->handleRequest($req);
 
@@ -52,8 +52,8 @@ class ExerciseController extends AbstractController
     {
         $em = $m->getManager();
         $exerciseRepository = $em->getRepository(Exercises::class);
-        $exercises = $exerciseRepository->findAll();
-        
+        $exercises = $exerciseRepository->findBy(['User' => $this->getUser()]);
+
         // Convertir les objets en tableau pour Alpine.js
         $exercisesArray = [];
         foreach ($exercises as $exercise) {
@@ -81,22 +81,42 @@ class ExerciseController extends AbstractController
         ]);  
     }
      
-     #[Route('/delete/{id}', name: 'delete_exercise', methods: ['GET'])]
-    public function delete(ManagerRegistry $m, $id): Response
-    {
-        $em = $m->getManager();
-        $exercise = $em->getRepository(Exercises::class)->find($id);
-        
-        if (!$exercise) {
-            throw $this->createNotFoundException('Exercise not found');
+    // Dans votre contrôleur
+// Dans votre contrôleur
+#[Route('/delete/{id}', name: 'delete_exercise', methods: ['POST', 'DELETE'])]
+public function delete(ManagerRegistry $m, Request $request, $id): Response
+{
+    $em = $m->getManager();
+    $exercise = $em->getRepository(Exercises::class)->find($id);
+
+    if (!$exercise || $exercise->getUser() !== $this->getUser()) {
+        if ($request->isXmlHttpRequest()) {
+            return $this->json(['error' => 'Exercise not found'], 404);
         }
-        
-        $em->remove($exercise);
-        $em->flush();
-        
-        // Vérifier que cette route existe dans votre application
-        return $this->redirectToRoute('exercises_show');
-    } 
+        throw $this->createNotFoundException('Exercise not found');
+    }
+
+    // Vérification CSRF - Changé de 'delete' . $id à 'global'
+    if ($request->isMethod('POST')) {
+        $submittedToken = $request->request->get('_token');
+        if (!$this->isCsrfTokenValid('global', $submittedToken)) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['error' => 'Invalid CSRF token'], 400);
+            }
+            throw $this->createAccessDeniedException('Invalid CSRF token');
+        }
+    }
+
+    $em->remove($exercise);
+    $em->flush();
+
+    if ($request->isXmlHttpRequest()) {
+        return $this->json(['success' => true]);
+    }
+
+    $this->addFlash('success', 'Exercise deleted successfully!');
+    return $this->redirectToRoute('exercises_show');
+}
     
     #[Route('/update/{id}', name: 'exercises_edit', methods: ['GET', 'POST'])]
     public function update(Request $request, ManagerRegistry $m, $id): Response
@@ -104,7 +124,7 @@ class ExerciseController extends AbstractController
         $em = $m->getManager();
         $exercise = $em->getRepository(Exercises::class)->find($id);
 
-        if (!$exercise) {
+        if (!$exercise || $exercise->getUser() !== $this->getUser()) {
             throw $this->createNotFoundException('Exercise not found');
         }
 

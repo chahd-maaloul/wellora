@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
@@ -7,27 +6,44 @@ use App\Entity\DailyPlan;
 use App\Form\DailyPlanType;
 use App\Repository\DailyPlanRepository;
 use App\Repository\ExercisesRepository;
+use App\Repository\GoalRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DailyPlanController extends AbstractController
 {
-     #[Route('/coach/daily-plans', name: 'coach_daily_plans')]
+    #[Route('/coach/daily-plans', name: 'coach_daily_plans')]
     public function index(
         DailyPlanRepository $dailyPlanRepository,
-        ExercisesRepository $exercisesRepository
+        ExercisesRepository $exercisesRepository,
+        GoalRepository $goalRepository
     ): Response
     {
-        // Récupérer tous les daily plans
-        $dailyPlans = $dailyPlanRepository->findBy([], ['date' => 'DESC', 'id' => 'DESC']);
+        // Récupérer le coach connecté et le typer
+        $user = $this->getUser();
+        if (!$user instanceof \App\Entity\User) {
+            throw $this->createAccessDeniedException('Invalid user type');
+        }
+        $coach = $user;
         
-        // Récupérer tous les exercices actifs pour la sidebar
-        $allExercises = $exercisesRepository->findBy(['isActive' => true], ['name' => 'ASC']);
+        // Récupérer uniquement les daily plans du coach connecté
+        $dailyPlans = $dailyPlanRepository->findBy(['coach' => $coach], ['date' => 'DESC', 'id' => 'DESC']);
         
-        // Formater les daily plans pour le template Alpine.js
+        // Récupérer tous les exercices actifs pour la sidebar (associés au coach)
+        $allExercises = $exercisesRepository->findBy([
+            'User' => $coach,  // Notez le U majuscule !
+            'isActive' => true
+        ], ['name' => 'ASC']);
+    
+        // Récupérer les goals assignés à ce coach
+        $coachId = $coach->getUuid();
+        $coachGoals = $goalRepository->findBy(['coachId' => $coachId]);
+        
+        // Formater les daily plans pour le template
         $formattedPlans = [];
         foreach ($dailyPlans as $plan) {
             // Compter le nombre d'exercices
@@ -52,9 +68,6 @@ class DailyPlanController extends AbstractController
                 ];
             }
             
-            
-          
-            
             // Compter les jours depuis la création
             $planDate = $plan->getDate();
             $today = new \DateTime();
@@ -63,7 +76,6 @@ class DailyPlanController extends AbstractController
             $formattedPlans[] = [
                 'id' => $plan->getId(),
                 'title' => $plan->getTitre(),
-              
                 'date' => $planDate->format('Y-m-d'),
                 'formattedDate' => $planDate->format('M d, Y'),
                 'daysAgo' => $daysAgo,
@@ -77,6 +89,8 @@ class DailyPlanController extends AbstractController
                     'id' => $plan->getGoal()->getId(),
                     'title' => $plan->getGoal()->getTitle(),
                     'progress' => $plan->getGoal()->getProgress() ?? 0,
+                    'patientName' => $plan->getGoal()->getPatient() ? 
+                        $plan->getGoal()->getPatient()->getFullName() : 'Unknown',
                 ] : null,
             ];
         }
@@ -94,55 +108,74 @@ class DailyPlanController extends AbstractController
                 'sets' => $exercise->getSets() ?? 0,
                 'reps' => $exercise->getReps() ?? 0,
                 'description' => $exercise->getDescription() ?? '',
-            
                 'videoUrl' => $exercise->getVideoUrl(),
             ];
         }
         
-        // Données statiques pour les clients (à remplacer par votre système utilisateur)
-        $clients = [
-            ['id' => 1, 'name' => 'John Doe', 'email' => 'john@email.com', 'avatar' => 'JD'],
-            ['id' => 2, 'name' => 'Mary Smith', 'email' => 'mary@email.com', 'avatar' => 'MS'],
-            ['id' => 3, 'name' => 'Peter Johnson', 'email' => 'peter@email.com', 'avatar' => 'PJ'],
-            ['id' => 4, 'name' => 'Sarah Williams', 'email' => 'sarah@email.com', 'avatar' => 'SW'],
-        ];
-        
-        // Données statiques pour les objectifs
-        $goals = [
-            ['id' => 1, 'title' => 'Lose 5kg', 'progress' => 60, 'status' => 'ACTIVE'],
-            ['id' => 2, 'title' => 'Run 10km', 'progress' => 30, 'status' => 'ACTIVE'],
-            ['id' => 3, 'title' => 'Build Muscle', 'progress' => 80, 'status' => 'ACTIVE'],
-            ['id' => 4, 'title' => 'Improve Flexibility', 'progress' => 45, 'status' => 'PENDING'],
-        ];
+        // Formater les goals du coach pour la sélection
+        $formattedGoals = [];
+        foreach ($coachGoals as $goal) {
+            $patient = $goal->getPatient();
+            $formattedGoals[] = [
+                'id' => $goal->getId(),
+                'title' => $goal->getTitle(),
+                'progress' => $goal->getProgress() ?? 0,
+                'status' => $goal->getStatus(),
+                'patientId' => $patient ? $patient->getUuid() : null,
+                'patientName' => $patient ? $patient->getFullName() : 'No patient assigned',
+                'patientEmail' => $patient ? $patient->getEmail() : '',
+            ];
+        }
 
         return $this->render('coach/DailyPlan/show_plan.html.twig', [
             'pageTitle' => 'Daily Plans Manager',
-            'clients' => $clients,
-            'goals' => $goals,
             'dailyPlans' => $formattedPlans,
             'exercises' => $formattedExercises,
+            'coachGoals' => $formattedGoals,
         ]);
     }
     
-    
     #[Route('/coach/daily-plan/new', name: 'coach_daily_plan_new')]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(
+        Request $request, 
+        EntityManagerInterface $entityManager,
+        GoalRepository $goalRepository,
+        ExercisesRepository $exercisesRepository
+    ): Response
     {
+        // Récupérer le coach connecté et le typer
+        $user = $this->getUser();
+        if (!$user instanceof \App\Entity\User) {
+            throw $this->createAccessDeniedException('Invalid user type');
+        }
+        $coach = $user;
+        
+        $coachId = $coach->getUuid();
+        
         $dailyPlan = new DailyPlan();
+        $dailyPlan->setCoach($coach);
+        $dailyPlan->setDate(new \DateTime()); // Date par défaut
         
         $form = $this->createForm(DailyPlanType::class, $dailyPlan);
         $form->handleRequest($request);
         
         if ($form->isSubmitted() && $form->isValid()) {
-            // Récupérer les données du formulaire HTML (non-mappées)
-            $userName = $request->request->get('selected_user');
-            $planTitle = $request->request->get('plan_title');
-            $planDate = $request->request->get('plan_date');
+            // Récupérer les données du formulaire (les champs mappés sont déjà dans $dailyPlan)
             
-            // Si un utilisateur est sélectionné, l'ajouter aux notes
-            if ($userName) {
-                $currentNotes = $dailyPlan->getNotes() ?? '';
-                $dailyPlan->setNotes("Utilisateur: " . $userName . "\n\n" . $currentNotes);
+            // Récupérer l'ID du goal depuis le champ caché
+            $goalId = $request->request->get('selected_goal');
+            
+            // Si un goal est sélectionné, l'associer au plan (SANS AJOUTER LE NOM AUX NOTES)
+            if ($goalId) {
+                $goal = $goalRepository->find($goalId);
+                if ($goal) {
+                    // Vérifier que le goal appartient bien à ce coach
+                    if ($goal->getCoachId() === $coachId) {
+                        $dailyPlan->setGoal($goal);
+                        // NE PAS AJOUTER LE NOM DU PATIENT AUX NOTES
+                        // Les notes restent telles que saisies par l'utilisateur
+                    }
+                }
             }
             
             // Calculer les totaux automatiquement
@@ -151,12 +184,31 @@ class DailyPlanController extends AbstractController
             $entityManager->persist($dailyPlan);
             $entityManager->flush();
             
-            $this->addFlash('success', 'Plan quotidien créé avec succès !');
+            $this->addFlash('success', 'Daily plan created successfully!');
             return $this->redirectToRoute('coach_daily_plans');
         }
         
+        // Récupérer les goals assignés à ce coach pour le template
+        $coachGoals = $goalRepository->findBy(['coachId' => $coachId]);
+        $formattedGoals = [];
+        foreach ($coachGoals as $goal) {
+            $patient = $goal->getPatient();
+            $formattedGoals[] = [
+                'id' => $goal->getId(),
+                'title' => $goal->getTitle(),
+                'patientName' => $patient ? $patient->getFullName() : 'No patient',
+                'progress' => $goal->getProgress() ?? 0,
+            ];
+        }
+        
+        // Récupérer les exercices associés au coach pour le formulaire
+        // Pour Select2, nous avons besoin de formater les données correctement
+        $exercises = $exercisesRepository->findBy(['User' => $coach, 'isActive' => true], ['name' => 'ASC']);
+        
         return $this->render('coach/DailyPlan/new_plan.html.twig', [
             'form' => $form->createView(),
+            'coachGoals' => $formattedGoals,
+            'exercises' => $exercises, // Passer les exercices au template
         ]);
     }
     
@@ -177,7 +229,6 @@ class DailyPlanController extends AbstractController
             $caloriesPerMinute = $exercise->getCalories() ?? 0;
             
             // Calcul des calories totales pour cet exercice
-            // Si l'exercice a un nombre de sets/reps, on calcule différemment
             if ($exercise->getSets() && $exercise->getReps()) {
                 // Pour les exercices avec sets/reps, on estime le temps par set
                 $timePerSet = 2; // 2 minutes par set en moyenne
@@ -192,181 +243,283 @@ class DailyPlanController extends AbstractController
         $dailyPlan->setDureeMin($totalDuration);
         $dailyPlan->setCalories((int) round($totalCalories));
     }
-    #[Route('/delete/{id}', name: 'delete_daily_plan', methods: ['GET'])]
-public function delete(ManagerRegistry $m, $id): Response
-{
-    $em = $m->getManager();
-    $dailyPlan = $em->getRepository(DailyPlan::class)->find($id);
     
-    if (!$dailyPlan) {
-        throw $this->createNotFoundException('Daily plan not found');
+    #[Route('/delete/{id}', name: 'delete_daily_plan', methods: ['POST'])]
+    public function delete(ManagerRegistry $doctrine, $id): Response
+    {
+        $em = $doctrine->getManager();
+        $dailyPlan = $em->getRepository(DailyPlan::class)->find($id);
+        
+        if (!$dailyPlan) {
+            throw $this->createNotFoundException('Daily plan not found');
+        }
+        
+        // Vérifier que le plan appartient bien au coach connecté
+        $user = $this->getUser();
+        if ($dailyPlan->getCoach() !== $user) {
+            throw $this->createAccessDeniedException('You can only delete your own plans');
+        }
+        
+        $em->remove($dailyPlan);
+        $em->flush();
+        
+        $this->addFlash('success', 'Daily plan deleted successfully!');
+        return $this->redirectToRoute('coach_daily_plans');
     }
     
-    $em->remove($dailyPlan);
-    $em->flush();
-    
-    // Redirection vers la liste des plans (corrigé le nom de la route)
-    return $this->redirectToRoute('coach_daily_plans');
-}
- #[Route('/coach/daily-plans/{id}/edit', name: 'coach_daily_plan_edit', methods: ['GET', 'POST'])]
+   #[Route('/coach/daily-plans/{id}/edit', name: 'coach_daily_plan_edit', methods: ['GET', 'POST'])]
 public function edit(
     Request $request,
     int $id,
     EntityManagerInterface $entityManager,
     DailyPlanRepository $dailyPlanRepository,
-    ExercisesRepository $exercisesRepository
+    ExercisesRepository $exercisesRepository,
+    GoalRepository $goalRepository
 ): Response
 {
-    // 1. Récupérer le plan
+    // Récupérer le coach connecté
+    $user = $this->getUser();
+    if (!$user instanceof \App\Entity\User) {
+        throw $this->createAccessDeniedException('Invalid user type');
+    }
+    $coach = $user;
+    
+    $coachId = $coach->getUuid();
+    
+    // Récupérer le plan
     $dailyPlan = $dailyPlanRepository->find($id);
     
     if (!$dailyPlan) {
         throw $this->createNotFoundException('Daily plan not found');
     }
     
-    // =========== GESTION POST (SAUVEGARDE) ===========
-    if ($request->isMethod('POST')) {
-        try {
-            // Récupérer les données du formulaire
-            $data = $request->request->all();
-            
-            // Mettre à jour les propriétés
-            $dailyPlan->setTitre($data['title'] ?? $dailyPlan->getTitre());
-            
-            if (isset($data['date']) && !empty($data['date'])) {
-                $dailyPlan->setDate(new \DateTime($data['date']));
-            }
-            
-            $dailyPlan->setStatus($data['status'] ?? $dailyPlan->getStatus());
-            $dailyPlan->setNotes($data['notes'] ?? $dailyPlan->getNotes());
-            
-            // Mettre à jour la durée et calories si fournies
-            if (isset($data['duration'])) {
-                $dailyPlan->setDureeMin((int) $data['duration']);
-            }
-            
-            if (isset($data['calories'])) {
-                $dailyPlan->setCalories((int) $data['calories']);
-            }
-            
-            // Sauvegarder
-            $entityManager->flush();
-            
-            // Message de succès
-            $this->addFlash('success', 'Daily plan updated successfully!');
-            
-            // Rediriger vers la liste
-            return $this->redirectToRoute('coach_daily_plans');
-            
-        } catch (\Exception $e) {
-            $this->addFlash('error', 'Error updating plan: ' . $e->getMessage());
-        }
+    // Vérifier que le plan appartient bien au coach
+    if ($dailyPlan->getCoach() !== $coach) {
+        throw $this->createAccessDeniedException('You can only edit your own plans');
     }
     
-    // =========== GESTION GET (AFFICHAGE) ===========
-    // 2. Formater les données pour le template (votre code existant)
-    $formattedPlan = [
-        'id' => $dailyPlan->getId(),
-        'title' => $dailyPlan->getTitre(),
-        'date' => $dailyPlan->getDate()->format('Y-m-d'),
-        'status' => $dailyPlan->getStatus(),
-        'duration' => $dailyPlan->getDureeMin(),
-        'calories' => $dailyPlan->getCalories(),
-        'notes' => $dailyPlan->getNotes(),
-        
-        'goalId' => $dailyPlan->getGoal() ? $dailyPlan->getGoal()->getId() : null,
-        'exercises' => []
-    ];
-    
-    // 3. Ajouter les exercices
-    foreach ($dailyPlan->getExercices() as $exercise) {
-        $formattedPlan['exercises'][] = [
-            'id' => $exercise->getId(),
-            'sets' => $exercise->getSets(),
-            'reps' => $exercise->getReps(),
+    // Récupérer les goals assignés à ce coach
+    $coachGoals = $goalRepository->findBy(['coachId' => $coachId]);
+    $formattedGoals = [];
+    foreach ($coachGoals as $goal) {
+        $patient = $goal->getPatient();
+        $formattedGoals[] = [
+            'id' => $goal->getId(),
+            'title' => $goal->getTitle(),
+            'patientName' => $patient ? $patient->getFullName() : 'No patient',
+            'progress' => $goal->getProgress() ?? 0,
         ];
     }
     
-    // 4. Récupérer tous les exercices disponibles
-    $allExercises = $exercisesRepository->findBy(['isActive' => true], ['name' => 'ASC']);
-    $formattedExercises = [];
+    // Formater les données du plan pour Alpine.js
+    $exercisesData = [];
+    foreach ($dailyPlan->getExercices() as $exercise) {
+        $exercisesData[] = [
+            'id' => $exercise->getId(),
+            'sets' => $exercise->getSets() ?? '',
+            'reps' => $exercise->getReps() ?? '',
+        ];
+    }
     
+    $planData = [
+        'id' => $dailyPlan->getId(),
+        'title' => $dailyPlan->getTitre(),
+        'clientId' => $dailyPlan->getGoal() ? $dailyPlan->getGoal()->getPatient() ? $dailyPlan->getGoal()->getPatient()->getUuid() : '' : '',
+        'date' => $dailyPlan->getDate()->format('Y-m-d'),
+        'status' => $dailyPlan->getStatus() ?? 'planned',
+        'goalId' => $dailyPlan->getGoal() ? $dailyPlan->getGoal()->getId() : '',
+        'notes' => $dailyPlan->getNotes() ?? '',
+        'exercises' => $exercisesData,
+        'duration' => $dailyPlan->getDureeMin() ?? 0,
+        'calories' => $dailyPlan->getCalories() ?? 0,
+    ];
+    
+    // Récupérer tous les exercices disponibles associés au coach
+    $allExercises = $exercisesRepository->findBy(['User' => $coach, 'isActive' => true], ['name' => 'ASC']);
+    $formattedExercises = [];
     foreach ($allExercises as $exercise) {
         $formattedExercises[] = [
             'id' => $exercise->getId(),
             'name' => $exercise->getName(),
             'category' => $exercise->getCategory(),
-            'duration' => $exercise->getDuration(),
-            'calories' => $exercise->getCalories(),
-            'sets' => $exercise->getSets(),
-            'reps' => $exercise->getReps()
+            'duration' => $exercise->getDuration() ?? 0,
+            'calories' => $exercise->getCalories() ?? 0,
+            'sets' => $exercise->getSets() ?? 0,
+            'reps' => $exercise->getReps() ?? 0,
         ];
     }
     
-    // 5. Données pour les dropdowns (vous pouvez les garder statiques ou les récupérer)
-    $clients = [
-        ['id' => 1, 'name' => 'John Doe', 'email' => 'john@email.com'],
-        ['id' => 2, 'name' => 'Mary Smith', 'email' => 'mary@email.com'],
-        ['id' => 3, 'name' => 'Peter Johnson', 'email' => 'peter@email.com'],
-        ['id' => 4, 'name' => 'Sarah Williams', 'email' => 'sarah@email.com'],
-    ];
+    // Récupérer les clients (patients) pour la sélection
+    $clients = [];
+    foreach ($coachGoals as $goal) {
+        $patient = $goal->getPatient();
+        if ($patient && !isset($clients[$patient->getUuid()])) {
+            $clients[$patient->getUuid()] = [
+                'id' => $patient->getUuid(),
+                'name' => $patient->getFullName(),
+                'email' => $patient->getEmail(),
+            ];
+        }
+    }
+    $clients = array_values($clients); // Réindexer
     
-    $goals = [
-        ['id' => 1, 'title' => 'Lose 5kg'],
-        ['id' => 2, 'title' => 'Run 10km'],
-        ['id' => 3, 'title' => 'Build Muscle'],
-        ['id' => 4, 'title' => 'Improve Flexibility'],
-    ];
-    
-    // 6. Rendre le template
-    return $this->render('coach/DailyPlan/edit_plan.html.twig', [
-        'pageTitle' => 'Edit Daily Plan',
-        'dailyPlan' => $formattedPlan,
-        'clients' => $clients,
-        'goals' => $goals,
-        'exercises' => $formattedExercises,
-    ]);
-}
-#[Route('/coach/rest-day/new', name: 'coach_rest_day_new', methods: ['GET', 'POST'])]
-public function newRestDay(Request $request, EntityManagerInterface $entityManager): Response
-{
-    $dailyPlan = new DailyPlan();
-    
+    // Créer le formulaire Symfony
     $form = $this->createForm(DailyPlanType::class, $dailyPlan);
     $form->handleRequest($request);
     
     if ($form->isSubmitted() && $form->isValid()) {
-        // Récupérer les données du formulaire HTML
-        $userName = $request->request->get('selected_user');
-        $planTitle = $request->request->get('plan_title') ?? 'Rest Day';
-        $planDate = $request->request->get('plan_date');
-        $restType = $request->request->get('rest_type');
+        // Récupérer l'ID du goal depuis le champ caché
+        $goalId = $request->request->get('selected_goal');
         
-        // Définir le titre et le type
-        $dailyPlan->setTitre($planTitle);
+        // Mettre à jour le goal si sélectionné
+        if ($goalId) {
+            $goal = $goalRepository->find($goalId);
+            if ($goal && $goal->getCoachId() === $coachId) {
+                $dailyPlan->setGoal($goal);
+            }
+        } else {
+            $dailyPlan->setGoal(null);
+        }
         
-        // NE PAS ajouter d'informations automatiques aux notes
-        // Laisser uniquement les notes du formulaire
+        // Recalculer les totaux
+        $this->calculateTotals($dailyPlan);
         
-        // Définir les valeurs spécifiques pour le repos
-        $dailyPlan->setStatus('rest_day');
-        $dailyPlan->setDureeMin(0); // 0 minutes pour un jour de repos
-        $dailyPlan->setCalories(0); // Pas de calories brûlées lors du repos
-        
-        // Si des exercices ont été sélectionnés par erreur, les vider
-        $dailyPlan->getExercices()->clear();
-        
-        $entityManager->persist($dailyPlan);
         $entityManager->flush();
         
-        $this->addFlash('success', 'Rest day scheduled successfully!');
+        $this->addFlash('success', 'Daily plan updated successfully!');
         return $this->redirectToRoute('coach_daily_plans');
     }
     
-    // Pour la méthode GET, afficher le formulaire
-    return $this->render('coach/DailyPlan/restday.html.twig', [
+    return $this->render('coach/DailyPlan/edit_plan.html.twig', [
+        'pageTitle' => 'Edit Daily Plan',
         'form' => $form->createView(),
+        'dailyPlan' => $dailyPlan,
+        'coachGoals' => $formattedGoals,
+        'exercises' => $formattedExercises,
+        'clients' => $clients,
+        'planData' => $planData, // Données formatées pour Alpine.js
     ]);
 }
+    #[Route('/coach/rest-day/new', name: 'coach_rest_day_new', methods: ['GET', 'POST'])]
+    public function newRestDay(
+        Request $request, 
+        EntityManagerInterface $entityManager,
+        GoalRepository $goalRepository,
+        ExercisesRepository $exercisesRepository
+    ): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof \App\Entity\User) {
+            throw $this->createAccessDeniedException('Invalid user type');
+        }
+        $coach = $user;
+        $coachId = $coach->getUuid();
+        
+        $dailyPlan = new DailyPlan();
+        $dailyPlan->setCoach($coach);
+        $dailyPlan->setDate(new \DateTime());
+        $dailyPlan->setStatus('rest');
+        $dailyPlan->setDureeMin(0);
+        $dailyPlan->setCalories(0);
+        $dailyPlan->setTitre('Rest Day');
+        
+        $form = $this->createForm(DailyPlanType::class, $dailyPlan);
+        $form->handleRequest($request);
+        
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Récupérer l'ID du goal depuis le champ caché
+            $goalId = $request->request->get('selected_goal');
+            
+            if ($goalId) {
+                $goal = $goalRepository->find($goalId);
+                if ($goal && $goal->getCoachId() === $coachId) {
+                    $dailyPlan->setGoal($goal);
+                    // NE PAS AJOUTER LE NOM DU PATIENT AUX NOTES
+                }
+            }
+           
+            // S'assurer qu'il n'y a pas d'exercices
+            $dailyPlan->getExercices()->clear();
+            
+            $entityManager->persist($dailyPlan);
+            $entityManager->flush();
+            
+            $this->addFlash('success', 'Rest day scheduled successfully!');
+            return $this->redirectToRoute('coach_daily_plans');
+        }
+        
+        // Récupérer les goals du coach
+        $coachGoals = $goalRepository->findBy(['coachId' => $coachId]);
+        $formattedGoals = [];
+        foreach ($coachGoals as $goal) {
+            $patient = $goal->getPatient();
+            $formattedGoals[] = [
+                'id' => $goal->getId(),
+                'title' => $goal->getTitle(),
+                'patientName' => $patient ? $patient->getFullName() : 'No patient',
+                'progress' => $goal->getProgress() ?? 0,
+            ];
+        }
+        
+        // Récupérer les exercices associés au coach
+        $exercises = $exercisesRepository->findBy(['User' => $coach, 'isActive' => true], ['name' => 'ASC']);
+        
+        return $this->render('coach/DailyPlan/restday.html.twig', [
+            'form' => $form->createView(),
+            'coachGoals' => $formattedGoals,
+            'exercises' => $exercises,
+        ]);
+    }
+    #[Route('/coach/client/{clientId}/plans', name: 'coach_client_plans_api', methods: ['GET'])]
+public function getClientPlans(string $clientId, DailyPlanRepository $dailyPlanRepository): JsonResponse
+{
+    $coach = $this->getUser();
     
+    if (!$coach instanceof \App\Entity\User) {
+        return $this->json(['error' => 'Unauthorized'], 401);
+    }
+    
+    // Récupérer UNIQUEMENT les plans des goals de ce client ET de ce coach
+    $plans = $dailyPlanRepository->createQueryBuilder('dp')
+        ->leftJoin('dp.goal', 'g')
+        ->where('g.patient = :clientId')
+        ->andWhere('dp.coach = :coach')
+        ->andWhere('g.coachId = :coachId')
+        ->setParameter('clientId', $clientId)
+        ->setParameter('coach', $coach)
+        ->setParameter('coachId', $coach->getUuid())
+        ->orderBy('dp.date', 'DESC')
+        ->getQuery()
+        ->getResult();
+    
+    $formattedPlans = [];
+    foreach ($plans as $plan) {
+        $exercises = [];
+        foreach ($plan->getExercices() as $exercise) {
+            $exercises[] = [
+                'id' => $exercise->getId(),
+                'name' => $exercise->getName(),
+                'duration' => $exercise->getDuration() ?? 0,
+                'calories' => $exercise->getCalories() ?? 0,
+            ];
+        }
+        
+        $formattedPlans[] = [
+            'id' => $plan->getId(),
+            'title' => $plan->getTitre(),
+            'date' => $plan->getDate()->format('Y-m-d'),
+            'duration' => $plan->getDureeMin() ?? 0,
+            'calories' => $plan->getCalories() ?? 0,
+            'status' => $plan->getStatus() ?? 'draft',
+            'notes' => $plan->getNotes() ?? '',
+            'exercises' => $exercises,
+            'goal' => $plan->getGoal() ? [
+                'id' => $plan->getGoal()->getId(),
+                'title' => $plan->getGoal()->getTitle(),
+            ] : null,
+        ];
+    }
+    
+    return $this->json(['plans' => $formattedPlans]);
+}
 }

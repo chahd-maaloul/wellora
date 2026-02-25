@@ -37,7 +37,7 @@
                         <i class="fas fa-dumbbell"></i>
                         Exercise Library
                     </a>
-                    <button @click="savePlan()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <button type="button" @click="submitForm()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                         <i class="fas fa-save"></i>
                         Save Changes
                     </button>
@@ -59,28 +59,19 @@
                             </h2>
                         </div>
                         
-                        <form @submit.prevent="savePlan()" class="p-4 space-y-4">
+                        {{ form_start(form, {'attr': {'id': 'daily-plan-form', 'class': 'p-4 space-y-4'}}) }}
+                            
                             <!-- Plan Title -->
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <i class="mr-1 fas fa-heading"></i>Plan Title *
                                 </label>
-                                <input type="text" x-model="plan.title" required 
-                                       placeholder="E.g., Monday Morning Cardio"
-                                       class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
-                            </div>
-
-                            <!-- Client Selection -->
-                            <div>
-                                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    <i class="mr-1 fas fa-user"></i>Client
-                                </label>
-                                <select x-model="plan.clientId" class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
-                                    <option value="">No client assigned</option>
-                                    <template x-for="client in clients" :key="client.id">
-                                        <option :value="client.id" x-text="client.name + ' (' + client.email + ')'"></option>
-                                    </template>
-                                </select>
+                                {{ form_widget(form.titre, {'attr': {
+                                    'x-model': 'plan.title',
+                                    'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500',
+                                    'required': 'required',
+                                    'placeholder': 'E.g., Monday Morning Cardio'
+                                }}) }}
                             </div>
 
                             <!-- Date & Status -->
@@ -89,20 +80,20 @@
                                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         <i class="mr-1 fas fa-calendar"></i>Date *
                                     </label>
-                                    <input type="date" x-model="plan.date" required
-                                           class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                    {{ form_widget(form.date, {'attr': {
+                                        'x-model': 'plan.date',
+                                        'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500',
+                                        'required': 'required'
+                                    }}) }}
                                 </div>
                                 <div>
                                     <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         <i class="mr-1 fas fa-flag"></i>Status
                                     </label>
-                                    <select x-model="plan.status"
-                                            class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
-                                        <option value="planned">Planned</option>
-                                        <option value="in_progress">In Progress</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="cancelled">Cancelled</option>
-                                    </select>
+                                    {{ form_widget(form.status, {'attr': {
+                                        'x-model': 'plan.status',
+                                        'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500'
+                                    }}) }}
                                 </div>
                             </div>
 
@@ -111,13 +102,10 @@
                                 <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <i class="mr-1 fas fa-bullseye"></i>Associated Goal (Optional)
                                 </label>
-                                <select x-model="plan.goalId"
-                                        class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
-                                    <option value="">No goal</option>
-                                    <template x-for="goal in goals" :key="goal.id">
-                                        <option :value="goal.id" x-text="goal.title"></option>
-                                    </template>
-                                </select>
+                                {{ form_widget(form.goal, {'attr': {
+                                    'x-model': 'plan.goalId',
+                                    'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500'
+                                }}) }}
                             </div>
 
                             <!-- Notes -->
@@ -125,9 +113,12 @@
                                 <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <i class="mr-1 fas fa-sticky-note"></i>Notes & Instructions
                                 </label>
-                                <textarea x-model="plan.notes" rows="4"
-                                          placeholder="Special instructions for the client..."
-                                          class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500"></textarea>
+                                {{ form_widget(form.notes, {'attr': {
+                                    'x-model': 'plan.notes',
+                                    'rows': '4',
+                                    'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500',
+                                    'placeholder': 'Special instructions for the client...'
+                                }}) }}
                             </div>
 
                             <!-- Exercises Section -->
@@ -149,6 +140,11 @@
                                 </div>
                                 
                                 <div class="space-y-3">
+                                    <!-- Champ caché pour les exercices (sera mis à jour par JS) -->
+                                    <div style="display: none;">
+                                        {{ form_widget(form.exercices, {'attr': {'id': 'exercises-select'}}) }}
+                                    </div>
+                                    
                                     <template x-for="(exercise, index) in plan.exercises" :key="index">
                                         <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
                                             <div class="flex items-center justify-between mb-3">
@@ -235,16 +231,22 @@
                                     <div>
                                         <label class="block mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Total Duration (minutes)</label>
                                         <div class="flex items-center gap-2">
-                                            <input type="number" x-model="plan.duration" 
-                                                   class="w-32 px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            {{ form_widget(form.duree_min, {'attr': {
+                                                'x-model': 'plan.duration',
+                                                'class': 'w-32 px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white',
+                                                'readonly': 'readonly'
+                                            }}) }}
                                             <span class="text-sm text-gray-600 dark:text-gray-400">min</span>
                                         </div>
                                     </div>
                                     <div>
                                         <label class="block mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Total Calories</label>
                                         <div class="flex items-center gap-2">
-                                            <input type="number" x-model="plan.calories"
-                                                   class="w-32 px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            {{ form_widget(form.calories, {'attr': {
+                                                'x-model': 'plan.calories',
+                                                'class': 'w-32 px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white',
+                                                'readonly': 'readonly'
+                                            }}) }}
                                             <span class="text-sm text-gray-600 dark:text-gray-400">cal</span>
                                         </div>
                                     </div>
@@ -254,6 +256,9 @@
                                     Totals are automatically calculated based on selected exercises
                                 </p>
                             </div>
+
+                            <!-- Champ caché pour selected_goal -->
+                            <input type="hidden" name="selected_goal" id="selected-goal" x-model="plan.goalId">
 
                             <!-- Actions -->
                             <div class="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -265,7 +270,7 @@
                                     Save Changes
                                 </button>
                             </div>
-                        </form>
+                        {{ form_end(form) }}
                     </div>
                 </div>
 
@@ -283,10 +288,6 @@
                             <div>
                                 <h3 class="mb-2 font-semibold text-gray-900 dark:text-white" x-text="plan.title || 'Untitled Plan'"></h3>
                                 <div class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-gray-500 dark:text-gray-400">Client</span>
-                                        <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="getClientName(plan.clientId) || 'No client'"></span>
-                                    </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm text-gray-500 dark:text-gray-400">Date</span>
                                         <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="formatDate(plan.date)"></span>
@@ -346,7 +347,7 @@
                             </h2>
                         </div>
                         <div class="p-4 space-y-2">
-                            <button @click="calculateTotals()" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <button type="button" @click="calculateTotals()" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                                     <i class="fas fa-calculator text-blue-500"></i>
                                 </div>
@@ -355,7 +356,7 @@
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Auto-calculate duration & calories</p>
                                 </div>
                             </button>
-                            <button @click="duplicatePlan()" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <button type="button" @click="duplicatePlan()" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30">
                                     <i class="fas fa-copy text-green-500"></i>
                                 </div>
@@ -385,10 +386,16 @@
 function dailyPlanEditor() {
     return {
         // Data from Symfony
-        plan: {{ dailyPlan|default({})|json_encode|raw }},
-        clients: {{ clients|default([])|json_encode|raw }},
-        goals: {{ goals|default([])|json_encode|raw }},
-        availableExercises: {{ exercises|default([])|json_encode|raw }},
+        plan: {{ planData|json_encode|raw }},
+        clients: {{ clients|json_encode|raw }},
+        goals: {{ coachGoals|json_encode|raw }},
+        availableExercises: {{ exercises|json_encode|raw }},
+        
+        init() {
+            // Initialiser les données
+            console.log('Plan data loaded:', this.plan);
+            console.log('Exercises available:', this.availableExercises.length);
+        },
         
         // Helper methods
         getClientName(clientId) {
@@ -415,7 +422,10 @@ function dailyPlanEditor() {
                 planned: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                 in_progress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
                 completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                rest: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                draft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
             };
             return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
         },
@@ -425,20 +435,27 @@ function dailyPlanEditor() {
                 planned: 'Planned',
                 in_progress: 'In Progress',
                 completed: 'Completed',
-                cancelled: 'Cancelled'
+                cancelled: 'Cancelled',
+                active: 'Active',
+                rest: 'Rest Day',
+                draft: 'Draft'
             };
             return texts[status] || status;
         },
         
         formatDate(dateStr) {
             if (!dateStr) return 'No date';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric',
-                year: 'numeric'
-            });
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return dateStr;
+            }
         },
         
         // Actions
@@ -449,6 +466,7 @@ function dailyPlanEditor() {
         removeExercise(index) {
             this.plan.exercises.splice(index, 1);
             this.calculateTotals();
+            this.updateExercisesSelect();
         },
         
         calculateTotals() {
@@ -461,7 +479,7 @@ function dailyPlanEditor() {
                     // Durée
                     totalDuration += exInfo.duration || 0;
                     
-                    // Calories (simplifié)
+                    // Calories
                     const caloriesPerMinute = exInfo.calories || 0;
                     if (exercise.sets && exercise.reps) {
                         // Pour exercices avec sets/reps
@@ -476,89 +494,43 @@ function dailyPlanEditor() {
             
             this.plan.duration = totalDuration;
             this.plan.calories = Math.round(totalCalories);
+            
+            this.updateExercisesSelect();
+        },
+        
+        updateExercisesSelect() {
+            // Mettre à jour le select Symfony avec les exercices sélectionnés
+            const select = document.getElementById('exercises-select');
+            if (select) {
+                Array.from(select.options).forEach(option => {
+                    option.selected = this.plan.exercises.some(e => e.id == option.value);
+                });
+            }
         },
         
         duplicatePlan() {
             if (confirm('Create a copy of this plan?')) {
-                // Réinitialiser l'ID pour créer une copie
-                const planCopy = JSON.parse(JSON.stringify(this.plan));
-                planCopy.id = null;
-                planCopy.title = planCopy.title + ' (Copy)';
+                // Rediriger vers la page de création avec les données
+                const params = new URLSearchParams();
+                params.append('title', this.plan.title + ' (Copy)');
+                params.append('date', this.plan.date);
+                params.append('status', this.plan.status);
+                params.append('notes', this.plan.notes);
                 
-                // Rediriger vers la création avec les données pré-remplies
-                // Vous pouvez adapter cette logique selon votre besoin
-                console.log('Plan to duplicate:', planCopy);
-                alert('Duplication feature would create a new plan with these settings.');
+                window.location.href = '/coach/daily-plan/new?' + params.toString();
             }
         },
         
-        async savePlan() {
-    try {
-        // Validation
-        if (!this.plan.title || !this.plan.date) {
-            alert('Please fill in required fields: Title and Date');
-            return;
-        }
-        
-        // Recalculer les totaux
-        this.calculateTotals();
-        
-        // Créer un FormData (plus compatible avec Symfony)
-        const formData = new FormData();
-        
-        // Ajouter les champs
-        formData.append('title', this.plan.title || '');
-        formData.append('date', this.plan.date || '');
-        formData.append('status', this.plan.status || 'planned');
-        formData.append('notes', this.plan.notes || '');
-        formData.append('duration', this.plan.duration || 0);
-        formData.append('calories', this.plan.calories || 0);
-        formData.append('clientId', this.plan.clientId || '');
-        formData.append('goalId', this.plan.goalId || '');
-        
-        // Ajouter les exercices comme JSON
-        const exercisesData = this.plan.exercises.map(ex => ({
-            id: ex.id,
-            sets: ex.sets || '',
-            reps: ex.reps || ''
-        }));
-        formData.append('exercises', JSON.stringify(exercisesData));
-        
-        console.log('Saving plan ID:', this.plan.id);
-        
-        // Envoyer les données
-        const response = await fetch('/coach/daily-plans/' + this.plan.id + '/edit', {
-            method: 'POST',
-            body: formData
-            // Note: Pas besoin de Content-Type avec FormData
-        });
-        
-        // Vérifier la réponse
-        if (response.redirected) {
-            // Redirection vers la liste (succès)
-            window.location.href = response.url;
-        } else if (response.ok) {
-            // Lire la réponse
-            const text = await response.text();
+        submitForm() {
+            // Mettre à jour le select des exercices avant soumission
+            this.updateExercisesSelect();
             
-            // Vérifier si c'est une redirection
-            if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-                // C'est une page HTML (probablement une redirection)
-                window.location.href = '/coach/daily-plans';
-            } else {
-                // Sinon considérer comme succès
-                alert('Plan saved successfully!');
-                window.location.href = '/coach/daily-plans';
-            }
-        } else {
-            alert('Error saving plan. Status: ' + response.status);
+            // Mettre à jour le champ selected_goal
+            document.getElementById('selected-goal').value = this.plan.goalId || '';
+            
+            // Soumettre le formulaire
+            document.getElementById('daily-plan-form').submit();
         }
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error saving plan. Please try again.');
-    }
-}
     };
 }
 </script>

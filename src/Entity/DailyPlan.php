@@ -23,8 +23,7 @@ class DailyPlan
     private ?\DateTime $date = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Status is required")]
-    #[Assert\Choice(['Planned', 'Completed', 'Missed'])]
+    
     private ?string $status = null;
 
     #[ORM\Column(length: 255)]
@@ -44,8 +43,9 @@ class DailyPlan
     #[Assert\PositiveOrZero(message: "Duration in minutes must be zero or positive")]
     private ?int $duree_min = null;
 
+    
     #[ORM\ManyToOne(inversedBy: 'dailyplan')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Goal $goal = null;
 
     /**
@@ -54,6 +54,10 @@ class DailyPlan
     #[ORM\ManyToMany(targetEntity: Exercises::class, inversedBy: 'dailyPlans')]
     #[ORM\JoinTable(name: 'daily_plan_exercises')]
     private Collection $exercices;
+
+    #[ORM\ManyToOne(inversedBy: 'dailyPlans')]
+    #[ORM\JoinColumn(referencedColumnName: 'uuid')]
+    private ?User $coach = null;
     
 
     public function __construct()
@@ -170,6 +174,18 @@ class DailyPlan
     public function removeExercice(Exercises $exercice): static
     {
         $this->exercices->removeElement($exercice);
+
+        return $this;
+    }
+
+    public function getCoach(): ?User
+    {
+        return $this->coach;
+    }
+
+    public function setCoach(?User $coach): static
+    {
+        $this->coach = $coach;
 
         return $this;
     }
