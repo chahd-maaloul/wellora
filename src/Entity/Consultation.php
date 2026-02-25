@@ -110,21 +110,31 @@ class Consultation
     /**
      * @var Collection<int, Ordonnance>
      */
-    #[ORM\OneToMany(targetEntity: Ordonnance::class, mappedBy: 'id_consultation', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Ordonnance::class, mappedBy: 'consultation', cascade: ['persist', 'remove'])]
     #[Assert\Valid(groups: ['clinical_note'])]
-    private Collection $genere;
+    private Collection $ordonnances;
 
     /**
      * @var Collection<int, Examens>
      */
-    #[ORM\OneToMany(targetEntity: Examens::class, mappedBy: 'id_consultation', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Examens::class, mappedBy: 'consultation', cascade: ['persist', 'remove'])]
     #[Assert\Valid(groups: ['clinical_note'])]
-    private Collection $prescrit;
+    private Collection $examens;
+
+    // RELATIONSHIP WITH USER (Doctor who performed the consultation)
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'consultations')]
+    #[ORM\JoinColumn(name: 'medecin_id', referencedColumnName: 'uuid')]
+    private ?User $medecin = null;
+
+    // RELATIONSHIP WITH PATIENT
+    #[ORM\ManyToOne(targetEntity: Patient::class)]
+    #[ORM\JoinColumn(name: 'patient_id', referencedColumnName: 'uuid')]
+    private ?Patient $patient = null;
 
     public function __construct()
     {
-        $this->genere = new ArrayCollection();
-        $this->prescrit = new ArrayCollection();
+        $this->ordonnances = new ArrayCollection();
+        $this->examens = new ArrayCollection();
         $this->created_at = new \DateTime();
         $this->updated_at = new \DateTime();
         $this->diagnoses = [];
@@ -240,10 +250,10 @@ class Consultation
 
     private function validateMedications(ExecutionContextInterface $context): void
     {
-        $medications = $this->genere;
+        $medications = $this->ordonnances;
         if ($medications->count() > 10) {
             $context->buildViolation('Maximum 10 medicaments par ordonnance.')
-                ->atPath('genere')
+                ->atPath('ordonnances')
                 ->addViolation();
         }
 
@@ -265,7 +275,7 @@ class Consultation
             $key = $normalizedName . '|' . $normalizedDosage;
             if (isset($seen[$key])) {
                 $context->buildViolation('Pas de doublons exacts pour les medicaments (nom + dosage).')
-                    ->atPath('genere[' . $index . ']')
+                    ->atPath('ordonnances[' . $index . ']')
                     ->addViolation();
             }
             $seen[$key] = true;
@@ -564,28 +574,28 @@ class Consultation
     }
 
     /**
-     * @return Collection<int, ordonnance>
+     * @return Collection<int, Ordonnance>
      */
-    public function getGenere(): Collection
+    public function getOrdonnances(): Collection
     {
-        return $this->genere;
+        return $this->ordonnances;
     }
 
-    public function addGenere(ordonnance $genere): static
+    public function addOrdonnance(Ordonnance $ordonnance): static
     {
-        if (!$this->genere->contains($genere)) {
-            $this->genere->add($genere);
-            $genere->setIdConsultation($this);
+        if (!$this->ordonnances->contains($ordonnance)) {
+            $this->ordonnances->add($ordonnance);
+            $ordonnance->setConsultation($this);
         }
 
         return $this;
     }
 
-    public function removeGenere(Ordonnance $genere): static
+    public function removeOrdonnance(Ordonnance $ordonnance): static
     {
-        if ($this->genere->removeElement($genere)) {
-            if ($genere->getIdConsultation() === $this) {
-                $genere->setIdConsultation(null);
+        if ($this->ordonnances->removeElement($ordonnance)) {
+            if ($ordonnance->getConsultation() === $this) {
+                $ordonnance->setConsultation(null);
             }
         }
 
@@ -595,29 +605,69 @@ class Consultation
     /**
      * @return Collection<int, Examens>
      */
-    public function getPrescrit(): Collection
+    public function getExamens(): Collection
     {
-        return $this->prescrit;
+        return $this->examens;
     }
 
-    public function addPrescrit(Examens $prescrit): static
+    public function addExamen(Examens $examen): static
     {
-        if (!$this->prescrit->contains($prescrit)) {
-            $this->prescrit->add($prescrit);
-            $prescrit->setIdConsultation($this);
+        if (!$this->examens->contains($examen)) {
+            $this->examens->add($examen);
+            $examen->setConsultation($this);
         }
 
         return $this;
     }
 
-    public function removePrescrit(examens $prescrit): static
+    public function removeExamen(Examens $examen): static
     {
-        if ($this->prescrit->removeElement($prescrit)) {
-            if ($prescrit->getIdConsultation() === $this) {
-                $prescrit->setIdConsultation(null);
+        if ($this->examens->removeElement($examen)) {
+            if ($examen->getConsultation() === $this) {
+                $examen->setConsultation(null);
             }
         }
 
         return $this;
+    }
+
+    // USER RELATIONSHIP GETTERS AND SETTERS
+    public function getMedecin(): ?User
+    {
+        return $this->medecin;
+    }
+
+    public function setMedecin(?User $medecin): static
+    {
+        $this->medecin = $medecin;
+        return $this;
+    }
+
+    public function getPatient(): ?Patient
+    {
+        return $this->patient;
+    }
+
+    public function setPatient(?Patient $patient): static
+    {
+        $this->patient = $patient;
+        return $this;
+    }
+
+    // BACKWARD COMPATIBILITY ALIASES
+    /**
+     * @deprecated Use getOrdonnances() instead
+     */
+    public function getGenere(): Collection
+    {
+        return $this->ordonnances;
+    }
+
+    /**
+     * @deprecated Use getExamens() instead
+     */
+    public function getPrescrit(): Collection
+    {
+        return $this->examens;
     }
 }

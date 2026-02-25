@@ -7,6 +7,12 @@ use App\Entity\Ordonnance;
 use App\Entity\Examens;
 use App\Entity\Patient;
 use App\Entity\Consultation;
+use App\Entity\User;
+use App\Entity\DoctorAvailability;
+use App\Entity\DoctorLocation;
+use App\Entity\DoctorLeave;
+use App\Entity\DoctorSubstitution;
+use App\Entity\Medecin;
 use App\Form\SoapType;
 use App\Form\OrdonnanceType;
 use App\Form\ExamenType;
@@ -69,8 +75,8 @@ class DoctorController extends AbstractController
 
      * Doctor Dashboard - Main entry point for physicians
      */
-    #[Route('/dashboard', name: 'doctor_dashboard')]
-    public function dashboard1(): Response
+    /*#[Route('/dashboard', name: 'doctor_dashboard')]
+    public function dashboard(): Response
     {
         $stats = [
             'totalPatients' => 156,
@@ -133,12 +139,17 @@ class DoctorController extends AbstractController
 
     /**
      * Patient List - Affiche la liste des patients du médecin
+     * Seulement les patients avec rendez-vous acceptés
      */
     #[Route('/patients', name: 'doctor_patients', methods: ['GET'])]
     public function patientList(): Response
     {
+        // Récupérer le médecin actuellement connecté
+        $user = $this->getUser();
+        
+        // Récupérer uniquement les consultations acceptées pour ce médecin
         $consultations = $this->em->getRepository(Consultation::class)
-            ->searchForPatientList('', '', '', '', '', 'lastVisit', 'DESC', 1, 100);
+            ->findAcceptedByMedecin($user->getUuid());
 
         $consultationsArray = [];
         foreach ($consultations as $consultation) {
@@ -155,13 +166,16 @@ class DoctorController extends AbstractController
      *******************************************************************/
 
     /**
-     * Get Consultations - R??cup??re la liste des consultations (AJAX)
-     * NOTE: Version temporaire sans entit?? Patient - ?? mettre ?? jour quand Patient sera pr??t
+     * Get Consultations - Récupère la liste des consultations acceptées (AJAX)
+     * Filtre par médecin connecté
      */
     #[Route('/api/consultations', name: 'doctor_get_consultations', methods: ['GET'])]
     public function getConsultations(Request $request): JsonResponse
     {
         try {
+            // Récupérer le médecin actuellement connecté
+            $user = $this->getUser();
+            
             $search = $request->query->get('search', '');
             $status = $request->query->get('status', '');
             $condition = $request->query->get('condition', '');
@@ -173,17 +187,9 @@ class DoctorController extends AbstractController
             $limit = (int) $request->query->get('limit', 100);
 
             $consultationRepository = $this->em->getRepository(Consultation::class);
-            $consultations = $consultationRepository->searchForPatientList(
-                $search,
-                $status,
-                $condition,
-                $dateFrom,
-                $dateTo,
-                $sortBy,
-                $sortDir,
-                $page,
-                $limit
-            );
+            
+            // Récupérer uniquement les consultations acceptées pour ce médecin
+            $consultations = $consultationRepository->findAcceptedByMedecin($user->getUuid());
 
             $consultationsArray = [];
             foreach ($consultations as $consultation) {
@@ -203,7 +209,7 @@ class DoctorController extends AbstractController
 
             return $this->json([
                 'error' => true,
-                'message' => 'Erreur lors de la r??cup??ration des consultations',
+                'message' => 'Erreur lors de la récupération des consultations',
                 'details' => $e->getMessage(),
             ], 500);
         }
@@ -257,16 +263,47 @@ class DoctorController extends AbstractController
 
     private function formatConsultationForList(Consultation $consultation): array
     {
-        // TODO: Remplacer par les vraies donnÃ©es patient quand l'entitÃ© sera prÃªte
-        $patientName = 'Consultation ' . $consultation->getId();
-        $age = 35;
+        // Récupérer les données du patient depuis la relation
+        $patient = $consultation->getPatient();
+        
+        // Utiliser les vraies données patient si disponibles
+        if ($patient) {
+            $patientName = trim(($patient->getFirstName() ?? '') . ' ' . ($patient->getLastName() ?? ''));
+            if (empty($patientName) || $patientName === ' ') {
+                $patientName = 'Patient #' . substr($patient->getUuid() ?? '', 0, 8);
+            }
+            
+            $age = null;
+            if ($patient->getBirthdate()) {
+                $age = $patient->getBirthdate()->diff(new \DateTime())->y;
+            }
+            
+            $gender = 'M'; // Default
+            // Note: si vous avez un champ gender dans Patient, décommentez:
+            // $gender = $patient->getGender() ?? 'M';
+            
+            $avatar = $patient->getAvatarUrl();
+            if (empty($avatar)) {
+                $avatar = 'https://ui-avatars.com/api/?name=' . urlencode($patientName) . '&background=00A790&color=fff';
+            }
+            
+            $email = $patient->getEmail() ?? '';
+            $phone = $patient->getPhone() ?? '';
+        } else {
+            $patientName = 'Consultation ' . $consultation->getId();
+            $age = 35;
+            $gender = 'M';
+            $avatar = '/images/avatars/default.png';
+            $email = '';
+            $phone = '';
+        }
 
         $consultStatus = 'stable';
         $assessment = strtolower($consultation->getAssessment() ?? '');
 
         if (strpos($assessment, 'critique') !== false || strpos($assessment, 'urgent') !== false) {
             $consultStatus = 'critical';
-        } elseif (strpos($assessment, 'suivi') !== false || strpos($assessment, 'contrÃ´le') !== false) {
+        } elseif (strpos($assessment, 'suivi') !== false || strpos($assessment, 'contrôle') !== false) {
             $consultStatus = 'follow-up';
         } elseif ($consultation->getStatus() === 'completed') {
             $consultStatus = 'active';
@@ -293,13 +330,13 @@ class DoctorController extends AbstractController
         return [
             'id' => $consultation->getId(),
             'consultationId' => $consultation->getId(),
-            'patientId' => $consultation->getId(), // TODO: Utiliser le vrai ID patient
-            'name' => $patientName, // TODO: Utiliser le vrai nom du patient
-            'email' => '', // TODO: Utiliser le vrai email
-            'phone' => '', // TODO: Utiliser le vrai tÃ©lÃ©phone
-            'age' => $age, // TODO: Calculer le vrai Ã¢ge
-            'gender' => 'M', // TODO: Utiliser le vrai sexe
-            'avatar' => '/images/avatars/default.png',
+            'patientId' => $patient ? $patient->getUuid() : $consultation->getId(),
+            'name' => $patientName,
+            'email' => $email,
+            'phone' => $phone,
+            'age' => $age,
+            'gender' => $gender,
+            'avatar' => $avatar,
             'fileNumber' => 'CONS-' . str_pad($consultation->getId(), 4, '0', STR_PAD_LEFT),
             'status' => $consultStatus,
             'healthScore' => $healthScore,
@@ -422,7 +459,7 @@ class DoctorController extends AbstractController
         }
 
         $ordonnances = $this->em->getRepository(Ordonnance::class)->createQueryBuilder('o')
-            ->join('o.id_consultation', 'c')
+            ->join('o.consultation', 'c')
             ->orderBy('o.date_ordonnance', 'DESC')
             ->setMaxResults(10)
             ->getQuery()
@@ -652,19 +689,32 @@ class DoctorController extends AbstractController
         $patient = null;
         $currentNoteData = null;
         $consultation = null;
+        $patientData = null;
 
         if ($consultationId) {
             $consultation = $this->em->getRepository(Consultation::class)->find($consultationId);
             
             if (!$consultation) {
                 $this->addFlash('error', 'Consultation non trouvée');
-                return $this->redirectToRoute('doctor_patients');
+                return $this->redirectToRoute('doctor_clinical_notes');
             }
             
-            if (method_exists($consultation, 'getIdPatient')) {
-                $patient = $consultation->getIdPatient();
-            } else {
-                $patient = null;
+            // Récupérer le patient depuis la relation
+            $patient = $consultation->getPatient();
+            
+            // Préparer les données du patient pour le template
+            if ($patient) {
+                $patientData = [
+                    'id' => $patient->getUuid(),
+                    'name' => trim(($patient->getFirstName() ?? '') . ' ' . ($patient->getLastName() ?? '')),
+                    'firstName' => $patient->getFirstName(),
+                    'lastName' => $patient->getLastName(),
+                    'email' => $patient->getEmail(),
+                    'phone' => $patient->getPhone(),
+                    'age' => $patient->getBirthdate() ? $patient->getBirthdate()->diff(new \DateTime())->y : null,
+                    'gender' => 'M', // Default, à adapter si vous avez un champ gender
+                    'avatar' => $patient->getAvatarUrl() ?? 'https://ui-avatars.com/api/?name=' . urlencode(trim(($patient->getFirstName() ?? '') . ' ' . ($patient->getLastName() ?? ''))) . '&background=00A790&color=fff',
+                ];
             }
             
             $currentNoteData = [
@@ -681,67 +731,118 @@ class DoctorController extends AbstractController
                 'medications' => $this->getMedicationsArray($consultation),
                 'labTests' => $this->getExamsArray($consultation)
             ];
-        } 
-        elseif ($patientId) {
+        } elseif ($patientId) {
             $patient = $this->em->getRepository(Patient::class)->find($patientId);
             
             if (!$patient) {
                 $this->addFlash('error', 'Patient non trouvé');
-                return $this->redirectToRoute('doctor_patients');
+                return $this->redirectToRoute('doctor_clinical_notes');
             }
-        }
-        else {
-            $this->addFlash('error', 'Veuillez sélectionner un patient ou une consultation');
-            return $this->redirectToRoute('doctor_patients');
+            
+            // Préparer les données du patient pour le template
+            $patientData = [
+                'id' => $patient->getUuid(),
+                'name' => trim(($patient->getFirstName() ?? '') . ' ' . ($patient->getLastName() ?? '')),
+                'firstName' => $patient->getFirstName(),
+                'lastName' => $patient->getLastName(),
+                'email' => $patient->getEmail(),
+                'phone' => $patient->getPhone(),
+                'age' => $patient->getBirthdate() ? $patient->getBirthdate()->diff(new \DateTime())->y : null,
+                'gender' => 'M',
+                'avatar' => $patient->getAvatarUrl() ?? 'https://ui-avatars.com/api/?name=' . urlencode(trim(($patient->getFirstName() ?? '') . ' ' . ($patient->getLastName() ?? ''))) . '&background=00A790&color=fff',
+            ];
         }
 
         $history = [];
         if ($patient) {
             $history = $this->em->getRepository(Consultation::class)->findBy(
-                ['id_patient' => $patient],
+                ['patient' => $patient],
                 ['date_consultation' => 'DESC']
             );
         } elseif ($consultation) {
             $history = [$consultation];
         }
         
-        $historyData = [];
-        foreach ($history as $item) {
-            $vitals = $item->getVitals();
-            $vitals = is_array($vitals) ? $vitals : [];
+        // If no specific patient or consultation, show recent consultations
+        if (empty($history) && !$patient && !$consultation) {
+            $recentConsultations = $this->em->getRepository(Consultation::class)->findBy(
+                [],
+                ['date_consultation' => 'DESC'],
+                20
+            );
             
-            $historyData[] = [
-                'id' => $item->getId(),
-                'date' => $item->getDateConsultation() ? $item->getDateConsultation()->format('d/m/Y') : '',
-                'title' => 'Note SOAP',
-                'summary' => $item->getReasonForVisit() ?? '',
-                'data' => [
-                    'consultation' => [
-                        'chiefComplaint' => $item->getReasonForVisit() ?? '',
-                        'subjective' => $item->getSubjective() ?? '',
-                        'objective' => $item->getObjective() ?? '',
-                        'assessment' => $item->getAssessment() ?? '',
-                        'plan' => $item->getPlan() ?? '',
-                        'vitals' => [
-                            'bloodPressure' => [
-                                'systolic' => $vitals['bloodPressure']['systolic'] ?? $vitals['bloodPressureSystolic'] ?? '',
-                                'diastolic' => $vitals['bloodPressure']['diastolic'] ?? $vitals['bloodPressureDiastolic'] ?? '',
+            // Format recent consultations for display
+            $historyData = array_map(function($c) {
+                $vitals = $c->getVitals() ?: [];
+                return [
+                    'id' => $c->getId(),
+                    'date' => $c->getDateConsultation() ? $c->getDateConsultation()->format('d/m/Y') : '',
+                    'title' => 'Note SOAP',
+                    'summary' => $c->getReasonForVisit() ?? 'Pas de motif',
+                    'data' => [
+                        'consultation' => [
+                            'chiefComplaint' => $c->getReasonForVisit() ?? '',
+                            'subjective' => $c->getSubjective() ?? '',
+                            'objective' => $c->getObjective() ?? '',
+                            'assessment' => $c->getAssessment() ?? '',
+                            'plan' => $c->getPlan() ?? '',
+                            'vitals' => [
+                                'bloodPressure' => [
+                                    'systolic' => $vitals['bloodPressure']['systolic'] ?? $vitals['bloodPressureSystolic'] ?? '',
+                                    'diastolic' => $vitals['bloodPressure']['diastolic'] ?? $vitals['bloodPressureDiastolic'] ?? '',
+                                ],
+                                'pulse' => $vitals['pulse'] ?? $vitals['heartRate'] ?? '',
+                                'temperature' => $vitals['temperature'] ?? '',
+                                'spo2' => $vitals['spo2'] ?? $vitals['oxygenSaturation'] ?? '',
                             ],
-                            'pulse' => $vitals['pulse'] ?? $vitals['heartRate'] ?? '',
-                            'temperature' => $vitals['temperature'] ?? '',
-                            'spo2' => $vitals['spo2'] ?? $vitals['oxygenSaturation'] ?? '',
                         ],
+                        'diagnoses' => $c->getDiagnoses() ?? [],
+                        'medications' => $this->getMedicationsArray($c),
+                        'labTests' => $this->getExamsArray($c),
+                        'followUp' => $c->getFollowUp() ?? [],
                     ],
-                    'diagnoses' => $item->getDiagnoses() ?? [],
-                    'medications' => $this->getMedicationsArray($item),
-                    'labTests' => $this->getExamsArray($item),
-                    'followUp' => $item->getFollowUp() ?? [],
-                ],
-            ];
+                ];
+            }, $recentConsultations);
+        } else {
+            $historyData = [];
+            foreach ($history as $item) {
+                $vitals = $item->getVitals();
+                $vitals = is_array($vitals) ? $vitals : [];
+                
+                $historyData[] = [
+                    'id' => $item->getId(),
+                    'date' => $item->getDateConsultation() ? $item->getDateConsultation()->format('d/m/Y') : '',
+                    'title' => 'Note SOAP',
+                    'summary' => $item->getReasonForVisit() ?? '',
+                    'data' => [
+                        'consultation' => [
+                            'chiefComplaint' => $item->getReasonForVisit() ?? '',
+                            'subjective' => $item->getSubjective() ?? '',
+                            'objective' => $item->getObjective() ?? '',
+                            'assessment' => $item->getAssessment() ?? '',
+                            'plan' => $item->getPlan() ?? '',
+                            'vitals' => [
+                                'bloodPressure' => [
+                                    'systolic' => $vitals['bloodPressure']['systolic'] ?? $vitals['bloodPressureSystolic'] ?? '',
+                                    'diastolic' => $vitals['bloodPressure']['diastolic'] ?? $vitals['bloodPressureDiastolic'] ?? '',
+                                ],
+                                'pulse' => $vitals['pulse'] ?? $vitals['heartRate'] ?? '',
+                                'temperature' => $vitals['temperature'] ?? '',
+                                'spo2' => $vitals['spo2'] ?? $vitals['oxygenSaturation'] ?? '',
+                            ],
+                        ],
+                        'diagnoses' => $item->getDiagnoses() ?? [],
+                        'medications' => $this->getMedicationsArray($item),
+                        'labTests' => $this->getExamsArray($item),
+                        'followUp' => $item->getFollowUp() ?? [],
+                    ],
+                ];
+            }
         }
 
         return $this->render('doctor/clinical-notes.html.twig', [
             'patient' => $patient,
+            'patientData' => $patientData,
             'history' => $history,
             'historyData' => $historyData,
             'currentNoteData' => $currentNoteData,
@@ -754,7 +855,7 @@ class DoctorController extends AbstractController
      */
     private function getMedicationsArray(Consultation $consultation): array
     {
-        $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+        $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['consultation' => $consultation]);
         $medications = [];
         
         foreach ($ordonnances as $ord) {
@@ -776,7 +877,7 @@ class DoctorController extends AbstractController
      */
     private function getExamsArray(Consultation $consultation): array
     {
-        $examens = $this->em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+        $examens = $this->em->getRepository(Examens::class)->findBy(['consultation' => $consultation]);
         $exams = [];
         
         foreach ($examens as $exam) {
@@ -811,6 +912,12 @@ class DoctorController extends AbstractController
             $consultation = new Consultation();
             $consultationData = $data['consultation'];
             
+            // Set the current user as the doctor
+            $currentUser = $this->getUser();
+            if ($currentUser instanceof User) {
+                $consultation->setMedecin($currentUser);
+            }
+            
             if (empty($consultationData['chiefComplaint'])) {
                 return new JsonResponse([
                     'success' => false,
@@ -823,6 +930,14 @@ class DoctorController extends AbstractController
             $consultation->setObjective($consultationData['objective'] ?? '');
             $consultation->setAssessment($consultationData['assessment'] ?? '');
             $consultation->setPlan($consultationData['plan'] ?? '');
+            
+            // Set the patient if patientId is provided
+            if (!empty($data['patientId'])) {
+                $patient = $this->em->getRepository(Patient::class)->findOneBy(['uuid' => $data['patientId']]);
+                if ($patient) {
+                    $consultation->setPatient($patient);
+                }
+            }
             
             if (isset($consultationData['vitals']) && is_array($consultationData['vitals'])) {
                 $consultation->setVitals($consultationData['vitals']);
@@ -850,7 +965,7 @@ class DoctorController extends AbstractController
             if (isset($data['medications']) && is_array($data['medications'])) {
                 foreach ($data['medications'] as $medData) {
                     $ordonnance = new Ordonnance();
-                    $ordonnance->setIdConsultation($consultation);
+                    $ordonnance->setConsultation($consultation);
                     $ordonnance->setMedicament($medData['name'] ?? 'Médicament');
                     $ordonnance->setDosage($medData['dosage'] ?? '');
                     $ordonnance->setForme($medData['form'] ?? 'comprimé');
@@ -860,6 +975,11 @@ class DoctorController extends AbstractController
                     $ordonnance->setDiagnosisCode($medData['diagnosisCode'] ?? $medData['associatedDiagnosis'] ?? '');
                     $ordonnance->setDateOrdonnance(new \DateTime());
                     
+                    // Set the current user as the prescriber
+                    if ($currentUser instanceof User) {
+                        $ordonnance->setPrescribedBy($currentUser);
+                    }
+                    
                     $this->em->persist($ordonnance);
                 }
             }
@@ -867,13 +987,18 @@ class DoctorController extends AbstractController
             if (isset($data['labTests']) && is_array($data['labTests'])) {
                 foreach ($data['labTests'] as $examData) {
                     $examen = new Examens();
-                    $examen->setIdConsultation($consultation);
+                    $examen->setConsultation($consultation);
                     $examen->setTypeExamen($examData['type'] ?? 'laboratoire');
                     $examen->setNomExamen($examData['name'] ?? 'Examen');
                     $examen->setDateExamen(new \DateTime());
                     $examen->setResultat($examData['result'] ?? '');
                     $examen->setStatus($examData['status'] ?? 'prescrit');
                     $examen->setNotes($examData['notes'] ?? '');
+                    
+                    // Set the current user as the prescriber
+                    if ($currentUser instanceof User) {
+                        $examen->setPrescribedBy($currentUser);
+                    }
                     
                     $this->em->persist($examen);
                 }
@@ -995,41 +1120,51 @@ class DoctorController extends AbstractController
             }
 
             if (array_key_exists('medications', $data) && is_array($data['medications']) && count($data['medications']) > 0) {
-                $existingOrdonnances = $this->em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+                $existingOrdonnances = $this->em->getRepository(Ordonnance::class)->findBy(['consultation' => $consultation]);
                 foreach ($existingOrdonnances as $ordonnance) {
                     $this->em->remove($ordonnance);
                 }
                 foreach ($data['medications'] as $medData) {
                     $ordonnance = new Ordonnance();
-                    $ordonnance->setIdConsultation($consultation);
-                    $ordonnance->setMedicament($medData['name'] ?? 'M??dicament');
+                    $ordonnance->setConsultation($consultation);
+                    $ordonnance->setMedicament($medData['name'] ?? 'Médicament');
                     $ordonnance->setDosage($medData['dosage'] ?? '');
-                    $ordonnance->setForme($medData['form'] ?? 'comprim??');
+                    $ordonnance->setForme($medData['form'] ?? 'comprimé');
                     $ordonnance->setFrequency($medData['frequency'] ?? '1x/jour');
                     $ordonnance->setDureeTraitement($medData['duration'] ?? '7 jours');
                     $ordonnance->setInstructions($medData['instructions'] ?? '');
                     $ordonnance->setDiagnosisCode($medData['diagnosisCode'] ?? $medData['associatedDiagnosis'] ?? '');
                     $ordonnance->setDateOrdonnance(new \DateTime());
-
+                    
+                    // Set the current user as the prescriber
+                    if ($this->getUser() instanceof User) {
+                        $ordonnance->setPrescribedBy($this->getUser());
+                    }
+                    
                     $this->em->persist($ordonnance);
                 }
             }
 
             if (array_key_exists('labTests', $data) && is_array($data['labTests']) && count($data['labTests']) > 0) {
-                $existingExams = $this->em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+                $existingExams = $this->em->getRepository(Examens::class)->findBy(['consultation' => $consultation]);
                 foreach ($existingExams as $examen) {
                     $this->em->remove($examen);
                 }
                 foreach ($data['labTests'] as $examData) {
                     $examen = new Examens();
-                    $examen->setIdConsultation($consultation);
+                    $examen->setConsultation($consultation);
                     $examen->setTypeExamen($examData['type'] ?? 'laboratoire');
                     $examen->setNomExamen($examData['name'] ?? 'Examen');
                     $examen->setDateExamen(new \DateTime());
                     $examen->setResultat($examData['result'] ?? '');
                     $examen->setStatus($examData['status'] ?? 'prescrit');
                     $examen->setNotes($examData['notes'] ?? '');
-
+                    
+                    // Set the current user as the prescriber
+                    if ($this->getUser() instanceof User) {
+                        $examen->setPrescribedBy($this->getUser());
+                    }
+                    
                     $this->em->persist($examen);
                 }
             }
@@ -1063,12 +1198,12 @@ class DoctorController extends AbstractController
                 return new JsonResponse(['success' => false, 'message' => 'Note non trouvée'], 404);
             }
 
-            $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+            $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['consultation' => $consultation]);
             foreach ($ordonnances as $ordonnance) {
                 $this->em->remove($ordonnance);
             }
             
-            $examens = $this->em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+            $examens = $this->em->getRepository(Examens::class)->findBy(['consultation' => $consultation]);
             foreach ($examens as $examen) {
                 $this->em->remove($examen);
             }
@@ -1179,13 +1314,13 @@ class DoctorController extends AbstractController
             }
 
             // Delete related ordonnances
-            $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+            $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['consultation' => $consultation]);
             foreach ($ordonnances as $ordonnance) {
                 $this->em->remove($ordonnance);
             }
             
             // Delete related examens
-            $examens = $this->em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+            $examens = $this->em->getRepository(Examens::class)->findBy(['consultation' => $consultation]);
             foreach ($examens as $examen) {
                 $this->em->remove($examen);
             }
@@ -1211,12 +1346,12 @@ class DoctorController extends AbstractController
     public function deleteConsultation(Request $request, Consultation $consultation): RedirectResponse
     {
         if ($this->isCsrfTokenValid('delete' . $consultation->getId(), $request->request->get('_token'))) {
-            $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
+            $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['consultation' => $consultation]);
             foreach ($ordonnances as $ordonnance) {
                 $this->em->remove($ordonnance);
             }
             
-            $examens = $this->em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+            $examens = $this->em->getRepository(Examens::class)->findBy(['consultation' => $consultation]);
             foreach ($examens as $examen) {
                 $this->em->remove($examen);
             }
@@ -1233,8 +1368,8 @@ class DoctorController extends AbstractController
     #[Route('/consultation/{id}/show', name: 'doctor_consultation_show', methods: ['GET'])]
     public function showConsultation(Consultation $consultation): Response
     {
-        $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['id_consultation' => $consultation]);
-        $examens = $this->em->getRepository(Examens::class)->findBy(['id_consultation' => $consultation]);
+        $ordonnances = $this->em->getRepository(Ordonnance::class)->findBy(['consultation' => $consultation]);
+        $examens = $this->em->getRepository(Examens::class)->findBy(['consultation' => $consultation]);
         
         return $this->render('doctor/consultation/show.html.twig', [
             'consultation' => $consultation,
@@ -1310,6 +1445,412 @@ class DoctorController extends AbstractController
 
         return $this->render('doctor/availability-settings.html.twig', [
             'availability' => $availability,
+        ]);
+    }
+
+    #[Route('/availability/settings/load', name: 'doctor_availability_settings_load', methods: ['GET'])]
+    public function loadAvailabilitySettings(): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        // Default settings
+        $settings = [
+            'defaultAppointmentDuration' => '30',
+            'appointmentGap' => '5',
+            'lunchBreakStart' => '12:00',
+            'lunchBreakEnd' => '13:00',
+            'emergencySlotsPerDay' => 2,
+            'allowDoubleBooking' => false,
+            'autoConfirmAppointments' => false,
+        ];
+        
+        // Load weekly schedule from database
+        $availabilities = $this->em->getRepository(DoctorAvailability::class)->findByMedecin($user);
+        
+        $daysMap = [
+            'monday' => ['name' => 'Lundi', 'key' => 'monday'],
+            'tuesday' => ['name' => 'Mardi', 'key' => 'tuesday'],
+            'wednesday' => ['name' => 'Mercredi', 'key' => 'wednesday'],
+            'thursday' => ['name' => 'Jeudi', 'key' => 'thursday'],
+            'friday' => ['name' => 'Vendredi', 'key' => 'friday'],
+            'saturday' => ['name' => 'Samedi', 'key' => 'saturday'],
+            'sunday' => ['name' => 'Dimanche', 'key' => 'sunday'],
+        ];
+        
+        // Create a map of existing availabilities
+        $availabilityMap = [];
+        foreach ($availabilities as $availability) {
+            $availabilityMap[$availability->getDayOfWeek()] = $availability;
+        }
+        
+        // Build weekly schedule
+        $weeklySchedule = [];
+        foreach ($daysMap as $key => $dayInfo) {
+            if (isset($availabilityMap[$key])) {
+                $avail = $availabilityMap[$key];
+                $weeklySchedule[] = [
+                    'name' => $dayInfo['name'],
+                    'key' => $key,
+                    'isActive' => $avail->isActive(),
+                    'startTime' => $avail->getStartTime(),
+                    'endTime' => $avail->getEndTime(),
+                    'location' => $avail->getLocation() ?? 'clinic',
+                    'slots' => [],
+                ];
+            } else {
+                // Default values
+                $isActive = in_array($key, ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+                $weeklySchedule[] = [
+                    'name' => $dayInfo['name'],
+                    'key' => $key,
+                    'isActive' => $isActive,
+                    'startTime' => '08:00',
+                    'endTime' => '18:00',
+                    'location' => 'clinic',
+                    'slots' => [],
+                ];
+            }
+        }
+        
+        // Load locations from database
+        $locationEntities = $this->em->getRepository(DoctorLocation::class)->findByMedecin($user);
+        $locations = [];
+        foreach ($locationEntities as $loc) {
+            $locations[] = [
+                'id' => 'loc' . $loc->getId(),
+                'name' => $loc->getName(),
+                'type' => $loc->getType(),
+                'address' => $loc->getAddress(),
+                'phone' => $loc->getPhone(),
+                'isActive' => $loc->isActive(),
+            ];
+        }
+        
+        // If no locations, add default
+        if (empty($locations)) {
+            $locations[] = [
+                'id' => 'loc1',
+                'name' => 'Cabinet Principal',
+                'type' => 'clinic',
+                'address' => '',
+                'phone' => '',
+                'isActive' => true,
+            ];
+        }
+        
+        // Load leaves from database
+        $leaveEntities = $this->em->getRepository(DoctorLeave::class)->findUpcomingByMedecin($user);
+        $leaves = [];
+        foreach ($leaveEntities as $leave) {
+            $leaves[] = [
+                'id' => (string) $leave->getId(),
+                'type' => $leave->getType(),
+                'title' => $leave->getTitle(),
+                'startDate' => $leave->getStartDate()?->format('Y-m-d'),
+                'endDate' => $leave->getEndDate()?->format('Y-m-d'),
+                'days' => $leave->getDaysCount(),
+                'reason' => $leave->getReason(),
+                'status' => $leave->getStatus(),
+            ];
+        }
+        
+        return $this->json([
+            'success' => true,
+            'settings' => $settings,
+            'weeklySchedule' => $weeklySchedule,
+            'locations' => $locations,
+            'leaves' => $leaves,
+        ]);
+    }
+
+    #[Route('/availability/settings/save', name: 'doctor_availability_settings_save', methods: ['POST'])]
+    public function saveAvailabilitySettings(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+        
+        // Save weekly schedule
+        if (isset($data['weeklySchedule'])) {
+            foreach ($data['weeklySchedule'] as $dayData) {
+                $availability = $this->em->getRepository(DoctorAvailability::class)
+                    ->findByMedecinAndDay($user, $dayData['key']);
+                
+                if (!$availability) {
+                    $availability = new DoctorAvailability();
+                    $availability->setMedecin($user);
+                    $availability->setDayOfWeek($dayData['key']);
+                }
+                
+                $availability->setIsActive($dayData['isActive'] ?? false);
+                $availability->setStartTime($dayData['startTime'] ?? '08:00');
+                $availability->setEndTime($dayData['endTime'] ?? '18:00');
+                $availability->setLocation($dayData['location'] ?? null);
+                $availability->setUpdatedAt(new \DateTime());
+                
+                $this->em->persist($availability);
+            }
+        }
+        
+        $this->em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Paramètres enregistrés avec succès',
+        ]);
+    }
+
+    #[Route('/availability/location/add', name: 'doctor_availability_location_add', methods: ['POST'])]
+    public function addLocation(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+        
+        $location = new DoctorLocation();
+        $location->setMedecin($user);
+        $location->setName($data['name'] ?? '');
+        $location->setType($data['type'] ?? 'clinic');
+        $location->setAddress($data['address'] ?? null);
+        $location->setPhone($data['phone'] ?? null);
+        $location->setIsActive(true);
+        
+        $this->em->persist($location);
+        $this->em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Lieu ajouté avec succès',
+            'location' => [
+                'id' => 'loc' . $location->getId(),
+                'name' => $location->getName(),
+                'type' => $location->getType(),
+                'address' => $location->getAddress(),
+                'phone' => $location->getPhone(),
+                'isActive' => $location->isActive(),
+            ],
+        ]);
+    }
+
+    #[Route('/availability/leave/request', name: 'doctor_availability_leave_request', methods: ['POST'])]
+    public function requestLeave(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+        
+        $leave = new DoctorLeave();
+        $leave->setMedecin($user);
+        $leave->setType($data['type'] ?? DoctorLeave::TYPE_VACATION);
+        $leave->setTitle($data['title'] ?? '');
+        
+        if (isset($data['startDate'])) {
+            $leave->setStartDate(new \DateTime($data['startDate']));
+        }
+        if (isset($data['endDate'])) {
+            $leave->setEndDate(new \DateTime($data['endDate']));
+        }
+        
+        $leave->setReason($data['reason'] ?? null);
+        $leave->setStatus(DoctorLeave::STATUS_PENDING);
+        
+        $this->em->persist($leave);
+        $this->em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Demande de congé soumise avec succès',
+            'leave' => [
+                'id' => (string) $leave->getId(),
+                'type' => $leave->getType(),
+                'title' => $leave->getTitle(),
+                'startDate' => $leave->getStartDate()?->format('Y-m-d'),
+                'endDate' => $leave->getEndDate()?->format('Y-m-d'),
+                'days' => $leave->getDaysCount(),
+                'reason' => $leave->getReason(),
+                'status' => $leave->getStatus(),
+            ],
+        ]);
+    }
+
+    #[Route('/availability/leave/{id}/cancel', name: 'doctor_availability_leave_cancel', methods: ['POST'])]
+    public function cancelLeave(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        $leave = $this->em->getRepository(DoctorLeave::class)->find($id);
+        
+        if (!$leave) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Demande de congé non trouvée',
+            ], 404);
+        }
+        
+        if ($leave->getMedecin()->getId() !== $user->getId()) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Non autorisé',
+            ], 403);
+        }
+        
+        $leave->setStatus(DoctorLeave::STATUS_CANCELLED);
+        $leave->setUpdatedAt(new \DateTime());
+        
+        $this->em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Demande de congé annulée',
+        ]);
+    }
+
+    /*******************************************************************
+     * SUBSTITUTION (MÉDECIN REMPLAÇANT)
+     *******************************************************************/
+
+    #[Route('/availability/substitutes', name: 'doctor_availability_substitutes', methods: ['GET'])]
+    public function getAvailableSubstitutes(): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        $substitutes = $this->em->getRepository(DoctorSubstitution::class)->findAvailableSubstitutes($user);
+        
+        $data = [];
+        foreach ($substitutes as $substitute) {
+            $data[] = [
+                'uuid' => $substitute->getUuid(),
+                'firstName' => $substitute->getFirstName(),
+                'lastName' => $substitute->getLastName(),
+                'specialite' => $substitute->getSpecialite(),
+                'email' => $substitute->getEmail(),
+            ];
+        }
+        
+        return $this->json([
+            'success' => true,
+            'substitutes' => $data,
+        ]);
+    }
+
+    #[Route('/availability/substitution/assign', name: 'doctor_availability_substitution_assign', methods: ['POST'])]
+    public function assignSubstitute(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+        
+        $substituteUuid = $data['substituteUuid'] ?? null;
+        $leaveId = $data['leaveId'] ?? null;
+        $startDate = $data['startDate'] ?? null;
+        $endDate = $data['endDate'] ?? null;
+        $notes = $data['notes'] ?? null;
+        
+        if (!$substituteUuid) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Veuillez sélectionner un médecin remplaçant',
+            ], 400);
+        }
+        
+        $substitute = $this->em->getRepository(Medecin::class)->findOneBy(['uuid' => $substituteUuid]);
+        
+        if (!$substitute) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Médecin remplaçant non trouvé',
+            ], 404);
+        }
+        
+        $substitution = new DoctorSubstitution();
+        $substitution->setMedecin($user);
+        $substitution->setSubstitute($substitute);
+        
+        if ($leaveId) {
+            $leave = $this->em->getRepository(DoctorLeave::class)->find($leaveId);
+            if ($leave) {
+                $substitution->setLeave($leave);
+            }
+        }
+        
+        if ($startDate) {
+            $substitution->setStartDate(new \DateTime($startDate));
+        }
+        if ($endDate) {
+            $substitution->setEndDate(new \DateTime($endDate));
+        }
+        
+        $substitution->setNotes($notes);
+        $substitution->setStatus(DoctorSubstitution::STATUS_PENDING);
+        
+        $this->em->persist($substitution);
+        $this->em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Demande de remplacement envoyée avec succès',
+            'substitution' => [
+                'id' => $substitution->getId(),
+                'substituteName' => $substitute->getFirstName() . ' ' . $substitute->getLastName(),
+                'startDate' => $substitution->getStartDate()?->format('Y-m-d'),
+                'endDate' => $substitution->getEndDate()?->format('Y-m-d'),
+                'status' => $substitution->getStatus(),
+            ],
+        ]);
+    }
+
+    #[Route('/availability/substitution/{id}/cancel', name: 'doctor_availability_substitution_cancel', methods: ['POST'])]
+    public function cancelSubstitution(int $id): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        $substitution = $this->em->getRepository(DoctorSubstitution::class)->find($id);
+        
+        if (!$substitution) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Demande de remplacement non trouvée',
+            ], 404);
+        }
+        
+        if ($substitution->getMedecin()->getUuid() !== $user->getUuid()) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Non autorisé',
+            ], 403);
+        }
+        
+        $substitution->setStatus(DoctorSubstitution::STATUS_REJECTED);
+        $substitution->setUpdatedAt(new \DateTime());
+        
+        $this->em->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Demande de remplacement annulée',
+        ]);
+    }
+
+    #[Route('/availability/substitutions', name: 'doctor_availability_substitutions', methods: ['GET'])]
+    public function getSubstitutions(): JsonResponse
+    {
+        $user = $this->getUser();
+        
+        $substitutions = $this->em->getRepository(DoctorSubstitution::class)->findByMedecin($user);
+        
+        $data = [];
+        foreach ($substitutions as $sub) {
+            $substitute = $sub->getSubstitute();
+            $data[] = [
+                'id' => $sub->getId(),
+                'substituteUuid' => $substitute?->getUuid(),
+                'substituteName' => $substitute ? $substitute->getFirstName() . ' ' . $substitute->getLastName() : 'N/A',
+                'startDate' => $sub->getStartDate()?->format('Y-m-d'),
+                'endDate' => $sub->getEndDate()?->format('Y-m-d'),
+                'status' => $sub->getStatus(),
+                'notes' => $sub->getNotes(),
+            ];
+        }
+        
+        return $this->json([
+            'success' => true,
+            'substitutions' => $data,
         ]);
     }
 }

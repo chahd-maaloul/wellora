@@ -49,6 +49,12 @@
             padding: 20px;
         }
 
+        /* Dark mode styles */
+        .dark body {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            color: #e5e7eb;
+        }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -64,6 +70,12 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--gray-200);
         }
 
+        /* Dark mode cards */
+        .dark .patient-card {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
         .patient-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
         .patient-avatar {
             width: 72px; height: 72px; border-radius: 50%;
@@ -73,6 +85,7 @@
         }
 
         .patient-info h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+        .dark .patient-info h2 { color: #f3f4f6; }
         .patient-id { color: var(--gray-500); font-size: 14px; margin-bottom: 8px; }
         .status-badge {
             display: inline-flex; align-items: center; padding: 6px 12px;
@@ -86,8 +99,14 @@
             max-height: 400px; overflow-y: auto;
         }
 
+        .dark .notes-history {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
         .notes-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .section-title { font-size: 18px; font-weight: 600; color: var(--gray-800); padding-bottom: 8px; }
+        .dark .section-title { color: #f3f4f6; }
         
         .clear-history-btn {
             background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger);
@@ -101,10 +120,17 @@
             padding: 16px; background: var(--gray-50); border-radius: 12px;
             border: 1px solid var(--gray-200); cursor: pointer; transition: all 0.2s; position: relative;
         }
+        .dark .note-item {
+            background: #374151;
+            border-color: #4b5563;
+        }
         .note-item:hover { background: var(--gray-100); border-color: var(--gray-300); }
+        .dark .note-item:hover { background: #4b5563; border-color: #6b7280; }
         .note-item.active { background: var(--primary-light); border-color: var(--primary); }
+        .dark .note-item.active { background: #1e3a5f; border-color: #3b82f6; }
         .note-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
         .note-date { font-size: 12px; color: var(--gray-500); }
+        .dark .note-date { color: #9ca3af; }
         
         /* Style de la croix de suppression */
         .note-delete-btn {
@@ -116,11 +142,17 @@
         .note-delete-btn:hover { background: var(--danger-light); }
         
         .note-title { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+        .dark .note-title { color: #f3f4f6; }
         .note-summary { font-size: 12px; color: var(--gray-600); line-height: 1.4; }
+        .dark .note-summary { color: #9ca3af; }
 
         .quick-actions {
             background: white; border-radius: 16px; padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--gray-200);
+        }
+        .dark .quick-actions {
+            background: #1f2937;
+            border-color: #374151;
         }
         .quick-actions-list { display: flex; flex-direction: column; gap: 12px; }
         .quick-action-btn {
@@ -129,8 +161,70 @@
             color: var(--gray-700); font-weight: 500; transition: all 0.2s;
             cursor: pointer; border: none; width: 100%; font-size: 14px;
         }
+        .dark .quick-action-btn {
+            background: #374151;
+            color: #e5e7eb;
+        }
         .quick-action-btn:hover { background: var(--gray-100); transform: translateY(-1px); }
+        .dark .quick-action-btn:hover { background: #4b5563; }
         .quick-action-btn i { color: var(--primary); font-size: 18px; }
+
+        .chatbot-card {
+            background: white; border-radius: 16px; padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--gray-200);
+        }
+        .dark .chatbot-card {
+            background: #1f2937;
+            border-color: #374151;
+        }
+        .chatbot-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+        .chatbot-subtitle { font-size: 12px; color: var(--gray-500); }
+        .dark .chatbot-subtitle { color: #9ca3af; }
+        .chatbot-messages {
+            max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+            background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px;
+        }
+        .dark .chatbot-messages {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        .chatbot-msg { font-size: 13px; line-height: 1.4; padding: 10px 12px; border-radius: 10px; max-width: 92%; }
+        .chatbot-msg.bot { background: white; border: 1px solid var(--gray-200); color: var(--gray-800); align-self: flex-start; }
+        .dark .chatbot-msg.bot { background: #1f2937; border-color: #4b5563; color: #e5e7eb; }
+        .chatbot-msg.user { background: var(--primary-light); color: var(--primary); align-self: flex-end; }
+        .dark .chatbot-msg.user { background: #1e3a5f; color: #bfdbfe; }
+        .chatbot-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .chatbot-chip {
+            background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300);
+            border-radius: 999px; padding: 8px 12px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .dark .chatbot-chip { background: #374151; color: #e5e7eb; border-color: #4b5563; }
+        .chatbot-chip:hover { background: var(--gray-200); }
+        .dark .chatbot-chip:hover { background: #4b5563; }
+        .chatbot-input { display: flex; gap: 8px; margin-top: 12px; }
+        .chatbot-input input {
+            flex: 1; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 10px;
+            background: white; font-size: 13px;
+        }
+        .dark .chatbot-input input { background: #1f2937; border-color: #4b5563; color: #e5e7eb; }
+        .chatbot-input button {
+            padding: 10px 14px; border: none; border-radius: 10px; background: var(--primary); color: white; font-weight: 600;
+            cursor: pointer;
+        }
+        .chatbot-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+        .chatbot-reset {
+            background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300);
+            border-radius: 10px; padding: 8px 12px; font-size: 12px; cursor: pointer;
+        }
+        .dark .chatbot-reset { background: #374151; color: #e5e7eb; border-color: #4b5563; }
+        .triage-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .triage-vert { background: var(--secondary-light); color: var(--secondary); }
+        .triage-orange { background: var(--warning-light); color: var(--warning); }
+        .triage-rouge { background: var(--danger-light); color: var(--danger); }
+        .chatbot-disclaimer {
+            margin-top: 10px; font-size: 11px; color: var(--gray-500);
+        }
+        .dark .chatbot-disclaimer { color: #9ca3af; }
 
         .right-column {
             background: white; border-radius: 16px; padding: 32px;
@@ -138,8 +232,15 @@
             max-height: calc(100vh - 100px); overflow-y: auto; scroll-behavior: smooth;
         }
 
+        .dark .right-column {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
         .editor-header { margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--gray-200); }
+        .dark .editor-header { border-bottom-color: #374151; }
         .editor-title { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+        .dark .editor-title { color: #f3f4f6; }
         .editor-meta { color: var(--gray-500); font-size: 14px; display: flex; align-items: center; gap: 8px; }
         .editor-meta::before { content: "•"; color: var(--gray-400); }
 
@@ -155,23 +256,36 @@
         .badge-a { background: var(--soap-a); }
         .badge-p { background: var(--soap-p); }
         .section-label { font-size: 18px; font-weight: 600; color: var(--gray-900); }
+        .dark .section-label { color: #f3f4f6; }
 
         .form-group { margin-bottom: 24px; }
         .form-label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--gray-700); font-size: 14px; }
+        .dark .form-label { color: #d1d5db; }
         .form-control {
             width: 100%; padding: 14px 16px; border: 2px solid var(--gray-300);
             border-radius: 12px; font-size: 15px; transition: all 0.2s; background: var(--gray-50);
         }
+        .dark .form-control {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
         .form-control:focus { outline: none; border-color: var(--primary); background: white; }
+        .dark .form-control:focus { background: #4b5563; border-color: #3b82f6; }
+        .form-control::placeholder { color: var(--gray-400); }
+        .dark .form-control::placeholder { color: #9ca3af; }
         textarea.form-control { min-height: 120px; resize: vertical; line-height: 1.6; }
 
         .chief-complaint-section .form-control { border-color: var(--gray-400); background: var(--gray-100); font-size: 16px; padding: 16px; }
+        .dark .chief-complaint-section .form-control { background: #374151; border-color: #4b5563; }
 
         .vitals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
         .vital-input label { display: block; font-size: 12px; color: var(--gray-600); margin-bottom: 6px; font-weight: 500; }
+        .dark .vital-input label { color: #9ca3af; }
         .bp-input-group { display: flex; align-items: center; gap: 8px; }
         .bp-input { flex: 1; }
         .bp-separator { color: var(--gray-400); font-weight: 500; }
+        .dark .bp-separator { color: #9ca3af; }
 
         .diagnoses-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
         .diagnosis-tag {
@@ -179,12 +293,18 @@
             background: var(--soap-a-bg); color: var(--soap-a); border-radius: 20px;
             font-size: 13px; font-weight: 500; border: 1px solid rgba(245, 158, 11, 0.2);
         }
+        .dark .diagnosis-tag {
+            background: #78350f;
+            color: #fcd34d;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
         .diagnosis-tag button { background: none; border: none; color: var(--danger); cursor: pointer; padding: 0; }
         .diagnosis-input-group { display: flex; gap: 12px; }
         .diagnosis-input { flex: 1; }
         .btn-add { background: var(--soap-a); color: white; border: none; border-radius: 12px; padding: 0 20px; font-weight: 600; cursor: pointer; }
 
         .section-title-large { font-size: 20px; font-weight: 700; color: var(--gray-900); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .dark .section-title-large { color: #f3f4f6; }
         .btn-add-large {
             background: var(--soap-p); color: white; border: none; border-radius: 12px;
             padding: 12px 24px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
@@ -194,23 +314,33 @@
             background: var(--soap-p-bg); border: 2px solid rgba(239, 68, 68, 0.2);
             border-radius: 16px; padding: 24px; margin-bottom: 20px;
         }
+        .dark .medication-card, .dark .exam-card {
+            background: #450a0a;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .card-title { font-size: 16px; font-weight: 700; color: var(--soap-p); }
+        .dark .card-title { color: #fca5a5; }
         .btn-delete { background: var(--danger); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
         .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .form-grid-full { grid-column: span 2; }
         .example-text { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+        .dark .example-text { color: #9ca3af; }
 
         .followup-section { background: var(--gray-50); border: 2px solid var(--gray-300); border-radius: 16px; padding: 24px; margin-bottom: 32px; }
+        .dark .followup-section { background: #374151; border-color: #4b5563; }
         .followup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 
         .empty-state { text-align: center; padding: 40px 20px; background: var(--gray-100); border: 2px dashed var(--gray-300); border-radius: 16px; color: var(--gray-500); }
+        .dark .empty-state { background: #374151; border-color: #4b5563; color: #9ca3af; }
         
         .action-buttons { display: flex; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200); }
+        .dark .action-buttons { border-top-color: #374151; }
         .btn { padding: 14px 28px; border-radius: 12px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+        .dark .btn-secondary { background: #374151; color: #e5e7eb; }
         
         .notification {
             position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px;
@@ -229,6 +359,31 @@
             display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
         .confirmation-content { background: white; border-radius: 16px; padding: 32px; max-width: 400px; width: 90%; }
+        .dark .confirmation-content { background: #1f2937; }
+
+        /* Select dropdown - remove default arrow */
+        select.form-control {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: none;
+            padding-right: 16px;
+        }
+
+        /* Scrollbar dark mode */
+        .dark ::-webkit-scrollbar {
+            width: 8px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
     </style>
 {% endblock %}
 
@@ -238,10 +393,28 @@
     <div class="left-column">
         <div class="patient-card">
             <div class="patient-header">
-                <div class="patient-avatar">JD</div>
+                <div class="patient-avatar" id="patientAvatar">
+                    {% if patientData is defined and patientData %}
+                        {{ patientData.name|slice(0, 2)|upper }}
+                    {% else %}
+                        JD
+                    {% endif %}
+                </div>
                 <div class="patient-info">
-                    <h2>Jean Dupont</h2>
-                    <p class="patient-id">PAT-2024-001</p>
+                    <h2 id="patientName">
+                        {% if patientData is defined and patientData %}
+                            {{ patientData.name }}
+                        {% else %}
+                            Sélectionner un patient
+                        {% endif %}
+                    </h2>
+                    <p class="patient-id" id="patientId">
+                        {% if patientData is defined and patientData %}
+                            {{ patientData.id|slice(0, 8)|upper }}
+                        {% else %}
+                            --
+                        {% endif %}
+                    </p>
                     <span class="status-badge">Actif</span>
                 </div>
             </div>
@@ -276,6 +449,21 @@
                 </button>
             </div>
         </div>
+
+        <div class="chatbot-card" id="preconsultChatbot">
+            <div class="chatbot-header">
+                <h3 class="section-title">Préconsultation</h3>
+                <span class="chatbot-subtitle">Orientation rapide</span>
+            </div>
+            <div class="chatbot-messages" id="chatbotMessages" aria-live="polite"></div>
+            <div class="chatbot-choices" id="chatbotChoices"></div>
+            <div class="chatbot-actions">
+                <button class="chatbot-reset" onclick="resetChatbot()">Recommencer</button>
+            </div>
+            <div class="chatbot-disclaimer">
+                Cet outil ne remplace pas un avis mÃ©dical. En cas de doute ou d'urgence, contactez les services d'urgence.
+            </div>
+        </div>
     </div>
 
     <!-- Right Column - Editor -->
@@ -284,7 +472,7 @@
             <h1 class="editor-title" id="mainEditorTitle">Nouvelle Note SOAP</h1>
             <div class="editor-meta">
                 <span>{{ "now"|date("d/m/Y") }}</span>
-                <span>• Dr. Martin</span>
+                <span>• Dr. {{ app.user.firstName }} {{ app.user.lastName }}</span>
             </div>
         </div>
 
@@ -407,25 +595,95 @@
     let medCounter = 0;
     let examCounter = 0;
     
+    // Données du patient
+    const patientData = {{ patientData|default(null)|json_encode|raw }};
+    
     // Historique depuis la base
     let notesData = {{ historyData|default([])|json_encode|raw }};
 
     const currentNote = {{ currentNoteData|default(null)|json_encode|raw }};
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Afficher les informations du patient si disponibles
+        if (patientData && patientData.name) {
+            document.getElementById('patientName').textContent = patientData.name;
+            document.getElementById('patientAvatar').textContent = patientData.name.substring(0, 2).toUpperCase();
+            if (patientData.id) {
+                document.getElementById('patientId').textContent = patientData.id.substring(0, 8).toUpperCase();
+            }
+        }
+        
         renderHistory();
         updateDiagnosisSelects();
+        
+        // Charger les données de la note existante
         if (currentNote && currentNote.id) {
+            console.log('Loading current note:', currentNote);
             currentEditingId = currentNote.id;
             document.getElementById('mainEditorTitle').textContent = `Modifier la Note #${currentNote.id}`;
-            document.getElementById('saveBtnText').textContent = "Mettre ? jour";
-            fillFormWithData({
-                consultation: currentNote,
-                diagnoses: currentNote.diagnoses || [],
-                medications: currentNote.medications || [],
-                labTests: currentNote.labTests || [],
-                followUp: currentNote.followUp || {}
-            });
+            document.getElementById('saveBtnText').textContent = "Mettre à jour";
+            
+            // Remplir le formulaire avec les données existantes
+            document.getElementById('chiefComplaint').value = currentNote.chiefComplaint || '';
+            document.getElementById('subjective').value = currentNote.subjective || '';
+            document.getElementById('objective').value = currentNote.objective || '';
+            document.getElementById('assessment').value = currentNote.assessment || '';
+            document.getElementById('plan').value = currentNote.plan || '';
+            
+            // Remplir les signes vitaux
+            const vitals = currentNote.vitals || {};
+            const bp = vitals.bloodPressure || {};
+            document.getElementById('bpSystolic').value = bp.systolic ?? vitals.bloodPressureSystolic ?? '';
+            document.getElementById('bpDiastolic').value = bp.diastolic ?? vitals.bloodPressureDiastolic ?? '';
+            document.getElementById('pulse').value = vitals.pulse ?? vitals.heartRate ?? '';
+            document.getElementById('temperature').value = vitals.temperature ?? '';
+            document.getElementById('spo2').value = vitals.spo2 ?? vitals.oxygenSaturation ?? '';
+            
+            // Remplir les diagnostics
+            if (currentNote.diagnoses && currentNote.diagnoses.length > 0) {
+                currentNote.diagnoses.forEach(dx => addDiagnosis(dx));
+            }
+            
+            // Remplir les médicaments
+            if (currentNote.medications && currentNote.medications.length > 0) {
+                document.getElementById('emptyMedications').style.display = 'none';
+                currentNote.medications.forEach(m => {
+                    addMedicationCard();
+                    const last = document.querySelector('#medicationsContainer .medication-card:last-child');
+                    if (last) {
+                        last.querySelector('.medication-name').value = m.name || '';
+                        last.querySelector('.medication-dosage').value = m.dosage || '';
+                        last.querySelector('.medication-form').value = m.form || '';
+                        last.querySelector('.medication-frequency').value = m.frequency || '';
+                        last.querySelector('.medication-duration').value = m.duration || '';
+                        last.querySelector('.medication-instructions').value = m.instructions || '';
+                        last.querySelector('.medication-diagnosis').value = m.associatedDiagnosis || '';
+                    }
+                });
+            }
+            
+            // Remplir les examens
+            if (currentNote.labTests && currentNote.labTests.length > 0) {
+                document.getElementById('emptyExams').style.display = 'none';
+                currentNote.labTests.forEach(e => {
+                    addExamCard();
+                    const last = document.querySelector('#examsContainer .exam-card:last-child');
+                    if (last) {
+                        last.querySelector('.exam-type').value = e.type || '';
+                        last.querySelector('.exam-name').value = e.name || '';
+                        last.querySelector('.exam-requested-date').value = e.requestedDate || '';
+                        last.querySelector('.exam-status').value = e.status || '';
+                        last.querySelector('.exam-notes').value = e.notes || '';
+                    }
+                });
+            }
+            
+            // Remplir le suivi
+            if (currentNote.followUp) {
+                document.getElementById('followUpDate').value = currentNote.followUp.date || '';
+                document.getElementById('followUpType').value = currentNote.followUp.type || 'control';
+                document.getElementById('followUpPriority').value = currentNote.followUp.priority || 'routine';
+            }
         }
     });
 
@@ -507,7 +765,10 @@
     // --- ENREGISTREMENT ---
     async function saveNoteToServer() {
         const data = generateJSON();
-        data.patientId = 1; // Remplacer par l'ID dynamique du patient
+        // Use the actual patient ID from patientData if available
+        if (patientData && patientData.id) {
+            data.patientId = patientData.id;
+        }
 
         if (currentEditingId) data.noteId = currentEditingId;
 
@@ -622,14 +883,50 @@
         card.innerHTML = `
             <div class="card-header"><h4 class="card-title">Examen</h4><button class="btn-delete" onclick="removeExam(this)"><i class="fas fa-trash"></i> Supprimer</button></div>
             <div class="form-grid">
-                <div class="form-group"><label class="form-label">Type</label><select class="form-control exam-type"><option value="scanner">Scanner</option><option value="radio">Radio</option></select></div>
-                <div class="form-group"><label class="form-label">Nom</label><input type="text" class="form-control exam-name"></div>
+                <div class="form-group"><label class="form-label">Type</label><select class="form-control exam-type" onchange="updateExamNameFromType(this)">
+                    <optgroup label="🧬 Examens biologiques">
+                        <option value="nfs">NFS (Numération Formule Sanguine)</option>
+                        <option value="bilan_lipidique">Bilan lipidique (Cholestérol, Triglycérides)</option>
+                        <option value="bilan_hepatique">Bilan hépatique (Transaminases, Gamma GT)</option>
+                        <option value="bilan_renal">Bilan rénal (Créatinine, Urée)</option>
+                        <option value="glycemie_hba1c">Glycémie, HbA1c (Diabète)</option>
+                        <option value="serologies">Sérologies (VIH, Hépatites)</option>
+                        <option value="ecbu">Examens urinaires (ECBU)</option>
+                        <option value="hormones">Hormones (TSH, cortisol)</option>
+                    </optgroup>
+                    <optgroup label="🧠 Examens d'imagerie médicale">
+                        <option value="irm">IRM (avec compte-rendu texte + images)</option>
+                        <option value="scanner">Scanner (TDM)</option>
+                        <option value="radiographie">Radiographie (Rayons X)</option>
+                        <option value="echographie">Échographie (Abdominale, pelvienne, obstétricale)</option>
+                        <option value="mammographie">Mammographie</option>
+                        <option value="osteodensitometrie">Ostéodensitométrie (densité osseuse)</option>
+                    </optgroup>
+                    <optgroup label="❤️ Examens cardiovasculaires">
+                        <option value="ecg">Électrocardiogramme (ECG)</option>
+                        <option value="holter">Holter (rythme cardiaque sur 24h)</option>
+                        <option value="echocardiographie">Échocardiographie</option>
+                        <option value="epreuve_effort">Épreuve d'effort</option>
+                        <option value="coronarographie">Coronarographie</option>
+                    </optgroup>
+                </select></div>
+                <div class="form-group"><label class="form-label">Nom / Détails</label><input type="text" class="form-control exam-name" placeholder="Précisions supplémentaires..."></div>
                 <div class="form-group"><label class="form-label">Date demandée</label><input type="date" class="form-control exam-requested-date"></div>
                 <div class="form-group"><label class="form-label">Statut</label><select class="form-control exam-status"><option value="prescrit">Prescrit</option><option value="realise">Réalisé</option></select></div>
                 <div class="form-group form-grid-full"><label class="form-label">Notes</label><textarea class="form-control exam-notes"></textarea></div>
             </div>`;
         document.getElementById('examsContainer').appendChild(card);
         if(scroll) card.scrollIntoView({behavior:'smooth'});
+    }
+
+    function updateExamNameFromType(selectElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const card = selectElement.closest('.exam-card');
+        const nameInput = card.querySelector('.exam-name');
+        // Auto-fill the name with the selected exam type text if name is empty
+        if (nameInput && !nameInput.value) {
+            nameInput.value = selectedOption.text;
+        }
     }
 
     function removeMedication(btn) { btn.closest('.medication-card').remove(); if(!document.querySelector('.medication-card')) document.getElementById('emptyMedications').style.display='block'; }

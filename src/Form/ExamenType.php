@@ -22,7 +22,7 @@ class ExamenType extends AbstractType
             ->add('nom_examen')
             ->add('date_realisation')
             ->add('result_file')
-            ->add('id_consultation', EntityType::class, [
+            ->add('consultation', EntityType::class, [
                 'class' => Consultation::class,
                 'choice_label' => 'id',
             ])

@@ -1,5 +1,5 @@
 {# templates/health/analytics/doctor-view.html.twig #}
-{# Doctor Analytics Dashboard - Multi-Patient Monitoring & Medical Reports #}
+{# Doctor Analytics Dashboard - Multi-Patient Monitoring & Medical Reports with AI #}
 
 {% extends 'layouts/app.html.twig' %}
 
@@ -12,7 +12,27 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="doctorAnalytics()" x-init="init()">
+<div class="min-h-full bg-gray-50 dark:bg-gray-950"
+     x-data="doctorAnalytics"
+     x-init="init()"
+     data-doctor-analytics
+     data-api-available="{{ api_available ? '1' : '0' }}"
+     data-ai-predictions="{{ ai_data.predictions ? (ai_data.predictions.predictions | json_encode | e('html_attr')) : '[]' }}"
+     data-ai-confidence="{{ ai_data.predictions ? (ai_data.predictions.confidence * 100) : 85 }}"
+     data-ai-recommendations="{{ ai_data.recommendations ? (ai_data.recommendations.recommendations | json_encode | e('html_attr')) : '[]' }}"
+     data-ai-profit-predictions="{{ ai_data.profit_predictions ? (ai_data.profit_predictions | json_encode | e('html_attr')) : '' }}"
+     data-ai-revenue-weekly="{{ ai_data.revenue_weekly ? (ai_data.revenue_weekly | json_encode | e('html_attr')) : '' }}"
+     data-ai-revenue-monthly="{{ ai_data.revenue_monthly ? (ai_data.revenue_monthly | json_encode | e('html_attr')) : '' }}"
+     data-ai-profit-alerts="{{ ai_data.profit_alerts ? (ai_data.profit_alerts | json_encode | e('html_attr')) : '[]' }}"
+     data-treatment-effectiveness="{{ ai_data.treatment_effectiveness ? (ai_data.treatment_effectiveness | json_encode | e('html_attr')) : '' }}"
+     data-doctor-id="{{ doctor_id ? doctor_id : '' }}"
+     data-patients="{{ patients | json_encode | e('html_attr') }}"
+     data-last-update="{{ 'now'|date('H:i') }}"
+     data-critical-alerts="{{ stats.criticalAlerts|default(0) }}"
+     data-today-appointments="{{ stats.todayAppointments|default(0) }}"
+     data-next-appointment="{{ stats.nextAppointment|default('Aucun') }}"
+     data-reports-generated="{{ stats.reportsGenerated|default(0) }}"
+     data-recent-alerts="{{ recent_alerts | json_encode | e('html_attr') }}">
     {# Header Section #}
     <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -28,6 +48,18 @@
                 </div>
                 
                 <div class="flex items-center gap-3">
+                    {# AI Status Indicator #}
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+                         :class="apiAvailable ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'">
+                        <span class="relative flex h-2 w-2">
+                            <span class="absolute inline-flex w-full h-full rounded-full opacity-75"
+                                  :class="apiAvailable ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'"></span>
+                            <span class="relative inline-flex w-2 h-2 rounded-full"
+                                  :class="apiAvailable ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                        </span>
+                        <span x-text="apiAvailable ? 'IA Connectée' : 'IA Mode Simulation'"></span>
+                    </div>
+                    
                     <div class="relative">
                         <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search left-3 top-1/2"></i>
                         <input 
@@ -118,6 +150,54 @@
                         <i class="fa-solid fa-check"></i>
                     </span>
                     <span class="text-gray-500 dark:text-gray-400">{{ 'Ce mois'|trans }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# AI Predictions Section #}
+        <div class="mb-8 p-6 bg-gradient-to-r from-wellcare-50 to-blue-50 border border-wellcare-100 shadow-sm rounded-2xl dark:from-wellcare-900/20 dark:to-blue-900/20 dark:border-wellcare-800">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 text-wellcare-600 dark:bg-wellcare-900/50 dark:text-wellcare-400">
+                        <i class="text-xl fa-solid fa-brain"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fa-solid fa-wand-magic-sparkles"></i>
+                            {{ 'Prédictions IA'|trans }}
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Activité prévue pour les 7 prochains jours'|trans }}</p>
+                    </div>
+                </div>
+                <button @click="refreshAiPredictions" :disabled="isLoadingPredictions" 
+                        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-wellcare-700 bg-white border border-wellcare-200 rounded-lg hover:bg-wellcare-50 dark:bg-wellcare-900/50 dark:text-wellcare-300 dark:border-wellcare-700 dark:hover:bg-wellcare-900/70">
+                    <i class="fa-solid fa-rotate" :class="isLoadingPredictions ? 'fa-spin' : ''"></i>
+                    {{ 'Actualiser'|trans }}
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-7">
+                <template x-for="(prediction, index) in aiPredictions" :key="index">
+                    <div class="p-4 text-center bg-white rounded-xl dark:bg-gray-800/50">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400" x-text="prediction.day_name"></p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500" x-text="formatDate(prediction.day)"></p>
+                        <div class="mt-2">
+                            <span class="text-2xl font-bold text-wellcare-600 dark:text-wellcare-400" 
+                                  x-text="prediction.predicted_consultations"></span>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ 'consultations'|trans }}</p>
+                    </div>
+                </template>
+            </div>
+            
+            <div class="flex items-center justify-between mt-4 pt-4 border-t border-wellcare-200 dark:border-wellcare-700">
+                <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>{{ 'Confiance:'|trans }} <strong x-text="aiConfidence + '%'"></strong></span>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <i class="fa-solid fa-clock"></i>
+                    <span x-text="lastPredictionUpdate"></span>
                 </div>
             </div>
         </div>
@@ -240,10 +320,196 @@
                         <canvas id="treatmentEffectivenessChart"></canvas>
                     </div>
                 </div>
+
+                {# Weekly Revenue Chart #}
+                <div class="p-6 mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                <i class="text-lg fa-solid fa-chart-column"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Revenus hebdomadaires'|trans }}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ '12 dernières semaines'|trans }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative h-72" x-show="revenueWeekly && revenueWeekly.labels && revenueWeekly.labels.length">
+                        <canvas id="weeklyRevenueChart"></canvas>
+                    </div>
+                    <div class="p-4 text-center text-gray-500 dark:text-gray-400" x-show="!revenueWeekly || !revenueWeekly.labels || revenueWeekly.labels.length === 0">
+                        <i class="mb-2 text-2xl fa-solid fa-chart-line"></i>
+                        <p class="text-sm">{{ 'Données insuffisantes'|trans }}</p>
+                    </div>
+                </div>
+
+                {# Monthly Revenue Chart #}
+                <div class="p-6 mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                <i class="text-lg fa-solid fa-chart-area"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Revenus mensuels'|trans }}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ '12 derniers mois'|trans }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative h-72" x-show="revenueMonthly && revenueMonthly.labels && revenueMonthly.labels.length">
+                        <canvas id="monthlyRevenueChart"></canvas>
+                    </div>
+                    <div class="p-4 text-center text-gray-500 dark:text-gray-400" x-show="!revenueMonthly || !revenueMonthly.labels || revenueMonthly.labels.length === 0">
+                        <i class="mb-2 text-2xl fa-solid fa-chart-line"></i>
+                        <p class="text-sm">{{ 'Données insuffisantes'|trans }}</p>
+                    </div>
+                </div>
             </div>
 
             {# Sidebar #}
             <div class="space-y-8">
+                {# Profit Predictions Panel #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                                <i class="text-lg fa-solid fa-coins"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Prévisions de revenus'|trans }}</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Basé sur les consultations'|trans }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div x-show="profitPredictions" class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ '30 derniers jours'|trans }}</span>
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white" x-text="formatCurrency(profitPredictions.last_30)"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Prochains 30 jours'|trans }}</span>
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white" x-text="formatCurrency(profitPredictions.next_30)"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Honoraires moyens'|trans }}</span>
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white" x-text="formatCurrency(profitPredictions.avg_fee)"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 'Tendance'|trans }}</span>
+                            <span class="text-sm font-semibold" :class="profitPredictions.trend >= 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="formatPercent(profitPredictions.trend)"></span>
+                        </div>
+                        <div x-show="profitPredictions.monthly_forecast && profitPredictions.monthly_forecast.length">
+                            <p class="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">{{ 'Prochains mois'|trans }}</p>
+                            <div class="mt-2 space-y-1">
+                                <template x-for="item in profitPredictions.monthly_forecast" :key="item.month">
+                                    <div class="flex items-center justify-between text-sm text-gray-700 dark:text-gray-300">
+                                        <span x-text="item.month"></span>
+                                        <span class="font-medium text-gray-900 dark:text-white" x-text="formatCurrency(item.revenue)"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div x-show="profitAlerts.length" class="pt-3 mt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                            <template x-for="alert in profitAlerts" :key="alert.title">
+                                <div class="p-3 rounded-lg border"
+                                     :class="alert.type === 'critical' ? 'border-rose-200 bg-rose-50 dark:border-rose-800 dark:bg-rose-900/20' : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'">
+                                    <p class="text-xs font-semibold uppercase"
+                                       :class="alert.type === 'critical' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'"
+                                       x-text="alert.title"></p>
+                                    <p class="text-xs text-gray-700 dark:text-gray-300" x-text="alert.message"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="!profitPredictions" class="p-4 text-center text-gray-500 dark:text-gray-400">
+                        <i class="mb-2 text-2xl fa-solid fa-chart-line"></i>
+                        <p class="text-sm">{{ 'Données insuffisantes'|trans }}</p>
+                    </div>
+                </div>
+
+                {# Planning Suggestions Panel #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                <i class="text-lg fa-solid fa-calendar-alt"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Suggestions d\'amélioration du planning'|trans }}</h3>
+                        </div>
+                        <span class="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full dark:bg-blue-900/30 dark:text-blue-400" x-text="planningSuggestions.length + ' suggestions'"></span>
+                    </div>
+                    <div class="space-y-3">
+                        <template x-for="suggestion in planningSuggestions" :key="suggestion.title">
+                            <div class="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-800">
+                                        <i class="text-blue-600 dark:text-blue-400 fa-solid"
+                                           :class="{
+                                               'fa-compress-alt': suggestion.title.includes('creux'),
+                                               'fa-balance-scale': suggestion.title.includes('répartir') || suggestion.title.includes('Répartir'),
+                                               'fa-clock': suggestion.title.includes('marges'),
+                                               'fa-calendar-plus': suggestion.title.includes('Optimiser'),
+                                               'fa-exchange-alt': suggestion.title.includes('décalage') || suggestion.title.includes('Décalage'),
+                                               'fa-lightbulb': true
+                                           }"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-semibold text-blue-800 dark:text-blue-200" x-text="suggestion.title"></p>
+                                        <p class="mt-1 text-sm text-blue-700 dark:text-blue-300" x-text="suggestion.description"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="planningSuggestions.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="mb-2 text-2xl fa-solid fa-check-circle text-emerald-500"></i>
+                            <p class="text-sm">{{ 'Votre planning est bien optimisé !'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {# AI Recommendations Panel #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                                <i class="text-lg fa-solid fa-lightbulb"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Autres Recommandations IA'|trans }}</h3>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <template x-for="rec in otherRecommendations" :key="rec.type + rec.title">
+                            <div class="p-3 border rounded-lg"
+                                 :class="{
+                                     'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20': rec.type === 'popularity',
+                                     'border-rose-200 bg-rose-50 dark:border-rose-800 dark:bg-rose-900/20': rec.type === 'emergency',
+                                     'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20': rec.type === 'activity',
+                                     'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20': rec.type === 'profit',
+                                     'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20': rec.type === 'general'
+                                 }">
+                                <div class="flex items-start gap-2">
+                                    <i class="mt-0.5 fa-solid"
+                                       :class="{
+                                           'fa-chart-line text-purple-600 dark:text-purple-400': rec.type === 'popularity',
+                                           'fa-triangle-exclamation text-rose-600 dark:text-rose-400': rec.type === 'emergency',
+                                           'fa-calendar-check text-amber-600 dark:text-amber-400': rec.type === 'activity',
+                                           'fa-coins text-emerald-600 dark:text-emerald-400': rec.type === 'profit',
+                                           'fa-check-circle text-emerald-600 dark:text-emerald-400': rec.type === 'general'
+                                       }"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="rec.title"></p>
+                                        <p class="text-xs text-gray-600 dark:text-gray-300" x-text="rec.description"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="otherRecommendations.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+                            <i class="mb-2 text-2xl fa-solid fa-robot"></i>
+                            <p class="text-sm">{{ 'Chargement des recommandations...'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+
                 {# Critical Alerts Panel #}
                 <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
                     <div class="flex items-center justify-between mb-4">
@@ -324,24 +590,6 @@
                     </div>
                 </div>
 
-                {# Data Export #}
-                <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Export de Données'|trans }}</h3>
-                    <div class="space-y-3">
-                        <button @click="exportAllData('csv')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                            <i class="fa-solid fa-file-csv"></i>
-                            {{ 'Export CSV (tous patients)'|trans }}
-                        </button>
-                        <button @click="exportAllData('excel')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                            <i class="fa-solid fa-file-excel"></i>
-                            {{ 'Export Excel'|trans }}
-                        </button>
-                        <button @click="printDashboard" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                            <i class="fa-solid fa-print"></i>
-                            {{ 'Version imprimable'|trans }}
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -374,5 +622,6 @@
     {{ parent() }}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ asset('build/health-analytics.js') }}"></script>
 {% endblock %}

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr" class="h-full scroll-smooth">
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="WellCare Connect - Plateforme de santé et téléconsultation">
@@ -569,11 +570,11 @@
                     </div>
                     <ul class="space-y-1" role="menubar">
                         <li role="none">
-                            <a href="/doctor/dashboard" 
+                            <a href="/health/doctor/dashboard" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/doctor/dashboard') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/doctor/dashboard')"
+                               :class="[isActive('/health/doctor/dashboard') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/health/doctor/dashboard')"
                                :title="collapsed ? 'Dashboard' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
@@ -585,7 +586,7 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/doctor/schedule/day-view" 
+                            <a href="/doctor/schedule/week" 
                                role="menuitem"
                                class="sidebar-link"
                                :class="[isActive('/doctor/schedule') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
@@ -602,11 +603,11 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/doctor/patients" 
+                            <a href="/health/doctor/patients" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/doctor/patients') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/doctor/patients')"
+                               :class="[isActive('/health/doctor/patients') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/health/doctor/patients')"
                                :title="collapsed ? 'Patients' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
@@ -618,11 +619,11 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/doctor/patient-queue" 
+                            <a href="/health/doctor/patient-queue" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/doctor/patient-queue') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/doctor/patient-queue')"
+                               :class="[isActive('/health/doctor/patient-queue') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/health/doctor/patient-queue')"
                                :title="collapsed ? 'File d\'attente' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
@@ -634,11 +635,11 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/doctor/patient-chart" 
+                            <a href="/health/doctor/patients" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/doctor/patient-chart') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/doctor/patient-chart')"
+                               :class="[isActive('/health/doctor/patients') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/health/doctor/patients')"
                                :title="collapsed ? 'Dossier Patient' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
@@ -650,11 +651,11 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/doctor/clinical-notes" 
+                            <a href="/health/doctor/clinical-notes" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/doctor/clinical-notes') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/doctor/clinical-notes')"
+                               :class="[isActive('/health/doctor/clinical-notes') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/health/doctor/clinical-notes')"
                                :title="collapsed ? 'Notes Cliniques' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">
@@ -666,11 +667,11 @@
                             </a>
                         </li>
                         <li role="none">
-                            <a href="/doctor/availability-settings" 
+                            <a href="/health/doctor/availability-settings" 
                                role="menuitem"
                                class="sidebar-link"
-                               :class="[isActive('/doctor/availability-settings') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
-                               @click="setActive('/doctor/availability-settings')"
+                               :class="[isActive('/health/doctor/availability-settings') ? 'sidebar-link-active-admin' : 'sidebar-link-inactive-admin', collapsed ? 'justify-center px-2' : '']"
+                               @click="setActive('/health/doctor/availability-settings')"
                                :title="collapsed ? 'Disponibilité' : ''"
                             >
                                 <span class="sidebar-icon text-wellcare-dark-500" :class="collapsed ? 'w-6 h-6' : ''">

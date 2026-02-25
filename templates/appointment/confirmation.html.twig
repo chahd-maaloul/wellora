@@ -27,7 +27,7 @@
                 <div class="flex items-center justify-between pb-6 mb-6 border-b border-gray-200 dark:border-gray-700">
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Appointment ID</p>
-                        <p class="font-mono text-lg font-semibold text-gray-900 dark:text-white">#WC-2024-034567</p>
+                        <p class="font-mono text-lg font-semibold text-gray-900 dark:text-white">#WC-{{ consultation.id|default('2024-034567') }}</p>
                     </div>
                     <span class="badge-success px-3 py-1.5">
                         <i class="mr-1 fas fa-check-circle"></i> Confirmed
@@ -40,11 +40,11 @@
                         <i class="text-3xl fas fa-user-md text-wellcare-600"></i>
                     </div>
                     <div class="flex-1">
-                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Dr. Ahmed Ben Ali</h2>
-                        <p class="text-wellcare-600 dark:text-wellcare-400">Cardiologist</p>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Dr. {{ consultation.medecin.fullName|default('Doctor') }}</h2>
+                        <p class="text-wellcare-600 dark:text-wellcare-400">{{ consultation.medecin.specialite|default('General Medicine') }}</p>
                         <div class="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <span><i class="mr-1 text-yellow-400 fas fa-star"></i> 4.8 (127 reviews)</span>
-                            <span><i class="mr-1 fas fa-map-marker-alt"></i> Tunis</span>
+                            <span><i class="mr-1 text-yellow-400 fas fa-star"></i> 4.5 (10 reviews)</span>
+                            <span><i class="mr-1 fas fa-map-marker-alt"></i> {{ consultation.medecin.address|default('Tunis') }}</span>
                         </div>
                     </div>
                 </div>
@@ -60,7 +60,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Date</p>
-                                <p class="font-medium text-gray-900 dark:text-white">Monday, February 3, 2025</p>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ consultation.dateConsultation ? consultation.dateConsultation|date('l, F j, Y') : 'Not specified' }}</p>
                             </div>
                         </div>
                         
@@ -70,7 +70,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Time</p>
-                                <p class="font-medium text-gray-900 dark:text-white">10:00 AM</p>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ consultation.timeConsultation ? consultation.timeConsultation|date('h:i A') : 'Not specified' }}</p>
                             </div>
                         </div>
                         
@@ -80,7 +80,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Type</p>
-                                <p class="font-medium text-gray-900 dark:text-white">In-Person Consultation</p>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ consultation.appointmentMode|default('In-Person') }} Consultation</p>
                             </div>
                         </div>
                         
@@ -90,7 +90,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Duration</p>
-                                <p class="font-medium text-gray-900 dark:text-white">45 minutes</p>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ consultation.duration|default(30) }} minutes</p>
                             </div>
                         </div>
                     </div>
@@ -104,13 +104,13 @@
                         </div>
                         <div class="flex-1">
                             <h4 class="font-medium text-gray-900 dark:text-white">Clinic Location</h4>
-                            <p class="text-gray-600 dark:text-gray-400">123 Avenue Habib Bourguiba, Tunis 1000</p>
+                            <p class="text-gray-600 dark:text-gray-400">{{ consultation.medecin.address|default('Tunis, Tunisia') }}</p>
                             <div class="flex gap-3 mt-2">
                                 <a href="#" class="text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
                                     <i class="mr-1 fas fa-directions"></i> Get Directions
                                 </a>
                                 <a href="#" class="text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
-                                    <i class="mr-1 fas fa-phone"></i> +216 71 123 456
+                                    <i class="mr-1 fas fa-phone"></i> {{ consultation.medecin.phone|default('+216 71 123 456') }}
                                 </a>
                             </div>
                         </div>
@@ -123,7 +123,7 @@
                     <div class="space-y-2">
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Consultation Fee</span>
-                            <span class="text-gray-900 dark:text-white">120 TND</span>
+                            <span class="text-gray-900 dark:text-white">{{ consultation.fee|default(120) }} TND</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-gray-600 dark:text-gray-400">Platform Fee</span>
@@ -131,7 +131,7 @@
                         </div>
                         <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                             <span class="font-semibold text-gray-900 dark:text-white">Total Paid</span>
-                            <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">125 TND</span>
+                            <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">{{ (consultation.fee|default(120) + 5) }} TND</span>
                         </div>
                     </div>
                     <div class="p-3 mt-4 rounded-lg bg-green-50 dark:bg-green-900/20">
@@ -258,18 +258,19 @@
             <a href="{{ path('appointment_patient_dashboard') }}" class="flex-1 text-center btn-primary">
                 <i class="mr-2 fas fa-calendar-alt"></i>View My Appointments
             </a>
-            <a href="/doctors" class="flex-1 text-center btn-outline">
+            <a href="/appointment/search-doctors" class="flex-1 text-center btn-outline">
                 <i class="mr-2 fas fa-search"></i>Book Another Appointment
             </a>
         </div>
         
         {# Confirmation Email Notice #}
         <div class="mt-8 text-center">
+            {% set patient = consultation.patient %}
             <p class="text-sm text-gray-500 dark:text-gray-400">
-                <i class="mr-1 fas fa-envelope"></i> A confirmation email has been sent to <strong>john.doe@example.com</strong>
+                <i class="mr-1 fas fa-envelope"></i> A confirmation email has been sent to <strong>{{ app.user.email|default('your email') }}</strong>
             </p>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                <i class="mr-1 fas fa-sms"></i> An SMS confirmation has been sent to <strong>+216 12 345 678</strong>
+                <i class="mr-1 fas fa-sms"></i> An SMS confirmation has been sent to <strong>{{ app.user.phone|default('your phone') }}</strong>
             </p>
         </div>
     </div>
@@ -278,18 +279,23 @@
 <script>
 function confirmation() {
     return {
+        doctorName: '{{ consultation.medecin.fullName|default('Doctor') }}',
+        date: '{{ consultation.dateConsultation ? consultation.dateConsultation|date('Y-m-d') : '' }}',
+        time: '{{ consultation.timeConsultation ? consultation.timeConsultation|date('H:i') : '' }}',
+        location: '{{ consultation.medecin.address|default('Tunis, Tunisia') }}',
+        appointmentId: '{{ consultation.id|default('') }}',
+        
         init() {
             // Any initialization logic
         },
         
         downloadICS() {
-            // Generate and download .ics file
             const event = {
-                title: 'Doctor Appointment - Dr. Ahmed Ben Ali',
-                start: '20250203T100000',
-                end: '20250203T104500',
-                location: '123 Avenue Habib Bourguiba, Tunis 1000',
-                description: 'Cardiology consultation with Dr. Ahmed Ben Ali'
+                title: 'Doctor Appointment - Dr. {{ consultation.medecin.fullName|default('Doctor') }}',
+                start: this.date + 'T' + this.time.replace(':', ''),
+                end: this.date + 'T' + (parseInt(this.time.split(':')[0]) + 1).toString().padStart(2, '0') + this.time.split(':')[1] + '00',
+                location: this.location,
+                description: 'Consultation with Dr. {{ consultation.medecin.fullName|default('Doctor') }}'
             };
             
             const icsContent = `BEGIN:VCALENDAR
@@ -312,7 +318,7 @@ END:VCALENDAR`;
         },
         
         shareVia(method) {
-            const details = `Appointment with Dr. Ahmed Ben Ali on Monday, February 3, 2025 at 10:00 AM`;
+            const details = `Appointment with Dr. ${this.doctorName} on ${this.date} at ${this.time}`;
             
             if (method === 'whatsapp') {
                 window.open(`https://wa.me/?text=${encodeURIComponent(details)}`, '_blank');
@@ -323,12 +329,11 @@ END:VCALENDAR`;
         
         copyDetails() {
             const details = `Appointment Confirmation
-Doctor: Dr. Ahmed Ben Ali
-Specialty: Cardiologist
-Date: Monday, February 3, 2025
-Time: 10:00 AM
-Location: 123 Avenue Habib Bourguiba, Tunis 1000
-Appointment ID: #WC-2024-034567`;
+Doctor: Dr. ${this.doctorName}
+Date: ${this.date}
+Time: ${this.time}
+Location: ${this.location}
+Appointment ID: #WC-${this.appointmentId}`;
             
             navigator.clipboard.writeText(details).then(() => {
                 alert('Appointment details copied to clipboard!');

@@ -22,7 +22,7 @@ class OrdonnanceType extends AbstractType
             ->add('instructions')
             ->add('frequency')
             ->add('diagnosis_code')
-            ->add('id_consultation', EntityType::class, [
+            ->add('consultation', EntityType::class, [
                 'class' => Consultation::class,
                 'choice_label' => 'id',
             ])

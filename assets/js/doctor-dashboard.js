@@ -1,10 +1,7 @@
-/**
+ /**
  * Doctor Dashboard JavaScript Module
  * Handles patient list, patient chart, clinical notes, and communication interfaces
  */
-
-// Import Alpine if not already available
-import Alpine from 'alpinejs';
 
 // Medical color palette
 const medicalColors = {
@@ -22,10 +19,8 @@ const medicalColors = {
     infoLight: 'rgba(59, 130, 246, 0.1)',
 };
 
-// Make sure Alpine is available globally
-window.Alpine = Alpine;
-
 // Initialize Alpine components when Alpine is ready
+// Alpine is imported and started in app.js, so we use the global instance
 document.addEventListener('alpine:init', () => {
     
     // Patient List Component
@@ -91,13 +86,13 @@ document.addEventListener('alpine:init', () => {
                 
             } catch (error) {
                 console.error('Erreur chargement patients:', error);
-                // Fallback data
+                // Fallback data with proper UUIDs for patientId
                 this.patients = [
-                    { id: 1, consultationId: 1, name: 'Ahmed Ben Ali', age: 45, gender: 'M', fileNumber: 'CONS-0001', status: 'active', healthScore: 78, conditions: ['Hypertension'], lastVisitDate: '15/01/2025', reasonForVisit: 'Consultation de suivi' },
-                    { id: 2, consultationId: 2, name: 'Fatma Trabelsi', age: 32, gender: 'F', fileNumber: 'CONS-0002', status: 'follow-up', healthScore: 82, conditions: ['Diabète Type 2'], lastVisitDate: '14/01/2025', reasonForVisit: 'Bilan mensuel' },
-                    { id: 3, consultationId: 3, name: 'Mohamed Khmiri', age: 58, gender: 'M', fileNumber: 'CONS-0003', status: 'critical', healthScore: 45, conditions: ['Insuffisance cardiaque'], lastVisitDate: '10/01/2025', reasonForVisit: 'Urgence cardiaque' },
-                    { id: 4, consultationId: 4, name: 'Salma Bouaziz', age: 28, gender: 'F', fileNumber: 'CONS-0004', status: 'active', healthScore: 92, conditions: [], lastVisitDate: '08/01/2025', reasonForVisit: 'Consultation générale' },
-                    { id: 5, consultationId: 5, name: 'Ali Mougou', age: 65, gender: 'M', fileNumber: 'CONS-0005', status: 'follow-up', healthScore: 68, conditions: ['Asthme', 'Allergies'], lastVisitDate: '05/01/2025', reasonForVisit: 'Contrôle asthme' },
+                    { id: 1, patientId: '550e8400-e29b-41d4-a716-446655440001', consultationId: 1, name: 'Ahmed Ben Ali', age: 45, gender: 'M', fileNumber: 'CONS-0001', status: 'active', healthScore: 78, conditions: ['Hypertension'], lastVisitDate: '15/01/2025', reasonForVisit: 'Consultation de suivi' },
+                    { id: 2, patientId: '550e8400-e29b-41d4-a716-446655440002', consultationId: 2, name: 'Fatma Trabelsi', age: 32, gender: 'F', fileNumber: 'CONS-0002', status: 'follow-up', healthScore: 82, conditions: ['Diabète Type 2'], lastVisitDate: '14/01/2025', reasonForVisit: 'Bilan mensuel' },
+                    { id: 3, patientId: '550e8400-e29b-41d4-a716-446655440003', consultationId: 3, name: 'Mohamed Khmiri', age: 58, gender: 'M', fileNumber: 'CONS-0003', status: 'critical', healthScore: 45, conditions: ['Insuffisance cardiaque'], lastVisitDate: '10/01/2025', reasonForVisit: 'Urgence cardiaque' },
+                    { id: 4, patientId: '550e8400-e29b-41d4-a716-446655440004', consultationId: 4, name: 'Salma Bouaziz', age: 28, gender: 'F', fileNumber: 'CONS-0004', status: 'active', healthScore: 92, conditions: [], lastVisitDate: '08/01/2025', reasonForVisit: 'Consultation générale' },
+                    { id: 5, patientId: '550e8400-e29b-41d4-a716-446655440005', consultationId: 5, name: 'Ali Mougou', age: 65, gender: 'M', fileNumber: 'CONS-0005', status: 'follow-up', healthScore: 68, conditions: ['Asthme', 'Allergies'], lastVisitDate: '05/01/2025', reasonForVisit: 'Contrôle asthme' },
                 ];
                 this.stats.totalPatients = this.patients.length;
                 this.updateFilteredPatients();
@@ -184,6 +179,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
                 'follow-up': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
                 stable: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+                completed: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+                in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+                emergency: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
             };
             return classes[status] || classes.stable;
         },
@@ -194,6 +194,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'bg-rose-500',
                 'follow-up': 'bg-amber-500',
                 stable: 'bg-blue-500',
+                pending: 'bg-amber-500',
+                completed: 'bg-emerald-500',
+                in_progress: 'bg-blue-500',
+                cancelled: 'bg-gray-500',
+                emergency: 'bg-rose-500',
             };
             return classes[status] || classes.stable;
         },
@@ -204,6 +209,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'Critique',
                 'follow-up': 'Suivi requis',
                 stable: 'Stable',
+                pending: 'En attente',
+                completed: 'Terminée',
+                in_progress: 'En cours',
+                cancelled: 'Annulée',
+                emergency: 'Urgence',
             };
             return labels[status] || status;
         },
@@ -277,15 +287,19 @@ document.addEventListener('alpine:init', () => {
     }));
 
     // Patient Chart Component
-    Alpine.data('patientChart', () => ({
+    Alpine.data('patientChart', function(initialPatientData = null) {
+        return {
         // State
         activeTab: 'timeline',
         timelineFilter: 'all',
         vitalsPeriod: '7d',
         consultationId: null,
         
-        // Patient Data - Complete object with all required properties
-        patient: {
+        // Store initial data reference for debugging
+        _initialPatientData: initialPatientData,
+        
+        // Patient Data - Use initial data if provided, otherwise defaults
+        patient: initialPatientData ? JSON.parse(JSON.stringify(initialPatientData)) : {
             id: 'P001',
             name: 'Patient',
             age: '--',
@@ -336,13 +350,50 @@ document.addEventListener('alpine:init', () => {
         // Vital signs cards data (formatted for display)
         vitalsCards: [],
         
+        // Current Consultation - for single consultation view
+        currentConsultation: {
+            id: null,
+            plan: '',
+            notes: '',
+            assessment: '',
+            soapNotes: {
+                subjective: '',
+                objective: '',
+                assessment: '',
+                plan: ''
+            }
+        },
+        
+        // All Consultations - for patient chart view
+        allConsultations: [],
+        
         init() {
-            // Initialize vitals cards with default values
+            // Get consultation ID from URL - check if we're on patient-chart route
+            const urlParts = window.location.pathname.split('/');
+            const lastPart = urlParts[urlParts.length - 1];
+            const secondLastPart = urlParts[urlParts.length - 2];
+            
+            // Debug: Log what we received
+            console.log('Patient chart init - initialPatientData:', this._initialPatientData);
+            console.log('Patient chart init - patient property:', this.patient);
+            
+            // Skip API call if we're on the patient-chart route (data provided via Twig)
+            // OR if we're on the /doctor/patient/{id}/chart route (data also provided via Twig now)
+            if (secondLastPart === 'patient-chart' || lastPart === 'chart') {
+                console.log('Patient chart route detected, skipping API call. Data provided via Twig.');
+                // Initialize vitals cards AFTER all Twig data is set via x-init
+                this.$nextTick(() => {
+                    console.log('After $nextTick, patient:', this.patient);
+                    this.vitalsCards = this.formatVitalsCards();
+                    this.initCharts();
+                });
+                return;
+            }
+            
+            // Initialize vitals cards with default values for non-Twig routes
             this.vitalsCards = this.formatVitalsCards();
             
-            // Get consultation ID from URL
-            const urlParts = window.location.pathname.split('/');
-            this.consultationId = urlParts[urlParts.length - 2];
+            this.consultationId = lastPart !== 'chart' ? lastPart : secondLastPart;
             
             if (this.consultationId && this.consultationId !== 'chart') {
                 this.loadPatientChartData();
@@ -557,6 +608,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
                 'follow-up': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
                 stable: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+                completed: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+                in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+                emergency: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
             };
             return classes[status] || classes.active;
         },
@@ -567,6 +623,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'Critique',
                 'follow-up': 'Suivi requis',
                 stable: 'Stable',
+                pending: 'En attente',
+                completed: 'Terminée',
+                in_progress: 'En cours',
+                cancelled: 'Annulée',
+                emergency: 'Urgence',
             };
             return labels[status] || status;
         },
@@ -627,7 +688,7 @@ document.addEventListener('alpine:init', () => {
         openAddSymptomModal() {
             // Placeholder for add symptom modal
         },
-    }));
+    }});
 
     // Clinical Notes Component
     Alpine.data('clinicalNotes', () => ({
@@ -831,6 +892,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
                 'follow-up': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
                 stable: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+                completed: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+                in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+                emergency: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
             };
             return classes[status] || classes.active;
         },
@@ -841,6 +907,11 @@ document.addEventListener('alpine:init', () => {
                 critical: 'Critique',
                 'follow-up': 'Suivi requis',
                 stable: 'Stable',
+                pending: 'En attente',
+                completed: 'Terminée',
+                in_progress: 'En cours',
+                cancelled: 'Annulée',
+                emergency: 'Urgence',
             };
             return labels[status] || status;
         },

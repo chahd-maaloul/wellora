@@ -1,5 +1,9 @@
 # config/services.yaml
 parameters:
+    ai_model_doctor_api_url: '%env(default:default_ai_api_url:AI_MODEL_DOCTOR_API_URL)%'
+    default_ai_api_url: 'http://localhost:5000'
+    ai_model_doctor_enabled: '%env(bool:default:default_ai_enabled:AI_MODEL_DOCTOR_ENABLED)%'
+    default_ai_enabled: true
     ai_coach_id: '%env(AI_COACH_ID)%'
 
 services:
@@ -21,6 +25,11 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    # AI Model Doctor Service Configuration
+    App\Service\AiModelDoctorService:
+        arguments:
+            $apiBaseUrl: '%ai_model_doctor_api_url%'
+            $enabled: '%ai_model_doctor_enabled%'
     # controllers are imported separately to make sure services can be injected
     # as action arguments even if you don't extend any base controller class
     App\Controller\:

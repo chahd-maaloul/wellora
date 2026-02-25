@@ -601,8 +601,8 @@ function bookingFlow() {
         
         // NOUVEAU : Propriétés pour les informations du docteur
         doctorId: null,
-        doctorName: 'Ahmed Ben Ali', // Valeur par défaut
-        doctorSpecialty: 'Cardiologist', // Valeur par défaut
+        doctorName: '{{ doctor.fullName|default('Select a Doctor') }}',
+        doctorSpecialty: '{{ doctor.specialite|default('General Medicine') }}',
         
         formData: {
             consultationType: 'first-visit',
@@ -612,11 +612,11 @@ function bookingFlow() {
             duration: 30,
             selectedDate: null,
             selectedTime: null,
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john.doe@example.com',
-            phone: '+216 12 345 678',
-            dateOfBirth: '1985-05-15',
+            firstName: '{{ app.user ? app.user.firstName : '' }}',
+            lastName: '{{ app.user ? app.user.lastName : '' }}',
+            email: '{{ app.user ? app.user.email : '' }}',
+            phone: '{{ app.user ? app.user.phone : '' }}',
+            dateOfBirth: '{{ app.user and app.user.birthdate ? app.user.birthdate|date('Y-m-d') : '' }}',
             gender: 'male',
             emergencyName: '',
             emergencyPhone: '',
@@ -647,10 +647,14 @@ function bookingFlow() {
         init() {
             // Récupérer l'ID du docteur depuis l'URL
             const urlParams = new URLSearchParams(window.location.search);
-            this.doctorId = urlParams.get('doctorId') || 1; // Par défaut ID 1
+            this.doctorId = urlParams.get('doctorId') || '{{ doctor.id|default('') }}';
             
-            // Définir les informations du docteur selon l'ID
-            this.setDoctorInfo(this.doctorId);
+            // Les informations du docteur sont déjà définies depuis le serveur
+            // Si pas de docteur sélectionné, utiliser les valeurs par défaut
+            if (!this.doctorId) {
+                this.doctorName = 'Select a Doctor';
+                this.doctorSpecialty = 'General Medicine';
+            }
             
             this.generateCalendar();
             this.generateTimeSlots();
@@ -673,21 +677,7 @@ function bookingFlow() {
             }
         },
         
-        // NOUVELLE MÉTHODE : Définir les informations du docteur
-        setDoctorInfo(doctorId) {
-            // Définir les informations selon l'ID du docteur
-            const doctors = {
-                1: { name: 'Ahmed Ben Ali', specialty: 'Cardiologist' },
-                2: { name: 'Fatima Trabelsi', specialty: 'Dermatologist' },
-                3: { name: 'Sami Guesmi', specialty: 'General Medicine' },
-                4: { name: 'Amel Chaabane', specialty: 'Pediatrics' },
-                5: { name: 'Karim Mansouri', specialty: 'Orthopedics' }
-            };
-            
-            const doctor = doctors[doctorId] || doctors[1]; // Par défaut le premier
-            this.doctorName = doctor.name;
-            this.doctorSpecialty = doctor.specialty;
-        },
+        // Les informations du docteur sont définies depuis le serveur via Twig
         
         get currentMonthYear() {
             return this.currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });

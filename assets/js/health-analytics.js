@@ -565,6 +565,40 @@ document.addEventListener('alpine:init', () => {
     }));
     
     // Doctor Analytics Alpine.js Component
+    const doctorAnalyticsRoot = document.querySelector('[data-doctor-analytics]');
+    const parseJsonAttr = (value, fallback) => {
+        if (!value) return fallback;
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            return fallback;
+        }
+    };
+    const getAttr = (name, fallback = '') => {
+        if (!doctorAnalyticsRoot) return fallback;
+        return doctorAnalyticsRoot.getAttribute(name) ?? fallback;
+    };
+    const bootstrapPatients = parseJsonAttr(getAttr('data-patients', ''), []);
+    const bootstrap = {
+        apiAvailable: getAttr('data-api-available', '0') === '1',
+        aiPredictions: parseJsonAttr(getAttr('data-ai-predictions', ''), []),
+        aiConfidence: Number(getAttr('data-ai-confidence', '85')) || 85,
+        aiRecommendations: parseJsonAttr(getAttr('data-ai-recommendations', ''), []),
+        aiProfitPredictions: parseJsonAttr(getAttr('data-ai-profit-predictions', ''), null),
+        aiRevenueWeekly: parseJsonAttr(getAttr('data-ai-revenue-weekly', ''), null),
+        aiRevenueMonthly: parseJsonAttr(getAttr('data-ai-revenue-monthly', ''), null),
+        aiProfitAlerts: parseJsonAttr(getAttr('data-ai-profit-alerts', ''), []),
+        treatmentEffectiveness: parseJsonAttr(getAttr('data-treatment-effectiveness', ''), null),
+        doctorId: getAttr('data-doctor-id', '') || null,
+        lastPredictionUpdate: getAttr('data-last-update', ''),
+        patients: bootstrapPatients,
+        criticalAlerts: Number(getAttr('data-critical-alerts', '0')) || 0,
+        todayAppointments: Number(getAttr('data-today-appointments', '0')) || 0,
+        nextAppointment: getAttr('data-next-appointment', '') || 'Aucun',
+        reportsGenerated: Number(getAttr('data-reports-generated', '0')) || 0,
+        recentAlerts: parseJsonAttr(getAttr('data-recent-alerts', ''), []),
+    };
+
     Alpine.data('doctorAnalytics', () => ({
         // State
         patientSearch: '',
@@ -579,81 +613,117 @@ document.addEventListener('alpine:init', () => {
         zoomLevel: 100,
         
         // Stats
-        totalPatients: 24,
-        criticalAlerts: 3,
-        todayAppointments: 8,
-        nextAppointment: '14:30 - Dr. Martin',
-        reportsGenerated: 12,
+        totalPatients: bootstrap.patients.length || 0,
+        criticalAlerts: bootstrap.criticalAlerts,
+        todayAppointments: bootstrap.todayAppointments,
+        nextAppointment: bootstrap.nextAppointment || 'Aucun',
+        reportsGenerated: bootstrap.reportsGenerated,
+
+        // AI Data
+        apiAvailable: bootstrap.apiAvailable,
+        aiPredictions: bootstrap.aiPredictions,
+        aiConfidence: bootstrap.aiConfidence,
+        aiRecommendations: bootstrap.aiRecommendations,
+        profitPredictions: bootstrap.aiProfitPredictions,
+        revenueWeekly: bootstrap.aiRevenueWeekly,
+        revenueMonthly: bootstrap.aiRevenueMonthly,
+        profitAlerts: bootstrap.aiProfitAlerts,
+        treatmentEffectiveness: bootstrap.treatmentEffectiveness,
+        doctorId: bootstrap.doctorId,
+        isLoadingPredictions: false,
+        lastPredictionUpdate: bootstrap.lastPredictionUpdate || new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
         
         // Data
-        patients: [
-            {
-                id: 'P001',
-                name: 'Marie Dupont',
-                avatar: 'https://ui-avatars.com/api/?name=Marie+Dupont&background=00A790&color=fff',
-                healthScore: 85,
-                trend: 'improving',
-                trendLabel: 'En amélioration',
-                alerts: [],
-                lastEntry: 'Il y a 2h'
-            },
-            {
-                id: 'P002',
-                name: 'Jean Martin',
-                avatar: 'https://ui-avatars.com/api/?name=Jean+Martin&background=ef4444&color=fff',
-                healthScore: 62,
-                trend: 'declining',
-                trendLabel: 'En déclin',
-                alerts: [
-                    { id: 1, severity: 'critical', message: 'Tension élevée', icon: 'fa-heart-pulse' },
-                    { id: 2, severity: 'warning', message: 'Médicament oublié', icon: 'fa-pills' }
-                ],
-                lastEntry: 'Il y a 5h'
-            },
-            {
-                id: 'P003',
-                name: 'Sophie Bernard',
-                avatar: 'https://ui-avatars.com/api/?name=Sophie+Bernard&background=f59e0b&color=fff',
-                healthScore: 73,
-                trend: 'stable',
-                trendLabel: 'Stable',
-                alerts: [
-                    { id: 3, severity: 'warning', message: 'Sommeil perturbé', icon: 'fa-bed' }
-                ],
-                lastEntry: 'Hier'
-            }
-        ],
+        patients: bootstrap.patients,
         
-        recentAlerts: [
-            {
-                id: 1,
-                severity: 'critical',
-                patientName: 'Jean Martin',
-                message: 'Tension artérielle > 140/90',
-                time: 'Il y a 10 min'
-            },
-            {
-                id: 2,
-                severity: 'warning',
-                patientName: 'Sophie Bernard',
-                message: '3 médicaments oubliés cette semaine',
-                time: 'Il y a 1h'
-            },
-            {
-                id: 3,
-                severity: 'critical',
-                patientName: 'Pierre Durand',
-                message: 'Symptômes cardiaques rapportés',
-                time: 'Il y a 2h'
-            }
-        ],
+        recentAlerts: bootstrap.recentAlerts,
         
         charts: {},
         
         init() {
             this.$nextTick(() => {
                 this.initTreatmentChart();
+                this.initRevenueChart();
+                this.initRevenueMonthlyChart();
             });
+        },
+
+        // Computed: Planning suggestions only
+        get planningSuggestions() {
+            return this.aiRecommendations.filter(rec => rec.type === 'planning');
+        },
+
+        // Computed: Other recommendations (excluding planning)
+        get otherRecommendations() {
+            return this.aiRecommendations.filter(rec => rec.type !== 'planning');
+        },
+
+        formatDate(dateStr) {
+            const date = new Date(dateStr);
+            if (Number.isNaN(date.getTime())) return '';
+            return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+        },
+
+        formatCurrency(value) {
+            const num = Number(value) || 0;
+            return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(num);
+        },
+
+        formatPercent(value) {
+            const num = Number(value) || 0;
+            return new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 }).format(num);
+        },
+
+        async refreshAiPredictions() {
+            this.isLoadingPredictions = true;
+
+            try {
+                const url = this.doctorId ? `/health/analytics/ai/predictions?doctor_id=${this.doctorId}` : '/health/analytics/ai/predictions';
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success && data.predictions) {
+                    if (data.predictions.predictions) {
+                        this.aiPredictions = data.predictions.predictions;
+                        this.aiConfidence = (data.predictions.confidence || 0.85) * 100;
+                    } else if (data.predictions.predictions) {
+                        this.aiPredictions = data.predictions.predictions.slice(0, 7).map((p, i) => ({
+                            day: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
+                            day_name: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][(new Date().getDay() + i) % 7],
+                            predicted_consultations: p.predicted_daily_avg || 10
+                        }));
+                    }
+                    this.apiAvailable = data.api_available;
+                }
+
+                if (data.recommendations && data.recommendations.recommendations) {
+                    this.aiRecommendations = data.recommendations.recommendations;
+                }
+
+                if (data.profit_predictions) {
+                    this.profitPredictions = data.profit_predictions;
+                }
+
+                if (data.revenue_weekly) {
+                    this.revenueWeekly = data.revenue_weekly;
+                    this.initRevenueChart();
+                }
+
+                if (data.revenue_monthly) {
+                    this.revenueMonthly = data.revenue_monthly;
+                    this.initRevenueMonthlyChart();
+                }
+
+                if (data.profit_alerts) {
+                    this.profitAlerts = data.profit_alerts;
+                }
+
+                this.lastPredictionUpdate = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            } catch (error) {
+                console.error('Error refreshing AI predictions:', error);
+            } finally {
+                this.isLoadingPredictions = false;
+            }
         },
         
         get filteredPatients() {
@@ -679,38 +749,52 @@ document.addEventListener('alpine:init', () => {
         
         initTreatmentChart() {
             const ctx = document.getElementById('treatmentEffectivenessChart');
-            if (!ctx) return;
+            if (!ctx || typeof ctx.getContext !== 'function') return;
+            const context = ctx.getContext('2d');
+            if (!context) return;
+            if (this.charts.treatment) {
+                this.charts.treatment.destroy();
+            }
+
+            // Use data from backend if available
+            const labels = (this.treatmentEffectiveness && this.treatmentEffectiveness.labels) 
+                ? this.treatmentEffectiveness.labels 
+                : ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6'];
             
-            this.charts.treatment = new Chart(ctx, {
+            const datasets = (this.treatmentEffectiveness && this.treatmentEffectiveness.datasets) 
+                ? this.treatmentEffectiveness.datasets 
+                : [
+                    {
+                        label: 'Marie D.',
+                        data: [65, 70, 75, 78, 82, 85],
+                        borderColor: medicalColors.primary,
+                        backgroundColor: medicalColors.primaryLight,
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Jean M.',
+                        data: [70, 68, 65, 62, 60, 62],
+                        borderColor: medicalColors.danger,
+                        backgroundColor: medicalColors.dangerLight,
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Sophie B.',
+                        data: [68, 70, 71, 72, 72, 73],
+                        borderColor: medicalColors.warning,
+                        backgroundColor: medicalColors.warningLight,
+                        fill: false,
+                        tension: 0.4
+                    }
+                ];
+            
+            this.charts.treatment = new Chart(context, {
                 type: 'line',
                 data: {
-                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6'],
-                    datasets: [
-                        {
-                            label: 'Marie D.',
-                            data: [65, 70, 75, 78, 82, 85],
-                            borderColor: medicalColors.primary,
-                            backgroundColor: medicalColors.primaryLight,
-                            fill: false,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Jean M.',
-                            data: [70, 68, 65, 62, 60, 62],
-                            borderColor: medicalColors.danger,
-                            backgroundColor: medicalColors.dangerLight,
-                            fill: false,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Sophie B.',
-                            data: [68, 70, 71, 72, 72, 73],
-                            borderColor: medicalColors.warning,
-                            backgroundColor: medicalColors.warningLight,
-                            fill: false,
-                            tension: 0.4
-                        }
-                    ]
+                    labels: labels,
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -755,9 +839,7 @@ document.addEventListener('alpine:init', () => {
         },
         
         generateReport(patientId) {
-            this.reportPatient = patientId;
-            // Navigate to report generator or open modal
-            alert(`Génération du rapport pour le patient ${patientId}`);
+            return this.requestReport(patientId, this.reportType, this.reportPeriod);
         },
         
         sendMessage(patientId) {
@@ -770,7 +852,187 @@ document.addEventListener('alpine:init', () => {
         
         generateQuickReport() {
             if (!this.reportPatient) return;
-            alert(`Génération du rapport ${this.reportType} pour ${this.reportPatient}`);
+            return this.requestReport(this.reportPatient, this.reportType, this.reportPeriod);
+        },
+
+        requestReport(patientId, reportType, reportPeriod) {
+            if (!patientId) return Promise.resolve();
+
+            return fetch('/health/analytics/generate-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patient_id: patientId,
+                    report_type: reportType,
+                    report_period: reportPeriod,
+                    report_format: 'pdf'
+                })
+            }).then(async (response) => {
+                const contentType = response.headers.get('Content-Type') || '';
+                if (response.ok && contentType.includes('application/pdf')) {
+                    const blob = await response.blob();
+                    const disposition = response.headers.get('Content-Disposition') || '';
+                    let filename = 'rapport.pdf';
+                    const match = disposition.match(/filename="?([^";]+)"?/i);
+                    if (match && match[1]) {
+                        filename = match[1];
+                    }
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                    return;
+                }
+
+                return response.json().then((data) => {
+                    if (data && data.message) {
+                        alert(data.message);
+                    } else {
+                        alert('Erreur lors de la generation du rapport');
+                    }
+                }).catch(() => {
+                    alert('Erreur lors de la generation du rapport');
+                });
+            }).catch((error) => {
+                console.error('Report generation error:', error);
+                alert('Erreur lors de la generation du rapport');
+            });
+        },
+
+        initRevenueChart() {
+            const ctx = document.getElementById('weeklyRevenueChart');
+            if (!ctx || typeof ctx.getContext !== 'function') return;
+            const context = ctx.getContext('2d');
+            if (!context) return;
+            if (this.charts.revenue) {
+                this.charts.revenue.destroy();
+            }
+
+            const labels = (this.revenueWeekly && this.revenueWeekly.labels) ? this.revenueWeekly.labels : [];
+            const values = (this.revenueWeekly && this.revenueWeekly.values) ? this.revenueWeekly.values : [];
+
+            if (labels.length === 0) {
+                return;
+            }
+
+            this.charts.revenue = new Chart(context, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Revenus',
+                            data: values,
+                            backgroundColor: medicalColors.primaryLight,
+                            borderColor: medicalColors.primary,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                callback: function (value, index) {
+                                    const label = labels[index] || '';
+                                    return label.slice(5);
+                                },
+                            },
+                        },
+                        y: {
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: {
+                                callback: function (value) {
+                                    return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(value);
+                                },
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(context.raw);
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        },
+
+        initRevenueMonthlyChart() {
+            const ctx = document.getElementById('monthlyRevenueChart');
+            if (!ctx || typeof ctx.getContext !== 'function') return;
+            const context = ctx.getContext('2d');
+            if (!context) return;
+            if (this.charts.revenueMonthly) {
+                this.charts.revenueMonthly.destroy();
+            }
+
+            const labels = (this.revenueMonthly && this.revenueMonthly.labels) ? this.revenueMonthly.labels : [];
+            const values = (this.revenueMonthly && this.revenueMonthly.values) ? this.revenueMonthly.values : [];
+            if (labels.length === 0) {
+                return;
+            }
+
+            this.charts.revenueMonthly = new Chart(context, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Revenus mensuels',
+                            data: values,
+                            borderColor: medicalColors.primary,
+                            backgroundColor: medicalColors.primaryLight,
+                            fill: true,
+                            tension: 0.35,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                callback: function (value, index) {
+                                    const label = labels[index] || '';
+                                    return label.slice(2);
+                                },
+                            },
+                        },
+                        y: {
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: {
+                                callback: function (value) {
+                                    return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(value);
+                                },
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND', maximumFractionDigits: 0 }).format(context.raw);
+                                },
+                            },
+                        },
+                    },
+                },
+            });
         },
         
         exportAllData(format) {

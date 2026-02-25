@@ -55,7 +55,7 @@
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3 mb-2">
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                            {{ appointment.patientName ?? 'Patient #' ~ appointment.id }}
+                                            {{ appointment.patient ? appointment.patient.fullName : ('Patient #' ~ appointment.id) }}
                                         </h3>
                                         <span class="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
                                             En attente
@@ -232,13 +232,13 @@
                         const toast = document.createElement('div');
                         toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in cursor-pointer';
                         toast.innerHTML = '<i class="mr-2 fa-solid fa-check-circle"></i> Rendez-vous accepté ! <span class="underline ml-2">Aller au planning...</span>';
-                        toast.onclick = () => window.location.href = '/doctor/schedule/week-view';
+                        toast.onclick = () => window.location.href = '/doctor/schedule/week';
                         document.body.appendChild(toast);
                         
                         // Redirection automatique après 2 secondes
                         setTimeout(() => {
                             toast.remove();
-                            window.location.href = '/doctor/schedule/week-view';
+                            window.location.href = '/doctor/schedule/week';
                         }, 2000);
                         
                         // Recharger si plus de rendez-vous
@@ -248,7 +248,7 @@
                     }, 300);
                 } else {
                     // Si l'élément n'existe pas, rediriger directement vers le planning
-                    window.location.href = '/doctor/schedule/week-view';
+                    window.location.href = '/doctor/schedule/week';
                 }
             } else {
                 alert('❌ Erreur: ' + data.message);
