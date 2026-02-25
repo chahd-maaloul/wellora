@@ -119,4 +119,60 @@ final class HealthCalendarController extends AbstractController
             'config' => $this->calendarService->getColorConfig(),
         ], Response::HTTP_OK);
     }
+
+    /**
+     * Load calendar events (for FullCalendar integration).
+     * 
+     * @return JsonResponse JSON response with calendar events
+     */
+    #[Route('/calendar/load-events', name: 'fc_load_events', methods: ['GET', 'POST'])]
+    public function loadEvents(Request $request, Security $security): JsonResponse
+    {
+        $user = $security->getUser();
+        
+        if (!$user) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'User not authenticated',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+        
+        // Get journal_id from request - try both GET and POST
+        $journalId = $request->query->get('journal_id') ?? $request->request->get('journal_id');
+        
+        // If not found directly, try to parse from filters JSON
+        if (null === $journalId) {
+            $filtersJson = $request->request->get('filters');
+            if ($filtersJson) {
+                $filters = json_decode($filtersJson, true);
+                $journalId = $filters['journal_id'] ?? 0;
+            }
+        }
+        
+        $journalId = (int) ($journalId ?? 0);
+        
+        try {
+            if ($journalId > 0) {
+                $events = $this->calendarService->getEventsForJournal($journalId, $user);
+            } else {
+                // Get all journals for user and combine events
+                $journals = $this->journalRepository->findBy(['user' => $user]);
+                $events = [];
+                foreach ($journals as $journal) {
+                    $journalEvents = $this->calendarService->getEventsForJournal($journal->getId(), $user);
+                    $events = array_merge($events, $journalEvents);
+                }
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'events' => $events,
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'An error occurred while fetching calendar data: ' . $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

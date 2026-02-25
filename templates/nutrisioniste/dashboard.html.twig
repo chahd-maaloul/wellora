@@ -1,0 +1,233 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord Nutrisioniste - WellCare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/nutrition-css.css') }}">
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-8 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-3 text-wellcare-500 fas fa-user-nutritionist"></i>
+                    Tableau de Bord Nutrisioniste
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Gérez vos consultations et communications avec vos patients</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('nutrisioniste_schedule') }}" class="px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="mr-2 fas fa-calendar-alt"></i>Calendrier
+                </a>
+                <a href="{{ path('nutrisioniste_consultation_new') }}" class="px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="mr-2 fas fa-plus"></i>Nouvelle Consultation
+                </a>
+            </div>
+        </div>
+
+        {# Stats Cards #}
+        <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-2 lg:grid-cols-5">
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Patients total</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ stats.totalPatients }}</p>
+                    </div>
+                    <div class="flex items-center justify-center bg-blue-100 w-14 h-14 rounded-2xl dark:bg-blue-900/30">
+                        <i class="text-2xl text-blue-500 fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Patients actifs</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ stats.activePatients }}</p>
+                    </div>
+                    <div class="flex items-center justify-center bg-green-100 w-14 h-14 rounded-2xl dark:bg-green-900/30">
+                        <i class="text-2xl text-green-500 fas fa-user-check"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Consultations aujourd'hui</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ stats.todayConsultations }}</p>
+                    </div>
+                    <div class="flex items-center justify-center bg-purple-100 w-14 h-14 rounded-2xl dark:bg-purple-900/30">
+                        <i class="text-2xl text-purple-500 fas fa-calendar-check"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">En attente</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ stats.pendingConsultations }}</p>
+                    </div>
+                    <div class="flex items-center justify-center bg-amber-100 w-14 h-14 rounded-2xl dark:bg-amber-900/30">
+                        <i class="text-2xl text-amber-500 fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Messages non lus</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ stats.unreadMessages }}</p>
+                        {% if stats.urgentMessages > 0 %}
+                        <p class="text-xs text-red-500">{{ stats.urgentMessages }} urgent(s)</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-center bg-indigo-100 w-14 h-14 rounded-2xl dark:bg-indigo-900/30">
+                        <i class="text-2xl text-indigo-500 fas fa-envelope"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Main Content #}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {# Today's Schedule #}
+            <div class="lg:col-span-2">
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-calendar-day"></i>
+                            Consultations du jour
+                        </h2>
+                        <a href="{{ path('nutrisioniste_schedule') }}" class="text-sm font-medium text-wellcare-500 hover:text-wellcare-600">
+                            Voir tout <i class="ml-1 fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        {% for consultation in consultations %}
+                        <a href="{{ path('nutrisioniste_patient_view', { id: consultation.patientId }) }}" 
+                           class="flex items-center gap-4 p-4 transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
+                            <div class="w-16 text-center flex-shrink-0">
+                                <p class="text-lg font-bold text-gray-900 dark:text-white">{{ consultation.time }}</p>
+                                <p class="text-xs text-gray-500">{{ consultation.duration }} min</p>
+                            </div>
+                            <div class="w-1 h-12 rounded-full {% if consultation.status == 'confirmed' %}bg-green-500{% elseif consultation.status == 'in_progress' %}bg-blue-500{% else %}bg-amber-500{% endif %}"></div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ consultation.patientName }}</h3>
+                                <p class="text-sm text-gray-500">{{ consultation.type }}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                {% if consultation.status == 'confirmed' %}
+                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Confirmée</span>
+                                {% elseif consultation.status == 'in_progress' %}
+                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">En cours</span>
+                                {% else %}
+                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">En attente</span>
+                                {% endif %}
+                                <button class="p-2 text-gray-400 hover:text-wellcare-500">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        
+                        {% if consultations|length == 0 %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="text-4xl mb-2 far fa-calendar-times"></i>
+                            <p>Aucune consultation prévue aujourd'hui</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Upcoming Days #}
+                <div class="mt-6 p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="mr-2 fas fa-calendar-week"></i>
+                        Jours à venir
+                    </h2>
+                    <div class="flex gap-2 overflow-x-auto pb-2">
+                        {% for day in upcomingConsultations %}
+                        <div class="flex-shrink-0 p-4 border border-gray-200 dark:border-gray-700 rounded-xl {% if day.count > 0 %}bg-wellcare-50 dark:bg-wellcare-900/20{% endif %}">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ day.dayName }}</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ day.date|date('d M') }}</p>
+                            {% if day.count > 0 %}
+                            <p class="text-xs text-wellcare-600">{{ day.count }} consultation(s)</p>
+                            {% else %}
+                            <p class="text-xs text-gray-400">Libre</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Messages Sidebar #}
+            <div class="lg:col-span-1">
+                <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-comments"></i>
+                            Messages
+                        </h2>
+                        <a href="{{ path('nutrisioniste_messages') }}" class="text-sm font-medium text-wellcare-500 hover:text-wellcare-600">
+                            Voir tout
+                        </a>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <a href="{{ path('nutrisioniste_messages', { filter: 'unread' }) }}" 
+                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 {% if stats.unreadMessages > 0 %}bg-blue-50 dark:bg-blue-900/20{% endif %}">
+                            <span class="text-gray-700 dark:text-gray-300">Non lus</span>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{{ stats.unreadMessages }}</span>
+                        </a>
+                        <a href="{{ path('nutrisioniste_messages', { filter: 'urgent' }) }}" 
+                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 {% if stats.urgentMessages > 0 %}bg-red-50 dark:bg-red-900/20{% endif %}">
+                            <span class="text-gray-700 dark:text-gray-300">Urgents</span>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">{{ stats.urgentMessages }}</span>
+                        </a>
+                        <a href="{{ path('nutrisioniste_messages') }}" 
+                           class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <span class="text-gray-700 dark:text-gray-300">Tous les messages</span>
+                            <i class="text-gray-400 fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <a href="{{ path('nutrisioniste_messages') }}" class="block w-full px-4 py-3 text-center font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="mr-2 fas fa-plus"></i>Nouveau message
+                        </a>
+                    </div>
+                </div>
+
+                {# Quick Actions #}
+                <div class="mt-6 p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                        <i class="mr-2 fas fa-bolt"></i>
+                        Actions rapides
+                    </h2>
+                    <div class="space-y-2">
+                        <a href="{{ path('nutrisioniste_consultation_new') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300">
+                            <i class="text-wellcare-500 fas fa-calendar-plus"></i>
+                            <span>Planifier consultation</span>
+                        </a>
+                        <a href="{{ path('nutrisioniste_patients') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300">
+                            <i class="text-wellcare-500 fas fa-user-plus"></i>
+                            <span>Ajouter patient</span>
+                        </a>
+                        <a href="{{ path('nutrisioniste_schedule') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300">
+                            <i class="text-wellcare-500 fas fa-clipboard-list"></i>
+                            <span>Voir planning</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

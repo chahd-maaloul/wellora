@@ -4,6 +4,11 @@ namespace App\Entity;
 
 use App\Enum\UserRole;
 use App\Repository\UserRepository;
+use App\Entity\NutritionGoal;
+use App\Entity\FoodLog;
+use App\Entity\WaterIntake;
+use App\Entity\MealPlan;
+use App\Entity\NutritionConsultation;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -142,11 +147,36 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Healthjournal::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
     private Collection $healthJournals;
 
+    // Nutrition relationships
+    #[ORM\OneToMany(targetEntity: NutritionGoal::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $nutritionGoals;
+
+    #[ORM\OneToMany(targetEntity: FoodLog::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $foodLogs;
+
+    #[ORM\OneToMany(targetEntity: WaterIntake::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $waterIntakes;
+
+    #[ORM\OneToMany(targetEntity: MealPlan::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $mealPlans;
+
+    #[ORM\OneToMany(targetEntity: NutritionConsultation::class, mappedBy: 'patient', cascade: ['persist', 'remove'])]
+    private Collection $nutritionConsultations;
+
+    #[ORM\OneToMany(targetEntity: NutritionConsultation::class, mappedBy: 'nutritionist', cascade: ['persist', 'remove'])]
+    private Collection $nutritionConsultationsGiven;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->uuid = Uuid::v4()->toRfc4122();
         $this->healthJournals = new ArrayCollection();
+        $this->nutritionGoals = new ArrayCollection();
+        $this->foodLogs = new ArrayCollection();
+        $this->waterIntakes = new ArrayCollection();
+        $this->mealPlans = new ArrayCollection();
+        $this->nutritionConsultations = new ArrayCollection();
+        $this->nutritionConsultationsGiven = new ArrayCollection();
     }
 
     /**
@@ -172,6 +202,180 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->healthJournals->removeElement($healthJournal)) {
             if ($healthJournal->getUser() === $this) {
                 $healthJournal->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NutritionGoal>
+     */
+    public function getNutritionGoals(): Collection
+    {
+        return $this->nutritionGoals;
+    }
+
+    public function addNutritionGoal(NutritionGoal $goal): static
+    {
+        if (!$this->nutritionGoals->contains($goal)) {
+            $this->nutritionGoals->add($goal);
+            $goal->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNutritionGoal(NutritionGoal $goal): static
+    {
+        if ($this->nutritionGoals->removeElement($goal)) {
+            if ($goal->getUser() === $this) {
+                $goal->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FoodLog>
+     */
+    public function getFoodLogs(): Collection
+    {
+        return $this->foodLogs;
+    }
+
+    public function addFoodLog(FoodLog $foodLog): static
+    {
+        if (!$this->foodLogs->contains($foodLog)) {
+            $this->foodLogs->add($foodLog);
+            $foodLog->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFoodLog(FoodLog $foodLog): static
+    {
+        if ($this->foodLogs->removeElement($foodLog)) {
+            if ($foodLog->getUser() === $this) {
+                $foodLog->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, WaterIntake>
+     */
+    public function getWaterIntakes(): Collection
+    {
+        return $this->waterIntakes;
+    }
+
+    public function addWaterIntake(WaterIntake $waterIntake): static
+    {
+        if (!$this->waterIntakes->contains($waterIntake)) {
+            $this->waterIntakes->add($waterIntake);
+            $waterIntake->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeWaterIntake(WaterIntake $waterIntake): static
+    {
+        if ($this->waterIntakes->removeElement($waterIntake)) {
+            if ($waterIntake->getUser() === $this) {
+                $waterIntake->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MealPlan>
+     */
+    public function getMealPlans(): Collection
+    {
+        return $this->mealPlans;
+    }
+
+    public function addMealPlan(MealPlan $mealPlan): static
+    {
+        if (!$this->mealPlans->contains($mealPlan)) {
+            $this->mealPlans->add($mealPlan);
+            $mealPlan->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMealPlan(MealPlan $mealPlan): static
+    {
+        if ($this->mealPlans->removeElement($mealPlan)) {
+            if ($mealPlan->getUser() === $this) {
+                $mealPlan->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NutritionConsultation>
+     */
+    public function getNutritionConsultations(): Collection
+    {
+        return $this->nutritionConsultations;
+    }
+
+    public function addNutritionConsultation(NutritionConsultation $consultation): static
+    {
+        if (!$this->nutritionConsultations->contains($consultation)) {
+            $this->nutritionConsultations->add($consultation);
+            $consultation->setPatient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNutritionConsultation(NutritionConsultation $consultation): static
+    {
+        if ($this->nutritionConsultations->removeElement($consultation)) {
+            if ($consultation->getPatient() === $this) {
+                $consultation->setPatient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NutritionConsultation>
+     */
+    public function getNutritionConsultationsGiven(): Collection
+    {
+        return $this->nutritionConsultationsGiven;
+    }
+
+    public function addNutritionConsultationGiven(NutritionConsultation $consultation): static
+    {
+        if (!$this->nutritionConsultationsGiven->contains($consultation)) {
+            $this->nutritionConsultationsGiven->add($consultation);
+            $consultation->setNutritionist($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNutritionConsultationGiven(NutritionConsultation $consultation): static
+    {
+        if ($this->nutritionConsultationsGiven->removeElement($consultation)) {
+            if ($consultation->getNutritionist() === $this) {
+                $consultation->setNutritionist(null);
             }
         }
 

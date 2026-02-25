@@ -4,6 +4,10 @@ framework:
     annotations: false
     http_method_override: false
     handle_all_throwables: true
+    
+    # Enable form component
+    form:
+        enabled: true
 
     # Session configuration
     session:

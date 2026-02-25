@@ -101,7 +101,6 @@ class PublicationParcoursType extends AbstractType
                 'label' => 'Parcours Image (JPG or PNG)',
                 'mapped' => false,
                 'required' => $options['require_image'],
-                'constraints' => $imageConstraints,
             ])
         ;
     }

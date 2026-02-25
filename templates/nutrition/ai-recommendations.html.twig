@@ -1,0 +1,201 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Recommandations AI - WellCare Nutrition{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-4xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <a href="{{ path('nutrition_ai_assistant') }}" class="p-2 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Recommandations</h1>
+                    <p class="text-gray-600 dark:text-gray-400">Basées sur votre journée</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bars -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-6">État actuel</h2>
+            
+            <!-- Calories -->
+            {% set calPercent = (stats.calories / stats.targetCalories * 100)|round %}
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">🔥 Calories</span>
+                    <span class="text-sm text-gray-500">{{ stats.calories }} / {{ stats.targetCalories }} kcal</span>
+                </div>
+                <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 {% if calPercent > 100 %}bg-red-500{% elseif calPercent >= 80 %}bg-emerald-500{% else %}bg-yellow-500{% endif %}" 
+                         style="width: {{ min(calPercent, 100) }}%"></div>
+                </div>
+            </div>
+
+            <!-- Protein -->
+            {% set proteinPercent = (stats.protein / stats.targetProtein * 100)|round %}
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">🥩 Protéines</span>
+                    <span class="text-sm text-gray-500">{{ stats.protein }} / {{ stats.targetProtein }}g</span>
+                </div>
+                <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 {% if proteinPercent >= 80 %}bg-emerald-500{% else %}bg-yellow-500{% endif %}" 
+                         style="width: {{ min(proteinPercent, 100) }}%"></div>
+                </div>
+            </div>
+
+            <!-- Carbs -->
+            {% set carbsPercent = (stats.carbs / stats.targetCarbs * 100)|round %}
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">🍚 Glucides</span>
+                    <span class="text-sm text-gray-500">{{ stats.carbs }} / {{ stats.targetCarbs }}g</span>
+                </div>
+                <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 {% if carbsPercent >= 80 %}bg-emerald-500{% elseif carbsPercent < 50 %}bg-yellow-500{% else %}bg-blue-500{% endif %}" 
+                         style="width: {{ min(carbsPercent, 100) }}%"></div>
+                </div>
+            </div>
+
+            <!-- Fats -->
+            {% set fatsPercent = (stats.fats / stats.targetFats * 100)|round %}
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">🥑 Lipides</span>
+                    <span class="text-sm text-gray-500">{{ stats.fats }} / {{ stats.targetFats }}g</span>
+                </div>
+                <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 {% if fatsPercent >= 80 %}bg-emerald-500{% elseif fatsPercent < 50 %}bg-yellow-500{% else %}bg-purple-500{% endif %}" 
+                         style="width: {{ min(fatsPercent, 100) }}%"></div>
+                </div>
+            </div>
+
+            <!-- Water -->
+            {% set waterPercent = (stats.water / stats.targetWater * 100)|round %}
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-gray-700 dark:text-gray-300">💧 Hydratation</span>
+                    <span class="text-sm text-gray-500">{{ stats.water }} / {{ stats.targetWater }}L</span>
+                </div>
+                <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 {% if waterPercent >= 80 %}bg-cyan-500{% elseif waterPercent < 50 %}bg-red-500{% else %}bg-blue-400{% endif %}" 
+                         style="width: {{ min(waterPercent, 100) }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">💡 Conseils du jour</h2>
+            
+            <div class="space-y-3">
+                {% if calPercent > 100 %}
+                    <div class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                        <span class="text-xl">⚠️</span>
+                        <div>
+                            <p class="font-medium text-red-800 dark:text-red-200">Calories dépassées</p>
+                            <p class="text-sm text-red-600 dark:text-red-300">Privilégiez les aliments légers pour le reste de la journée</p>
+                        </div>
+                    </div>
+                {% elseif calPercent >= 80 %}
+                    <div class="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                        <span class="text-xl">✅</span>
+                        <div>
+                            <p class="font-medium text-emerald-800 dark:text-emerald-200">Bien parti!</p>
+                            <p class="text-sm text-emerald-600 dark:text-emerald-300">Vous êtes dans les limites de calories</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                        <span class="text-xl">ℹ️</span>
+                        <div>
+                            <p class="font-medium text-blue-800 dark:text-blue-200">Encore de la place</p>
+                            <p class="text-sm text-blue-600 dark:text-blue-300">Vous pouvez compléter avec une collation</p>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if proteinPercent < 50 %}
+                    <div class="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                        <span class="text-xl">💪</span>
+                        <div>
+                            <p class="font-medium text-orange-800 dark:text-orange-200">Augmentez les protéines</p>
+                            <p class="text-sm text-orange-600 dark:text-orange-300">Ajoutez de la viande, du poisson ou des œufs</p>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if waterPercent < 50 %}
+                    <div class="flex items-start gap-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl">
+                        <span class="text-xl">💧</span>
+                        <div>
+                            <p class="font-medium text-cyan-800 dark:text-cyan-200">Hydratez-vous!</p>
+                            <p class="text-sm text-cyan-600 dark:text-cyan-300">Buvez au moins {{ ((stats.targetWater - stats.water)*1000)|round }}ml d'eau</p>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if carbsPercent < 30 and stats.fats > stats.targetFats * 0.8 %}
+                    <div class="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+                        <span class="text-xl">⚖️</span>
+                        <div>
+                            <p class="font-medium text-yellow-800 dark:text-yellow-200">Équilibre des macros</p>
+                            <p class="text-sm text-yellow-600 dark:text-yellow-300">Ajoutez des glucides, réduisez les lipides</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Actions rapides</h2>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <a href="{{ path('nutrition_food_add') }}" class="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors">
+                    <span class="text-2xl">➕</span>
+                    <span class="font-medium text-emerald-800 dark:text-emerald-200">Ajouter un aliment</span>
+                </a>
+                <a href="{{ path('nutrition_water_add') }}" class="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                    <span class="text-2xl">💧</span>
+                    <span class="font-medium text-blue-800 dark:text-blue-200">Ajouter de l'eau</span>
+                </a>
+                <a href="{{ path('nutrition_ai_assistant') }}" class="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors">
+                    <span class="text-2xl">🤖</span>
+                    <span class="font-medium text-purple-800 dark:text-purple-200">Demander à l'AI</span>
+                </a>
+                <a href="{{ path('nutrition_dashboard') }}" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <span class="text-2xl">📊</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-200">Voir dashboard</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex flex-wrap justify-center gap-3">
+            <a href="{{ path('nutrition_ai_assistant') }}" class="inline-flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors">
+                💬 Assistant
+            </a>
+            <a href="{{ path('nutrition_ai_insights') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                📊 Analyses
+            </a>
+            <a href="{{ path('nutrition_ai_history') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                📋 Historique
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -94,7 +94,6 @@ class ParcoursDeSanteType extends AbstractType
             'label' => 'Parcours Image (JPG or PNG)',
             'mapped' => false,
             'required' => true,
-            'constraints' => $imageConstraints,
         ]);
     }
 

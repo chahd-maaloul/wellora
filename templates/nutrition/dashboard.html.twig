@@ -1,40 +1,40 @@
+{# 
+Dashboard Page 
+Main nutrition tracking dashboard without JavaScript dependencies
+#}
+
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}Nutrition Dashboard - WellCare Connect{% endblock %}
+{% block title %}Tableau de bord - WellCare{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
     {{ encore_entry_link_tags('nutrition-css') }}
 {% endblock %}
 
-{% block javascripts %}
-    {{ parent() }}
-    {{ encore_entry_script_tags('nutrition') }}
-{% endblock %}
-
 {% block body %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="nutritionDashboard()">
-    {# Page Header #}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    {# Header #}
     <div class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 class="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
-                        <i class="text-3xl fas fa-apple-alt text-wellcare-500"></i>
-                        Nutrition & Alimentation
+                        <i class="text-3xl fas fa-utensils text-wellcare-500"></i>
+                        Tableau de Bord Nutrition
                     </h1>
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">Suivez votre alimentation et atteignez vos objectifs nutritionnels</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">Suivez votre alimentation quotidienne</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button @click="$dispatch('open-quick-log')" 
-                            class="inline-flex items-center px-4 py-2 text-white transition-colors rounded-lg shadow-sm bg-wellcare-500 hover:bg-wellcare-600">
+                    <a href="{{ path('nutrition_quick_log') }}" 
+                       class="inline-flex items-center px-4 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                         <i class="mr-2 fas fa-plus"></i>
-                        Ajouter un aliment
-                    </button>
-                    <a href="{{ path('nutrition_goals') }}" 
-                       class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <i class="mr-2 fas fa-bullseye"></i>
-                        Mes objectifs
+                        Ajout Rapide
+                    </a>
+                    <a href="{{ path('nutrition_ai_assistant') }}" 
+                       class="inline-flex items-center px-4 py-2 text-white transition-colors rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700">
+                        <i class="mr-2 fas fa-robot"></i>
+                        AI Assistant
                     </a>
                 </div>
             </div>
@@ -42,435 +42,307 @@
     </div>
 
     <main class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        {# Quick Stats Row #}
-        <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
+        {# Summary Cards #}
+        <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
             {# Calories Card #}
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Calories</p>
-                        <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ calories.consumed|default(0) }}<span class="text-sm font-normal text-gray-500">/{{ calories.target|default(2000) }} kcal</span></p>
-                    </div>
-                    <div class="relative w-16 h-16">
-                        <svg class="w-16 h-16 transform -rotate-90">
-                            <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="6" fill="none" class="text-gray-200 dark:text-gray-700"/>
-                            <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="6" fill="none" 
-                                    stroke-dasharray="{{ (calories.consumed|default(0) / calories.target|default(2000) * 175.93) ~ ' 175.93' }}"
-                                    class="{% if (calories.consumed|default(0) / calories.target|default(2000)) > 1 %}text-red-500{% else %}text-wellcare-500{% endif %}"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                        <div class="h-2 transition-all duration-500 rounded-full bg-wellcare-500" 
-                             style="width: {{ min(((calories.consumed|default(0) / calories.target|default(2000)) * 100), 100) }}%"></div>
-                    </div>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ ((calories.target|default(2000) - calories.consumed|default(0)))|abs }} kcal restantes</p>
-                </div>
-            </div>
-
-            {# Water Intake Card #}
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Hydratation</p>
-                        <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ water.intake|default(0) }}<span class="text-sm font-normal text-gray-500">/{{ water.target|default(8) }} verres</span></p>
-                    </div>
-                    <div class="flex items-center justify-center bg-blue-100 rounded-full w-14 h-14 dark:bg-blue-900/30">
-                        <i class="text-xl text-blue-500 fas fa-glass-water"></i>
-                    </div>
-                </div>
-                <div class="flex mt-4 -space-x-2">
-                    {% for i in 1..(water.target|default(8)) %}
-                        <button @click="toggleWater({{ i }})" 
-                                class="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center transition-all hover:scale-110
-                                       {{ i <= water.intake|default(0) ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-400' }}">
-                            <i class="text-xs fas fa-check"></i>
-                        </button>
-                    {% endfor %}
-                </div>
-            </div>
-
-            {# Macros Summary Card #}
-            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 lg:col-span-2">
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-900 dark:text-white">Macronutriments</h3>
-                    <span class="text-sm text-gray-500">{{ macros.total|default(0) }}g consommés</span>
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Calories</h3>
+                    <span class="text-2xl">🔥</span>
                 </div>
-                <div class="grid grid-cols-3 gap-4">
-                    {# Proteins #}
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs text-gray-500 dark:text-gray-400"><i class="mr-1 fas fa-drumstick-bite text-amber-500"></i>Protéines</span>
-                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ macros.proteins|default(0) }}g</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                            <div class="h-2 rounded-full bg-amber-500" style="width: {{ min(((macros.proteins|default(0) / macros.proteinTarget|default(100)) * 100), 100) }}%"></div>
-                        </div>
-                    </div>
-                    {# Carbs #}
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs text-gray-500 dark:text-gray-400"><i class="mr-1 text-green-500 fas fa-bread-slice"></i>Glucides</span>
-                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ macros.carbs|default(0) }}g</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                            <div class="h-2 bg-green-500 rounded-full" style="width: {{ min(((macros.carbs|default(0) / macros.carbTarget|default(250)) * 100), 100) }}%"></div>
-                        </div>
-                    </div>
-                    {# Fats #}
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs text-gray-500 dark:text-gray-400"><i class="mr-1 text-purple-500 fas fa-cheese"></i>Lipides</span>
-                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ macros.fats|default(0) }}g</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                            <div class="h-2 bg-purple-500 rounded-full" style="width: {{ min(((macros.fats|default(0) / macros.fatTarget|default(70)) * 100), 100) }}%"></div>
-                        </div>
-                    </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ calories.consumed|default(0) }}</span>
+                    <span class="text-sm text-gray-500">/ {{ calories.target|default(2000) }}</span>
+                </div>
+                <div class="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="bg-wellcare-500 h-2 rounded-full" style="width: {{ calories.target > 0 ? min(100, (calories.consumed / calories.target) * 100) : 0 }}%"></div>
+                </div>
+            </div>
+
+            {# Protein Card #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Protéines</h3>
+                    <span class="text-2xl">🥩</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ macros.proteins|default(0) }}g</span>
+                    <span class="text-sm text-gray-500">/ {{ nutritionGoal.proteinTarget|default(120) }}g</span>
+                </div>
+                <div class="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="bg-amber-500 h-2 rounded-full" style="width: {{ nutritionGoal.proteinTarget > 0 ? min(100, (macros.proteins / nutritionGoal.proteinTarget) * 100) : 0 }}%"></div>
+                </div>
+            </div>
+
+            {# Carbs Card #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Glucides</h3>
+                    <span class="text-2xl">🍞</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ macros.carbs|default(0) }}g</span>
+                    <span class="text-sm text-gray-500">/ {{ nutritionGoal.carbsTarget|default(250) }}g</span>
+                </div>
+                <div class="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ nutritionGoal.carbsTarget > 0 ? min(100, (macros.carbs / nutritionGoal.carbsTarget) * 100) : 0 }}%"></div>
+                </div>
+            </div>
+
+            {# Fats Card #}
+            <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Lipides</h3>
+                    <span class="text-2xl">🧈</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ macros.fats|default(0) }}g</span>
+                    <span class="text-sm text-gray-500">/ {{ nutritionGoal.fatsTarget|default(70) }}g</span>
+                </div>
+                <div class="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div class="bg-purple-500 h-2 rounded-full" style="width: {{ nutritionGoal.fatsTarget > 0 ? min(100, (macros.fats / nutritionGoal.fatsTarget) * 100) : 0 }}%"></div>
                 </div>
             </div>
         </div>
 
-        {# Main Content Grid #}
-        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {# Left Column - Today's Meals #}
-            <div class="space-y-6 lg:col-span-2">
-                {# Meal Timeline #}
-                <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <div class="p-6 border-b border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Aujourd'hui</h2>
-                            <span class="text-sm text-gray-500">{{ "now"|date("d/m/Y") }}</span>
-                        </div>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        {# Breakfast #}
-                        <div class="meal-item" data-meal="breakfast">
-                            <div class="flex items-start gap-4 p-4 border border-orange-100 rounded-lg bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800/50">
-                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-orange-100 rounded-full dark:bg-orange-900/50">
-                                    <i class="text-xl text-orange-500 fas fa-mug-hot"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="font-medium text-gray-900 dark:text-white">Petit-déjeuner</h3>
-                                        <span class="text-sm font-medium text-orange-600 dark:text-orange-400">{{ meals.breakfast.calories|default(0) }} kcal</span>
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {# Today's Meals #}
+            <div class="lg:col-span-2 space-y-6">
+                {% for mealType, mealData in meals %}
+                    {% if mealData.items|length > 0 %}
+                        <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    {% if mealType == 'breakfast' %}
+                                        <i class="mr-2 text-orange-500 fas fa-coffee"></i>Petit-déjeuner
+                                    {% elseif mealType == 'lunch' %}
+                                        <i class="mr-2 text-yellow-500 fas fa-sun"></i>Déjeuner
+                                    {% elseif mealType == 'dinner' %}
+                                        <i class="mr-2 text-indigo-500 fas fa-moon"></i>Dîner
+                                    {% else %}
+                                        <i class="mr-2 text-pink-500 fas fa-cookie-bite"></i>Collation
+                                    {% endif %}
+                                </h3>
+                                <span class="text-sm font-medium text-gray-500">{{ mealData.calories }} kcal</span>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                {% for item in mealData.items %}
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
+                                            <p class="text-sm text-gray-500">
+                                                {{ item.calories }} kcal | 
+                                                P: {{ item.protein }}g | 
+                                                G: {{ item.carbs }}g | 
+                                                L: {{ item.fats }}g
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <a href="{{ path('nutrition_food_edit', { id: item.id }) }}" 
+                                               class="text-blue-500 hover:text-blue-700 p-2" title="Modifier">
+                                                <i class="fas fa-edit text-xs"></i>
+                                            </a>
+                                            <a href="{{ path('nutrition_food_delete', { id: item.id }) }}" 
+                                               class="text-red-500 hover:text-red-700 p-2"
+                                               onclick="showDeleteModal(event, '{{ path('nutrition_food_delete', { id: item.id }) }}', '{{ item.name|escape('js') }}')">
+                                                <i class="fas fa-times text-xs"></i>
+                                            </a>
+                                        </div>
                                     </div>
-                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                        {% if meals.breakfast.items|default|length > 0 %}
-                                            {{ meals.breakfast.items|join(', ') }}
-                                        {% else %}
-                                            Aucun aliment enregistré
-                                        {% endif %}
-                                    </p>
-                                    <button @click="$dispatch('add-meal', { meal: 'breakfast' })" 
-                                            class="mt-2 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                        <i class="mr-1 fas fa-plus"></i>Ajouter
-                                    </button>
-                                </div>
+                                {% endfor %}
                             </div>
                         </div>
+                    {% endif %}
+                {% endfor %}
 
-                        {# Lunch #}
-                        <div class="meal-item" data-meal="lunch">
-                            <div class="flex items-start gap-4 p-4 border border-yellow-100 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800/50">
-                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full dark:bg-yellow-900/50">
-                                    <i class="text-xl text-yellow-500 fas fa-utensils"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="font-medium text-gray-900 dark:text-white">Déjeuner</h3>
-                                        <span class="text-sm font-medium text-yellow-600 dark:text-yellow-400">{{ meals.lunch.calories|default(0) }} kcal</span>
-                                    </div>
-                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                        {% if meals.lunch.items|default|length > 0 %}
-                                            {{ meals.lunch.items|join(', ') }}
-                                        {% else %}
-                                            Aucun aliment enregistré
-                                        {% endif %}
-                                    </p>
-                                    <button @click="$dispatch('add-meal', { meal: 'lunch' })" 
-                                            class="mt-2 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                        <i class="mr-1 fas fa-plus"></i>Ajouter
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# Dinner #}
-                        <div class="meal-item" data-meal="dinner">
-                            <div class="flex items-start gap-4 p-4 border border-indigo-100 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800/50">
-                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-indigo-100 rounded-full dark:bg-indigo-900/50">
-                                    <i class="text-xl text-indigo-500 fas fa-moon"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="font-medium text-gray-900 dark:text-white">Dîner</h3>
-                                        <span class="text-sm font-medium text-indigo-600 dark:text-indigo-400">{{ meals.dinner.calories|default(0) }} kcal</span>
-                                    </div>
-                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                        {% if meals.dinner.items|default|length > 0 %}
-                                            {{ meals.dinner.items|join(', ') }}
-                                        {% else %}
-                                            Aucun aliment enregistré
-                                        {% endif %}
-                                    </p>
-                                    <button @click="$dispatch('add-meal', { meal: 'dinner' })" 
-                                            class="mt-2 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                        <i class="mr-1 fas fa-plus"></i>Ajouter
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# Snacks #}
-                        <div class="meal-item" data-meal="snacks">
-                            <div class="flex items-start gap-4 p-4 border border-pink-100 rounded-lg bg-pink-50 dark:bg-pink-900/20 dark:border-pink-800/50">
-                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 bg-pink-100 rounded-full dark:bg-pink-900/50">
-                                    <i class="text-xl text-pink-500 fas fa-cookie"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="font-medium text-gray-900 dark:text-white">Colations</h3>
-                                        <span class="text-sm font-medium text-pink-600 dark:text-pink-400">{{ meals.snacks.calories|default(0) }} kcal</span>
-                                    </div>
-                                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                        {% if meals.snacks.items|default|length > 0 %}
-                                            {{ meals.snacks.items|join(', ') }}
-                                        {% else %}
-                                            Aucun aliment enregistré
-                                        {% endif %}
-                                    </p>
-                                    <button @click="$dispatch('add-meal', { meal: 'snacks' })" 
-                                            class="mt-2 text-sm font-medium text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                                        <i class="mr-1 fas fa-plus"></i>Ajouter
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {# Weekly Trend Chart #}
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Semaine en cours</h2>
-                        <div class="flex gap-2">
-                            <button class="px-3 py-1 text-sm rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Calories</button>
-                            <button class="px-3 py-1 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400">Macros</button>
-                        </div>
-                    </div>
-                    <div class="h-64">
-                        <canvas id="weeklyNutritionChart"></canvas>
-                    </div>
+                {# Add Meal Buttons #}
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <a href="{{ path('nutrition_quick_log', { meal: 'breakfast' }) }}" 
+                       class="p-4 text-center transition-all border-2 border-orange-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 dark:border-gray-700 dark:hover:border-orange-600 dark:hover:bg-orange-900/20">
+                        <i class="mb-2 text-2xl text-orange-500 fas fa-coffee"></i>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Petit-déjeuner</p>
+                    </a>
+                    <a href="{{ path('nutrition_quick_log', { meal: 'lunch' }) }}" 
+                       class="p-4 text-center transition-all border-2 border-yellow-200 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 dark:border-gray-700 dark:hover:border-yellow-600 dark:hover:bg-yellow-900/20">
+                        <i class="mb-2 text-2xl text-yellow-500 fas fa-sun"></i>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Déjeuner</p>
+                    </a>
+                    <a href="{{ path('nutrition_quick_log', { meal: 'dinner' }) }}" 
+                       class="p-4 text-center transition-all border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 dark:border-gray-700 dark:hover:border-indigo-600 dark:hover:bg-indigo-900/20">
+                        <i class="mb-2 text-2xl text-indigo-500 fas fa-moon"></i>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Dîner</p>
+                    </a>
+                    <a href="{{ path('nutrition_quick_log', { meal: 'snacks' }) }}" 
+                       class="p-4 text-center transition-all border-2 border-pink-200 rounded-xl hover:border-pink-400 hover:bg-pink-50 dark:border-gray-700 dark:hover:border-pink-600 dark:hover:bg-pink-900/20">
+                        <i class="mb-2 text-2xl text-pink-500 fas fa-cookie-bite"></i>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Collation</p>
+                    </a>
                 </div>
             </div>
 
-            {# Right Column - Sidebar #}
-            <div class="space-y-6">
-                {# Quick Actions #}
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Actions rapides</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button @click="$dispatch('open-quick-log')" 
-                                class="flex flex-col items-center p-4 transition-colors rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30">
-                            <i class="mb-2 text-xl fas fa-search text-wellcare-500"></i>
-                            <span class="text-xs font-medium text-wellcare-700 dark:text-wellcare-300">Rechercher</span>
-                        </button>
-                        <button @click="$dispatch('open-barcode')" 
-                                class="flex flex-col items-center p-4 transition-colors rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30">
-                            <i class="mb-2 text-xl text-blue-500 fas fa-barcode"></i>
-                            <span class="text-xs font-medium text-blue-700 dark:text-blue-300">Scanner</span>
-                        </button>
-                        <button @click="$dispatch('open-voice')" 
-                                class="flex flex-col items-center p-4 transition-colors rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30">
-                            <i class="mb-2 text-xl text-purple-500 fas fa-microphone"></i>
-                            <span class="text-xs font-medium text-purple-700 dark:text-purple-300">Voix</span>
-                        </button>
-                        <a href="{{ path('nutrition_meal_planner') }}" 
-                           class="flex flex-col items-center p-4 transition-colors rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30">
-                            <i class="mb-2 text-xl text-green-500 fas fa-calendar-alt"></i>
-                            <span class="text-xs font-medium text-green-700 dark:text-green-300">Planifier</span>
-                        </a>
-                    </div>
-                </div>
-
-                {# Nutritionist Connection #}
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Votre nutritionniste</h3>
-                    {% if nutritionist %}
-                        <div class="flex items-center gap-4 mb-4">
-                            <img src="{{ nutritionist.avatar|default('/build/images/avatar-placeholder.svg') }}" 
-                                 alt="{{ nutritionist.name }}" 
-                                 class="object-cover w-12 h-12 rounded-full">
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ nutritionist.name }}</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Diététicien.ne</p>
-                            </div>
-                        </div>
-                        {% if nutritionist.nextAppointment %}
-                            <div class="p-3 mb-4 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
-                                <p class="text-xs font-medium text-wellcare-600 dark:text-wellcare-400">Prochain rendez-vous</p>
-                                <p class="text-sm text-gray-900 dark:text-white">{{ nutritionist.nextAppointment.date|date('d/m/Y à H:i') }}</p>
-                            </div>
-                        {% endif %}
-                        <div class="flex gap-2">
-                            <a href="{{ path('nutrition_messages', { nutritionistId: nutritionist.id }) }}" 
-                               class="inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-medium transition-colors rounded-lg text-wellcare-600 dark:text-wellcare-400 bg-wellcare-50 dark:bg-wellcare-900/20 hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30">
-                                <i class="mr-2 fas fa-comment"></i>Message
-                            </a>
-                            <a href="{{ path('nutrition_consultation') }}" 
-                               class="inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
-                                <i class="mr-2 fas fa-video"></i>Appel
-                            </a>
-                        </div>
-                    {% else %}
-                        <div class="py-4 text-center">
-                            <i class="mb-3 text-3xl text-gray-300 fas fa-user-plus dark:text-gray-600"></i>
-                            <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">Aucun nutritionniste assigné</p>
-                            <button class="px-4 py-2 text-sm font-medium transition-colors border rounded-lg text-wellcare-600 dark:text-wellcare-400 border-wellcare-300 dark:border-wellcare-700 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
-                                Trouver un nutritionniste
-                            </button>
-                        </div>
-                    {% endif %}
-                </div>
-
-                {# Recent Foods #}
-                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
-                    <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Aliments récents</h3>
-                    <div class="space-y-3">
-                        {% for food in recentFoods|default([])|slice(0, 5) %}
-                            <div class="flex items-center justify-between p-3 transition-colors rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div class="flex items-center gap-3">
-                                    <div class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-700">
-                                        <i class="text-gray-400 fas fa-utensils"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ food.name }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ food.calories }} kcal</p>
-                                    </div>
-                                </div>
-                                <button @click="addFood('{{ food.name }}', {{ food.calories }})" 
-                                        class="transition-colors text-wellcare-500 hover:text-wellcare-600">
-                                    <i class="fas fa-plus-circle"></i>
-                                </button>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <a href="{{ path('nutrition_food_diary') }}" 
-                       class="block mt-4 text-sm font-medium text-center text-wellcare-600 dark:text-wellcare-400 hover:text-wellcare-700 dark:hover:text-wellcare-300">
-                        Voir tout <i class="ml-1 fas fa-arrow-right"></i>
+            {# AI Quick Actions #}
+            <div class="p-6 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-emerald-500 fas fa-robot"></i>
+                        Assistant AI
+                    </h3>
+                    <a href="{{ path('nutrition_ai_insights') }}" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">
+                        Voir analyses →
                     </a>
                 </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <a href="{{ path('nutrition_ai_assistant', {'_fragment': 'ask'}) }}?message=recette" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">🍳</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Recettes</span>
+                    </a>
+                    <a href="{{ path('nutrition_ai_assistant') }}?message=menu semaine" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">📅</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Menu</span>
+                    </a>
+                    <a href="{{ path('nutrition_ai_assistant') }}?message=perdre du poids" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">⚖️</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Perte poids</span>
+                    </a>
+                    <a href="{{ path('nutrition_ai_recommendations') }}" 
+                       class="p-3 bg-white dark:bg-gray-800 rounded-lg hover:shadow-md transition-all text-center">
+                        <span class="text-2xl block mb-1">💡</span>
+                        <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Conseils</span>
+                    </a>
+                </div>
+            </div>
 
-                {# Achievements #}
-                <div class="p-6 text-white shadow-sm bg-gradient-to-br from-wellcare-500 to-wellcare-600 rounded-xl">
-                    <div class="flex items-center gap-3 mb-4">
-                        <i class="text-2xl fas fa-trophy"></i>
-                        <div>
-                            <p class="font-semibold">_objectif.atteints|default(0)}_objectifs atteints</p>
-                            <p class="text-sm text-white/80">Cette semaine</p>
+            {# Sidebar #}
+            <div class="space-y-6">
+                {# Water Intake #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-blue-500 fas fa-tint"></i>
+                        Hydratation
+                    </h3>
+                    <div class="text-center">
+                        <div class="relative inline-block mb-4">
+                            <svg class="w-32 h-32 transform -rotate-90">
+                                <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="12" fill="none" class="text-gray-200 dark:text-gray-700"/>
+                                {% set waterPercent = water.target > 0 ? (water.intake / water.target * 100) : 0 %}
+                                {% set waterColor = waterPercent >= 100 ? 'text-green-500' : 'text-blue-500' %}
+                                <circle cx="64" cy="64" r="56" stroke="currentColor" stroke-width="12" fill="none" 
+                                        stroke-dasharray="{{ water.target * 35 }}"
+                                        stroke-dashoffset="{{ water.target * 35 - (water.intake / water.target * water.target * 35)|round }}"
+                                        class="{{ waterColor }} transition-all duration-500"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-3xl font-bold {{ waterPercent >= 100 ? 'text-green-500' : 'text-gray-900 dark:text-white' }}">{{ water.intake|default(0) }}</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex -space-x-2">
-                        {% for badge in badges|default([])|slice(0, 4) %}
-                            <div class="flex items-center justify-center w-10 h-10 border-2 border-white rounded-full bg-white/20" title="{{ badge.name }}">
-                                <i class="fas {{ badge.icon }} text-sm"></i>
-                            </div>
-                        {% endfor %}
-                        {% if (badges|default([])|length) > 4 %}
-                            <div class="flex items-center justify-center w-10 h-10 border-2 border-white rounded-full bg-white/10">
-                                <span class="text-xs">+{{ (badges|default([])|length) - 4 }}</span>
-                            </div>
+                        <p class="text-gray-600 dark:text-gray-400">/ {{ water.target|default(8) }} verres</p>
+                        {% if waterPercent >= 100 %}
+                        <div class="mt-3 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse">
+                            <p class="text-white font-bold text-sm">
+                                <i class="fas fa-trophy mr-1"></i>
+                                Objectif atteint! 🎉
+                            </p>
+                        </div>
                         {% endif %}
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 mt-4">
+                        {% for i in 1..4 %}
+                            <form method="post" action="{{ path('nutrition_water_quick_add') }}">
+                                <input type="hidden" name="glasses" value="{{ i }}">
+                                <button type="submit" class="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50">
+                                    +{{ i }}
+                                </button>
+                            </form>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# Quick Links #}
+                <div class="p-6 bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 text-wellcare-500 fas fa-bolt"></i>
+                        Accès Rapide
+                    </h3>
+                    <div class="space-y-2">
+                        <a href="{{ path('nutrition_meal_planner') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-wellcare-500 fas fa-calendar-alt"></i>
+                            <span class="text-gray-700 dark:text-gray-300">Planificateur</span>
+                        </a>
+                        <a href="{{ path('nutrition_goals') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-wellcare-500 fas fa-target"></i>
+                            <span class="text-gray-700 dark:text-gray-300">Objectifs</span>
+                        </a>
+                        <a href="{{ path('nutrition_food_diary') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-wellcare-500 fas fa-book"></i>
+                            <span class="text-gray-700 dark:text-gray-300">Journal</span>
+                        </a>
+                        <a href="{{ path('nutrition_nutrition_recipes') }}" class="flex items-center gap-3 p-3 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <i class="text-wellcare-500 fas fa-book-open"></i>
+                            <span class="text-gray-700 dark:text-gray-300">Recettes</span>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+</div>
 
-    {# Quick Log Modal #}
-    {% include 'nutrition/partials/quick-log-modal.html.twig' %}
-
-    {# Barcode Scanner Modal #}
-    {% include 'nutrition/partials/barcode-scanner-modal.html.twig' %}
+{# Custom Delete Confirmation Modal #}
+<div id="delete-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="hideDeleteModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+            <div class="text-center">
+                <div class="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                    <i class="text-3xl text-red-500 fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">Confirmer la suppression</h3>
+                <p class="mb-6 text-gray-600 dark:text-gray-400">
+                    Êtes-vous sûr de vouloir supprimer <span id="delete-item-name" class="font-semibold text-red-500"></span> ?
+                </p>
+                <div class="flex gap-3">
+                    <button onclick="hideDeleteModal()" 
+                            class="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
+                        Annuler
+                    </button>
+                    <a id="delete-confirm-btn" href="#"
+                       class="flex-1 px-4 py-3 text-white bg-red-500 rounded-lg hover:bg-red-600">
+                        Supprimer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('nutritionDashboard', () => ({
-        waterIntake: {{ water.intake|default(0) }},
-        waterTarget: {{ water.target|default(8) }},
-        
-        init() {
-            this.initCharts();
-        },
+let deleteUrl = '';
 
-        toggleWater(level) {
-            if (level <= this.waterTarget) {
-                this.waterIntake = level;
-                // Save to backend
-                fetch('/api/nutrition/water', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ intake: this.waterIntake })
-                });
-            }
-        },
+function showDeleteModal(event, url, itemName) {
+    event.preventDefault();
+    deleteUrl = url;
+    document.getElementById('delete-item-name').textContent = itemName;
+    document.getElementById('delete-confirm-btn').href = url;
+    document.getElementById('delete-modal').classList.remove('hidden');
+}
 
-        addFood(name, calories) {
-            // Add food to current meal
-            console.log('Adding food:', name, calories);
-        },
+function hideDeleteModal() {
+    document.getElementById('delete-modal').classList.add('hidden');
+    deleteUrl = '';
+}
 
-        initCharts() {
-            const ctx = document.getElementById('weeklyNutritionChart');
-            if (!ctx) return;
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                    datasets: [{
-                        label: 'Calories',
-                        data: [1850, 2100, 1950, 2200, 1800, 1650, 2000],
-                        backgroundColor: 'rgba(0, 167, 144, 0.8)',
-                        borderRadius: 6,
-                    }, {
-                        label: 'Objectif',
-                        data: [2000, 2000, 2000, 2000, 2000, 2000, 2000],
-                        type: 'line',
-                        borderColor: 'rgba(156, 163, 175, 0.5)',
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(156, 163, 175, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }));
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideDeleteModal();
+    }
 });
 </script>
+
+{# Floating AI Chat Button #}
+{% include 'nutrition/_ai-floating-button.html.twig' %}
 {% endblock %}

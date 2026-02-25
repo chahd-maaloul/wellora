@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ patientName }} - Messages - WellCare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-5xl">
+        {# Header #}
+        <div class="flex items-center gap-4 mb-6">
+            <a href="{{ path('nutrisioniste_messages') }}" class="p-2 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30 flex items-center justify-center">
+                    <span class="text-lg font-medium text-wellcare-600">{{ patientName|first }}</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ patientName }}</h1>
+                    <p class="text-sm text-gray-500">Patient #{{ patientId }}</p>
+                </div>
+            </div>
+        </div>
+
+        {# Messages #}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden mb-6">
+            <div class="p-4 h-[400px] overflow-y-auto">
+                {% for message in messages %}
+                <div class="mb-4 {% if message.sender == 'nutritionist' %}text-right{% endif %}">
+                    <div class="inline-block max-w-md p-4 rounded-2xl {% if message.sender == 'nutritionist' %}bg-wellcare-500 text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white{% endif %}">
+                        <p>{{ message.content }}</p>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">{{ message.time }} - {{ message.date }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {# Message Form #}
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <form method="post" action="{{ path('nutrisioniste_message_send', { id: conversationId }) }}">
+                    <div class="flex gap-3">
+                        <input type="text" name="message" placeholder="Tapez votre message..." required
+                               class="flex-1 px-4 py-3 border border-gray-300 rounded-xl dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                        <button type="submit" class="px-6 py-3 font-medium text-white transition-colors rounded-xl bg-wellcare-500 hover:bg-wellcare-600">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# Quick Actions #}
+        <div class="flex gap-3">
+            <a href="{{ path('nutrisioniste_patient_view', { id: patientId }) }}" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-user"></i>Voir dossier patient
+            </a>
+            <a href="{{ path('nutrisioniste_consultation_new') }}" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-calendar-plus"></i>Planifier consultation
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

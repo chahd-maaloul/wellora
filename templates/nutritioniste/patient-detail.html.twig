@@ -10,15 +10,15 @@
 {% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
 
 {% block body %}
-<div class="min-h-screen py-8" x-data="patientDetail()">
+<div class="min-h-screen py-8">
     <div class="px-4 mx-auto max-w-7xl">
         {# Header #}
         <div class="flex items-center gap-4 mb-8">
-            <a href="{{ path('nutritionniste_patients') }}" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+            <a href="#" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ patient.name }}</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Marie Dubois</h1>
                 <p class="text-gray-500 dark:text-gray-400">Patient Profile</p>
             </div>
         </div>
@@ -27,19 +27,19 @@
         <div class="grid grid-cols-1 gap-4 mb-8 md:grid-cols-4">
             <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Statut</p>
-                <p class="mt-1 text-2xl font-bold text-gray-900 capitalize dark:text-white">{{ patient.status }}</p>
+                <p class="mt-1 text-2xl font-bold text-gray-900 capitalize dark:text-white">Actif</p>
             </div>
             <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Objectif</p>
-                <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">{{ patient.goal }}</p>
+                <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">Perte de poids</p>
             </div>
             <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
                 <p class="text-sm text-gray-500 dark:text-gray-400">IMC</p>
-                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ patient.bmi }}</p>
+                <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">24.5</p>
             </div>
             <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Date de début</p>
-                <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">{{ patient.startDate|date('d/m/Y') }}</p>
+                <p class="mt-1 text-xl font-bold text-gray-900 dark:text-white">15/01/2025</p>
             </div>
         </div>
 
@@ -48,20 +48,19 @@
             <div class="p-6 bg-white shadow-lg lg:col-span-2 dark:bg-gray-800 rounded-2xl">
                 <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Progression du poids</h2>
                 <div class="flex items-end gap-4 mb-4">
-                    <div class="text-4xl font-bold text-wellcare-500">{{ patient.currentWeight }}<span class="text-lg font-normal text-gray-500">kg</span></div>
+                    <div class="text-4xl font-bold text-wellcare-500">68<span class="text-lg font-normal text-gray-500">kg</span></div>
                     <div class="flex items-center gap-2 text-sm text-green-500">
                         <i class="fas fa-arrow-down"></i>
-                        {{ patient.initialWeight - patient.currentWeight }}kg
+                        -7kg
                     </div>
                 </div>
                 <div class="space-y-2">
                     <div class="flex justify-between text-sm">
-                        <span class="text-gray-500">Initial: {{ patient.initialWeight }}kg</span>
-                        <span class="text-gray-500">Objectif: {{ patient.targetWeight }}kg</span>
+                        <span class="text-gray-500">Initial: 75kg</span>
+                        <span class="text-gray-500">Objectif: 65kg</span>
                     </div>
                     <div class="w-full h-3 bg-gray-200 rounded-full dark:bg-gray-700">
-                        {% set progress = ((patient.initialWeight - patient.currentWeight) / (patient.initialWeight - patient.targetWeight) * 100) %}
-                        <div class="h-3 rounded-full bg-wellcare-500" style="width: {{ progress|abs }}%"></div>
+                        <div class="h-3 rounded-full bg-wellcare-500" style="width: 70%"></div>
                     </div>
                 </div>
             </div>
@@ -69,18 +68,18 @@
             <div class="p-6 bg-white shadow-lg dark:bg-gray-800 rounded-2xl">
                 <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Actions rapides</h2>
                 <div class="space-y-3">
-                    <button class="w-full px-4 py-3 text-left text-blue-600 transition-colors rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+                    <a href="#" class="w-full block px-4 py-3 text-left text-blue-600 transition-colors rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30">
                         <i class="mr-2 fas fa-envelope"></i>Envoyer un message
-                    </button>
-                    <button class="w-full px-4 py-3 text-left text-green-600 transition-colors rounded-lg bg-green-50 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30">
+                    </a>
+                    <a href="#" class="w-full block px-4 py-3 text-left text-green-600 transition-colors rounded-lg bg-green-50 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30">
                         <i class="mr-2 fas fa-utensils"></i>Créer un plan alimentaire
-                    </button>
-                    <button class="w-full px-4 py-3 text-left text-purple-600 transition-colors rounded-lg bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30">
+                    </a>
+                    <a href="#" class="w-full block px-4 py-3 text-left text-purple-600 transition-colors rounded-lg bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30">
                         <i class="mr-2 fas fa-chart-pie"></i>Analyser la nutrition
-                    </button>
-                    <button class="w-full px-4 py-3 text-left transition-colors rounded-lg text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30">
+                    </a>
+                    <a href="#" class="w-full block px-4 py-3 text-left transition-colors rounded-lg text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30">
                         <i class="mr-2 fas fa-file-alt"></i>Générer un rapport
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -123,4 +122,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
 {% endblock %}
