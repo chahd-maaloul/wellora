@@ -1,5 +1,5 @@
 {# templates/health/analytics/patient-view.html.twig #}
-{# Patient Analytics Dashboard - Health Trends, Patterns & Insights #}
+{# Patient Analytics Dashboard - Complete Health Metrics & Risk Assessment #}
 
 {% extends 'layouts/app.html.twig' %}
 
@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="patientAnalytics()" x-init="init()">
+<div class="min-h-full bg-gray-50 dark:bg-gray-950" x-data="healthAnalytics()" x-init="init()">
     {# Header Section #}
     <div class="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -23,313 +23,871 @@
                         {{ 'Mon Analyse Santé'|trans }}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {{ 'Visualisez vos tendances, suivez vos progrès et comprenez vos données de santé'|trans }}
+                        {{ 'Évaluez vos risques de santé et suivez votre progression'|trans }}
                     </p>
+                    {% if start_date and end_date %}
+                    <p class="mt-2 text-sm text-wellcare-600 dark:text-wellcare-400">
+                        <i class="fa-solid fa-calendar-range mr-1"></i>
+                        {{ 'Période:'|trans }} {{ start_date }} - {{ end_date }}
+                    </p>
+                    {% endif %}
                 </div>
                 
-                {# Date Range Selector #}
+                {# Journal Selector #}
                 <div class="flex items-center gap-3">
-                    <div class="relative">
-                        <input 
-                            type="text" 
-                            id="dateRange" 
-                            class="pr-10 input"
-                            placeholder="{{ 'Sélectionner une période'|trans }}"
-                            x-ref="dateRange"
-                            readonly
-                        >
-                        <i class="absolute text-gray-400 transform -translate-y-1/2 pointer-events-none fa-regular fa-calendar right-3 top-1/2"></i>
+                    {% if journals|length > 0 %}
+                    <div class="relative w-64">
+                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">{{ 'Sélectionner le journal'|trans }}</label>
+                        <select x-model="selectedJournalId" @change="updateJournal" class="w-full input">
+                            <option value="">{{ 'Tous les journaux'|trans }}</option>
+                            {% for journal in journals %}
+                            <option value="{{ journal.id }}">
+                                {% if journal.name %}{{ journal.name }}{% else %}Journal #{{ journal.id }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <select x-model="selectedPeriod" @change="updatePeriod" class="w-32 input">
-                        <option value="7d">{{ '7 jours'|trans }}</option>
-                        <option value="30d">{{ '30 jours'|trans }}</option>
-                        <option value="3m">{{ '3 mois'|trans }}</option>
-                        <option value="1y">{{ '1 an'|trans }}</option>
-                    </select>
+                    {% endif %}
                 </div>
-            </div>
         </div>
     </div>
 
     <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        {# Health Score Card #}
+        {# Global Health Score #}
         <div class="p-6 mb-8 text-white shadow-lg bg-gradient-to-r from-wellcare-500 to-wellcare-light-500 rounded-2xl">
             <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <div class="flex items-center gap-4 md:col-span-1">
                     <div class="relative">
-                        <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                        <svg class="w-28 h-28 transform -rotate-90" viewBox="0 0 100 100">
                             <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
                             <circle cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8"
-                                    stroke-dasharray="283" :stroke-dashoffset="283 - (283 * healthScore / 100)"
+                                    :stroke-dasharray="283" :stroke-dashoffset="283 - (283 * globalScore / 100)"
                                     stroke-linecap="round" class="transition-all duration-1000"/>
                         </svg>
-                        <div class="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
-                            <span class="text-3xl font-bold" x-text="healthScore"></span>
+                        <div class="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 text-center">
+                            <span class="text-4xl font-bold" x-text="globalScore"></span>
+                            <span class="text-xs block" x-text="globalScoreLabel"></span>
                         </div>
                     </div>
                     <div>
-                        <p class="text-sm font-medium opacity-90">{{ 'Score Santé'|trans }}</p>
-                        <p class="text-xs opacity-75" x-text="healthScoreLabel"></p>
+                        <p class="text-sm font-medium opacity-90">{{ 'Score Santé Global'|trans }}</p>
+                        <p class="text-xs opacity-75" x-text="globalScoreDescription"></p>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 gap-4 md:col-span-3">
-                    <div class="p-4 bg-white/10 rounded-xl">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="fa-solid fa-arrow-trend-up"></i>
-                            <span class="text-sm">{{ 'Tendance'|trans }}</span>
+                
+                {# Score Breakdown #}
+                <div class="grid grid-cols-5 gap-2 md:col-span-3">
+                    <template x-for="(metric, index) in scoreBreakdown" :key="index">
+                        <div class="p-3 bg-white/10 rounded-xl text-center">
+                            <div class="flex items-center justify-center mb-1">
+                                <i :class="metric.icon + ' text-lg'" :style="'color: ' + metric.color"></i>
+                            </div>
+                            <p class="text-xs opacity-75" x-text="metric.name"></p>
+                            <p class="text-lg font-bold" :style="'color: ' + getScoreColor(metric.score)" x-text="metric.score"></p>
+                            <p class="text-xs opacity-75" x-text="metric.weight + '%'"></p>
                         </div>
-                        <p class="text-2xl font-bold" x-text="trendDirection"></p>
-                        <p class="text-xs opacity-75">{{ 'vs période précédente'|trans }}</p>
-                    </div>
-                    <div class="p-4 bg-white/10 rounded-xl">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="fa-solid fa-fire"></i>
-                            <span class="text-sm">{{ 'Énergie moy.'|trans }}</span>
-                        </div>
-                        <p class="text-2xl font-bold" x-text="avgEnergy + '/10'"></p>
-                        <p class="text-xs opacity-75" x-text="energyTrend"></p>
-                    </div>
-                    <div class="p-4 bg-white/10 rounded-xl">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="fa-solid fa-moon"></i>
-                            <span class="text-sm">{{ 'Sommeil moy.'|trans }}</span>
-                        </div>
-                        <p class="text-2xl font-bold" x-text="avgSleep + 'h'"></p>
-                        <p class="text-xs opacity-75" x-text="sleepTrend"></p>
-                    </div>
+                    </template>
                 </div>
             </div>
         </div>
 
-        {# Main Charts Grid #}
-        <div class="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2">
-            {# Health Trends Over Time #}
-            <div class="p-6 bg-white border border-gray-100 shadow-sm lg:col-span-2 rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center justify-between mb-6">
+        {# Risk Metrics Grid #}
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <i class="fa-solid fa-heart-pulse mr-2 text-wellcare-500"></i>
+            {{ 'Métriques de Risque'|trans }}
+        </h2>
+        
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-8">
+            {# 1. Glycemic Risk #}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
-                            <i class="text-lg fa-solid fa-chart-area"></i>
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-droplet text-red-500 text-xl"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Tendances de Santé'|trans }}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Évolution de vos indicateurs clés'|trans }}</p>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Risque Glycémique'|trans }}</h3>
+                            <p class="text-xs text-gray-500">{{ 'Glycémie (g/L)'|trans }}</p>
                         </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-sm font-bold"
+                          :class="glycemicStatus.class" x-text="glycemicStatus.text"></span>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Moyenne'|trans }}</p>
+                        <p class="text-xl font-bold" :class="glycemicStatus.class" x-text="avgGlycemia.toFixed(2)"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Min'|trans }}</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="minGlycemia.toFixed(2)"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Max'|trans }}</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="maxGlycemia.toFixed(2)"></p>
+                    </div>
+                </div>
+                
+                {# Score Bar #}
+                <div class="mb-2">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ 'Score Glycémique'|trans }}</span>
+                        <span class="text-sm font-bold" :style="'color: ' + getScoreColor(glycemicScore)" x-text="glycemicScore"></span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                        <div class="h-3 rounded-full transition-all duration-500"
+                             :style="'width: ' + glycemicScore + '%; background-color: ' + getScoreColor(glycemicScore)"></div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between text-xs text-gray-500">
+                    <span>40 (🔴 Risque élevé)</span>
+                    <span>70</span>
+                    <span>100 (🟢 Normal)</span>
+                </div>
+                
+                <div class="h-48 mt-4">
+                    <canvas id="glycemiaChart"></canvas>
+                </div>
+            </div>
+
+            {# 2. Cardiovascular Risk #}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-heart text-red-500 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Risque Cardiovasculaire'|trans }}</h3>
+                            <p class="text-xs text-gray-500">{{ 'Tension (mmHg)'|trans }}</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-sm font-bold"
+                          :class="bpStatus.class" x-text="bpStatus.text"></span>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Systolique'|trans }}</p>
+                        <p class="text-xl font-bold" :class="bpStatus.class" x-text="avgSystolic"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Diastolique'|trans }}</p>
+                        <p class="text-xl font-bold" :class="bpStatus.class" x-text="avgDiastolic"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Score'|trans }}</p>
+                        <p class="text-xl font-bold" :style="'color: ' + getScoreColor(bpScore)" x-text="bpScore"></p>
+                    </div>
+                </div>
+                
+                {# BP Zones #}
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded bg-green-500"></div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">< 120/80 - {{ 'Normal'|trans }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button @click="toggleMetric('energy')" 
-                                :class="activeMetrics.includes('energy') ? 'bg-wellcare-100 text-wellcare-700 dark:bg-wellcare-900/30 dark:text-wellcare-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
-                                class="px-3 py-1 text-xs font-medium transition-colors rounded-full">
-                            {{ 'Énergie'|trans }}
-                        </button>
-                        <button @click="toggleMetric('mood')" 
-                                :class="activeMetrics.includes('mood') ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
-                                class="px-3 py-1 text-xs font-medium transition-colors rounded-full">
-                            {{ 'Humeur'|trans }}
-                        </button>
-                        <button @click="toggleMetric('sleep')" 
-                                :class="activeMetrics.includes('sleep') ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
-                                class="px-3 py-1 text-xs font-medium transition-colors rounded-full">
-                            {{ 'Sommeil'|trans }}
-                        </button>
+                        <div class="w-4 h-4 rounded bg-orange-500"></div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">120-139/80-89 - {{ 'Pré-hypertension'|trans }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded bg-red-500"></div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">≥ 140/90 - {{ 'Hypertension'|trans }}</span>
                     </div>
                 </div>
-                <div class="relative h-80">
-                    <canvas id="trendsChart"></canvas>
+                
+                <div class="h-48 mt-4">
+                    <canvas id="bpChart"></canvas>
                 </div>
             </div>
 
-            {# Symptom Analysis - Heatmap #}
-            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center justify-between mb-6">
+            {# 3. Sleep/Fatigue Risk #}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
-                            <i class="text-lg fa-solid fa-fire-flame-curved"></i>
+                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-bed text-indigo-500 text-xl"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Analyse des Symptômes'|trans }}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Fréquence par jour et heure'|trans }}</p>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Risque Fatigue/Burnout'|trans }}</h3>
+                            <p class="text-xs text-gray-500">{{ 'Sommeil'|trans }}</p>
                         </div>
                     </div>
+                    <span class="px-3 py-1 rounded-full text-sm font-bold"
+                          :class="sleepStatus.class" x-text="sleepStatus.text"></span>
                 </div>
-                <div class="relative h-64">
-                    <canvas id="symptomHeatmapChart"></canvas>
+                
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Heures moy.'|trans }}</p>
+                        <p class="text-xl font-bold" :class="sleepStatus.class" x-text="avgSleep.toFixed(1) + 'h'"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Qualité moy.'|trans }}</p>
+                        <p class="text-xl font-bold" :class="sleepStatus.class" x-text="avgSleepQuality + '/5'"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Score'|trans }}</p>
+                        <p class="text-xl font-bold" :style="'color: ' + getScoreColor(sleepScore)" x-text="sleepScore"></p>
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Symptôme le plus fréquent'|trans }}</p>
-                        <p class="font-semibold text-gray-900 dark:text-white" x-text="mostFrequentSymptom"></p>
+                
+                {# Sleep Score Formula #}
+                <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg mb-4">
+                    <p class="text-xs text-gray-500 mb-2">{{ 'Calcul du score'|trans }}:</p>
+                    <div class="flex justify-between text-sm">
+                        <span>8h + qualité 5 = 100</span>
+                        <span>6h + qualité 3 = 60</span>
+                        <span><5h = 30</span>
                     </div>
-                    <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Durée moyenne'|trans }}</p>
-                        <p class="font-semibold text-gray-900 dark:text-white" x-text="avgSymptomDuration"></p>
-                    </div>
+                </div>
+                
+                <div class="h-48 mt-4">
+                    <canvas id="sleepChart"></canvas>
                 </div>
             </div>
 
-            {# Medication Effectiveness #}
-            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                <div class="flex items-center justify-between mb-6">
+            {# 4. Symptomatic Risk #}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="flex items-center justify-center w-10 h-10 text-blue-600 rounded-xl bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
-                            <i class="text-lg fa-solid fa-pills"></i>
+                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-face-frown text-orange-500 text-xl"></i>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Efficacité des Médicaments'|trans }}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Suivi des traitements'|trans }}</p>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Risque Symptomatique'|trans }}</h3>
+                            <p class="text-xs text-gray-500">{{ 'Intensité des symptômes'|trans }}</p>
                         </div>
                     </div>
+                    <span class="px-3 py-1 rounded-full text-sm font-bold"
+                          :class="symptomStatus.class" x-text="symptomStatus.text"></span>
                 </div>
-                <div class="relative h-64">
-                    <canvas id="medicationChart"></canvas>
+                
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Nb symptômes'|trans }}</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="totalSymptoms"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Intensité moy.'|trans }}</p>
+                        <p class="text-xl font-bold" :class="symptomStatus.class" x-text="avgIntensity.toFixed(1)"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Score'|trans }}</p>
+                        <p class="text-xl font-bold" :style="'color: ' + getScoreColor(symptomScore)" x-text="symptomScore"></p>
+                    </div>
                 </div>
-                <div class="mt-4 space-y-3">
-                    <template x-for="med in medications" :key="med.id">
-                        <div class="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2 h-2 rounded-full" :style="`background-color: ${med.color}`"></div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="med.name"></span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-gray-500 dark:text-gray-400" x-text="med.effectiveness + '% efficace'"></span>
-                                <div class="w-16 h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                                    <div class="h-2 transition-all duration-500 rounded-full" 
-                                         :style="`width: ${med.effectiveness}%; background-color: ${med.color}`"></div>
+                
+                {# Intensity Zones #}
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded bg-green-500"></div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">≤ 3 - {{ 'Normal'|trans }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded bg-orange-500"></div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">4-6 - {{ 'Pré-alerte'|trans }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded bg-red-500"></div>
+                        <span class="text-xs text-gray-600 dark:text-gray-400">≥ 7 + 3 jours - {{ 'Alerte'|trans }}</span>
+                    </div>
+                </div>
+                
+                <div class="h-48 mt-4">
+                    <canvas id="symptomChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {# 5. Weight Risk & Combined Charts #}
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <i class="fa-solid fa-scale-balanced mr-2 text-wellcare-500"></i>
+            {{ 'Poids & Variations'|trans }}
+        </h2>
+        
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-8">
+            {# Weight Risk Card #}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-weight-scale text-blue-500 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Risque Lié au Poids'|trans }}</h3>
+                            <p class="text-xs text-gray-500">{{ 'Variation et IMC'|trans }}</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-sm font-bold"
+                          :class="weightStatus.class" x-text="weightStatus.text"></span>
+                </div>
+                
+                <div class="grid grid-cols-4 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Poids actuel'|trans }}</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="currentWeight + ' kg'"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Variation'|trans }}</p>
+                        <p class="text-xl font-bold" :class="weightVariation > 2 || weightVariation < -2 ? 'text-red-500' : 'text-green-500'" 
+                           x-text="(weightVariation >= 0 ? '+' : '') + weightVariation.toFixed(1) + ' kg'"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'IMC'|trans }}</p>
+                        <p class="text-xl font-bold" :style="'color: ' + getScoreColor(weightScore)" x-text="bmi.toFixed(1)"></p>
+                    </div>
+                    <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-xs text-gray-500">{{ 'Score'|trans }}</p>
+                        <p class="text-xl font-bold" :style="'color: ' + getScoreColor(weightScore)" x-text="weightScore"></p>
+                    </div>
+                </div>
+                
+                {# Weight Chart #}
+                <div class="h-64">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+
+            {# Alertes #}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-yellow-500 mr-2"></i>
+                    {{ 'Alertes Actives'|trans }}
+                </h3>
+                
+                <div class="space-y-3">
+                    <template x-for="alert in activeAlerts" :key="alert.id">
+                        <div class="p-3 rounded-lg border"
+                             :class="alert.severity === 'critical' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 
+                                     alert.severity === 'warning' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' :
+                                     'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'">
+                            <div class="flex items-start gap-3">
+                                <i :class="alert.icon + ' text-lg mt-0.5'" 
+                                   :class="alert.severity === 'critical' ? 'text-red-500' : 
+                                           alert.severity === 'warning' ? 'text-orange-500' : 'text-green-500'"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="alert.title"></p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400" x-text="alert.description"></p>
                                 </div>
                             </div>
                         </div>
                     </template>
+                    
+                    <div x-show="activeAlerts.length === 0" class="p-4 text-center text-gray-500">
+                        <i class="fa-solid fa-check-circle text-4xl text-green-500 mb-2"></i>
+                        <p>{{ 'Aucune alerte active'|trans }}</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {# Lifestyle Correlation Section #}
-        <div class="p-6 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <i class="text-lg fa-solid fa-link"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Corrélation Mode de Vie'|trans }}</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Comment vos habitudes affectent votre santé'|trans }}</p>
-                    </div>
-                </div>
-                <select x-model="correlationType" @change="updateCorrelationChart" class="w-48 input">
-                    <option value="exercise">{{ 'Exercice vs Énergie'|trans }}</option>
-                    <option value="sleep">{{ 'Sommeil vs Humeur'|trans }}</option>
-                    <option value="food">{{ 'Alimentation vs Symptômes'|trans }}</option>
-                </select>
-            </div>
-            <div class="relative h-72">
-                <canvas id="correlationChart"></canvas>
-            </div>
-            <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
-                <div class="p-4 text-center bg-gray-50 rounded-xl dark:bg-gray-800">
-                    <i class="mb-2 text-2xl fa-solid fa-person-running text-emerald-500"></i>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Jours avec exercice'|trans }}</p>
-                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="exerciseDays + '%'"></p>
-                </div>
-                <div class="p-4 text-center bg-gray-50 rounded-xl dark:bg-gray-800">
-                    <i class="mb-2 text-2xl fa-solid fa-bolt text-amber-500"></i>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Énergie moy. (exercice)'|trans }}</p>
-                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="energyWithExercise"></p>
-                </div>
-                <div class="p-4 text-center bg-gray-50 rounded-xl dark:bg-gray-800">
-                    <i class="mb-2 text-2xl text-indigo-500 fa-solid fa-bed"></i>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Qualité sommeil'|trans }}</p>
-                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="sleepQuality"></p>
-                </div>
+        {# Combined Trends #}
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <i class="fa-solid fa-chart-line mr-2 text-wellcare-500"></i>
+            {{ 'Tendances Combinées'|trans }}
+        </h2>
+        
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-8">
+            <div class="h-80">
+                <canvas id="combinedChart"></canvas>
             </div>
         </div>
 
-        {# Trigger Analysis #}
-        <div class="p-6 mb-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                        <i class="text-lg fa-solid fa-lightbulb"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Analyse des Déclencheurs'|trans }}</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Facteurs qui influencent vos symptômes'|trans }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div class="relative h-64">
-                    <canvas id="triggerChart"></canvas>
-                </div>
-                <div class="space-y-4">
-                    <template x-for="trigger in triggers" :key="trigger.id">
-                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl dark:bg-gray-800">
-                            <div class="flex items-center justify-center w-12 h-12 text-xl rounded-lg"
-                                 :class="trigger.impact > 0 ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'">
-                                <i :class="trigger.icon"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="font-medium text-gray-900 dark:text-white" x-text="trigger.name"></p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="trigger.description"></p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-bold" 
-                                   :class="trigger.impact > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'"
-                                   x-text="(trigger.impact > 0 ? '+' : '') + trigger.impact + '%'"></p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'impact'|trans }}</p>
-                            </div>
+        {# Recommendations #}
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>
+            {{ 'Recommandations'|trans }}
+        </h2>
+        
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <template x-for="rec in recommendations" :key="rec.id">
+                <div class="p-4 rounded-xl border transition-all duration-300 hover:shadow-md"
+                     :class="rec.priority === 'high' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 
+                             rec.priority === 'medium' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' :
+                             'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                             :class="rec.priority === 'high' ? 'bg-red-100 dark:bg-red-900/50' : 
+                                     rec.priority === 'medium' ? 'bg-orange-100 dark:bg-orange-900/50' :
+                                     'bg-green-100 dark:bg-green-900/50'">
+                            <i :class="rec.icon + ' text-lg'" 
+                               :class="rec.priority === 'high' ? 'text-red-500' : 
+                                       rec.priority === 'medium' ? 'text-orange-500' : 'text-green-500'"></i>
                         </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-
-        {# Quick Stats & Export #}
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-            <div class="p-6 bg-white border border-gray-100 shadow-sm lg:col-span-3 rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Résumé de la période'|trans }}</h3>
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <div class="p-4 text-center bg-wellcare-50 rounded-xl dark:bg-wellcare-900/20">
-                        <p class="text-2xl font-bold text-wellcare-600 dark:text-wellcare-400" x-text="totalEntries"></p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Entrées'|trans }}</p>
-                    </div>
-                    <div class="p-4 text-center bg-purple-50 rounded-xl dark:bg-purple-900/20">
-                        <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" x-text="goodDays + '%'"></p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Bons jours'|trans }}</p>
-                    </div>
-                    <div class="p-4 text-center bg-amber-50 rounded-xl dark:bg-amber-900/20">
-                        <p class="text-2xl font-bold text-amber-600 dark:text-amber-400" x-text="symptomFreeDays"></p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Jours sans symptômes'|trans }}</p>
-                    </div>
-                    <div class="p-4 text-center bg-emerald-50 rounded-xl dark:bg-emerald-900/20">
-                        <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400" x-text="medicationAdherence + '%'"></p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Adhérence traitement'|trans }}</p>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white" x-text="rec.title"></h4>
+                            <p class="mt-1 text-xs text-gray-600 dark:text-gray-400" x-text="rec.description"></p>
+                            <span class="inline-block mt-2 text-xs px-2 py-0.5 rounded"
+                                  :class="rec.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' : 
+                                          rec.priority === 'medium' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' :
+                                          'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'"
+                                  x-text="rec.priorityLabel"></span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ 'Exporter'|trans }}</h3>
-                <div class="space-y-3">
-                    <button @click="exportData('pdf')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-rose-600 hover:bg-rose-700">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        {{ 'Rapport PDF'|trans }}
-                    </button>
-                    <button @click="exportData('csv')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                        <i class="fa-solid fa-file-csv"></i>
-                        {{ 'Données CSV'|trans }}
-                    </button>
-                    <button @click="exportData('png')" class="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
-                        <i class="fa-solid fa-image"></i>
-                        {{ 'Graphiques PNG'|trans }}
-                    </button>
-                </div>
-            </div>
+            </template>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block javascripts %}
-    {{ parent() }}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
-    <script src="{{ asset('build/health-analytics.js') }}"></script>
+{% block scripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('healthAnalytics', () => ({
+        selectedJournalId: '{{ selected_journal_id|default('')|e('js') }}',
+        startDate: '{{ start_date_js|default('')|e('js') }}',
+        endDate: '{{ end_date_js|default('')|e('js') }}',
+        
+        // Real data from controller
+        glycemicData: {{ glycemic_data|default([0.95, 1.02, 0.88, 1.08, 0.92, 1.15, 0.98])|json_encode|raw }},
+        bpSystolic: {{ bp_systolic|default([118, 122, 120, 125, 119, 128, 121])|json_encode|raw }},
+        bpDiastolic: {{ bp_diastolic|default([78, 80, 76, 82, 77, 84, 79])|json_encode|raw }},
+        sleepData: {{ sleep_data|default([7.5, 6.5, 8.0, 7.0, 6.0, 7.5, 8.5])|json_encode|raw }},
+        sleepQuality: [4, 3, 5, 4, 2, 4, 5], // Default quality values
+        weightData: {{ weight_data|default([72.5, 72.0, 71.8, 72.2, 71.5, 71.0, 70.8])|json_encode|raw }},
+        symptomIntensity: {{ symptom_intensity|default([3, 4, 2, 5, 3, 6, 2])|json_encode|raw }},
+        chartLabels: {{ dates|default(['Jour 1', 'Jour 2', 'Jour 3', 'Jour 4', 'Jour 5', 'Jour 6', 'Jour 7'])|json_encode|raw }},
+        
+        // Calculated averages from real data
+        avgGlycemia: {{ avg_glycemia|default(0.98) }},
+        minGlycemia: {{ min_glycemia|default(0.88) }},
+        maxGlycemia: {{ max_glycemia|default(1.15) }},
+        avgSystolic: {{ avg_systolic|default(122) }},
+        avgDiastolic: {{ avg_diastolic|default(79) }},
+        avgSleep: {{ avg_sleep|default(7.2) }},
+        avgSleepQuality: 3.9,
+        currentWeight: {{ current_weight|default(70.8) }},
+        weightVariation: {{ weight_variation|default(-1.7) }},
+        bmi: 23.2,
+        avgIntensity: {{ avg_intensity|default(3.6)|round }},
+        totalSymptoms: {{ total_symptoms|default(7)|round }},
+        
+        // Scores (0-100) - These will be recalculated by calculateMetrics()
+        glycemicScore: {{ glycemic_score|default(80) }},
+        bpScore: {{ bp_score|default(78) }},
+        sleepScore: {{ sleep_score|default(72) }},
+        symptomScore: {{ symptom_score|default(80) }},
+        weightScore: {{ weight_score|default(88) }},
+        globalScore: {{ global_score|default(80) }},
+        
+        // Charts
+        charts: {},
+        
+        init() {
+            this.calculateMetrics();
+            this.initCharts();
+        },
+        
+        updateJournal() {
+            const url = new URL(window.location.href);
+            if (this.selectedJournalId) {
+                url.searchParams.set('journal_id', this.selectedJournalId);
+            } else {
+                url.searchParams.delete('journal_id');
+            }
+            window.location.href = url.toString();
+        },
+        
+        calculateMetrics() {
+            // Calculate glycemic score
+            if (this.avgGlycemia < 0.70) {
+                this.glycemicScore = 40;
+            } else if (this.avgGlycemia <= 1.10) {
+                this.glycemicScore = 100;
+            } else if (this.avgGlycemia <= 1.25) {
+                this.glycemicScore = 70;
+            } else {
+                this.glycemicScore = 40;
+            }
+            
+            // Calculate BP score
+            if (this.avgSystolic >= 140 || this.avgDiastolic >= 90) {
+                this.bpScore = 40;
+            } else if (this.avgSystolic >= 120 || this.avgDiastolic >= 80) {
+                this.bpScore = 70;
+            } else {
+                this.bpScore = 100;
+            }
+            
+            // Calculate sleep score
+            if (this.avgSleep < 5) {
+                this.sleepScore = 30;
+            } else if (this.avgSleep < 6 || this.avgSleepQuality <= 2) {
+                this.sleepScore = 60;
+            } else {
+                this.sleepScore = Math.min(100, Math.round(this.avgSleep * 10 + this.avgSleepQuality * 5));
+            }
+            
+            // Calculate symptom score
+            const highIntensityDays = this.symptomIntensity.filter(i => i >= 7).length;
+            if (highIntensityDays >= 3) {
+                this.symptomScore = 40;
+            } else if (this.avgIntensity >= 7) {
+                this.symptomScore = 60;
+            } else if (this.avgIntensity >= 4) {
+                this.symptomScore = 70;
+            } else {
+                this.symptomScore = 100 - (this.avgIntensity * 5);
+            }
+            
+            // Calculate weight score
+            if (Math.abs(this.weightVariation) > 2) {
+                this.weightScore = 60;
+            } else if (this.bmi > 30) {
+                this.weightScore = 50;
+            } else {
+                this.weightScore = 88;
+            }
+            
+            // Calculate global score (weighted average)
+            this.globalScore = Math.round(
+                this.glycemicScore * 0.30 +
+                this.bpScore * 0.25 +
+                this.sleepScore * 0.20 +
+                this.weightScore * 0.15 +
+                this.symptomScore * 0.10
+            );
+        },
+        
+        get glycemicStatus() {
+            if (this.avgGlycemia < 0.70) return { text: 'Hypoglycémie 🔴', class: 'text-red-500' };
+            if (this.avgGlycemia <= 1.10) return { text: 'Normal 🟢', class: 'text-green-500' };
+            if (this.avgGlycemia <= 1.25) return { text: 'Pré-alerte 🟠', class: 'text-orange-500' };
+            return { text: 'Hyperglycémie 🔴', class: 'text-red-500' };
+        },
+        
+        get bpStatus() {
+            if (this.avgSystolic >= 140 || this.avgDiastolic >= 90) return { text: 'Hypertension 🔴', class: 'text-red-500' };
+            if (this.avgSystolic >= 120 || this.avgDiastolic >= 80) return { text: 'Pré-hypertension 🟠', class: 'text-orange-500' };
+            return { text: 'Normal 🟢', class: 'text-green-500' };
+        },
+        
+        get sleepStatus() {
+            if (this.avgSleep < 5) return { text: 'Risque élevé 🔴', class: 'text-red-500' };
+            if (this.avgSleep < 6 || this.avgSleepQuality <= 2) return { text: 'Attention 🟠', class: 'text-orange-500' };
+            return { text: 'Normal 🟢', class: 'text-green-500' };
+        },
+        
+        get symptomStatus() {
+            const highDays = this.symptomIntensity.filter(i => i >= 7).length;
+            if (highDays >= 3 || this.avgIntensity >= 7) return { text: 'Alerte 🔴', class: 'text-red-500' };
+            if (this.avgIntensity >= 4) return { text: 'Pré-alerte 🟠', class: 'text-orange-500' };
+            return { text: 'Normal 🟢', class: 'text-green-500' };
+        },
+        
+        get weightStatus() {
+            if (Math.abs(this.weightVariation) > 2) return { text: 'Variation anormale 🔴', class: 'text-red-500' };
+            if (this.bmi > 30) return { text: 'IMC élevé 🟠', class: 'text-orange-500' };
+            return { text: 'Normal 🟢', class: 'text-green-500' };
+        },
+        
+        get globalScoreLabel() {
+            if (this.globalScore >= 80) return 'Bon équilibre 🟢';
+            if (this.globalScore >= 60) return 'À surveiller 🟠';
+            return 'Risque élevé 🔴';
+        },
+        
+        get globalScoreDescription() {
+            if (this.globalScore >= 80) return '{{ 'Excellent état de santé'|trans }}';
+            if (this.globalScore >= 60) return '{{ 'Beberapa indicateurs à surveiller'|trans }}';
+            return '{{ 'Consultation recommandée'|trans }}';
+        },
+        
+        get scoreBreakdown() {
+            return [
+                { name: '{{ 'Glycémie'|trans }}', score: this.glycemicScore, weight: 30, icon: 'fa-droplet', color: '#ef4444' },
+                { name: '{{ 'Tension'|trans }}', score: this.bpScore, weight: 25, icon: 'fa-heart', color: '#f97316' },
+                { name: '{{ 'Sommeil'|trans }}', score: this.sleepScore, weight: 20, icon: 'fa-bed', color: '#8b5cf6' },
+                { name: '{{ 'Poids'|trans }}', score: this.weightScore, weight: 15, icon: 'fa-weight-scale', color: '#3b82f6' },
+                { name: '{{ 'Symptômes'|trans }}', score: this.symptomScore, weight: 10, icon: 'fa-face-frown', color: '#22c55e' }
+            ];
+        },
+        
+        get activeAlerts() {
+            const alerts = [];
+            if (this.glycemicScore < 70) {
+                alerts.push({
+                    id: 1,
+                    title: '{{ 'Risque glycémique'|trans }}',
+                    description: '{{ 'Glycémie en dehors de la plage normale'|trans }}',
+                    severity: this.glycemicScore < 50 ? 'critical' : 'warning',
+                    icon: 'fa-droplet'
+                });
+            }
+            if (this.bpScore < 70) {
+                alerts.push({
+                    id: 2,
+                    title: '{{ 'Tension élevée'|trans }}',
+                    description: '{{ 'Risque d\'hypertension détecté'|trans }}',
+                    severity: this.bpScore < 50 ? 'critical' : 'warning',
+                    icon: 'fa-heart-pulse'
+                });
+            }
+            if (this.sleepScore < 70) {
+                alerts.push({
+                    id: 3,
+                    title: '{{ 'Sommeil insuffisant'|trans }}',
+                    description: '{{ 'Moins de 6h de sommeil par nuit'|trans }}',
+                    severity: 'warning',
+                    icon: 'fa-bed'
+                });
+            }
+            if (Math.abs(this.weightVariation) > 2) {
+                alerts.push({
+                    id: 4,
+                    title: '{{ 'Variation de poids'|trans }}',
+                    description: '{{ 'Variation de plus de 2kg en une semaine'|trans }}',
+                    severity: 'warning',
+                    icon: 'fa-scale-balanced'
+                });
+            }
+            return alerts;
+        },
+        
+        get recommendations() {
+            const recs = [];
+            
+            if (this.globalScore < 60) {
+                recs.push({
+                    id: 1,
+                    title: '{{ 'Consultation médicale'|trans }}',
+                    description: '{{ 'Votre score de santé global est bas. Consultez un professionnel de santé.'|trans }}',
+                    priority: 'high',
+                    priorityLabel: '{{ 'Priorité haute'|trans }}',
+                    icon: 'fa-user-doctor'
+                });
+            }
+            
+            if (this.glycemicScore < 80) {
+                recs.push({
+                    id: 2,
+                    title: '{{ 'Contrôle glycémique'|trans }}',
+                    description: '{{ 'Surveillez votre glycémie et adoptez une alimentation équilibrée.'|trans }}',
+                    priority: this.glycemicScore < 60 ? 'high' : 'medium',
+                    priorityLabel: '{{ 'Surveillance'|trans }}',
+                    icon: 'fa-utensils'
+                });
+            }
+            
+            if (this.bpScore < 80) {
+                recs.push({
+                    id: 3,
+                    title: '{{ 'Gestion de la tension'|trans }}',
+                    description: '{{ 'Réduisez le sel, faites de l\'exercice régulièrement.'|trans }}',
+                    priority: this.bpScore < 60 ? 'high' : 'medium',
+                    priorityLabel: '{{ 'Mode de vie'|trans }}',
+                    icon: 'fa-person-running'
+                });
+            }
+            
+            if (this.sleepScore < 80) {
+                recs.push({
+                    id: 4,
+                    title: '{{ 'Améliorer le sommeil'|trans }}',
+                    description: '{{ 'Ciblez 7-8h de sommeil par nuit avec une routine régulière.'|trans }}',
+                    priority: 'medium',
+                    priorityLabel: '{{ 'Bien-être'|trans }}',
+                    icon: 'fa-moon'
+                });
+            }
+            
+            if (recs.length === 0) {
+                recs.push({
+                    id: 5,
+                    title: '{{ 'Excellent travail !'|trans }}',
+                    description: '{{ 'Tous vos indicateurs sont dans les normes. Continuez ainsi.'|trans }}',
+                    priority: 'low',
+                    priorityLabel: '{{ 'Félicitations'|trans }}',
+                    icon: 'fa-trophy'
+                });
+            }
+            
+            return recs;
+        },
+        
+        getScoreColor(score) {
+            if (score >= 80) return '#22c55e'; // green
+            if (score >= 60) return '#f97316'; // orange
+            return '#ef4444'; // red
+        },
+        
+        initCharts() {
+            const labels = this.chartLabels;
+            
+            // Glycemia Chart
+            this.charts.glycemia = new Chart(document.getElementById('glycemiaChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '{{ 'Glycémie (g/L)'|trans }}',
+                        data: this.glycemicData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: this.glycemicData.map(v => v >= 0.70 && v <= 1.10 ? '#22c55e' : v > 1.10 ? '#ef4444' : '#f97316')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 0.5, max: 1.5 } }
+                }
+            });
+            
+            // BP Chart
+            this.charts.bp = new Chart(document.getElementById('bpChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '{{ 'Systolique'|trans }}',
+                            data: this.bpSystolic,
+                            borderColor: '#ef4444',
+                            tension: 0.4
+                        },
+                        {
+                            label: '{{ 'Diastolique'|trans }}',
+                            data: this.bpDiastolic,
+                            borderColor: '#3b82f6',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+            
+            // Sleep Chart
+            this.charts.sleep = new Chart(document.getElementById('sleepChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '{{ 'Heures'|trans }}',
+                        data: this.sleepData,
+                        backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    }, {
+                        label: '{{ 'Qualité'|trans }}',
+                        data: this.sleepQuality,
+                        type: 'line',
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: { beginAtZero: true, max: 12 },
+                        y1: { beginAtZero: true, max: 5, position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+            
+            // Symptom Chart
+            this.charts.symptom = new Chart(document.getElementById('symptomChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '{{ 'Intensité'|trans }}',
+                        data: this.symptomIntensity,
+                        backgroundColor: this.symptomIntensity.map(v => v <= 3 ? '#22c55e' : v <= 6 ? '#f97316' : '#ef4444'),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, max: 10 } }
+                }
+            });
+            
+            // Weight Chart
+            this.charts.weight = new Chart(document.getElementById('weightChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '{{ 'Poids (kg)'|trans }}',
+                        data: this.weightData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+            
+            // Combined Chart
+            this.charts.combined = new Chart(document.getElementById('combinedChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '{{ 'Glycémie'|trans }}',
+                            data: this.glycemicData.map(v => v * 100),
+                            borderColor: '#ef4444',
+                            tension: 0.4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '{{ 'Tension syst.'|trans }}',
+                            data: this.bpSystolic,
+                            borderColor: '#f97316',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '{{ 'Sommeil'|trans }}',
+                            data: this.sleepData,
+                            borderColor: '#8b5cf6',
+                            tension: 0.4,
+                            yAxisID: 'y2'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        y: { position: 'left', title: { display: true, text: '{{ 'Glycémie'|trans }}' } },
+                        y1: { position: 'right', title: { display: true, text: '{{ 'Tension'|trans }}' }, grid: { drawOnChartArea: false } },
+                        y2: { display: false }
+                    }
+                }
+            });
+        }
+    }));
+});
+</script>
 {% endblock %}

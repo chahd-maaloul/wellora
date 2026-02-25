@@ -4,10 +4,18 @@ namespace App\Entity;
 
 use App\Enum\UserRole;
 use App\Repository\UserRepository;
+use App\Entity\NutritionGoal;
+use App\Entity\FoodLog;
+use App\Entity\WaterIntake;
+use App\Entity\MealPlan;
+use App\Entity\NutritionConsultation;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -27,7 +35,8 @@ use Symfony\Component\Uid\Uuid;
 ])]
 #[UniqueEntity(fields: ['email'], message: 'Cette adresse email est déjà utilisée')]
 #[UniqueEntity(fields: ['licenseNumber'], message: 'Ce numéro de licence est déjà utilisé', groups: ['Professional'])]
-abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
+#[UniqueEntity(fields: ['googleId'], message: 'Ce compte Google est déjà lié à un autre utilisateur')]
+abstract class User implements UserInterface, PasswordAuthenticatedUserInterface, TwoFactorInterface, BackupCodeInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: 'string', unique: true, length: 36)]
@@ -105,6 +114,57 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 128, nullable: true)]
     private ?string $lastSessionId = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $googleId = null;
+
+    // ============================================
+    // Two-Factor Authentication Fields (TOTP)
+    // ============================================
+    
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $isTwoFactorEnabled = false;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    // ============================================
+    // Backup Codes
+    // ============================================
+    
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $backupCodes = [];
+    
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $plainBackupCodes = [];
+
+    // ============================================
+    // Trusted Devices (custom implementation)
+    // ============================================
+    
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $trustedDevices = [];
+
+    #[ORM\OneToMany(targetEntity: Healthjournal::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $healthJournals;
+
+    // Nutrition relationships
+    #[ORM\OneToMany(targetEntity: NutritionGoal::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $nutritionGoals;
+
+    #[ORM\OneToMany(targetEntity: FoodLog::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $foodLogs;
+
+    #[ORM\OneToMany(targetEntity: WaterIntake::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $waterIntakes;
+
+    #[ORM\OneToMany(targetEntity: MealPlan::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $mealPlans;
+
+    #[ORM\OneToMany(targetEntity: NutritionConsultation::class, mappedBy: 'patient', cascade: ['persist', 'remove'])]
+    private Collection $nutritionConsultations;
+
+    #[ORM\OneToMany(targetEntity: NutritionConsultation::class, mappedBy: 'nutritionist', cascade: ['persist', 'remove'])]
+    private Collection $nutritionConsultationsGiven;
     // Professional properties shared across professional users
     #[ORM\Column(name: 'years_of_experience')]
     #[Assert\PositiveOrZero(message: 'Les années d\'expérience doivent être positives')]
@@ -201,6 +261,216 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->createdAt = new \DateTime();
         $this->uuid = Uuid::v4()->toRfc4122();
+        $this->healthJournals = new ArrayCollection();
+        $this->nutritionGoals = new ArrayCollection();
+        $this->foodLogs = new ArrayCollection();
+        $this->waterIntakes = new ArrayCollection();
+        $this->mealPlans = new ArrayCollection();
+        $this->nutritionConsultations = new ArrayCollection();
+        $this->nutritionConsultationsGiven = new ArrayCollection();
+    }
+
+    /**
+     * @return Collection<int, Healthjournal>
+     */
+    public function getHealthJournals(): Collection
+    {
+        return $this->healthJournals;
+    }
+
+    public function addHealthJournal(Healthjournal $healthJournal): static
+    {
+        if (!$this->healthJournals->contains($healthJournal)) {
+            $this->healthJournals->add($healthJournal);
+            $healthJournal->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHealthJournal(Healthjournal $healthJournal): static
+    {
+        if ($this->healthJournals->removeElement($healthJournal)) {
+            if ($healthJournal->getUser() === $this) {
+                $healthJournal->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NutritionGoal>
+     */
+    public function getNutritionGoals(): Collection
+    {
+        return $this->nutritionGoals;
+    }
+
+    public function addNutritionGoal(NutritionGoal $goal): static
+    {
+        if (!$this->nutritionGoals->contains($goal)) {
+            $this->nutritionGoals->add($goal);
+            $goal->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNutritionGoal(NutritionGoal $goal): static
+    {
+        if ($this->nutritionGoals->removeElement($goal)) {
+            if ($goal->getUser() === $this) {
+                $goal->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FoodLog>
+     */
+    public function getFoodLogs(): Collection
+    {
+        return $this->foodLogs;
+    }
+
+    public function addFoodLog(FoodLog $foodLog): static
+    {
+        if (!$this->foodLogs->contains($foodLog)) {
+            $this->foodLogs->add($foodLog);
+            $foodLog->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFoodLog(FoodLog $foodLog): static
+    {
+        if ($this->foodLogs->removeElement($foodLog)) {
+            if ($foodLog->getUser() === $this) {
+                $foodLog->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, WaterIntake>
+     */
+    public function getWaterIntakes(): Collection
+    {
+        return $this->waterIntakes;
+    }
+
+    public function addWaterIntake(WaterIntake $waterIntake): static
+    {
+        if (!$this->waterIntakes->contains($waterIntake)) {
+            $this->waterIntakes->add($waterIntake);
+            $waterIntake->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeWaterIntake(WaterIntake $waterIntake): static
+    {
+        if ($this->waterIntakes->removeElement($waterIntake)) {
+            if ($waterIntake->getUser() === $this) {
+                $waterIntake->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MealPlan>
+     */
+    public function getMealPlans(): Collection
+    {
+        return $this->mealPlans;
+    }
+
+    public function addMealPlan(MealPlan $mealPlan): static
+    {
+        if (!$this->mealPlans->contains($mealPlan)) {
+            $this->mealPlans->add($mealPlan);
+            $mealPlan->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMealPlan(MealPlan $mealPlan): static
+    {
+        if ($this->mealPlans->removeElement($mealPlan)) {
+            if ($mealPlan->getUser() === $this) {
+                $mealPlan->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NutritionConsultation>
+     */
+    public function getNutritionConsultations(): Collection
+    {
+        return $this->nutritionConsultations;
+    }
+
+    public function addNutritionConsultation(NutritionConsultation $consultation): static
+    {
+        if (!$this->nutritionConsultations->contains($consultation)) {
+            $this->nutritionConsultations->add($consultation);
+            $consultation->setPatient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNutritionConsultation(NutritionConsultation $consultation): static
+    {
+        if ($this->nutritionConsultations->removeElement($consultation)) {
+            if ($consultation->getPatient() === $this) {
+                $consultation->setPatient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NutritionConsultation>
+     */
+    public function getNutritionConsultationsGiven(): Collection
+    {
+        return $this->nutritionConsultationsGiven;
+    }
+
+    public function addNutritionConsultationGiven(NutritionConsultation $consultation): static
+    {
+        if (!$this->nutritionConsultationsGiven->contains($consultation)) {
+            $this->nutritionConsultationsGiven->add($consultation);
+            $consultation->setNutritionist($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNutritionConsultationGiven(NutritionConsultation $consultation): static
+    {
+        if ($this->nutritionConsultationsGiven->removeElement($consultation)) {
+            if ($consultation->getNutritionist() === $this) {
+                $consultation->setNutritionist(null);
+            }
+        }
+
+        return $this;
         $this->consultations = new ArrayCollection();
         $this->ordonnances = new ArrayCollection();
         $this->examens = new ArrayCollection();
@@ -613,6 +883,14 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getGoogleId(): ?string
+    {
+        return $this->googleId;
+    }
+
+    public function setGoogleId(?string $googleId): self
+    {
+        $this->googleId = $googleId;
     /**
      * @return Collection<int, Consultation>
      */
@@ -703,6 +981,295 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getFullName(): string
     {
         return $this->firstName . ' ' . $this->lastName;
+    }
+
+    // ============================================
+    // Two-Factor Authentication Getters/Setters
+    // ============================================
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->isTwoFactorEnabled;
+    }
+
+    public function setIsTwoFactorEnabled(bool $isTwoFactorEnabled): self
+    {
+        $this->isTwoFactorEnabled = $isTwoFactorEnabled;
+        return $this;
+    }
+
+    public function getTotpSecret(): ?string
+    {
+        return $this->totpSecret;
+    }
+
+    public function setTotpSecret(?string $totpSecret): self
+    {
+        $this->totpSecret = $totpSecret;
+        return $this;
+    }
+
+    // ============================================
+    // Backup Codes Getters/Setters
+    // ============================================
+
+    public function getBackupCodesArray(): ?array
+    {
+        return $this->backupCodes;
+    }
+
+    public function setBackupCodesArray(?array $backupCodes): self
+    {
+        $this->backupCodes = $backupCodes;
+        return $this;
+    }
+
+    // ============================================
+    // Trusted Devices Getters/Setters (Custom)
+    // ============================================
+
+    public function getTrustedDevicesArray(): ?array
+    {
+        return $this->trustedDevices;
+    }
+
+    public function setTrustedDevicesArray(?array $trustedDevices): self
+    {
+        $this->trustedDevices = $trustedDevices;
+        return $this;
+    }
+
+    // ============================================
+    // TwoFactorInterface Implementation (TOTP)
+    // ============================================
+
+    /**
+     * Return true if the user should do TOTP authentication.
+     */
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->isTwoFactorEnabled;
+    }
+
+    /**
+     * Return the user name. This is used in QR code generation.
+     */
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * Return the configuration for TOTP authentication.
+     */
+    public function getTotpAuthenticationConfiguration(): ?\Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface
+    {
+        // Return configuration if secret exists (during setup or after 2FA is enabled)
+        if (!$this->totpSecret) {
+            return null;
+        }
+        
+        return new TotpConfiguration(
+            $this->totpSecret,
+            TotpConfiguration::ALGORITHM_SHA1,
+            30,
+            6
+        );
+    }
+
+    // ============================================
+    // BackupCodeInterface Implementation
+    // ============================================
+
+    /**
+     * Check if a backup code is valid
+     */
+    public function isBackupCode(string $code): bool
+    {
+        $codes = $this->backupCodes ?? [];
+        
+        // Hash the entered code to compare with stored hashes
+        $hashedCode = hash('sha256', $code);
+        
+        foreach ($codes as $storedCode) {
+            if (hash_equals($storedCode, $hashedCode)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Invalidate a backup code after use
+     * @param string $code The plain code or already-hashed code
+     */
+    public function invalidateBackupCode(string $code): void
+    {
+        $codes = $this->backupCodes ?? [];
+        
+        // Check if the code looks like a SHA256 hash (64 characters hex)
+        $isAlreadyHashed = preg_match('/^[a-f0-9]{64}$/i', $code);
+        
+        if ($isAlreadyHashed) {
+            // Code is already hashed, use it directly
+            $hashToRemove = $code;
+        } else {
+            // Plain code, hash it
+            $hashToRemove = hash('sha256', $code);
+        }
+        
+        // Remove the used code from the array
+        $codes = array_filter($codes, function($storedCode) use ($hashToRemove) {
+            return !hash_equals($storedCode, $hashToRemove);
+        });
+        
+        $this->backupCodes = array_values($codes);
+        
+        // Also remove from plain codes for display
+        $plainCodes = $this->plainBackupCodes ?? [];
+        if (!$isAlreadyHashed) {
+            $this->plainBackupCodes = array_values(array_filter($plainCodes, function($plainCode) use ($code) {
+                return strtoupper($plainCode) !== strtoupper($code);
+            }));
+        }
+    }
+
+    /**
+     * Generate new backup codes
+     * Stores PLAIN codes for display, hashed for verification
+     */
+    public function generateBackupCodes(int $count = 10): array
+    {
+        $plainCodes = [];
+        $hashedCodes = [];
+        
+        for ($i = 0; $i < $count; $i++) {
+            // Generate a random 8-character code with format XXXX-XXXX
+            $code = strtoupper(sprintf('%04s-%04s', 
+                bin2hex(random_bytes(2)), 
+                bin2hex(random_bytes(2))
+            ));
+            
+            $plainCodes[] = $code;
+            $hashedCodes[] = hash('sha256', $code);
+        }
+        
+        // Store hashed codes for verification
+        $this->backupCodes = $hashedCodes;
+        // Store plain codes for display
+        $this->plainBackupCodes = $plainCodes;
+        
+        // Return the plain codes for user to save
+        return $plainCodes;
+    }
+    
+    /**
+     * Get plain backup codes for display
+     */
+    public function getPlainBackupCodes(): array
+    {
+        return $this->plainBackupCodes ?? [];
+    }
+
+    /**
+     * Get the backup codes (for interface compatibility)
+     */
+    public function getBackupCodes(): array
+    {
+        return $this->backupCodes ?? [];
+    }
+
+    /**
+     * Set the backup codes (for interface compatibility)
+     */
+    public function setBackupCodes(array $codes): void
+    {
+        $this->backupCodes = $codes;
+    }
+
+    // ============================================
+    // Custom Trusted Devices Methods
+    // ============================================
+
+    /**
+     * Get the trusted device identifier
+     */
+    public function getTrustedDeviceIdentifier(): string
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * Get trusted devices list
+     */
+    public function getTrustedDevices(): array
+    {
+        return $this->trustedDevices ?? [];
+    }
+
+    /**
+     * Add a trusted device
+     */
+    public function addTrustedDevice(string $deviceToken, \DateTimeInterface $expiresAt): void
+    {
+        $devices = $this->getTrustedDevices();
+        $devices[] = [
+            'token' => $deviceToken,
+            'expiresAt' => $expiresAt->format('Y-m-d H:i:s'),
+            'createdAt' => (new \DateTime())->format('Y-m-d H:i:s'),
+        ];
+        
+        $this->trustedDevices = $devices;
+    }
+
+    /**
+     * Remove a trusted device
+     */
+    public function removeTrustedDevice(string $deviceToken): void
+    {
+        $devices = $this->getTrustedDevices();
+        $devices = array_filter($devices, function($device) use ($deviceToken) {
+            return $device['token'] !== $deviceToken;
+        });
+        
+        $this->trustedDevices = array_values($devices);
+    }
+
+    /**
+     * Check if a device token is trusted
+     */
+    public function isTrustedDevice(string $deviceToken): bool
+    {
+        $devices = $this->getTrustedDevices();
+        
+        foreach ($devices as $device) {
+            if ($device['token'] === $deviceToken) {
+                // Check if not expired
+                $expiresAt = new \DateTime($device['expiresAt']);
+                if ($expiresAt > new \DateTime()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Clean up expired trusted devices
+     */
+    public function cleanupExpiredTrustedDevices(): void
+    {
+        $devices = $this->getTrustedDevices();
+        $now = new \DateTime();
+        
+        $devices = array_filter($devices, function($device) use ($now) {
+            $expiresAt = new \DateTime($device['expiresAt']);
+            return $expiresAt > $now;
+        });
+        
+        $this->trustedDevices = array_values($devices);
     }
 
     #[ORM\PreUpdate]

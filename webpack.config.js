@@ -23,6 +23,7 @@ Encore
         .addStyleEntry('fitness-css', './assets/styles/fitness.css')
         .addEntry('admin', './assets/admin.js')
         .addEntry('health-analytics', './assets/js/health-analytics.js')
+        .addEntry('health-calendar', './assets/js/health-calendar.js')
         .addEntry('doctor-dashboard', './assets/js/doctor-dashboard.js')
         .addEntry('doctor-schedule', './assets/js/doctor-schedule.js')
         .addEntry('accessibility', './assets/js/accessibility.js')

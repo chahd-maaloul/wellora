@@ -1,0 +1,89 @@
+{% extends 'layouts/app.html.twig' %}
+{% set cache_buster = 'now'|date('YmdHis') %}
+
+{% block title %}Configuration 2FA - WellCare Connect{% endblock %}
+
+{% block body %}
+<div class="w-full max-w-md mx-auto">
+    <div class="mb-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-wellcare-100 dark:bg-wellcare-900/30">
+            <svg class="w-8 h-8 text-wellcare-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Authentification à Deux Facteurs</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">Configurez l'authentification à deux facteurs pour sécuriser votre compte</p>
+    </div>
+
+    <div class="p-8 bg-white shadow-xl dark:bg-gray-800 rounded-2xl">
+        <div class="space-y-6">
+            <!-- Step 1: Instructions -->
+            <div class="pb-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Étape 1: Installez une application d'authentification</h2>
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    Téléchargez et installez Google Authenticator, Microsoft Authenticator, ou Authy sur votre smartphone.
+                </p>
+                <ul class="space-y-1 text-sm text-gray-600 list-disc list-inside dark:text-gray-400">
+                    <li>Google Authenticator (iOS / Android)</li>
+                    <li>Microsoft Authenticator (iOS / Android)</li>
+                    <li>Authy (iOS / Android)</li>
+                </ul>
+            </div>
+
+            <!-- Step 2: QR Code -->
+            <div class="pb-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Étape 2: Scannez le code QR</h2>
+                <div class="flex justify-center mb-4">
+                    <img src="{{ qrCodeUrl }}" alt="QR Code" class="w-48 h-48 border-2 border-gray-200 rounded-lg dark:border-gray-700">
+                </div>
+                <p class="mb-4 text-sm text-center text-gray-600 dark:text-gray-400">
+                    Scannez ce code QR avec votre application d'authentification
+                </p>
+                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                    <p class="text-xs text-center text-gray-500 dark:text-gray-400">Ou entrez ce code manuellement:</p>
+                    <p class="mt-2 font-mono text-lg font-bold text-center text-gray-900 dark:text-white">{{ secret }}</p>
+                    <div class="mt-3 text-center">
+                        <span onclick="navigator.clipboard.writeText('{{ secret }}'); alert('Code copié!');" class="text-sm cursor-pointer text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
+                            Cliquer pour copier le code
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Verify -->
+            <div>
+                <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Étape 3: Vérifiez</h2>
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    Entrez le code à 6 chiffres généré par votre application pour vérifier la configuration.
+                </p>
+                
+                <form action="/profile/2fa/enable" method="POST" id="twofa-form" class="space-y-4">
+                    <div>
+                        <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Code de vérification</label>
+                        <input type="text" 
+                               name="code" 
+                               id="code" 
+                               maxlength="6" 
+                               pattern="[0-9]*"
+                               inputmode="numeric"
+                               autocomplete="one-time-code"
+                               required
+                               class="block w-full px-4 py-3 mt-1 text-2xl tracking-widest text-center placeholder-gray-400 border border-gray-300 rounded-lg dark:border-gray-600 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:text-white"
+                               placeholder="000000">
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('2fa_enable') }}">
+
+                    <button type="submit" class="w-full px-4 py-3 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700">Activer la 2FA</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="{{ path('app_2fa_manage') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-wellcare-600">
+                ← Retour à la gestion 2FA
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

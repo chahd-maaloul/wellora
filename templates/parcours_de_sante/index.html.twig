@@ -1,0 +1,751 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ (is_my_trails_view|default(false)) ? 'My Trails List' : 'Discover Health Trails' }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+    <style>
+        .distance-range input[type="range"] {
+            position: absolute;
+            width: 100%;
+            height: 2rem;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+            background: transparent;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .distance-range input[type="range"]::-webkit-slider-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #2563eb;
+            border-radius: 9999px;
+            background: #2563eb;
+            box-shadow: 0 0 0 3px #ffffff;
+            pointer-events: auto;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .distance-range input[type="range"]::-moz-range-thumb {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #2563eb;
+            border-radius: 9999px;
+            background: #2563eb;
+            box-shadow: 0 0 0 3px #ffffff;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<!-- Page Header -->
+<div class="py-4 mb-4 -mx-4 -mt-4 bg-wellcare-dark-500">
+    <div class="px-4 mx-auto">
+        <h1 class="mb-1 text-xl font-bold text-white font-display">
+            <i class="mr-2 fa-solid fa-route"></i>{{ (is_my_trails_view|default(false)) ? 'My Trails List' : 'Discover Health Trails' }}
+        </h1>
+        <p class="text-sm text-white/80">{{ (is_my_trails_view|default(false)) ? 'View and manage your own trails' : 'Find the perfect health-focused route for your wellness journey' }}</p>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="px-4 mx-auto" x-data="{ viewMode: '{{ discoveryConfig.viewMode }}' }">
+    <div class="flex flex-col gap-4 lg:flex-row">
+        <!-- Filters Sidebar -->
+        <div class="flex-shrink-0 lg:w-72">
+            <div class="sticky bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700 top-4">
+                <div class="flex items-center p-3 border-b border-gray-100 dark:border-gray-700">
+                    <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+                        <i class="mr-2 fa-solid fa-filter text-wellcare-500"></i>Filters
+                    </h2>
+                </div>
+
+                <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+                    <h3 class="text-xs font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
+                        <i class="mr-2 fa-solid fa-wand-magic-sparkles text-wellcare-500"></i>AI Trail Chat
+                    </h3>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Click the chat icon at the bottom-right to open AI recommendations.
+                    </p>
+                </div>
+
+                <!-- Search -->
+                <div class="p-3 border-b border-gray-100 dark:border-gray-700">
+                    <form method="get" action="{{ path('app_parcours_de_sante_index') }}" class="space-y-2">
+                        <label for="nomParcours" class="block text-xs font-medium text-gray-700 dark:text-gray-300">Parcours Name</label>
+                        <input
+                            id="nomParcours"
+                            type="text"
+                            name="nomParcours"
+                            value="{{ nomParcours|default('') }}"
+                            placeholder="Search by name..."
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                        >
+
+                        <label for="localisation" class="block text-xs font-medium text-gray-700 dark:text-gray-300">Location</label>
+                        <input
+                            id="localisation"
+                            type="text"
+                            name="localisation"
+                            value="{{ localisation|default('') }}"
+                            placeholder="Search by location..."
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                        >
+
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Distance (km)</label>
+                        <div
+                            x-data="{
+                                minBound: {{ distanceFilter.minBound }},
+                                maxBound: {{ distanceFilter.maxBound }},
+                                minValue: {{ distanceFilter.minValue }},
+                                maxValue: {{ distanceFilter.maxValue }}
+                            }"
+                            class="space-y-2"
+                        >
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="`${Math.round(minValue)} km`"></span>
+                                <span x-text="`${Math.round(maxValue)} km`"></span>
+                            </div>
+
+                            <div class="distance-range relative h-8">
+                                <div class="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full border border-[#00A790] bg-transparent"></div>
+                                <div
+                                    class="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#00A790]"
+                                    :style="`left: ${((minValue - minBound) / (maxBound - minBound)) * 100}%; right: ${100 - (((maxValue - minBound) / (maxBound - minBound)) * 100)}%;`"
+                                ></div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    x-model.number="minValue"
+                                    @input="if (minValue > maxValue) { minValue = maxValue; }"
+                                    aria-label="Minimum distance"
+                                >
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="20"
+                                    step="1"
+                                    x-model.number="maxValue"
+                                    @input="if (maxValue < minValue) { maxValue = minValue; }"
+                                    aria-label="Maximum distance"
+                                >
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <span>{{ distanceFilter.minBound }} km</span>
+                                <span>{{ distanceFilter.maxBound }} km</span>
+                            </div>
+
+                            <input type="hidden" id="minDistance" name="minDistance" :value="minValue">
+                            <input type="hidden" id="maxDistance" name="maxDistance" :value="maxValue">
+                        </div>
+
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">Number of Publications</label>
+                        <div
+                            x-data="{
+                                minBound: {{ publicationFilter.minBound }},
+                                maxBound: {{ publicationFilter.maxBound }},
+                                minValue: {{ publicationFilter.minValue }},
+                                maxValue: {{ publicationFilter.maxValue }}
+                            }"
+                            class="space-y-2"
+                        >
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="`${Math.round(minValue)}`"></span>
+                                <span x-text="`${Math.round(maxValue)}`"></span>
+                            </div>
+
+                            <div class="distance-range relative h-8">
+                                <div class="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full border border-[#00A790] bg-transparent"></div>
+                                <div
+                                    class="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#00A790]"
+                                    :style="`left: ${((minValue - minBound) / (maxBound - minBound)) * 100}%; right: ${100 - (((maxValue - minBound) / (maxBound - minBound)) * 100)}%;`"
+                                ></div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    step="1"
+                                    x-model.number="minValue"
+                                    @input="if (minValue > maxValue) { minValue = maxValue; }"
+                                    aria-label="Minimum number of publications"
+                                >
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    step="1"
+                                    x-model.number="maxValue"
+                                    @input="if (maxValue < minValue) { maxValue = minValue; }"
+                                    aria-label="Maximum number of publications"
+                                >
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <span>{{ publicationFilter.minBound }}</span>
+                                <span>{{ publicationFilter.maxBound }}</span>
+                            </div>
+
+                            <input type="hidden" id="minPublicationCount" name="minPublicationCount" :value="minValue">
+                            <input type="hidden" id="maxPublicationCount" name="maxPublicationCount" :value="maxValue">
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
+                            <button type="submit" class="flex-1 px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                Search
+                            </button>
+                            <a href="{{ path('app_parcours_de_sante_index') }}" class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50" title="Refresh filters" aria-label="Refresh filters">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- View Toggle & Results Count -->
+            <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ parcours_de_santes.getTotalItemCount }}</span> {{ (is_my_trails_view|default(false)) ? 'my trails' : 'parcours available' }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex p-1 bg-gray-100 rounded-lg dark:bg-gray-800">
+                        <button @click="viewMode = 'grid'" 
+                            class="p-1.5 rounded-md transition"
+                            :class="viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-wellcare-500' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-grid-2"></i>
+                        </button>
+                        <button @click="viewMode = 'list'" 
+                            class="p-1.5 rounded-md transition"
+                            :class="viewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm text-wellcare-500' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-list"></i>
+                        </button>
+                    </div>
+                    <form method="get" action="{{ path('app_parcours_de_sante_index') }}" class="flex items-center gap-2">
+                        <input type="hidden" name="nomParcours" value="{{ nomParcours|default('') }}">
+                        <input type="hidden" name="localisation" value="{{ localisation|default('') }}">
+                        <input type="hidden" name="minDistance" value="{{ minDistance is not null ? minDistance : '' }}">
+                        <input type="hidden" name="maxDistance" value="{{ maxDistance is not null ? maxDistance : '' }}">
+                        <input type="hidden" name="minPublicationCount" value="{{ minPublicationCount is not null ? minPublicationCount : '' }}">
+                        <input type="hidden" name="maxPublicationCount" value="{{ maxPublicationCount is not null ? maxPublicationCount : '' }}">
+
+                        <select
+                            name="sortBy"
+                            onchange="this.form.submit()"
+                            class="py-1.5 px-3 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="date" {{ sortBy == 'date' ? 'selected' : '' }}>Creation Date</option>
+                            <option value="name" {{ sortBy == 'name' ? 'selected' : '' }}>Name</option>
+                            <option value="distance" {{ sortBy == 'distance' ? 'selected' : '' }}>Distance</option>
+                        </select>
+
+                        <input type="hidden" name="sortOrder" id="sortOrderInput" value="{{ sortOrder }}">
+                        <div class="inline-flex overflow-hidden border border-gray-200 rounded-lg dark:border-gray-600">
+                            <button
+                                type="button"
+                                title="Sort ascending"
+                                aria-label="Sort ascending"
+                                onclick="document.getElementById('sortOrderInput').value='ASC'; this.form.submit();"
+                                class="px-3 py-1.5 text-sm transition {{ sortOrder == 'ASC' ? 'bg-wellcare-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600' }}"
+                            >
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
+                            <button
+                                type="button"
+                                title="Sort descending"
+                                aria-label="Sort descending"
+                                onclick="document.getElementById('sortOrderInput').value='DESC'; this.form.submit();"
+                                class="px-3 py-1.5 text-sm transition border-l border-gray-200 dark:border-gray-600 {{ sortOrder == 'DESC' ? 'bg-wellcare-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600' }}"
+                            >
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </button>
+                        </div>
+                        <a href="{{ path('app_parcours_de_sante_new') }}" class="inline-flex items-center justify-center w-10 h-10 text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600" title="Add parcours" aria-label="Add parcours">
+                            <i class="fa-solid fa-plus"></i>
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div x-show="viewMode === 'grid'" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {% for parcours in parcours_de_santes %}
+                {% set parcoursImage = parcours.imageParcours|default('') %}
+                {% set parcoursImageIsExternal = parcoursImage starts with 'http://' or parcoursImage starts with 'https://' %}
+                {% set parcoursImageLocalPath = parcoursImage starts with '/' ? parcoursImage : '/' ~ parcoursImage %}
+                <div class="overflow-hidden transition bg-white border border-gray-100 shadow-sm cursor-pointer dark:bg-gray-800 rounded-xl dark:border-gray-700 hover:shadow-md" onclick="window.location.href='{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}'">
+                    <div class="relative h-36 bg-gray-200 dark:bg-gray-700">
+                        {% if parcoursImage %}
+                            {% if parcoursImageIsExternal %}
+                                <img src="{{ parcoursImage }}" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                            {% else %}
+                                <img src="{{ asset(parcoursImageLocalPath) }}" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                            {% endif %}
+                        {% else %}
+                            <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop" alt="{{ parcours.nomParcours }}" class="object-cover w-full h-full">
+                        {% endif %}
+                        {% if is_granted('EDIT', parcours) or is_granted('DELETE', parcours) %}
+                            <div class="absolute flex items-center gap-2 top-2 right-2">
+                                {% if is_granted('EDIT', parcours) %}
+                                    <a href="{{ path('app_parcours_de_sante_edit', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="flex items-center justify-center w-8 h-8 transition rounded-full bg-white/90 hover:bg-white">
+                                        <i class="text-blue-500 fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                {% endif %}
+                                {% if is_granted('DELETE', parcours) %}
+                                    <form method="post" action="{{ path('app_parcours_de_sante_delete', {'id': parcours.id}) }}" onsubmit="event.stopPropagation(); return confirm('Are you sure you want to delete this parcours?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ parcours.id) }}">
+                                        <button type="submit" onclick="event.stopPropagation();" class="flex items-center justify-center w-8 h-8 transition rounded-full bg-white/90 hover:bg-white">
+                                            <i class="text-red-500 fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="p-3">
+                        <h3 class="mb-1 font-semibold text-gray-900 dark:text-white">{{ parcours.nomParcours }}</h3>
+                        <p class="mb-2 text-xs text-gray-500"><i class="mr-1 fa-solid fa-location-dot"></i>{{ parcours.localisationParcours }}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <span><i class="mr-1 fa-solid fa-ruler"></i>{{ parcours.distanceParcours }} km</span>
+                                <span title="Publications"><i class="mr-1 fa-solid fa-newspaper"></i>{{ parcours.publicationParcours|length }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500" title="{{ parcours.dateCreation ? parcours.dateCreation|date('M d, Y') : '-' }}">{{ parcours.dateCreation ? parcours.dateCreation|time_diff : '-' }}</div>
+                        </div>
+                        <div class="flex items-center justify-end gap-2 mt-3">
+                            <a href="{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="inline-flex items-center justify-center w-7 h-7 text-xs text-white rounded bg-wellcare-500 hover:bg-wellcare-600" title="Details" aria-label="Details">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </a>
+                            <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="inline-flex items-center justify-center w-7 h-7 text-xs text-white bg-blue-500 rounded hover:bg-blue-600" title="View publications" aria-label="View publications">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="col-span-full text-center text-gray-500">No parcours found. <a href="{{ path('app_parcours_de_sante_new') }}" class="text-wellcare-500 hover:underline">Create one now</a>.</p>
+                {% endfor %}
+            </div>
+
+            <!-- List View -->
+            <div x-show="viewMode === 'list'" class="space-y-2">
+                {% for parcours in parcours_de_santes %}
+                {% set parcoursImage = parcours.imageParcours|default('') %}
+                {% set parcoursImageIsExternal = parcoursImage starts with 'http://' or parcoursImage starts with 'https://' %}
+                {% set parcoursImageLocalPath = parcoursImage starts with '/' ? parcoursImage : '/' ~ parcoursImage %}
+                <div class="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-lg dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onclick="window.location.href='{{ path('app_parcours_de_sante_show', {'id': parcours.id}) }}'">
+                    {% if parcoursImage %}
+                        {% if parcoursImageIsExternal %}
+                            <img src="{{ parcoursImage }}" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                        {% else %}
+                            <img src="{{ asset(parcoursImageLocalPath) }}" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                        {% endif %}
+                    {% else %}
+                        <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=60&h=60&fit=crop" alt="{{ parcours.nomParcours }}" class="w-12 h-12 rounded-lg object-cover">
+                    {% endif %}
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ parcours.nomParcours }}</h3>
+                        <p class="text-xs text-gray-500"><i class="mr-1 fa-solid fa-location-dot"></i>{{ parcours.localisationParcours }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ parcours.distanceParcours }} km</p>
+                        <p class="text-xs text-gray-500"><i class="mr-1 fa-solid fa-newspaper"></i>{{ parcours.publicationParcours|length }}</p>
+                        <p class="text-xs text-gray-500" title="{{ parcours.dateCreation ? parcours.dateCreation|date('M d, Y') : '-' }}">{{ parcours.dateCreation ? parcours.dateCreation|time_diff : '-' }}</p>
+                    </div>
+                    <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ path('app_publication_parcours_index', {'parcoursId': parcours.id}) }}';" class="inline-flex items-center justify-center w-8 h-8 text-white bg-blue-500 rounded hover:bg-blue-600" title="View publications" aria-label="View publications">
+                        <i class="fa-solid fa-eye"></i>
+                    </a>
+                    {% if is_granted('EDIT', parcours) %}
+                        <a href="{{ path('app_parcours_de_sante_edit', {'id': parcours.id}) }}" onclick="event.stopPropagation();" class="text-gray-400 hover:text-wellcare-500">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-center text-gray-500">No parcours found. <a href="{{ path('app_parcours_de_sante_new') }}" class="text-wellcare-500 hover:underline">Create one now</a>.</p>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4">
+                {{ knp_pagination_render(parcours_de_santes) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div
+    class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3"
+    style="position: fixed; right: 20px; bottom: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 12px;"
+>
+    <div
+        id="aiChatPanel"
+        class="w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden bg-white border border-gray-200 shadow-2xl dark:bg-gray-800 rounded-2xl dark:border-gray-700"
+        style="display: none; width: 352px; max-width: calc(100vw - 2rem); background: #ffffff; border: 1px solid #d1d5db; border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);"
+    >
+        <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                <i class="mr-1 fa-solid fa-wand-magic-sparkles text-wellcare-500"></i>AI Trail Chat
+            </h3>
+            <button
+                type="button"
+                id="aiChatClose"
+                class="inline-flex items-center justify-center w-8 h-8 text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                aria-label="Close AI trail chat"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div
+            id="aiTrailChat"
+            data-endpoint="{{ ai_chat_endpoint }}"
+            class="p-3"
+        >
+            <div id="aiChatMessages" class="h-56 p-2 space-y-2 overflow-y-auto rounded bg-gray-50 dark:bg-gray-700/70"></div>
+
+            <div class="flex flex-wrap gap-1 mt-2">
+                {% for value, label in ai_weather_options %}
+                    {% if value != 'any' %}
+                        <button
+                            type="button"
+                            class="aiWeatherChip px-2 py-1 text-[11px] font-medium border border-gray-200 rounded-full text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700"
+                            data-weather="{{ value }}"
+                        >
+                            {{ label }}
+                        </button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button
+                    type="button"
+                    id="aiChatUseLocation"
+                    class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                    <i class="mr-1 fa-solid fa-location-crosshairs"></i>Use my location
+                </button>
+                <button
+                    type="button"
+                    id="aiChatReset"
+                    class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
+                >
+                    Reset chat
+                </button>
+            </div>
+
+            <form id="aiChatForm" class="flex gap-2 mt-2">
+                <input
+                    id="aiChatInput"
+                    type="text"
+                    placeholder="Type your answer..."
+                    autocomplete="off"
+                    class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent"
+                >
+                <button type="submit" class="px-3 py-2 text-xs font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <button
+        type="button"
+        id="aiChatLauncher"
+        aria-controls="aiChatPanel"
+        aria-expanded="false"
+        class="inline-flex items-center justify-center w-14 h-14 text-white rounded-full shadow-lg bg-wellcare-500 hover:bg-wellcare-600 focus:outline-none focus:ring-2 focus:ring-wellcare-500 focus:ring-offset-2"
+        style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 9999px; border: 0; background: #00a790; color: #ffffff; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28); cursor: pointer;"
+    >
+        <i class="text-lg fa-solid fa-comments"></i>
+        <span class="sr-only">Open AI trail chat</span>
+    </button>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (function () {
+            const chatLauncher = document.getElementById('aiChatLauncher');
+            const chatPanel = document.getElementById('aiChatPanel');
+            const chatClose = document.getElementById('aiChatClose');
+            const chatRoot = document.getElementById('aiTrailChat');
+            const messages = document.getElementById('aiChatMessages');
+            const form = document.getElementById('aiChatForm');
+            const input = document.getElementById('aiChatInput');
+            const useLocationButton = document.getElementById('aiChatUseLocation');
+            const resetButton = document.getElementById('aiChatReset');
+            const weatherChips = document.querySelectorAll('.aiWeatherChip');
+
+            if (!chatLauncher || !chatPanel || !chatClose || !chatRoot || !messages || !form || !input || !useLocationButton || !resetButton) {
+                return;
+            }
+
+            const endpoint = chatRoot.dataset.endpoint;
+            const state = {
+                location: '',
+                latitude: null,
+                longitude: null,
+                weather: '',
+                step: 'ask_location',
+                pending: false
+            };
+
+            function isChatOpen() {
+                return chatPanel.style.display !== 'none';
+            }
+
+            function openChat() {
+                chatPanel.style.display = 'block';
+                chatLauncher.setAttribute('aria-expanded', 'true');
+                input.focus();
+            }
+
+            function closeChat() {
+                chatPanel.style.display = 'none';
+                chatLauncher.setAttribute('aria-expanded', 'false');
+            }
+
+            function addMessage(role, text, recommendation) {
+                const row = document.createElement('div');
+                row.className = role === 'assistant' ? 'flex justify-start' : 'flex justify-end';
+
+                const bubble = document.createElement('div');
+                bubble.className = role === 'assistant'
+                    ? 'max-w-[90%] rounded-lg px-2 py-1.5 text-xs bg-white text-gray-700 border border-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600'
+                    : 'max-w-[90%] rounded-lg px-2 py-1.5 text-xs bg-wellcare-500 text-white';
+                bubble.textContent = text;
+                row.appendChild(bubble);
+                messages.appendChild(row);
+
+                if (recommendation && recommendation.details_url) {
+                    const actionRow = document.createElement('div');
+                    actionRow.className = 'flex justify-start';
+                    const link = document.createElement('a');
+                    link.href = recommendation.details_url;
+                    link.className = 'inline-flex mt-1 items-center justify-center px-2 py-1 text-[11px] font-medium text-white rounded bg-wellcare-500 hover:bg-wellcare-600';
+                    link.textContent = 'Open trail details';
+                    actionRow.appendChild(link);
+                    messages.appendChild(actionRow);
+                }
+
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function normalizeWeather(inputValue) {
+                const value = inputValue.toLowerCase();
+
+                if (value.includes('clear') || value.includes('sun')) return 'clear';
+                if (value.includes('cloud') || value.includes('fog')) return 'cloudy';
+                if (value.includes('rain') || value.includes('drizzle') || value.includes('storm')) return 'rain';
+                if (value.includes('snow')) return 'snow';
+                if (value.includes('wind')) return 'windy';
+                if (value.includes('any') || value.includes('no preference')) return 'any';
+
+                if (value.includes('soleil') || value.includes('ensoleille')) return 'clear';
+                if (value.includes('nuage') || value.includes('brume')) return 'cloudy';
+                if (value.includes('pluie') || value.includes('orage')) return 'rain';
+                if (value.includes('neige')) return 'snow';
+                if (value.includes('vent')) return 'windy';
+
+                return null;
+            }
+
+            async function fetchRecommendation() {
+                if (state.pending) {
+                    return;
+                }
+
+                state.pending = true;
+                addMessage('assistant', 'Checking nearby parcours for you...');
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            location: state.location,
+                            latitude: state.latitude,
+                            longitude: state.longitude,
+                            weather: state.weather
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.ok) {
+                        addMessage('assistant', data.message || 'I could not compute a recommendation. Try again.');
+                        state.step = state.location !== '' || (state.latitude !== null && state.longitude !== null) ? 'ask_weather' : 'ask_location';
+                        return;
+                    }
+
+                    addMessage('assistant', data.message, data.recommendation || null);
+                    addMessage('assistant', 'If you want a new suggestion, type "restart".');
+                    state.step = 'done';
+                } catch (error) {
+                    addMessage('assistant', 'Network error while contacting AI recommendation service.');
+                } finally {
+                    state.pending = false;
+                }
+            }
+
+            function resetConversation() {
+                state.location = '';
+                state.latitude = null;
+                state.longitude = null;
+                state.weather = '';
+                state.step = 'ask_location';
+                state.pending = false;
+                messages.innerHTML = '';
+                addMessage('assistant', 'Hi, I am your trail assistant.');
+                addMessage('assistant', 'Where are you located? Share a city/address or use "Use my location".');
+                input.value = '';
+                if (isChatOpen()) {
+                    input.focus();
+                }
+            }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const text = input.value.trim();
+                if (text === '') {
+                    return;
+                }
+
+                addMessage('user', text);
+                input.value = '';
+
+                const lowerText = text.toLowerCase();
+                if (state.step === 'done') {
+                    if (lowerText.includes('restart') || lowerText.includes('again')) {
+                        resetConversation();
+                        return;
+                    }
+
+                    addMessage('assistant', 'Type "restart" to start a new recommendation.');
+                    return;
+                }
+
+                if (state.step === 'ask_location') {
+                    state.location = text;
+                    state.latitude = null;
+                    state.longitude = null;
+                    state.step = 'ask_weather';
+                    addMessage('assistant', 'Great. What weather do you want? (clear, cloudy, rain, snow, windy, or any)');
+                    return;
+                }
+
+                if (state.step === 'ask_weather') {
+                    const weather = normalizeWeather(text);
+                    if (!weather) {
+                        addMessage('assistant', 'Please choose: clear, cloudy, rain, snow, windy, or any.');
+                        return;
+                    }
+
+                    state.weather = weather;
+                    fetchRecommendation();
+                }
+            });
+
+            useLocationButton.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    addMessage('assistant', 'Geolocation is not available in this browser.');
+                    return;
+                }
+
+                useLocationButton.disabled = true;
+                const previousLabel = useLocationButton.textContent;
+                useLocationButton.textContent = 'Locating...';
+
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        state.latitude = Number(position.coords.latitude.toFixed(6));
+                        state.longitude = Number(position.coords.longitude.toFixed(6));
+                        state.location = 'Current location';
+                        addMessage('user', 'Use my location');
+
+                        if (state.step === 'ask_location') {
+                            state.step = 'ask_weather';
+                            addMessage('assistant', 'Location received. What weather do you want? (clear, cloudy, rain, snow, windy, or any)');
+                        } else {
+                            addMessage('assistant', 'Location updated.');
+                        }
+
+                        useLocationButton.disabled = false;
+                        useLocationButton.textContent = previousLabel;
+                    },
+                    function () {
+                        addMessage('assistant', 'I could not access your location. Please type your city instead.');
+                        useLocationButton.disabled = false;
+                        useLocationButton.textContent = previousLabel;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            });
+
+            weatherChips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    const weatherValue = chip.dataset.weather;
+                    if (!weatherValue) {
+                        return;
+                    }
+
+                    addMessage('user', chip.textContent.trim());
+                    state.weather = weatherValue;
+
+                    if (state.step === 'ask_location' && state.location === '' && (state.latitude === null || state.longitude === null)) {
+                        addMessage('assistant', 'Please share your location first.');
+                        return;
+                    }
+
+                    state.step = 'ask_weather';
+                    fetchRecommendation();
+                });
+            });
+
+            resetButton.addEventListener('click', function () {
+                resetConversation();
+            });
+
+            chatLauncher.addEventListener('click', function () {
+                if (!isChatOpen()) {
+                    openChat();
+                } else {
+                    closeChat();
+                }
+            });
+
+            chatClose.addEventListener('click', function () {
+                closeChat();
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && isChatOpen()) {
+                    closeChat();
+                }
+            });
+
+            resetConversation();
+        })();
+    </script>
+{% endblock %}

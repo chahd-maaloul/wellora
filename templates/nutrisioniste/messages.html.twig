@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Messages - Nutrisioniste - WellCare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-7xl">
+        {# Header #}
+        <div class="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-3 text-wellcare-500 fas fa-comments"></i>
+                    Messages
+                </h1>
+                <p class="mt-1 text-gray-500 dark:text-gray-400">Communiquez avec vos patients</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+            {# Conversations List #}
+            <div class="lg:col-span-1">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <form method="get" action="{{ path('nutrisioniste_messages') }}">
+                            <div class="relative">
+                                <input type="text" name="search" value="{{ search }}" placeholder="Rechercher..."
+                                       class="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <i class="absolute text-gray-400 transform -translate-y-1/2 fas fa-search left-3 top-1/2"></i>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                        {% for conversation in conversations %}
+                        <a href="{{ path('nutrisioniste_message_view', { id: conversation.id }) }}" 
+                           class="flex items-start gap-3 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 {% if conversation.unread %}bg-blue-50 dark:bg-blue-900/20{% endif %}">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center {% if conversation.unread %}bg-wellcare-100 dark:bg-wellcare-900/30{% else %}bg-gray-200 dark:bg-gray-600{% endif %}">
+                                <span class="text-sm font-medium {% if conversation.unread %}text-wellcare-600 dark:text-wellcare-400{% else %}text-gray-600 dark:text-gray-300{% endif %}">{{ conversation.avatar }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium text-gray-900 dark:text-white truncate">{{ conversation.patientName }}</h4>
+                                    <span class="text-xs text-gray-400">{{ conversation.time }}</span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ conversation.lastMessage }}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    {% if conversation.unread %}
+                                    <span class="w-2 h-2 rounded-full bg-wellcare-500"></span>
+                                    {% endif %}
+                                    {% if conversation.urgent %}
+                                    <span class="px-1.5 py-0.5 text-xs rounded bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">Urgent</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {# Message Content #}
+            <div class="lg:col-span-3">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg h-[600px] flex flex-col">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <p class="text-gray-500 dark:text-gray-400 text-center py-8">
+                            <i class="text-4xl mb-2 far fa-comments"></i><br>
+                            Sélectionnez une conversation pour voir les messages
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

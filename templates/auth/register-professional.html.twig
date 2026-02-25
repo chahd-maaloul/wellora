@@ -192,7 +192,7 @@
         }
       }
     }"
-    @submit.prevent="if (canProceed) { isSubmitting = true; document.getElementById('submit-type').value = 'submit'; document.getElementById('registration-form').submit(); } else { console.log('Cannot proceed - canProceed:', canProceed, 'isSubmitting:', isSubmitting); alert('Please fill in all required fields correctly.'); }"
+    @submit="if (!canProceed) { event.preventDefault(); alert('Veuillez remplir tous les champs requis correctement.'); } else { isSubmitting = true; document.getElementById('submit-type').value = 'submit'; }"
   >
     <input type="hidden" name="_submit" value="1">
     <input type="hidden" id="submit-type" name="_submit_type" value="">
@@ -780,6 +780,12 @@
                 I confirm that I am a licensed healthcare professional and agree to the <a href="/terms" class="text-wellcare-dark-600 hover:text-wellcare-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-300 hover:underline">Terms of Service</a> and <a href="/privacy" class="text-wellcare-dark-600 hover:text-wellcare-700 dark:text-wellcare-dark-400 dark:hover:text-wellcare-300 hover:underline">Privacy Policy</a>. I understand that my credentials will be verified before account activation.
               </label>
             </div>
+
+            {# Captcha Verification #}
+            {% include 'components/captcha.html.twig' with {
+              input_name: 'captcha_code',
+              container_class: 'mt-4'
+            } %}
           </div>
 
           {# Navigation Buttons #}

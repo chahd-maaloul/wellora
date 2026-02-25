@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Form\LoginFormType;
 use App\Form\RegistrationFormType;
 use App\Security\Authenticator;
+use App\Service\CaptchaService;
 use App\Service\LoginValidationService;
 use App\Service\PasswordResetService;
 use App\Service\EmailVerificationService;
@@ -38,7 +39,8 @@ class AuthController extends AbstractController
         private LoginValidationService $loginValidationService,
         private PasswordResetService $passwordResetService,
         private EmailVerificationService $emailVerificationService,
-        private TokenStorageInterface $tokenStorage
+        private TokenStorageInterface $tokenStorage,
+        private CaptchaService $captchaService
     ) {}
 
     #[Route('/login', name: 'app_login')]
@@ -310,15 +312,51 @@ class AuthController extends AbstractController
             $postKeys = array_keys($request->request->all());
             error_log("[DEBUG] POST data keys: " . implode(', ', $postKeys));
             
-            // Get POST data (keep CSRF token for validation)
+            // Only submit fields that actually belong to the Symfony form.
+            // This avoids "extra fields" errors for custom top-level inputs
+            // like captcha_code, _submit, _captcha_validated, etc.
             $postData = $request->request->all();
+            $allowedFields = array_keys($form->all());
+            $formData = [];
+            foreach ($allowedFields as $fieldName) {
+                if (array_key_exists($fieldName, $postData)) {
+                    $formData[$fieldName] = $postData[$fieldName];
+                }
+            }
             
             // Submit form WITHOUT CSRF validation (false parameter)
-            $form->submit($postData, false);
+            $form->submit($formData, false);
         }
         
         if ($form->isSubmitted()) {
             error_log("[DEBUG] Form isValid: " . ($form->isValid() ? 'true' : 'false'));
+            
+            // ========== CAPTCHA VALIDATION ==========
+            $captchaCode = $request->request->get('captcha_code');
+            error_log("[DEBUG] Captcha code submitted: " . ($captchaCode ? 'yes' : 'no'));
+            
+            if (empty($captchaCode)) {
+                $this->addFlash('error', 'Veuillez entrer le code de vérification.');
+                error_log("[DEBUG] Captcha validation failed - empty code");
+                $template = $type === 'patient' ? 'auth/register-patient.html.twig' : 'auth/register-professional.html.twig';
+                return $this->render($template, [
+                    'registrationForm' => $form->createView(),
+                    'type' => $type
+                ]);
+            }
+            
+            if (!$this->captchaService->validate($captchaCode)) {
+                $this->addFlash('error', 'Le code de vérification est incorrect. Veuillez réessayer.');
+                error_log("[DEBUG] Captcha validation failed - invalid code");
+                $template = $type === 'patient' ? 'auth/register-patient.html.twig' : 'auth/register-professional.html.twig';
+                return $this->render($template, [
+                    'registrationForm' => $form->createView(),
+                    'type' => $type
+                ]);
+            }
+            error_log("[DEBUG] Captcha validation passed");
+            // ========== END CAPTCHA VALIDATION ==========
+            
             // DEBUG: Log form data
             error_log("[DEBUG] Form submitted - email: " . $user->getEmail());
             error_log("[DEBUG] Form submitted - firstName: " . $user->getFirstName());
@@ -603,6 +641,7 @@ class AuthController extends AbstractController
     public function verifyEmail(Request $request): Response
     {
         $token = $request->query->get('token', '');
+        $prefillEmail = $request->query->get('email', '');
         
         // If token is provided, verify email
         if (!empty($token)) {
@@ -630,6 +669,7 @@ class AuthController extends AbstractController
         return $this->render('auth/verify-email.html.twig', [
             'user' => $user,
             'hasToken' => !empty($token),
+            'prefillEmail' => $prefillEmail,
         ]);
     }
     
@@ -686,6 +726,34 @@ class AuthController extends AbstractController
                 'message' => 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage()
             ]);
         }
+    }
+
+    #[Route('/api/resend-verification-email-public', name: 'app_resend_verification_email_public', methods: ['POST'])]
+    public function resendVerificationEmailPublic(Request $request): JsonResponse
+    {
+        $email = trim((string) $request->request->get('email', ''));
+
+        if ($email === '') {
+            return $this->json([
+                'success' => false,
+                'message' => 'Veuillez entrer votre adresse email.'
+            ]);
+        }
+
+        try {
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+
+            if ($user instanceof User && !$user->isEmailVerified()) {
+                $this->emailVerificationService->resendVerificationEmail($user);
+            }
+        } catch (\Throwable $e) {
+            error_log('[DEBUG] Public resend verification failed: ' . $e->getMessage());
+        }
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Si un compte non vérifié existe avec cette adresse, un email de vérification a été envoyé.'
+        ]);
     }
     
     #[Route('/api/validate-password', name: 'app_validate_password', methods: ['POST'])]

@@ -1,7 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
+use App\DTO\Health\HealthMetricDTO;
+use App\DTO\Health\HealthScoreDTO;
+use App\DTO\Health\HealthStatisticsDTO;
+use App\DTO\Health\HealthTrendDTO;
+use App\DTO\Health\HealthTrendDirection;
+use App\DTO\Health\HealthRiskDTO;
+use App\DTO\Health\HealthPredictionDTO;
+use App\Entity\Healthentry;
+use App\Entity\Healthjournal;
+use App\Entity\Symptom;
+use App\Form\HealthentryType;
+use App\Repository\HealthentryRepository;
+use App\Repository\HealthjournalRepository;
+use App\Repository\SymptomRepository;
+use App\Service\Health\HealthAnalyticsService;
+use App\Service\Health\HealthRiskEngineService;
+use App\Service\Health\HealthTrendService;
+use App\Service\Health\HealthPredictionService;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\Consultation;
 use App\Entity\Examens;
 use App\Entity\Medecin;
@@ -18,12 +40,20 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\SecurityBundle\Security;
 
 #[Route('/health')]
-class HealthController extends AbstractController
+final class HealthController extends AbstractController
 {
     public function __construct(
+        private readonly HealthAnalyticsService $analyticsService,
+        private readonly HealthTrendService $trendService,
+        private readonly HealthRiskEngineService $riskEngineService,
+        private readonly HealthPredictionService $predictionService,
+    ) {}
+
+    #[Route('/', name: 'app_health_index', methods: ['GET'])]
         private AiModelDoctorService $aiModelDoctorService,
         private ConsultationRepository $consultationRepository
     ) {
@@ -35,605 +65,49 @@ class HealthController extends AbstractController
     #[Route('/dashboard', name: 'health_index', methods: ['GET'])]
     public function index(): Response
     {
-        // Données de signes vitaux simulées (à remplacer par des données réelles de la base)
-        $vitalSigns = [
-            'heartRate' => [
-                'value' => 72,
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '+2',
-            ],
-            'bloodPressure' => [
-                'systolic' => 120,
-                'diastolic' => 80,
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '0',
-            ],
-            'temperature' => [
-                'value' => 36.6,
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '-0.1',
-            ],
-            'oxygenSaturation' => [
-                'value' => 98,
-                'status' => 'normal',
-                'trend' => 'up',
-                'change' => '+1',
-            ],
-        ];
-
-        // Entrées récentes du journal de santé
-        $entries = [
-            [
-                'id' => 1,
-                'date' => new \DateTime('-1 day'),
-                'mood' => 4,
-                'energy' => 8,
-                'sleep' => 7.5,
-                'symptoms' => [],
-                'notes' => 'Bonne journée, beaucoup d\'énergie',
-            ],
-            [
-                'id' => 2,
-                'date' => new \DateTime('-2 days'),
-                'mood' => 3,
-                'energy' => 6,
-                'sleep' => 6.0,
-                'symptoms' => ['Légère fatigue'],
-                'notes' => 'Journée moyenne',
-            ],
-            [
-                'id' => 3,
-                'date' => new \DateTime('-3 days'),
-                'mood' => 5,
-                'energy' => 9,
-                'sleep' => 8.0,
-                'symptoms' => [],
-                'notes' => 'Excellente journée',
-            ],
-        ];
-
-        // Données pour les graphiques
-        $chartData = [
-            'energy' => [
-                'labels' => ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                'data' => [7, 6, 8, 7, 9, 8, 8],
-            ],
-            'mood' => [
-                'labels' => ['Très mal', 'Mal', 'Moyen', 'Bien', 'Très bien'],
-                'data' => [0, 1, 2, 3, 4],
-            ],
-        ];
-
-        // Insights générés par l'IA
-        $insights = [
-            [
-                'type' => 'pattern',
-                'title' => 'Activité et sommeil',
-                'description' => 'Vous dormez 23% mieux les soirées où vous faites une promenade.',
-                'icon' => 'walking',
-                'severity' => 'positive',
-            ],
-            [
-                'type' => 'recommendation',
-                'title' => 'Hydratation',
-                'description' => 'Votre énergie est plus élevée les jours où vous buvez plus de 2L d\'eau.',
-                'icon' => 'droplet',
-                'severity' => 'info',
-            ],
-            [
-                'type' => 'alert',
-                'title' => 'Tension artérielle',
-                'description' => 'Votre tension a légèrement augmenté cette semaine. Surveillez votre consommation de sel.',
-                'icon' => 'heart-pulse',
-                'severity' => 'warning',
-            ],
-        ];
-
-        // Rendez-vous à venir
-        $appointments = [
-            [
-                'id' => 1,
-                'doctor' => 'Dr. Sophie Martin',
-                'specialty' => 'Médecine générale',
-                'date' => new \DateTime('+15 days'),
-                'time' => '14:30',
-                'type' => 'Consultation générale',
-            ],
-        ];
-
-        // Médicaments du jour
-        $medications = [
-            [
-                'id' => 1,
-                'name' => 'Doliprane 500mg',
-                'dosage' => '1 comprimé',
-                'time' => 'Matin',
-                'taken' => true,
-                'icon' => 'sun',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Vitamine D',
-                'dosage' => '1 gélule',
-                'time' => 'Soir',
-                'taken' => false,
-                'icon' => 'moon',
-            ],
-        ];
-
-        return $this->render('health/dashboard.html.twig', [
-            'vitalSigns' => $vitalSigns,
-            'entries' => $entries,
-            'chartData' => $chartData,
-            'insights' => $insights,
-            'appointments' => $appointments,
-            'medications' => $medications,
-        ]);
+        return $this->redirectToRoute('app_healthentry_index');
     }
 
-    /**
-     * Accessible Journal Entry - Affiche le formulaire d'entrée journalière accessible
-     */
-    #[Route('/accessible/journal-entry', name: 'health_journal_entry_accessible', methods: ['GET'])]
-    public function journalEntryAccessible(): Response
-    {
-        return $this->render('health/accessible/journal-entry.html.twig');
-    }
-
-    /**
-     * Health Journal - Affiche le journal de santé complet du patient
-     */
-    #[Route('/journal', name: 'health_journal', methods: ['GET'])]
+    #[Route('/journal', name: 'app_health_journal', methods: ['GET'])]
     public function journal(): Response
     {
-        // Données du journal de santé
-        $journalEntries = [
-            [
-                'id' => 1,
-                'date' => new \DateTime('today'),
-                'mood' => 4,
-                'energy' => 8,
-                'sleep' => 7.5,
-                'symptoms' => [],
-                'notes' => 'Bonne journée, beaucoup d\'énergie',
-                'weather' => 'sunny',
-                'activities' => ['Marche 30min', 'Yoga'],
-            ],
-            [
-                'id' => 2,
-                'date' => new \DateTime('yesterday'),
-                'mood' => 3,
-                'energy' => 6,
-                'sleep' => 6.0,
-                'symptoms' => ['Légère fatigue', 'Céphalée'],
-                'notes' => 'Journée moyenne, un peu stressant au travail',
-                'weather' => 'cloudy',
-                'activities' => ['Travail sedentaire'],
-            ],
-            [
-                'id' => 3,
-                'date' => new \DateTime('-2 days'),
-                'mood' => 5,
-                'energy' => 9,
-                'sleep' => 8.0,
-                'symptoms' => [],
-                'notes' => 'Excellente journée, sortie en famille',
-                'weather' => 'sunny',
-                'activities' => ['Randonnée', 'Famille'],
-            ],
-            [
-                'id' => 4,
-                'date' => new \DateTime('-3 days'),
-                'mood' => 4,
-                'energy' => 7,
-                'sleep' => 7.0,
-                'symptoms' => ['Éternuements'],
-                'notes' => 'Légère allergie printanière',
-                'weather' => 'windy',
-                'activities' => ['Jardinage'],
-            ],
-        ];
-
-        // Statistiques du journal
-        $stats = [
-            'totalEntries' => count($journalEntries),
-            'averageMood' => 4.0,
-            'averageEnergy' => 7.5,
-            'averageSleep' => 7.125,
-            'mostCommonSymptoms' => ['Fatigue', 'Céphalée', 'Éternuements'],
-            'bestDay' => 'Mardi',
-            'worstDay' => 'Mercredi',
-        ];
-
         return $this->render('health/journal.html.twig', [
-            'entries' => $journalEntries,
-            'stats' => $stats,
+            'controller_name' => 'HealthController',
         ]);
     }
 
-    /**
-     * Symptom Tracker - Affiche le suivi des symptômes avec Body Map
-     */
-    #[Route('/symptoms', name: 'health_symptoms', methods: ['GET'])]
-    public function symptoms(): Response
+    #[Route('/prediction', name: 'app_health_prediction', methods: ['GET'])]
+    public function prediction(
+        HealthjournalRepository $journalRepository,
+        HealthentryRepository $entryRepository,
+        Security $security
+    ): Response {
+        $user = $security->getUser();
+        
+        // Get prediction using entries filtered by current user
+        $prediction = $this->predictionService->predictGlycemia(null, $user);
+        
+        // Get total entries count
+        $totalEntries = $entryRepository->count([]);
+        
+        return $this->render('health/prediction.html.twig', [
+            'controller_name' => 'HealthController',
+            'prediction' => $prediction,
+            'totalEntries' => $totalEntries,
+        ]);
+    }
+
+    #[Route('/dashboard', name: 'app_health_dashboard', methods: ['GET'])]
+    public function dashboard(): Response
     {
-        // Données des symptômes
-        $symptoms = [
-            [
-                'id' => 1,
-                'date' => new \DateTime('today'),
-                'bodyPart' => 'head',
-                'symptom' => 'Céphalée',
-                'severity' => 3,
-                'duration' => '2 heures',
-                'triggers' => ['Stress', 'Écran'],
-                'relief' => ['Repos', 'Paracétamol'],
-            ],
-            [
-                'id' => 2,
-                'date' => new \DateTime('yesterday'),
-                'bodyPart' => 'back',
-                'symptom' => 'Dorsalgie',
-                'severity' => 4,
-                'duration' => 'Toute la journée',
-                'triggers' => ['Position assise'],
-                'relief' => ['Étirements', 'Chaleur'],
-            ],
-            [
-                'id' => 3,
-                'date' => new \DateTime('-2 days'),
-                'bodyPart' => 'throat',
-                'symptom' => 'Mal de gorge',
-                'severity' => 2,
-                'duration' => '1 jour',
-                'triggers' => [],
-                'relief' => ['Thé au miel'],
-            ],
-        ];
-
-        // Body parts for the body map
-        $bodyParts = [
-            ['id' => 'head', 'name' => 'Tête', 'icon' => 'fa-face-smile'],
-            ['id' => 'throat', 'name' => 'Cou', 'icon' => 'fa-user'],
-            ['id' => 'chest', 'name' => 'Poitrine', 'icon' => 'fa-child'],
-            ['id' => 'arms', 'name' => 'Bras', 'icon' => 'fa-hand'],
-            ['id' => 'back', 'name' => 'Dos', 'icon' => 'fa-person'],
-            ['id' => 'stomach', 'name' => 'Ventre', 'icon' => 'fa-lemon'],
-            ['id' => 'legs', 'name' => 'Jambes', 'icon' => 'fa-person-walking'],
-            ['id' => 'feet', 'name' => 'Pieds', 'icon' => 'fa-shoe-prints'],
-        ];
-
-        // Symptom patterns
-        $patterns = [
-            [
-                'symptom' => 'Céphalée',
-                'frequency' => '2-3x par semaine',
-                'commonTriggers' => ['Stress', 'Écran', 'Manque de sommeil'],
-                'recommendation' => 'Pensez à faire des pauses régulières et à vous hydrater',
-            ],
-            [
-                'symptom' => 'Dorsalgie',
-                'frequency' => '1x par semaine',
-                'commonTriggers' => ['Position assise prolongée', 'Mauvaise posture'],
-                'recommendation' => 'Étirements et pauses recommandées toutes les 30 minutes',
-            ],
-        ];
-
-        return $this->render('health/symptoms.html.twig', [
-            'symptoms' => $symptoms,
-            'bodyParts' => $bodyParts,
-            'patterns' => $patterns,
+        return $this->render('health/dashboard.html.twig', [
+            'controller_name' => 'HealthController',
         ]);
     }
 
-    /**
-     * Quick Entry - Enregistrement rapide d'une entrée journalière (AJAX)
-     */
-    #[Route('/quick-entry', name: 'health_quick_entry', methods: ['POST'])]
-    public function quickEntry(Request $request): JsonResponse
+    #[Route('/records', name: 'app_health_records', methods: ['GET'])]
+    public function records(): Response
     {
-        $data = json_decode($request->getContent(), true);
-
-        // Validation des données
-        if (!$data) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Données invalides',
-            ], 400);
-        }
-
-        $requiredFields = ['mood', 'energy', 'sleep'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field])) {
-                return $this->json([
-                    'success' => false,
-                    'message' => sprintf('Le champ "%s" est requis', $field),
-                ], 400);
-            }
-        }
-
-        // Validation des valeurs
-        if ($data['mood'] < 1 || $data['mood'] > 5) {
-            return $this->json([
-                'success' => false,
-                'message' => 'L\'humeur doit être comprise entre 1 et 5',
-            ], 400);
-        }
-
-        if ($data['energy'] < 1 || $data['energy'] > 10) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Le niveau d\'énergie doit être compris entre 1 et 10',
-            ], 400);
-        }
-
-        if ($data['sleep'] < 0 || $data['sleep'] > 24) {
-            return $this->json([
-                'success' => false,
-                'message' => 'La durée de sommeil doit être comprise entre 0 et 24 heures',
-            ], 400);
-        }
-
-        // TODO: Sauvegarder l'entrée en base de données
-        // $entry = new HealthEntry();
-        // $entry->setMood($data['mood']);
-        // $entry->setEnergy($data['energy']);
-        // $entry->setSleep($data['sleep']);
-        // $entry->setSymptoms($data['symptoms'] ?? []);
-        // $entry->setNotes($data['notes'] ?? null);
-        // $entityManager->persist($entry);
-        // $entityManager->flush();
-
-        return $this->json([
-            'success' => true,
-            'message' => 'Entrée enregistrée avec succès',
-            'data' => [
-                'id' => uniqid(),
-                'date' => (new \DateTime())->format('Y-m-d H:i:s'),
-                'mood' => $data['mood'],
-                'energy' => $data['energy'],
-                'sleep' => $data['sleep'],
-            ],
-        ]);
-    }
-
-    /**
-     * Get Metrics - Récupère les signes vitaux (AJAX)
-     */
-    #[Route('/metrics', name: 'health_get_metrics', methods: ['GET'])]
-    public function getMetrics(): JsonResponse
-    {
-        // TODO: Récupérer les données réelles depuis la base
-        $metrics = [
-            'heartRate' => [
-                'value' => 72,
-                'unit' => 'bpm',
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '+2',
-                'normalRange' => '60-100',
-                'lastUpdated' => (new \DateTime('-30 minutes'))->format('H:i'),
-            ],
-            'bloodPressure' => [
-                'systolic' => 120,
-                'diastolic' => 80,
-                'unit' => 'mmHg',
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '0',
-                'normalRange' => '90-120/60-80',
-                'lastUpdated' => (new \DateTime('-1 hour'))->format('H:i'),
-            ],
-            'temperature' => [
-                'value' => 36.6,
-                'unit' => '°C',
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '-0.1',
-                'normalRange' => '36.1-37.2',
-                'lastUpdated' => (new \DateTime('-2 hours'))->format('H:i'),
-            ],
-            'oxygenSaturation' => [
-                'value' => 98,
-                'unit' => '%',
-                'status' => 'normal',
-                'trend' => 'up',
-                'change' => '+1',
-                'normalRange' => '95-100',
-                'lastUpdated' => (new \DateTime('-30 minutes'))->format('H:i'),
-            ],
-            'weight' => [
-                'value' => 70.5,
-                'unit' => 'kg',
-                'status' => 'normal',
-                'trend' => 'stable',
-                'change' => '0',
-                'normalRange' => null,
-                'lastUpdated' => (new \DateTime('-1 day'))->format('d/m/Y H:i'),
-            ],
-        ];
-
-        return $this->json([
-            'success' => true,
-            'data' => $metrics,
-        ]);
-    }
-
-    /**
-     * Get Chart Data - Récupère les données pour les graphiques Chart.js (AJAX)
-     */
-    #[Route('/charts', name: 'health_get_chart_data', methods: ['GET'])]
-    public function getChartData(Request $request): JsonResponse
-    {
-        $period = $request->query->get('period', '7d'); // 7d, 30d, 3m, 1y
-
-        // Générer des données selon la période demandée
-        $chartData = match ($period) {
-            '30d' => [
-                'energy' => [
-                    'labels' => $this->generateDateLabels(30),
-                    'datasets' => [
-                        [
-                            'label' => 'Niveau d\'énergie',
-                            'data' => $this->generateRandomData(30, 4, 9),
-                            'borderColor' => '#00A790',
-                            'backgroundColor' => 'rgba(0, 167, 144, 0.1)',
-                            'fill' => true,
-                            'tension' => 0.4,
-                        ],
-                    ],
-                ],
-                'mood' => [
-                    'labels' => ['Très mal', 'Mal', 'Moyen', 'Bien', 'Très bien'],
-                    'datasets' => [
-                        [
-                            'data' => [2, 5, 8, 10, 5],
-                            'backgroundColor' => [
-                                '#ef4444',
-                                '#f97316',
-                                '#eab308',
-                                '#22c55e',
-                                '#00A790',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            '3m' => [
-                'energy' => [
-                    'labels' => $this->generateWeekLabels(12),
-                    'datasets' => [
-                        [
-                            'label' => 'Niveau d\'énergie moyen',
-                            'data' => $this->generateRandomData(12, 5, 8),
-                            'borderColor' => '#00A790',
-                            'backgroundColor' => 'rgba(0, 167, 144, 0.1)',
-                            'fill' => true,
-                            'tension' => 0.4,
-                        ],
-                    ],
-                ],
-            ],
-            default => [
-                'energy' => [
-                    'labels' => ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                    'datasets' => [
-                        [
-                            'label' => 'Niveau d\'énergie',
-                            'data' => [7, 6, 8, 7, 9, 8, 8],
-                            'borderColor' => '#00A790',
-                            'backgroundColor' => 'rgba(0, 167, 144, 0.1)',
-                            'fill' => true,
-                            'tension' => 0.4,
-                        ],
-                    ],
-                ],
-                'mood' => [
-                    'labels' => ['Très mal', 'Mal', 'Moyen', 'Bien', 'Très bien'],
-                    'datasets' => [
-                        [
-                            'data' => [0, 1, 2, 3, 4],
-                            'backgroundColor' => [
-                                '#ef4444',
-                                '#f97316',
-                                '#eab308',
-                                '#22c55e',
-                                '#00A790',
-                            ],
-                        ],
-                    ],
-                ],
-                'sleep' => [
-                    'labels' => ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                    'datasets' => [
-                        [
-                            'label' => 'Heures de sommeil',
-                            'data' => [7.5, 6.0, 8.0, 7.0, 7.5, 9.0, 8.5],
-                            'borderColor' => '#6366f1',
-                            'backgroundColor' => 'rgba(99, 102, 241, 0.1)',
-                            'fill' => true,
-                            'tension' => 0.4,
-                        ],
-                    ],
-                ],
-            ],
-        };
-
-        return $this->json([
-            'success' => true,
-            'period' => $period,
-            'data' => $chartData,
-        ]);
-    }
-
-    /**
-     * Get Insights - Récupère les insights de l'IA (AJAX)
-     */
-    #[Route('/insights', name: 'health_get_insights', methods: ['GET'])]
-    public function getInsights(): JsonResponse
-    {
-        // TODO: Générer des insights réels basés sur les données du patient
-        $insights = [
-            [
-                'id' => 'insight_1',
-                'type' => 'pattern',
-                'category' => 'activité',
-                'title' => 'Activité et sommeil',
-                'description' => 'Vous dormez 23% mieux les soirées où vous faites une promenade.',
-                'icon' => 'person-walking',
-                'severity' => 'positive',
-                'confidence' => 0.87,
-                'actionable' => true,
-                'action' => 'Essayez de marcher 30 minutes ce soir',
-            ],
-            [
-                'id' => 'insight_2',
-                'type' => 'correlation',
-                'category' => 'hydratation',
-                'title' => 'Hydratation',
-                'description' => 'Votre énergie est plus élevée les jours où vous buvez plus de 2L d\'eau.',
-                'icon' => 'droplet',
-                'severity' => 'info',
-                'confidence' => 0.72,
-                'actionable' => true,
-                'action' => 'Buvez un verre d\'eau maintenant',
-            ],
-            [
-                'id' => 'insight_3',
-                'type' => 'alert',
-                'category' => 'cardiovasculaire',
-                'title' => 'Tension artérielle',
-                'description' => 'Votre tension a légèrement augmenté cette semaine. Surveillez votre consommation de sel.',
-                'icon' => 'heart-pulse',
-                'severity' => 'warning',
-                'confidence' => 0.65,
-                'actionable' => true,
-                'action' => 'Consultez votre médecin si cela persiste',
-            ],
-            [
-                'id' => 'insight_4',
-                'type' => 'recommendation',
-                'category' => 'sommeil',
-                'title' => 'Qualité du sommeil',
-                'description' => 'Votre sommeil est optimal quand vous vous couchez avant 23h.',
-                'icon' => 'bed',
-                'severity' => 'positive',
-                'confidence' => 0.91,
-                'actionable' => true,
-                'action' => 'Essayez de dormir avant 23h ce soir',
-            ],
-        ];
-
-        return $this->json([
-            'success' => true,
-            'generatedAt' => (new \DateTime())->format('Y-m-d H:i:s'),
-            'data' => $insights,
-        ]);
-    }
-
     /**
      * Export Data - Exporte les données de santé
      */
@@ -772,9 +246,10 @@ class HealthController extends AbstractController
         });
 
         return $this->render('health/records.html.twig', [
-            'records' => $records,
+            'controller_name' => 'HealthController',
         ]);
     }
+
 
     /**
      * Prescriptions - Affiche les ordonnances du patient connecté
@@ -829,10 +304,12 @@ class HealthController extends AbstractController
             ];
         }
 
+
         return $this->render('health/prescriptions.html.twig', [
-            'prescriptions' => $prescriptions,
+            'controller_name' => 'HealthController',
         ]);
     }
+
 
     /**
      * Lab Results - Affiche les résultats de laboratoire
@@ -1035,184 +512,148 @@ public function bodyMap(): Response
             'recordedSymptoms' => $recordedSymptoms,
             'bodyParts' => $bodyParts,
             'symptomTypes' => $symptomTypes,
+
         ]);
     }
 
-    /**
-     * Accessible Body Map - Affiche la carte corporelle accessible pour le suivi des symptômes
-     */
-    #[Route('/accessible/body-map', name: 'health_body_map_accessible', methods: ['GET'])]
-    public function bodyMapAccessible(): Response
+    #[Route('/symptoms', name: 'app_health_symptoms', methods: ['GET'])]
+    public function symptoms(): Response
     {
-        return $this->render('health/accessible/body-map.html.twig');
-    }
-
-    /**
-     * Record Symptom - Enregistre un symptôme depuis la carte corporelle (AJAX)
-     */
-    #[Route('/symptom', name: 'health_record_symptom', methods: ['POST'])]
-    public function recordSymptom(Request $request): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-
-        // Validation
-        if (!$data) {
-            return $this->json([
-                'success' => false,
-                'message' => 'Données invalides',
-            ], 400);
-        }
-
-        $requiredFields = ['bodyPart', 'symptom', 'intensity'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || empty($data[$field])) {
-                return $this->json([
-                    'success' => false,
-                    'message' => sprintf('Le champ "%s" est requis', $field),
-                ], 400);
-            }
-        }
-
-        // Validation de l'intensité
-        $intensity = (int) $data['intensity'];
-        if ($intensity < 1 || $intensity > 10) {
-            return $this->json([
-                'success' => false,
-                'message' => 'L\'intensité doit être comprise entre 1 et 10',
-            ], 400);
-        }
-
-        // TODO: Sauvegarder le symptôme en base de données
-        // $symptom = new Symptom();
-        // $symptom->setBodyPart($data['bodyPart']);
-        // $symptom->setDescription($data['symptom']);
-        // $symptom->setIntensity($intensity);
-        // $symptom->setNotes($data['notes'] ?? null);
-        // $symptom->setDate(new \DateTime());
-        // $entityManager->persist($symptom);
-        // $entityManager->flush();
-
-        // Ajouter un message flash
-        $this->addFlash('success', 'Symptôme enregistré avec succès');
-
-        return $this->json([
-            'success' => true,
-            'message' => 'Symptôme enregistré avec succès',
-            'data' => [
-                'id' => uniqid(),
-                'bodyPart' => $data['bodyPart'],
-                'symptom' => $data['symptom'],
-                'intensity' => $intensity,
-                'date' => (new \DateTime())->format('Y-m-d H:i:s'),
-            ],
+        return $this->render('health/symptoms.html.twig', [
+            'controller_name' => 'HealthController',
         ]);
     }
 
-    /**
-     * Helper: Export CSV
-     */
-    private function exportCsv(array $data): Response
+    #[Route('/billing', name: 'app_health_billing', methods: ['GET'])]
+    public function billing(): Response
     {
-        $csvData = [];
-        $csvData[] = ['Date', 'Humeur', 'Énergie', 'Sommeil', 'Symptômes'];
-
-        foreach ($data['entries'] as $entry) {
-            $csvData[] = [
-                $entry['date'],
-                $entry['mood'],
-                $entry['energy'],
-                $entry['sleep'],
-                implode(', ', $entry['symptoms']),
-            ];
-        }
-
-        $output = fopen('php://temp', 'r+');
-        foreach ($csvData as $row) {
-            fputcsv($output, $row, ';');
-        }
-        rewind($output);
-        $csv = stream_get_contents($output);
-        fclose($output);
-
-        $response = new Response($csv);
-        $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="export-sante-' . date('Y-m-d') . '.csv"');
-
-        return $response;
-    }
-
-    /**
-     * Helper: Export PDF
-     */
-    private function exportPdf(array $data): Response
-    {
-        // TODO: Implémenter la génération PDF avec une bibliothèque comme TCPDF ou Dompdf
-        // Pour l'instant, on retourne une réponse JSON
-        return $this->json([
-            'success' => true,
-            'message' => 'Export PDF en cours de développement',
-            'data' => $data,
+        return $this->render('health/billing.html.twig', [
+            'controller_name' => 'HealthController',
         ]);
     }
 
-    /**
-     * Helper: Génère des labels de dates
-     */
-    private function generateDateLabels(int $days): array
-    {
-        $labels = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $labels[] = (new \DateTime("-$i days"))->format('d/m');
+    #[Route('/analytics', name: 'app_health_analytics', methods: ['GET', 'POST'])]
+    public function analyticsPatient(
+        Request $request,
+        HealthjournalRepository $journalRepo,
+        Security $security
+    ): Response {
+        // Get selected journal
+        $journalId = $request->query->get('journal_id');
+        $selectedJournal = $this->resolveSelectedJournal($journalRepo, $journalId, $security);
+        
+        // Handle case with no data
+        if (null === $selectedJournal) {
+            return $this->render('health/analytics/patient-view.html.twig', [
+                'controller_name' => 'HealthController',
+                'has_data' => false,
+                'journals' => $journalRepo->findBy(['user' => $security->getUser()]),
+                'selected_journal_id' => null,
+                'start_date' => null,
+                'end_date' => null,
+                'start_date_js' => '',
+                'end_date_js' => '',
+            ]);
         }
-        return $labels;
-    }
-
-    /**
-     * Helper: Génère des labels de semaines
-     */
-    private function generateWeekLabels(int $weeks): array
-    {
-        $labels = [];
-        for ($i = $weeks - 1; $i >= 0; $i--) {
-            $labels[] = 'S-' . (new \DateTime("-$i weeks"))->format('W');
+        
+        // Get analytics data from service
+        $analyticsData = $this->analyticsService->getAnalyticsForJournal($selectedJournal);
+        
+        $metrics = $analyticsData['metrics'];
+        $statistics = $analyticsData['statistics'];
+        $scores = $analyticsData['scores'];
+        
+        // Handle case with no entries - still pass date range
+        if ($metrics->isEmpty()) {
+            $dateRange = $this->parseJournalDateRange($selectedJournal);
+            
+            return $this->render('health/analytics/patient-view.html.twig', [
+                'controller_name' => 'HealthController',
+                'has_data' => false,
+                'journals' => $journalRepo->findAll(),
+                'selected_journal_id' => $selectedJournal->getId(),
+                'start_date' => $dateRange['start'],
+                'end_date' => $dateRange['end'],
+                'start_date_js' => $dateRange['startJs'],
+                'end_date_js' => $dateRange['endJs'],
+            ]);
         }
-        return $labels;
-    }
-
-    /**
-     * Helper: Génère des données aléatoires
-     */
-    private function generateRandomData(int $count, int $min, int $max): array
-    {
-        $data = [];
-        for ($i = 0; $i < $count; $i++) {
-            $data[] = rand($min * 10, $max * 10) / 10;
-        }
-        return $data;
-    }
-
-    /**
-     * Analytics Dashboard - Patient View (Alias)
-     * Alias route for patient-view template
-     */
-    #[Route('/analytics/patient-view', name: 'health_analytics_patient_view', methods: ['GET'])]
-    public function analyticsPatientView(): Response
-    {
-        return $this->redirectToRoute('health_analytics_patient', [], 301);
-    }
-
-    /**
-     * Analytics Dashboard - Patient View
-     * Affiche le tableau de bord d'analytics pour les patients
-     */
-    #[Route('/analytics', name: 'health_analytics_patient', methods: ['GET'])]
-    public function analyticsPatient(): Response
-    {
+        
+        // Get trend comparison
+        $trend = $this->trendService->compareWithPrevious($selectedJournal);
+        
+        // Get risk assessment
+        $risk = $this->riskEngineService->analyzeRisk($metrics);
+        
+        // Prepare chart data
+        $chartData = $this->prepareChartData($metrics);
+        
+        // Date range parsing from journal name (kept in controller as it's view-related)
+        $dateRange = $this->parseJournalDateRange($selectedJournal);
+        
         return $this->render('health/analytics/patient-view.html.twig', [
-            'page_title' => 'Mon Analyse Santé',
+            'controller_name' => 'HealthController',
+            'has_data' => true,
+            
+            // Chart data
+            'glycemic_data' => $chartData['glycemia'],
+            'bp_systolic' => $chartData['bpSystolic'],
+            'bp_diastolic' => $chartData['bpDiastolic'],
+            'sleep_data' => $chartData['sleep'],
+            'weight_data' => $chartData['weight'],
+            'dates' => $chartData['dates'],
+            'symptom_intensity' => $chartData['symptomIntensity'],
+            
+            // Statistics
+            'avg_glycemia' => $statistics->avgGlycemia,
+            'min_glycemia' => $statistics->minGlycemia,
+            'max_glycemia' => $statistics->maxGlycemia,
+            'avg_systolic' => $statistics->avgSystolic,
+            'avg_diastolic' => $statistics->avgDiastolic,
+            'avg_sleep' => $statistics->avgSleep,
+            'current_weight' => $statistics->currentWeight,
+            'weight_variation' => $statistics->weightVariation,
+            'avg_intensity' => $statistics->avgIntensity,
+            'total_symptoms' => $statistics->totalSymptomIntensity,
+            
+            // Scores
+            'glycemic_score' => $scores->glycemicScore,
+            'bp_score' => $scores->bloodPressureScore,
+            'sleep_score' => $scores->sleepScore,
+            'symptom_score' => $scores->symptomScore,
+            'weight_score' => $scores->weightScore,
+            'global_score' => $scores->globalScore,
+            'global_grade' => $scores->globalScoreGrade,
+            
+            // Trend data
+            'has_trend_data' => $trend->hasPreviousData,
+            'global_evolution' => $trend->globalEvolutionPercentage,
+            'trend_direction' => $trend->globalDirection->value,
+            
+            // Risk data
+            'risk_tier' => $risk->tier->value,
+            'risk_score' => $risk->overallRiskScore,
+            'risk_summary' => $risk->summary,
+            'risk_recommendations' => $risk->recommendations,
+            'risk_factors' => array_map(fn($f) => [
+                'name' => $f->name,
+                'description' => $f->description,
+                'severity' => $f->severity,
+            ], $risk->riskFactors),
+            'requires_attention' => $risk->requiresImmediateAttention,
+            
+            // Journal info
+            'journals' => $journalRepo->findAll(),
+            'selected_journal_id' => $selectedJournal->getId(),
+            'start_date' => $dateRange['start'],
+            'end_date' => $dateRange['end'],
+            'start_date_js' => $dateRange['startJs'],
+            'end_date_js' => $dateRange['endJs'],
         ]);
     }
 
+    #[Route('/accessible/body-map', name: 'app_health_accessible_body_map', methods: ['GET'])]
+    public function bodyMapAccessible(): Response
     /**
      * Analytics Dashboard - Doctor View (Alias)
      * Alias route for doctor-view template
@@ -1410,27 +851,50 @@ public function bodyMap(): Response
     #[Route('/analytics/data', name: 'health_analytics_data', methods: ['GET'])]
     public function getAnalyticsData(Request $request): JsonResponse
     {
-        $type = $request->query->get('type', 'trends');
-        $period = $request->query->get('period', '7d');
-        $patientId = $request->query->get('patient_id');
-
-        $data = match ($type) {
-            'trends' => $this->getTrendsData($period),
-            'symptoms' => $this->getSymptomData($period),
-            'medications' => $this->getMedicationData($period),
-            'correlations' => $this->getCorrelationData($period),
-            'triggers' => $this->getTriggerData($period),
-            default => [],
-        };
-
-        return $this->json([
-            'success' => true,
-            'type' => $type,
-            'period' => $period,
-            'data' => $data,
+        return $this->render('health/accessible/body-map.html.twig', [
+            'controller_name' => 'HealthController',
         ]);
     }
 
+    #[Route('/journal/accessible', name: 'app_health_journal_accessible', methods: ['GET', 'POST'])]
+    public function journalAccessible(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        HealthjournalRepository $journalRepo,
+        HealthentryRepository $entryRepo,
+        Security $security
+    ): Response {
+        $healthentry = new Healthentry();
+        // Add empty symptom for form rendering - will be removed before saving if not filled
+        $healthentry->addSymptom(new Symptom());
+        
+        $form = $this->createForm(HealthentryType::class, $healthentry);
+        $form->handleRequest($request);
+        
+        if ($form->isSubmitted()) {
+            // Handle "Add Symptom" button
+            if ($request->request->has('add_symptom')) {
+                $symptom = new Symptom();
+                $healthentry->addSymptom($symptom);
+                $form = $this->createForm(HealthentryType::class, $healthentry);
+                
+                return $this->render('health/accessible/journal-entry.html.twig', [
+                    'controller_name' => 'HealthController',
+                    'form' => $form->createView(),
+                ]);
+            }
+            
+            // Manual validation for numeric fields
+            $this->validateNumericFields($form);
+            
+            if ($form->isValid()) {
+                $this->processValidEntry($form, $entityManager, $journalRepo, $entryRepo, $request, $security);
+            }
+        }
+        
+        return $this->render('health/accessible/journal-entry.html.twig', [
+            'controller_name' => 'HealthController',
+            'form' => $form->createView(),
     /**
      * Get AI Predictions - Récupère les prédictions IA pour les médecins (AJAX)
      */
@@ -1840,122 +1304,213 @@ public function bodyMap(): Response
         ]);
     }
 
-    /**
-     * Helper: Get trends data
-     */
-    private function getTrendsData(string $period): array
+    #[Route('/accessible/journal-entry', name: 'app_health_accessible_journal_entry', methods: ['GET'])]
+    public function accessibleJournalEntryRedirect(): Response
     {
-        $days = match ($period) {
-            '30d' => 30,
-            '3m' => 90,
-            '1y' => 365,
-            default => 7,
-        };
-
-        return [
-            'labels' => $this->generateDateLabels($days),
-            'energy' => $this->generateRandomData($days, 4, 9),
-            'mood' => $this->generateRandomData($days, 2, 5),
-            'sleep' => $this->generateRandomData($days, 5, 9),
-        ];
+        return $this->redirectToRoute('app_health_journal_accessible', [], 301);
     }
 
+    // ============================================
+    // PRIVATE HELPER METHODS
+    // ============================================
+    
+    private function resolveSelectedJournal(
+        HealthjournalRepository $journalRepo,
+        ?string $journalId,
+        Security $security
+    ): ?Healthjournal {
+        $user = $security->getUser();
+        
+        if (!$user) {
+            return null;
+        }
+        
+        // If specific journal requested, verify it belongs to user
+        if ($journalId) {
+            $journal = $journalRepo->find((int) $journalId);
+            // Verify journal belongs to current user
+            if ($journal && $journal->getUser() === $user) {
+                return $journal;
+            }
+            return null;
+        }
+        
+        // Get user's journals and return first one
+        $journals = $journalRepo->findBy(['user' => $user], ['datedebut' => 'DESC']);
+        
+        return !empty($journals) ? $journals[0] : null;
+    }
+    
     /**
-     * Helper: Get symptom data
+     * @param \App\DTO\Health\HealthMetricDTO $metrics
      */
-    private function getSymptomData(string $period): array
+    private function prepareChartData($metrics): array
     {
+        // Create new arrays for template to avoid readonly issues
+        $glycemia = [];
+        $bpSystolic = [];
+        $bpDiastolic = [];
+        $sleep = [];
+        $weight = [];
+        $dates = [];
+        $symptomIntensity = [];
+        
+        foreach ($metrics->glycemia as $v) {
+            $glycemia[] = $v;
+        }
+        foreach ($metrics->bloodPressureSystolic as $v) {
+            $bpSystolic[] = $v;
+        }
+        foreach ($metrics->bloodPressureDiastolic as $v) {
+            $bpDiastolic[] = $v;
+        }
+        foreach ($metrics->sleep as $v) {
+            $sleep[] = $v;
+        }
+        foreach ($metrics->weight as $v) {
+            $weight[] = $v;
+        }
+        foreach ($metrics->symptomIntensity as $v) {
+            $symptomIntensity[] = $v;
+        }
+        foreach ($metrics->dates as $d) {
+            $dates[] = $d instanceof \DateTimeInterface 
+                ? $d->format('d/m/Y') 
+                : (is_object($d) ? $d->format('d/m/Y') : '');
+        }
+        
         return [
-            'labels' => ['Fatigue', 'Maux de tête', 'Tension', 'Douleurs', 'Insomnie'],
-            'frequency' => [12, 8, 5, 3, 6],
-            'intensity' => [6.5, 4.2, 5.8, 3.1, 5.5],
+            'glycemia' => $glycemia,
+            'bpSystolic' => $bpSystolic,
+            'bpDiastolic' => $bpDiastolic,
+            'sleep' => $sleep,
+            'weight' => $weight,
+            'dates' => $dates,
+            'symptomIntensity' => $symptomIntensity,
         ];
     }
-
-    /**
-     * Helper: Get medication data
-     */
-    private function getMedicationData(string $period): array
+    
+    private function parseJournalDateRange(Healthjournal $journal): array
     {
+        $journalName = $journal->getName() ?? '';
+        $datedebut = $journal->getDatedebut();
+        $datefin = $journal->getDatefin();
+        
+        // Try to extract month/year from journal name
+        $extracted = $this->extractMonthYearFromName($journalName);
+        
+        if (null !== $extracted) {
+            $startDate = $extracted['start'];
+            $endDate = $extracted['end'];
+        } elseif (null !== $datedebut && null !== $datefin) {
+            $startDate = $datedebut;
+            $endDate = $datefin;
+        } else {
+            $startDate = new \DateTime();
+            $endDate = new \DateTime();
+        }
+        
         return [
-            'adherence' => 87,
-            'taken' => 87,
-            'missed' => 10,
-            'skipped' => 3,
-            'medications' => [
-                ['name' => 'Vitamine D', 'effectiveness' => 85, 'adherence' => 92],
-                ['name' => 'Magnésium', 'effectiveness' => 72, 'adherence' => 88],
-                ['name' => 'Oméga-3', 'effectiveness' => 68, 'adherence' => 81],
-            ],
+            'start' => $startDate->format('d/m/Y'),
+            'end' => $endDate->format('d/m/Y'),
+            'startJs' => $startDate->format('Y-m-d'),
+            'endJs' => $endDate->format('Y-m-d'),
         ];
     }
-
-    /**
-     * Helper: Get correlation data
-     */
-    private function getCorrelationData(string $period): array
+    
+    private function extractMonthYearFromName(string $name): ?array
     {
-        return [
-            'exercise_energy' => [
-                'correlation' => 0.73,
-                'data' => array_map(fn($i) => [
-                    'x' => rand(0, 60),
-                    'y' => rand(40, 95) / 10,
-                ], range(1, 20)),
-            ],
-            'sleep_mood' => [
-                'correlation' => 0.68,
-                'data' => array_map(fn($i) => [
-                    'x' => rand(40, 100) / 10,
-                    'y' => rand(20, 50) / 10,
-                ], range(1, 20)),
-            ],
+        $frenchMonths = [
+            'janvier' => 1, 'février' => 2, 'mars' => 3, 'avril' => 4,
+            'mai' => 5, 'juin' => 6, 'juillet' => 7, 'août' => 8,
+            'septembre' => 9, 'octobre' => 10, 'novembre' => 11, 'décembre' => 12,
         ];
+        
+        $englishMonths = [
+            'january' => 1, 'february' => 2, 'march' => 3, 'april' => 4,
+            'may' => 5, 'june' => 6, 'july' => 7, 'august' => 8,
+            'september' => 9, 'october' => 10, 'november' => 11, 'december' => 12,
+        ];
+        
+        $nameLower = strtolower($name);
+        $month = null;
+        
+        // Check French months
+        foreach ($frenchMonths as $monthName => $monthNum) {
+            if (str_contains($nameLower, $monthName)) {
+                $month = $monthNum;
+                break;
+            }
+        }
+        
+        // Check English months if not found
+        if (null === $month) {
+            foreach ($englishMonths as $monthName => $monthNum) {
+                if (str_contains($nameLower, $monthName)) {
+                    $month = $monthNum;
+                    break;
+                }
+            }
+        }
+        
+        // Extract year
+        $year = (int) date('Y');
+        if (preg_match('/\b(19|20)\d{2}\b/', $name, $matches)) {
+            $year = (int) $matches[0];
+        }
+        
+        if (null === $month) {
+            return null;
+        }
+        
+        $startDate = new \DateTime(sprintf('%d-%02d-01', $year, $month));
+        $endDate = (clone $startDate)->modify('last day of this month');
+        
+        return ['start' => $startDate, 'end' => $endDate];
     }
-
-    /**
-     * Helper: Get trigger data
-     */
-    private function getTriggerData(string $period): array
+    
+    private function validateNumericFields($form): void
     {
-        return [
-            ['name' => 'Stress', 'impact' => 23, 'type' => 'negative'],
-            ['name' => 'Sommeil < 6h', 'impact' => 18, 'type' => 'negative'],
-            ['name' => 'Exercice', 'impact' => -15, 'type' => 'positive'],
-            ['name' => 'Caféine', 'impact' => 12, 'type' => 'negative'],
-            ['name' => 'Hydratation', 'impact' => -8, 'type' => 'positive'],
-        ];
-    }
-
-    /**
-     * Billing - Affiche les factures et paiements du patient
-     */
-    #[Route('/billing', name: 'health_billing', methods: ['GET'])]
-    public function billing(): Response
-    {
-        $invoices = [
-            [
-                'id' => 'INV-2024-001',
-                'date' => new \DateTime('-30 days'),
-                'description' => 'Consultation Dr. Sophie Martin',
-                'amount' => 50,
-                'status' => 'paid',
-            ],
-            [
-                'id' => 'INV-2024-002',
-                'date' => new \DateTime('-15 days'),
-                'description' => 'Analyse de sang complète',
-                'amount' => 70,
-                'status' => 'paid',
-            ],
-            [
-                'id' => 'INV-2024-003',
-                'date' => new \DateTime('-3 days'),
-                'description' => 'Consultation Dr. Ahmed Ben Ali',
-                'amount' => 120,
-                'status' => 'pending',
-            ],
-        ];
+        $date = $form->get('date')->getData();
+        if (null !== $date) {
+            $today = new \DateTime('today');
+            if ($date > $today) {
+                $form->get('date')->addError(new \Symfony\Component\Form\FormError(
+                    'La date ne peut pas être dans le futur'
+                ));
+            }
+        }
+        
+        $poids = $form->get('poids')->getData();
+        if (null !== $poids && $poids !== '' && ($poids < 30 || $poids > 200)) {
+            $form->get('poids')->addError(new \Symfony\Component\Form\FormError(
+                'Le poids doit être compris entre 30 et 200 kg'
+            ));
+        }
+        
+        $glycemie = $form->get('glycemie')->getData();
+        if (null !== $glycemie && $glycemie !== '' && ($glycemie < 0.5 || $glycemie > 3)) {
+            $form->get('glycemie')->addError(new \Symfony\Component\Form\FormError(
+                'La glycémie doit être comprise entre 0.5 et 3 g/l'
+            ));
+        }
+        
+        $tension = $form->get('tension')->getData();
+        if (null !== $tension && $tension !== '') {
+            $tensionValue = (float) $tension;
+            if ($tensionValue < 40 || $tensionValue > 120) {
+                $form->get('tension')->addError(new \Symfony\Component\Form\FormError(
+                    'La tension doit être comprise entre 40 et 120 mmHg'
+                ));
+            }
+        }
+        
+        $sommeil = $form->get('sommeil')->getData();
+        if (null !== $sommeil && $sommeil !== '' && ($sommeil < 0 || $sommeil > 12)) {
+            $form->get('sommeil')->addError(new \Symfony\Component\Form\FormError(
+                'Le sommeil doit être compris entre 0 et 12 heures'
+            ));
+        }
 
         $totalPaid = array_sum(array_map(fn($inv) => $inv['status'] === 'paid' ? $inv['amount'] : 0, $invoices));
         $totalPending = array_sum(array_map(fn($inv) => $inv['status'] === 'pending' ? $inv['amount'] : 0, $invoices));
@@ -2789,17 +2344,96 @@ public function bodyMap(): Response
             'patient_id' => $id,
         ]);
     }
-
-    /**
-     * Doctor Interface - Communication
-     * Interface de messagerie avec les patients
-     */
-    #[Route('/doctor/patient/{id}/communication', name: 'doctor_communication', methods: ['GET'])]
-    public function doctorCommunication(string $id): Response
-    {
-        return $this->render('doctor/communication.html.twig', [
-            'page_title' => 'Communication',
-            'patient_id' => $id,
-        ]);
+    
+    private function processValidEntry(
+        $form,
+        EntityManagerInterface $entityManager,
+        HealthjournalRepository $journalRepo,
+        HealthentryRepository $entryRepo,
+        Request $request,
+        Security $security
+    ): Response {
+        $healthentry = $form->getData();
+        
+        // Remove empty symptoms (those without type) before saving
+        if ($healthentry->getSymptoms()->count() > 0) {
+            $symptomsToRemove = [];
+            foreach ($healthentry->getSymptoms() as $symptom) {
+                if (null === $symptom->getType() || '' === $symptom->getType()) {
+                    $symptomsToRemove[] = $symptom;
+                }
+            }
+            foreach ($symptomsToRemove as $symptom) {
+                $healthentry->removeSymptom($symptom);
+            }
+        }
+        
+        // Find the journal based on entry date - entries are automatically assigned
+        // to the journal whose date range includes the entry date
+        $entryDate = $healthentry->getDate();
+        $journal = null;
+        $user = $security->getUser();
+        
+        if (null !== $entryDate && $user) {
+            // Find journal whose date range includes this entry date AND belongs to current user
+            $journal = $journalRepo->createQueryBuilder('j')
+                ->andWhere('j.datedebut <= :entryDate')
+                ->andWhere('j.datefin >= :entryDate')
+                ->andWhere('j.user = :user')
+                ->setParameter('entryDate', $entryDate)
+                ->setParameter('user', $user)
+                ->getQuery()
+                ->getOneOrNullResult();
+        }
+        
+        // Fallback: if no journal found by date, use first journal for this user
+        if (null === $journal && $user) {
+            $journal = $journalRepo->findOneBy(['user' => $user]);
+        }
+        
+        // Last resort: create a new journal for this user
+        if (null === $journal && $user) {
+            $journal = new Healthjournal();
+            $journal->setName('Journal Principal');
+            $journal->setDatedebut(new \DateTime());
+            $journal->setUser($user);
+            $entityManager->persist($journal);
+            $entityManager->flush();
+        }
+        
+        // If still no journal (user not logged in), show error
+        if (null === $journal) {
+            $form->addError(new \Symfony\Component\Form\FormError(
+                'Vous devez être connecté pour créer une entrée.'
+            ));
+            return $this->render('health/accessible/journal-entry.html.twig', [
+                'controller_name' => 'HealthController',
+                'form' => $form->createView(),
+            ]);
+        }
+        
+        $healthentry->setJournal($journal);
+        
+        // Check for duplicate entry
+        $date = $healthentry->getDate();
+        if (null !== $date) {
+            $existingEntry = $entryRepo->findOneBy(['date' => $date, 'journal' => $journal]);
+            if (null !== $existingEntry) {
+                $form->addError(new \Symfony\Component\Form\FormError(
+                    'Une entrée existe déjà pour cette date. Veuillez modifier l\'entrée existante.'
+                ));
+                return $this->render('health/accessible/journal-entry.html.twig', [
+                    'controller_name' => 'HealthController',
+                    'form' => $form->createView(),
+                ]);
+            }
+        }
+        
+        $entityManager->persist($healthentry);
+        $entityManager->flush();
+        
+        $this->addFlash('success', 'Entrée de journal créée avec succès');
+        
+        return $this->redirectToRoute('app_health_journal_accessible');
     }
 }

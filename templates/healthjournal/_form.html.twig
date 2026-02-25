@@ -1,0 +1,40 @@
+{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+    
+    {# Global Form Errors #}
+    {{ form_errors(form, {'attr': {'class': 'mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400'}}) }}
+    
+    {# Form Field Styling #}
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div class="md:col-span-2">
+            {{ form_label(form.name, 'Journal Name', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+            {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white', 'placeholder': 'e.g., My Health Journey 2024'}}) }}
+            {{ form_errors(form.name, {'attr': {'class': 'text-red-500 text-sm mt-1'}}) }}
+        </div>
+
+        <div class="md:col-span-2">
+            {{ form_label(form.datedebut, 'Start Date', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+            {{ form_widget(form.datedebut, {'attr': {'class': 'w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white'}}) }}
+            {{ form_errors(form.datedebut, {'attr': {'class': 'text-red-500 text-sm mt-1'}}) }}
+        </div>
+
+        <div class="md:col-span-2">
+            {{ form_label(form.datefin, 'End Date (optional)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+            {{ form_widget(form.datefin, {'attr': {'class': 'w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white'}}) }}
+            {{ form_errors(form.datefin, {'attr': {'class': 'text-red-500 text-sm mt-1'}}) }}
+        </div>
+    </div>
+
+    {# Submit Button #}
+    <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+        <a href="{{ path('app_healthjournal_index') }}" 
+           class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
+            Cancel
+        </a>
+        <button type="submit" 
+                class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 focus:ring-4 focus:ring-wellcare-300 dark:focus:ring-wellcare-800 transition-colors">
+            <i class="fa-solid fa-{{ button_label is defined and 'Create' in button_label ? 'plus' : 'save' }}"></i>
+            {{ button_label|default('Save') }}
+        </button>
+    </div>
+
+{{ form_end(form) }}

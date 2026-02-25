@@ -1,5 +1,4 @@
-﻿{# templates/health/accessible/journal-entry.html.twig #}
-{# Accessible Health Journal Entry Form - WCAG 2.1 AA Compliant #}
+﻿{# Accessible Health Journal Entry Form - WCAG 2.1 AA Compliant #}
 
 {% extends 'layouts/app.html.twig' %}
 
@@ -26,7 +25,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-full" x-data="journalEntry()" x-init="init()">
+<div class="min-h-full">
     {# Page Header #}
     <div class="mb-6">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -45,7 +44,7 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <a href="/health/accessible/body-map" class="btn-secondary">
+                <a href="{{ path('app_health_accessible_body_map') }}" class="btn-secondary">
                     <i class="fa-solid fa-child mr-2"></i>
                     {{ 'Carte corporelle'|trans }}
                 </a>
@@ -54,292 +53,203 @@
     </div>
 
     {# Form #}
-    <form @submit.prevent="saveEntry()" class="space-y-6">
-        {# Quick Stats Row #}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {# Mood Selection #}
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-                <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                    <i class="fa-solid fa-face-smile text-wellcare-500"></i>
-                    {{ 'Humeur'|trans }}
-                </label>
-                <div class="flex items-center justify-between gap-2" role="radiogroup" aria-label="Humeur">
-                    <template x-for="level in 5" :key="level">
-                        <button type="button"
-                                @click="mood = level"
-                                class="flex-1 p-3 rounded-lg transition-all border-2"
-                                :class="mood === level ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'"
-                                :aria-checked="mood === level"
-                                :aria-label="getMoodLabel(level)">
-                            <span class="text-2xl" x-text="getMoodEmoji(level)"></span>
-                        </button>
-                    </template>
-                </div>
-                <p class="mt-2 text-xs text-center text-gray-500 dark:text-gray-400" x-text="getMoodLabel(mood)"></p>
-            </div>
-
-            {# Energy Level #}
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-                <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                    <i class="fa-solid fa-bolt text-wellcare-500"></i>
-                    {{ 'Niveau d\'énergie'|trans }}
-                </label>
-                <div class="flex items-center justify-between gap-2" role="radiogroup" aria-label="Niveau d'énergie">
-                    <template x-for="level in 10" :key="level">
-                        <button type="button"
-                                @click="energy = level"
-                                class="flex-1 p-2 rounded transition-all border"
-                                :class="energy === level ? 'border-wellcare-500 bg-wellcare-500 text-white' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'"
-                                :aria-checked="energy === level"
-                                :aria-label="level + '/10'">
-                            <span class="text-xs font-medium" x-text="level"></span>
-                        </button>
-                    </template>
-                </div>
-                <p class="mt-2 text-xs text-center text-gray-500 dark:text-gray-400" x-text="energy + '/10'"></p>
-            </div>
-
-            {# Sleep Duration #}
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-                <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                    <i class="fa-solid fa-bed text-wellcare-500"></i>
-                    {{ 'Heures de sommeil'|trans }}
-                </label>
-                <div class="space-y-3">
-                    <input type="range" 
-                           x-model="sleep" 
-                           min="0" 
-                           max="12" 
-                           step="0.5"
-                           class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-wellcare-500"
-                           aria-label="Heures de sommeil">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500 dark:text-gray-400">0h</span>
-                        <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400" x-text="sleep + 'h'"></span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">12h</span>
-                    </div>
-                </div>
-            </div>
+    {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+    
+    {# Global Form Errors #}
+    {% if form.vars.errors|length > 0 %}
+    <div class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-exclamation-triangle text-red-500"></i>
+            <span class="text-red-700 dark:text-red-300 font-medium">{{ 'Erreurs dans le formulaire'|trans }}</span>
         </div>
-
-        {# Body Map Integration #}
-        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-            <div class="flex items-center justify-between mb-4">
-                <label class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
-                    <i class="fa-solid fa-child text-wellcare-500"></i>
-                    {{ 'Zones du corps avec symptômes'|trans }}
-                </label>
-                <a href="/health/accessible/body-map" class="text-xs text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 hover:underline">
-                    {{ 'Sélectionner sur la carte'|trans }}
-                </a>
-            </div>
-            
-            <div class="flex flex-wrap gap-2">
-                <template x-if="bodyParts.length === 0">
-                    <p class="text-sm text-gray-500 dark:text-gray-400 py-2">
-                        {{ 'Aucune zone sélectionnée. Cliquez sur la carte corporelle pour ajouter des zones.'|trans }}
-                    </p>
-                </template>
-                <template x-for="part in bodyParts" :key="part">
-                    <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300 rounded-full text-sm">
-                        <span x-text="getPartLabel(part)"></span>
-                        <button type="button" @click="removeBodyPart(part)" class="hover:text-wellcare-900 dark:hover:text-white">
-                            <i class="fa-solid fa-times text-xs"></i>
-                        </button>
-                    </span>
-                </template>
-            </div>
-        </div>
-
-        {# Symptoms Text #}
-        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-            <label for="symptoms" class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                <i class="fa-solid fa-notes-medical text-wellcare-500"></i>
-                {{ 'Symptômes et ressentis'|trans }}
-            </label>
-            <textarea 
-                id="symptoms"
-                x-model="symptoms"
-                class="w-full h-32 input resize-none"
-                :placeholder="'Décrivez vos symptômes, ressentis ou changements que vous avez remarqué...'|trans"
-                aria-describedby="symptoms-help"></textarea>
-            <p id="symptoms-help" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                {{ 'Soyez aussi précis que possible sur la nature, l\'intensité et la durée de vos symptômes'|trans }}
-            </p>
-        </div>
-
-        {# Additional Notes #}
-        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-            <label for="notes" class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                <i class="fa-solid fa-pen-to-square text-wellcare-500"></i>
-                {{ 'Notes additionnelles'|trans }}
-            </label>
-            <textarea 
-                id="notes"
-                x-model="notes"
-                class="w-full h-24 input resize-none"
-                :placeholder="'Ajoutez toute information supplémentaire que vous souhaitez partager...'|trans"></textarea>
-        </div>
-
-        {# Quick Tags #}
+        {{ form_errors(form) }}
+    </div>
+    {% endif %}
+    
+    {# Quick Stats Row #}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {# Date #}
         <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
             <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                <i class="fa-solid fa-tags text-wellcare-500"></i>
-                {{ 'Tags rapides'|trans }}
+                <i class="fa-solid fa-calendar text-wellcare-500"></i>
+                {{ 'Date'|trans }}
             </label>
-            <div class="flex flex-wrap gap-2">
-                <template x-for="tag in quickTags" :key="tag">
-                    <button type="button"
-                            @click="toggleTag(tag)"
-                            class="px-3 py-1.5 rounded-full text-sm transition-all border"
-                            :class="selectedTags.includes(tag) ? 'border-wellcare-500 bg-wellcare-100 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300' : 'border-gray-200 dark:border-gray-700 hover:border-wellcare-300'">
-                        <span x-text="tag"></span>
-                    </button>
-                </template>
+            <div class="space-y-3">
+                {{ form_widget(form.date, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'type': 'date'
+                    }
+                }) }}
+                <span class="text-red-500 text-sm">{{ form_errors(form.date) }}</span>
             </div>
         </div>
 
-        {# Submit Actions #}
-        <div class="flex items-center justify-between pt-4">
-            <button type="button" @click="saveDraft()" class="btn-secondary">
-                <i class="fa-solid fa-save mr-2"></i>
-                {{ 'Enregistrer comme brouillon'|trans }}
+        {# Weight #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-weight-scale text-wellcare-500"></i>
+                {{ 'Poids'|trans }} (kg)
+            </label>
+            <div class="space-y-3">
+                {{ form_widget(form.poids, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'min': '30',
+                        'max': '200',
+                        'step': '0.1',
+                        'aria-label': 'Poids en kilogrammes'
+                    }
+                }) }}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">30kg</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">200kg</span>
+                </div>
+                <span class="text-red-500 text-sm">{{ form_errors(form.poids) }}</span>
+            </div>
+        </div>
+
+        {# Blood Sugar (Glycemie) #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-droplet text-wellcare-500"></i>
+                {{ 'Glycémie'|trans }} (g/l)
+            </label>
+            <div class="space-y-3">
+                {{ form_widget(form.glycemie, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'min': '0.5',
+                        'max': '3',
+                        'step': '0.1',
+                        'aria-label': 'Glycémie en grammes par litre'
+                    }
+                }) }}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">0.5</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">3.0</span>
+                </div>
+                <span class="text-red-500 text-sm">{{ form_errors(form.glycemie) }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# Blood Pressure & Sleep #}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {# Blood Pressure (Tension) #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-heart-pulse text-wellcare-500"></i>
+                {{ 'Tension diastolique'|trans }} (mmHg)
+            </label>
+            <div class="space-y-3">
+                {{ form_widget(form.tension, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'placeholder': '80',
+                        'min': '40',
+                        'max': '120',
+                        'aria-label': 'Tension artérielle diastolique'
+                    }
+                }) }}
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Entrez la valeur diastolique (ex: 80 pour une tension de 120/80)'|trans }}</p>
+                <span class="text-red-500 text-sm">{{ form_errors(form.tension) }}</span>
+            </div>
+        </div>
+
+        {# Sleep Duration #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-bed text-wellcare-500"></i>
+                {{ 'Heures de sommeil'|trans }}
+            </label>
+            <div class="space-y-3">
+                {{ form_widget(form.sommeil, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'min': '0',
+                        'max': '12',
+                        'step': '0.5',
+                        'aria-label': 'Heures de sommeil'
+                    }
+                }) }}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">0h</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">12h</span>
+                </div>
+                <span class="text-red-500 text-sm">{{ form_errors(form.sommeil) }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# Symptoms Section #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+        <div class="flex items-center justify-between mb-4">
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-notes-medical text-wellcare-500"></i>
+                {{ 'Symptômes'|trans }}
+            </label>
+            <button type="submit" name="add_symptom" value="1" class="btn-secondary text-sm">
+                <i class="fa-solid fa-plus mr-1"></i>
+                {{ 'Ajouter un symptôme'|trans }}
+            </button>
+        </div>
+        
+        {# Render existing symptoms #}
+        {% for symptom in form.symptoms %}
+            <div class="symptom-item bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-500 dark:text-gray-400">{{ 'Type'|trans }}</label>
+                        {{ form_widget(symptom.type, {
+                            'attr': {
+                                'class': 'input w-full text-sm'
+                            }
+                        }) }}
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 dark:text-gray-400">{{ 'Intensité (1-10)'|trans }}</label>
+                        {{ form_widget(symptom.intensite, {
+                            'attr': {
+                                'class': 'input w-full text-sm',
+                                'min': 1,
+                                'max': 10
+                            }
+                        }) }}
+                    </div>
+                </div>
+                {{ form_errors(symptom.type) }}
+                {{ form_errors(symptom.intensite) }}
+            </div>
+        {% endfor %}
+        
+        {# Message if no symptoms #}
+        {% if form.symptoms|length == 0 %}
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                {{ 'Aucun symptôme ajouté. Cliquez sur "Ajouter un symptôme" pour en ajouter.'|trans }}
+            </p>
+        {% endif %}
+    </div>
+
+    {# Submit Actions #}
+    <div class="flex items-center justify-between pt-4">
+        <a href="{{ path('app_healthentry_index') }}" class="btn-secondary">
+            <i class="fa-solid fa-list mr-2"></i>
+            {{ 'Voir la liste des entrées'|trans }}
+        </a>
+        <div class="flex gap-2">
+            <button type="button" class="btn-secondary" onclick="window.history.back()">
+                <i class="fa-solid fa-arrow-left mr-2"></i>
+                {{ 'Annuler'|trans }}
             </button>
             <button type="submit" class="btn-primary">
                 <i class="fa-solid fa-check mr-2"></i>
                 {{ 'Enregistrer l\'entrée'|trans }}
             </button>
         </div>
-    </form>
+    </div>
+
+    {{ form_end(form) }}
 </div>
 
-{% endblock %}
-
-{% block scripts %}
-{{ parent() }}
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('journalEntry', () => ({
-        mood: 3,
-        energy: 5,
-        sleep: 7,
-        symptoms: '',
-        notes: '',
-        bodyParts: [],
-        selectedTags: [],
-        
-        quickTags: [
-            'Sport',
-            'Médicaments',
-            'Alcool',
-            'Café',
-            'Stress',
-            'Bon appétit',
-            'Fruits & Légumes',
-            'Marche',
-            'Mauvais sommeil',
-            'Voyage'
-        ],
-
-        partLabels: {
-            'head': 'Tête',
-            'neck': 'Cou',
-            'torso': 'Torse',
-            'left-arm': 'Bras gauche',
-            'right-arm': 'Bras droit',
-            'left-hand': 'Main gauche',
-            'right-hand': 'Main droite',
-            'left-leg': 'Jambe gauche',
-            'right-leg': 'Jambe droite',
-            'left-foot': 'Pied gauche',
-            'right-foot': 'Pied droit'
-        },
-
-        init() {
-            // Check if coming from body map
-            const fromBodyMap = new URLSearchParams(window.location.search).get('from');
-            if (fromBodyMap === 'body-map') {
-                const savedParts = sessionStorage.getItem('bodyMapSelectedParts');
-                if (savedParts) {
-                    this.bodyParts = JSON.parse(savedParts);
-                }
-            }
-        },
-
-        getMoodEmoji(level) {
-            const emojis = ['😢', '😕', '😐', '🙂', '😊'];
-            return emojis[level - 1] || '😐';
-        },
-
-        getMoodLabel(level) {
-            const labels = ['Très mal', 'Mal', 'Moyen', 'Bien', 'Très bien'];
-            return labels[level - 1] || 'Moyen';
-        },
-
-        getPartLabel(part) {
-            return this.partLabels[part] || part;
-        },
-
-        removeBodyPart(part) {
-            const index = this.bodyParts.indexOf(part);
-            if (index > -1) {
-                this.bodyParts.splice(index, 1);
-            }
-        },
-
-        toggleTag(tag) {
-            const index = this.selectedTags.indexOf(tag);
-            if (index > -1) {
-                this.selectedTags.splice(index, 1);
-            } else {
-                this.selectedTags.push(tag);
-            }
-        },
-
-        saveEntry() {
-            // Validate required fields
-            if (!this.mood || !this.energy) {
-                alert('Veuillez remplir au minimum l\'humeur et le niveau d\'énergie');
-                return;
-            }
-
-            const entryData = {
-                mood: this.mood,
-                energy: this.energy,
-                sleep: this.sleep,
-                symptoms: this.symptoms,
-                notes: this.notes,
-                bodyParts: this.bodyParts,
-                tags: this.selectedTags,
-                date: new Date().toISOString()
-            };
-
-            // Store in sessionStorage for demo (would be API call in production)
-            console.log('Saving entry:', entryData);
-            
-            // Show success message
-            alert('Entrée enregistrée avec succès!');
-            
-            // Redirect to dashboard
-            window.location.href = '/dashboard';
-        },
-
-        saveDraft() {
-            const draftData = {
-                mood: this.mood,
-                energy: this.energy,
-                sleep: this.sleep,
-                symptoms: this.symptoms,
-                notes: this.notes,
-                bodyParts: this.bodyParts,
-                tags: this.selectedTags,
-                savedAt: new Date().toISOString()
-            };
-
-            sessionStorage.setItem('journalDraft', JSON.stringify(draftData));
-            alert('Brouillon enregistré!');
-        }
-    }));
-});
-</script>
 {% endblock %}

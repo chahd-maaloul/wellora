@@ -21,7 +21,7 @@
         <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
         </svg>
-        <a href="/health/accessible/journal-entry" class="breadcrumb-link">{{ 'Nouvelle entrée'|trans }}</a>
+        <a href="/health/journal/accessible" class="breadcrumb-link">{{ 'Nouvelle entrée'|trans }}</a>
     </li>
     <li class="flex items-center">
         <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -378,7 +378,7 @@ document.addEventListener('alpine:init', () => {
             sessionStorage.setItem('bodyMapPainLevel', this.painLevel);
 
             // Navigate to journal entry
-            window.location.href = '/health/accessible/journal-entry?from=body-map';
+            window.location.href = '{{ path('app_health_journal_accessible') }}?from=body-map';
         }
     }));
 });

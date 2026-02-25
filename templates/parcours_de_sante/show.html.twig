@@ -1,0 +1,373 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ parcours_de_sante.nomParcours }} - Health Trail{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+{% endblock %}
+
+{% block body %}
+{% set heroImageRaw = parcours_de_sante.imageParcours|default('') %}
+{% set heroImageIsExternal = heroImageRaw starts with 'http://' or heroImageRaw starts with 'https://' %}
+{% set heroImageLocalPath = heroImageRaw starts with '/' ? heroImageRaw : '/' ~ heroImageRaw %}
+{% if heroImageRaw %}
+    {% if heroImageIsExternal %}
+        {% set heroImage = heroImageRaw %}
+    {% else %}
+        {% set heroImage = asset(heroImageLocalPath) %}
+    {% endif %}
+{% else %}
+    {% set heroImage = 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=1600&h=900&fit=crop' %}
+{% endif %}
+{% set weatherCondition = weather and weather.condition ? weather.condition : 'Unavailable' %}
+{% set weatherConditionKey = weatherCondition|lower %}
+{% set latitude = map_data and map_data.latitude is not null ? map_data.latitude : parcours_de_sante.latitudeParcours %}
+{% set longitude = map_data and map_data.longitude is not null ? map_data.longitude : parcours_de_sante.longitudeParcours %}
+{% set weatherGradient = 'from-sky-600 to-cyan-500' %}
+{% set weatherIcon = 'fa-solid fa-cloud-sun' %}
+{% set weatherBadgeClass = 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800' %}
+{% set weatherImage = 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=1200&h=700&fit=crop' %}
+
+{% if 'clear' in weatherConditionKey or 'sun' in weatherConditionKey %}
+    {% set weatherGradient = 'from-amber-500 to-orange-500' %}
+    {% set weatherIcon = 'fa-solid fa-sun' %}
+    {% set weatherBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800' %}
+    {% set weatherImage = 'https://images.unsplash.com/photo-1501973801540-537f08ccae7b?w=1200&h=700&fit=crop' %}
+{% elseif 'cloud' in weatherConditionKey or 'overcast' in weatherConditionKey %}
+    {% set weatherGradient = 'from-slate-600 to-slate-500' %}
+    {% set weatherIcon = 'fa-solid fa-cloud' %}
+    {% set weatherBadgeClass = 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-700' %}
+    {% set weatherImage = 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1200&h=700&fit=crop' %}
+{% elseif 'rain' in weatherConditionKey or 'drizzle' in weatherConditionKey or 'shower' in weatherConditionKey %}
+    {% set weatherGradient = 'from-blue-700 to-cyan-600' %}
+    {% set weatherIcon = 'fa-solid fa-cloud-rain' %}
+    {% set weatherBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' %}
+    {% set weatherImage = 'https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=1200&h=700&fit=crop' %}
+{% elseif 'snow' in weatherConditionKey or 'hail' in weatherConditionKey or 'ice' in weatherConditionKey %}
+    {% set weatherGradient = 'from-cyan-600 to-sky-500' %}
+    {% set weatherIcon = 'fa-solid fa-snowflake' %}
+    {% set weatherBadgeClass = 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800' %}
+    {% set weatherImage = 'https://images.unsplash.com/photo-1483664852095-d6cc6870702d?w=1200&h=700&fit=crop' %}
+{% elseif 'thunder' in weatherConditionKey or 'storm' in weatherConditionKey %}
+    {% set weatherGradient = 'from-gray-800 to-indigo-700' %}
+    {% set weatherIcon = 'fa-solid fa-bolt' %}
+    {% set weatherBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800' %}
+    {% set weatherImage = 'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=1200&h=700&fit=crop' %}
+{% elseif 'fog' in weatherConditionKey or 'mist' in weatherConditionKey %}
+    {% set weatherGradient = 'from-zinc-600 to-zinc-500' %}
+    {% set weatherIcon = 'fa-solid fa-smog' %}
+    {% set weatherBadgeClass = 'bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-zinc-900/30 dark:text-zinc-300 dark:border-zinc-700' %}
+    {% set weatherImage = 'https://images.unsplash.com/photo-1485236715568-ddc5ee6ca227?w=1200&h=700&fit=crop' %}
+{% endif %}
+
+<div class="relative -mx-4 -mt-4 mb-6 overflow-hidden rounded-b-3xl">
+    <img src="{{ heroImage }}" alt="{{ parcours_de_sante.nomParcours }}" class="h-[34vh] min-h-[260px] w-full object-cover">
+    <div class="absolute inset-0 bg-gradient-to-br from-wellcare-dark-500/80 via-wellcare-500/70 to-black/70"></div>
+    <div class="absolute inset-0 p-4 sm:p-6 lg:p-8">
+        <div class="flex h-full flex-col justify-between">
+            <div class="flex items-center gap-2">
+                <a href="{{ path('app_parcours_de_sante_index') }}" class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-white/20">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back
+                </a>
+            </div>
+            <div class="max-w-4xl text-white">
+                <h1 class="text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl font-display">{{ parcours_de_sante.nomParcours }}</h1>
+                <p class="mt-2 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-sm text-white/90 backdrop-blur-sm">
+                    <i class="mr-2 fa-solid fa-location-dot"></i>{{ parcours_de_sante.localisationParcours }}
+                </p>
+                <div class="mt-3 flex flex-wrap gap-2 text-xs sm:text-sm">
+                    <span class="inline-flex items-center rounded-full bg-black/25 px-3 py-1">
+                        <i class="mr-2 fa-solid fa-ruler"></i>{{ parcours_de_sante.distanceParcours|number_format(1) }} km
+                    </span>
+                    <span class="inline-flex items-center rounded-full bg-black/25 px-3 py-1">
+                        <i class="mr-2 fa-solid fa-newspaper"></i>{{ parcours_de_sante.publicationParcours|length }} publications
+                    </span>
+                    <span class="inline-flex items-center rounded-full bg-black/25 px-3 py-1">
+                        <i class="mr-2 fa-solid fa-calendar"></i>{{ parcours_de_sante.dateCreation ? parcours_de_sante.dateCreation|time_diff : '-' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="px-4 mx-auto space-y-5">
+    <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Distance</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ parcours_de_sante.distanceParcours|number_format(1) }}</p>
+            <p class="text-xs text-gray-500">km</p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Publications</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ parcours_de_sante.publicationParcours|length }}</p>
+            <p class="text-xs text-gray-500">posts</p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Temperature</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ weather and weather.temperature is not null ? weather.temperature|number_format(1) ~ ' C' : '-' }}</p>
+            <p class="text-xs text-gray-500">{{ weatherCondition }}</p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Wind</p>
+            <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ weather and weather.wind_speed is not null ? weather.wind_speed|number_format(1) ~ ' km/h' : '-' }}</p>
+            <p class="text-xs text-gray-500">speed</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <div class="space-y-5 xl:col-span-2">
+            <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Parcours Summary</h2>
+                <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+                        <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300">Location</p>
+                        <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{{ parcours_de_sante.localisationParcours }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+                        <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300">Created</p>
+                        <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100" title="{{ parcours_de_sante.dateCreation ? parcours_de_sante.dateCreation|date('l, M d, Y') : '-' }}">{{ parcours_de_sante.dateCreation ? parcours_de_sante.dateCreation|time_diff : '-' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900 sm:col-span-2">
+                        <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300">Coordinates</p>
+                        <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {% if latitude is not null and longitude is not null %}
+                                {{ latitude|number_format(6) }}, {{ longitude|number_format(6) }}
+                            {% else %}
+                                Coordinates unavailable
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Map Overview</h2>
+                    {% if map_data %}
+                        <a href="{{ map_data.external_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            Open in OpenStreetMap
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if map_data %}
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-300">{{ map_data.label }}</p>
+                    <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                        <iframe
+                            title="Parcours map"
+                            src="{{ map_data.embed_url }}"
+                            class="h-80 w-full"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                        ></iframe>
+                    </div>
+                {% else %}
+                    <div class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600 dark:border-gray-600 dark:bg-gray-700/30 dark:text-gray-300">
+                        Map preview is unavailable for this parcours.
+                    </div>
+                {% endif %}
+            </section>
+
+        </div>
+
+        <aside class="space-y-5">
+            <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Actions</h2>
+                <div class="mt-4 space-y-2">
+                    <a href="{{ path('app_publication_parcours_index', {'parcoursId': parcours_de_sante.id}) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/40">
+                        <i class="fa-solid fa-newspaper"></i>
+                        View publications
+                    </a>
+                    <a href="{{ path('app_parcours_de_sante_index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700/50">
+                        <i class="fa-solid fa-list"></i>
+                        All Health Trails
+                    </a>
+                </div>
+            </section>
+
+            <section
+                id="parcours-distance-section"
+                class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                data-parcours-lat="{{ latitude is not null ? latitude : '' }}"
+                data-parcours-lng="{{ longitude is not null ? longitude : '' }}"
+            >
+                <div class="flex flex-wrap items-center gap-3">
+                    <h2 class="inline-flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                        <i class="fa-solid fa-ruler"></i>
+                        Distance From Your Location
+                    </h2>
+                </div>
+
+                <p id="parcours-distance-value" class="mt-3 text-2xl font-bold text-gray-900 dark:text-white">-</p>
+                <p id="parcours-distance-status" class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                    Use your current location to calculate the direct distance.
+                </p>
+
+                <a
+                    id="parcours-distance-directions"
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-3 inline-flex hidden items-center gap-2 text-sm font-medium text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400"
+                >
+                    <i class="fa-solid fa-route"></i>
+                    Open route in OpenStreetMap
+                </a>
+            </section>
+
+            <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div class="relative h-44">
+                    <img src="{{ weatherImage }}" alt="Weather image for {{ weatherCondition }}" class="h-full w-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-r {{ weatherGradient }} opacity-55"></div>
+                    <div class="absolute inset-0 flex items-start justify-between p-4 text-white">
+                        <h2 class="text-lg font-semibold">Weather Snapshot</h2>
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-xl backdrop-blur-sm">
+                            <i class="{{ weatherIcon }}"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="bg-gray-100 p-5 dark:bg-gray-900">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between gap-4">
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">Temperature</p>
+                            <p class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                                {{ weather and weather.temperature is not null ? weather.temperature|number_format(1) ~ ' C' : '-' }}
+                            </p>
+                        </div>
+                        <div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-3 dark:border-gray-700">
+                            <p class="text-xl text-gray-600 dark:text-gray-200">Condition</p>
+                            <p class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-base font-semibold {{ weatherBadgeClass }}">
+                                <i class="{{ weatherIcon }}"></i>{{ weatherCondition }}
+                            </p>
+                        </div>
+                        <div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-3 dark:border-gray-700">
+                            <p class="text-xl text-gray-600 dark:text-gray-200">Wind</p>
+                            <p class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                                {{ weather and weather.wind_speed is not null ? weather.wind_speed|number_format(1) ~ ' km/h' : '-' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (() => {
+            const section = document.getElementById('parcours-distance-section');
+            if (!section) {
+                return;
+            }
+
+            const parcoursLatitude = Number.parseFloat(section.dataset.parcoursLat ?? '');
+            const parcoursLongitude = Number.parseFloat(section.dataset.parcoursLng ?? '');
+            const distanceValueElement = document.getElementById('parcours-distance-value');
+            const distanceStatusElement = document.getElementById('parcours-distance-status');
+            const directionsLink = document.getElementById('parcours-distance-directions');
+
+            if (
+                !Number.isFinite(parcoursLatitude) ||
+                !Number.isFinite(parcoursLongitude) ||
+                !distanceValueElement ||
+                !distanceStatusElement ||
+                !directionsLink
+            ) {
+                return;
+            }
+
+            const haversineDistanceKm = (fromLat, fromLng, toLat, toLng) => {
+                const earthRadiusKm = 6371;
+                const toRadians = (value) => (value * Math.PI) / 180;
+                const deltaLat = toRadians(toLat - fromLat);
+                const deltaLng = toRadians(toLng - fromLng);
+                const a =
+                    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                    Math.cos(toRadians(fromLat)) *
+                        Math.cos(toRadians(toLat)) *
+                        Math.sin(deltaLng / 2) *
+                        Math.sin(deltaLng / 2);
+
+                return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            };
+
+            const setStatus = (valueText, statusText) => {
+                distanceValueElement.textContent = valueText;
+                distanceStatusElement.textContent = statusText;
+            };
+
+            const updateDistance = (userLatitude, userLongitude) => {
+                const distanceKm = haversineDistanceKm(
+                    userLatitude,
+                    userLongitude,
+                    parcoursLatitude,
+                    parcoursLongitude
+                );
+
+                setStatus(
+                    `${distanceKm.toFixed(2)} km`,
+                    'Live direct distance between your current location and this parcours.'
+                );
+
+                const routeUrl = new URL('https://www.openstreetmap.org/directions');
+                routeUrl.searchParams.set('engine', 'fossgis_osrm_foot');
+                routeUrl.searchParams.set(
+                    'route',
+                    `${userLatitude.toFixed(6)},${userLongitude.toFixed(6)};${parcoursLatitude.toFixed(6)},${parcoursLongitude.toFixed(6)}`
+                );
+
+                directionsLink.href = routeUrl.toString();
+                directionsLink.classList.remove('hidden');
+            };
+
+            const calculateDistance = () => {
+                if (!('geolocation' in navigator)) {
+                    setStatus('-', 'Geolocation is not supported in this browser.');
+                    return;
+                }
+
+                setStatus('Calculating...', 'Waiting for your location permission to start live tracking.');
+
+                const watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const userLatitude = position.coords.latitude;
+                        const userLongitude = position.coords.longitude;
+                        updateDistance(userLatitude, userLongitude);
+                    },
+                    (error) => {
+                        const fallbackStatusByCode = {
+                            1: 'Location access denied. Please allow location permission and retry.',
+                            2: 'Location unavailable right now. Please retry.',
+                            3: 'Location request timed out. Please retry.',
+                        };
+
+                        setStatus('-', fallbackStatusByCode[error.code] ?? 'Could not read your location.');
+                        directionsLink.classList.add('hidden');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0,
+                    }
+                );
+
+                window.addEventListener(
+                    'beforeunload',
+                    () => {
+                        navigator.geolocation.clearWatch(watchId);
+                    },
+                    { once: true }
+                );
+            };
+
+            calculateDistance();
+        })();
+    </script>
+{% endblock %}

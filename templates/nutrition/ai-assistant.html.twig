@@ -1,0 +1,432 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Assistant Nutritionnel AI - WellCare{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body_class %}bg-gray-50 dark:bg-gray-900{% endblock %}
+
+{% block body %}
+<div class="min-h-screen py-8">
+    <div class="px-4 mx-auto max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center gap-4 mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <a href="{{ path('nutrition_dashboard') }}" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 transition-colors" title="Nouvelle conversation">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                </a>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Assistant Nutritionnel AI</h1>
+            <p class="text-gray-600 dark:text-gray-300">Obtenez des recommandations personnalisées basées sur vos objectifs</p>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Actions rapides</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button onclick="sendQuickMessage('recette déjeuner')" class="p-3 bg-emerald-100 dark:bg-emerald-900 hover:bg-emerald-200 dark:hover:bg-emerald-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">🍳</span>
+                    <span class="text-xs font-medium text-emerald-700 dark:text-emerald-300">Recettes</span>
+                </button>
+                <button onclick="sendQuickMessage('menu semaine')" class="p-3 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">📅</span>
+                    <span class="text-xs font-medium text-blue-700 dark:text-blue-300">Menu semaine</span>
+                </button>
+                <button onclick="sendQuickMessage('perdre du poids')" class="p-3 bg-orange-100 dark:bg-orange-900 hover:bg-orange-200 dark:hover:bg-orange-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">⚖️</span>
+                    <span class="text-xs font-medium text-orange-700 dark:text-orange-300">Perte poids</span>
+                </button>
+                <button onclick="sendQuickMessage('prise de muscle')" class="p-3 bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">💪</span>
+                    <span class="text-xs font-medium text-purple-700 dark:text-purple-300">Muscle</span>
+                </button>
+                <button onclick="sendQuickMessage('courses')" class="p-3 bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">🛒</span>
+                    <span class="text-xs font-medium text-yellow-700 dark:text-yellow-300">Courses</span>
+                </button>
+                <a href="{{ path('nutrition_grocery_list_pdf') }}" class="p-3 bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 rounded-xl transition-colors text-center">
+                    <span class="text-2xl mb-1 block">📄</span>
+                    <span class="text-xs font-medium text-red-700 dark:text-red-300">PDF</span>
+                </a>
+                <button onclick="sendQuickMessage('poulet')" class="p-3 bg-cyan-100 dark:bg-cyan-900 hover:bg-cyan-200 dark:hover:bg-cyan-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">ℹ️</span>
+                    <span class="text-xs font-medium text-cyan-700 dark:text-cyan-300">Info produit</span>
+                </button>
+                <button onclick="sendQuickMessage('régime vegan')" class="p-3 bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">🌱</span>
+                    <span class="text-xs font-medium text-green-700 dark:text-green-300">Végan</span>
+                </button>
+                <button onclick="sendQuickMessage('régime keto')" class="p-3 bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">🥑</span>
+                    <span class="text-xs font-medium text-yellow-700 dark:text-yellow-300">Keto</span>
+                </button>
+                <button onclick="sendQuickMessage('sportif')" class="p-3 bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">🏃</span>
+                    <span class="text-xs font-medium text-red-700 dark:text-red-300">Sportif</span>
+                </button>
+                <button onclick="sendQuickMessage('eau')" class="p-3 bg-cyan-100 dark:bg-cyan-900 hover:bg-cyan-200 dark:hover:bg-cyan-800 rounded-xl transition-colors text-center cursor-pointer">
+                    <span class="text-2xl mb-1 block">💧</span>
+                    <span class="text-xs font-medium text-cyan-700 dark:text-cyan-300">Hydratation</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+            <!-- Chat Messages -->
+            <div class="h-96 overflow-y-auto p-6 space-y-4" id="chat-messages">
+                {% if conversation|length > 0 %}
+                    {% for message in conversation %}
+                        {% if message.role == 'user' %}
+                            <div class="flex justify-end animate-slide-in-right">
+                                <div class="bg-emerald-500 text-white rounded-2xl rounded-br-md px-4 py-3 max-w-md">
+                                    <p class="text-sm">{{ message.content }}</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="flex justify-start animate-slide-in-left">
+                                <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-md px-4 py-3 max-w-md w-full">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
+                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-sm text-gray-800 dark:text-white whitespace-pre-wrap">{{ message.content }}</p>
+                                            
+                                            {% if message.meals is defined and message.meals|length > 0 %}
+                                                <div class="mt-4 space-y-2">
+                                                    {% for meal in message.meals %}
+                                                        <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                                            <div class="flex justify-between items-start">
+                                                                <div class="flex-1">
+                                                                    <p class="font-medium text-gray-800 dark:text-white">{{ meal.name }}</p>
+                                                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ meal.description }}</p>
+                                                                </div>
+                                                                <div class="text-right ml-2">
+                                                                    <p class="text-sm font-bold text-emerald-600">{{ meal.calories }} kcal</p>
+                                                                    <p class="text-xs text-gray-500">P:{{ meal.protein }}g G:{{ meal.carbs }}g L:{{ meal.fats }}g</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-2 flex gap-2">
+                                                                <button onclick="addMealToPlanner('{{ meal.name|escape('js') }}', {{ meal.calories }}, {{ meal.protein }}, {{ meal.carbs }}, {{ meal.fats }}, '{{ meal.description|escape('js') }}', '{{ meal.mealType|default('lunch') }}')" class="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                                    ➕ Ajouter au planner
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Welcome Message -->
+                    <div class="flex justify-start animate-fade-in">
+                        <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-md px-4 py-3 max-w-md">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-800 dark:text-white">
+Bonjour! 🌟 Je suis votre assistant nutritionnel WellCare AI.
+
+Je peux vous aider avec:
+
+🍳 <strong>Recettes</strong> - Suggestions personnalisées
+📅 <strong>Planification</strong> - Menus semaine  
+⚖️ <strong>Perte de poids</strong> - Plans adaptés
+💪 <strong>Muscle</strong> - Prise de masse
+🌱 <strong>Régimes spéciaux</strong> - Vegan, Keto...
+🏃 <strong>Sport</strong> - Nutrition athlete
+💧 <strong>Hydratation</strong> - Eau quotidienne
+📊 <strong>Calories</strong> - Guide nutritionnel
+
+Tapez votre demande ci-dessous ou utilisez les actions rapides!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Loading indicator -->
+                <div id="loading-indicator" class="hidden flex justify-start">
+                    <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-md px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                </svg>
+                            </div>
+                            <div class="flex gap-1">
+                                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Toast notification -->
+                <div id="toast" class="fixed bottom-4 right-4 bg-emerald-500 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 dark:bg-emerald-600">
+                    <p id="toast-message" class="text-sm font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Input Form -->
+            <form id="chat-form" class="border-t border-gray-200 dark:border-gray-700 p-4">
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="chat-input"
+                        name="message" 
+                        placeholder="Tapez votre message..." 
+                        required
+                        autocomplete="off"
+                        class="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    >
+                    <button 
+                        type="submit"
+                        id="send-btn"
+                        class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
+            <a href="{{ path('nutrition_dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-arrow-left"></i>Tableau de bord
+            </a>
+            <a href="{{ path('nutrition_meal_planner') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-calendar-alt"></i>Planificateur
+            </a>
+            <a href="{{ path('nutrition_goals') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-bullseye"></i>Objectifs
+            </a>
+            <a href="{{ path('nutrition_food_diary') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg shadow hover:shadow-md transition-all dark:hover:bg-gray-700">
+                <i class="mr-2 fas fa-book"></i>Journal
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.animate-slide-in-right { animation: slideInRight 0.3s ease-out; }
+.animate-slide-in-left { animation: slideInLeft 0.3s ease-out; }
+.animate-fade-in { animation: fadeIn 0.5s ease-out; }
+</style>
+
+<script>
+const form = document.getElementById('chat-form');
+const input = document.getElementById('chat-input');
+const messagesContainer = document.getElementById('chat-messages');
+const loadingIndicator = document.getElementById('loading-indicator');
+const sendBtn = document.getElementById('send-btn');
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    toastMessage.textContent = message;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3000);
+}
+
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function createUserMessage(text) {
+    return `
+        <div class="flex justify-end animate-slide-in-right">
+            <div class="bg-emerald-500 text-white rounded-2xl rounded-br-md px-4 py-3 max-w-md">
+                <p class="text-sm">${escapeHtml(text)}</p>
+            </div>
+        </div>
+    `;
+}
+
+function createAIMessage(response) {
+    let mealsHtml = '';
+    if (response.meals && response.meals.length > 0) {
+        mealsHtml = `
+            <div class="mt-4 space-y-2">
+                ${response.meals.map(meal => `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-800 dark:text-white">${escapeHtml(meal.name)}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">${escapeHtml(meal.description || '')}</p>
+                            </div>
+                            <div class="text-right ml-2">
+                                <p class="text-sm font-bold text-emerald-600">${meal.calories} kcal</p>
+                                <p class="text-xs text-gray-500">P:${meal.protein}g G:${meal.carbs}g L:${meal.fats}g</p>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex gap-2">
+                            <button onclick="addMealToPlanner('${escapeHtml(meal.name)}', ${meal.calories}, ${meal.protein}, ${meal.carbs}, ${meal.fats}, '${escapeHtml(meal.description || '')}', '${meal.mealType || 'lunch'}')" class="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                ➕ Ajouter au planner
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="flex justify-start animate-slide-in-left">
+            <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-bl-md px-4 py-3 max-w-md w-full">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-800 dark:text-white whitespace-pre-wrap">${escapeHtml(response.message)}</p>
+                        ${mealsHtml}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function sendMessage(message) {
+    if (!message.trim()) return;
+    
+    // Add user message
+    const userMsg = createUserMessage(message);
+    loadingIndicator.insertAdjacentHTML('beforebegin', userMsg);
+    scrollToBottom();
+    
+    // Show loading
+    loadingIndicator.classList.remove('hidden');
+    sendBtn.disabled = true;
+    input.value = '';
+    
+    try {
+        const formData = new FormData();
+        formData.append('message', message);
+        
+        const response = await fetch('{{ path('nutrition_ai_assistant') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            loadingIndicator.insertAdjacentHTML('beforebegin', createAIMessage(data));
+        } else {
+            // Show error message smoothly without reload
+            const errorMsg = createAIMessage({ message: 'Désolé, une erreur est survenue. Veuillez réessayer.' });
+            loadingIndicator.insertAdjacentHTML('beforebegin', errorMsg);
+            showToast('❌ Erreur de connexion');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        // Show error message smoothly without reload
+        const errorMsg = createAIMessage({ message: 'Désolé, une erreur de connexion est survenue. Veuillez vérifier votre connexion.' });
+        loadingIndicator.insertAdjacentHTML('beforebegin', errorMsg);
+        showToast('❌ Erreur de connexion');
+    }
+    
+    loadingIndicator.classList.add('hidden');
+    sendBtn.disabled = false;
+    input.focus();
+    scrollToBottom();
+}
+
+function sendQuickMessage(message) {
+    sendMessage(message);
+}
+
+async function addMealToPlanner(name, calories, protein, carbs, fats, description, mealType) {
+    try {
+        const formData = new FormData();
+        formData.append('meal_name', name);
+        formData.append('calories', calories);
+        formData.append('protein', protein);
+        formData.append('carbs', carbs);
+        formData.append('fats', fats);
+        formData.append('description', description);
+        formData.append('meal_type', mealType);
+        
+        const response = await fetch('{{ path('nutrition_ai_save_meal') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            showToast('✅ Repas ajouté au planificateur!');
+        } else {
+            showToast('❌ Erreur lors de l\'ajout');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('❌ Erreur lors de l\'ajout');
+    }
+}
+
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const message = input.value.trim();
+    sendMessage(message);
+});
+
+// Auto-scroll on page load
+scrollToBottom();
+</script>
+{% endblock %}

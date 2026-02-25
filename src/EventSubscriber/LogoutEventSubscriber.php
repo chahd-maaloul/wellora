@@ -18,22 +18,21 @@ class LogoutEventSubscriber implements EventSubscriberInterface
 
     public function onLogout(LogoutEvent $event): void
     {
-        // Get the session and clear all attributes
+        // Get the session
         $request = $event->getRequest();
         $session = $request->getSession();
         
+        // Add flash message BEFORE invalidating the session
         if ($session instanceof Session) {
-            // Clear all session data
-            $session->clear();
-            
-            // Invalidate the session cookie
-            $session->invalidate();
+            $session->getFlashBag()->add('success', 'Vous avez été déconnecté avec succès.');
         }
 
-        // Get the firewall name and set logout response
+        // Set logout response BEFORE invalidating session
         $event->setResponse(new RedirectResponse('/login'));
         
-        // Add flash message
-        $session->getFlashBag()->add('success', 'Vous avez été déconnecté avec succès.');
+        // Now invalidate the session
+        if ($session instanceof Session) {
+            $session->invalidate();
+        }
     }
 }

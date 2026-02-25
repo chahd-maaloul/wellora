@@ -1,0 +1,19 @@
+# 2FA Configuration for WellCare Connect
+# See: https://symfony.com/bundles/SchebTwoFactorBundle/6.x/configuration.html
+scheb_two_factor:
+    # Security tokens that will be checked for 2FA
+    security_tokens:
+        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
+        - Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken
+    
+    # TOTP Configuration (Google Authenticator, Microsoft Authenticator, Authy)
+    totp:
+        enabled: true
+        issuer: WellCare Connect
+    
+    # Backup Codes Configuration
+    backup_codes:
+        enabled: true
+    
+    # IP whitelist - IPs that won't require 2FA
+    ip_whitelist: []

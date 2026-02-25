@@ -1,0 +1,108 @@
+{{ form_start(form, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate'}}) }}
+    <div class="space-y-4">
+        {% set selectedParcours = form.vars.value and form.vars.value.parcoursDeSante ? form.vars.value.parcoursDeSante : null %}
+        {% if selectedParcours %}
+            <div class="p-3 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600">
+                <p class="text-xs text-gray-500 dark:text-gray-400">Selected trail</p>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ selectedParcours.nomParcours }}</p>
+            </div>
+        {% endif %}
+
+        <div>
+            {{ form_label(form.textPublication, 'Publication Text', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+            {{ form_widget(form.textPublication, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.textPublication.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'rows': '5', 'placeholder': 'Share your trail experience'}}) }}
+            {% if form.textPublication.vars.errors|length > 0 %}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.textPublication) }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+                {{ form_label(form.ambiance, 'Ambiance (1-5)', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                {{ form_widget(form.ambiance, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.ambiance.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'min': '1', 'max': '5'}}) }}
+                {% if form.ambiance.vars.errors|length > 0 %}
+                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form_errors(form.ambiance) }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                {{ form_label(form.securite, 'Safety (1-5)', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                {{ form_widget(form.securite, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.securite.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'min': '1', 'max': '5'}}) }}
+                {% if form.securite.vars.errors|length > 0 %}
+                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.securite) }}
+                </div>
+            {% endif %}
+            </div>
+
+            <div>
+                {{ form_label(form.experience, 'Experience', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                {{ form_widget(form.experience, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.experience.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
+                {% if form.experience.vars.errors|length > 0 %}
+                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form_errors(form.experience) }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                {{ form_label(form.typePublication, 'Publication Type', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+                {{ form_widget(form.typePublication, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.typePublication.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
+                {% if form.typePublication.vars.errors|length > 0 %}
+                    <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {{ form_errors(form.typePublication) }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            {{ form_label(form.datePublication, 'Publication Date', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+            {{ form_widget(form.datePublication, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.datePublication.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200')}}) }}
+            {% if form.datePublication.vars.errors|length > 0 %}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form.datePublication) }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div>
+            {% set currentImage = form.vars.value and form.vars.value.imagePublication ? form.vars.value.imagePublication : null %}
+            {% if currentImage %}
+                {% set currentImageSrc = currentImage %}
+                {% if not (currentImage starts with 'http://' or currentImage starts with 'https://') %}
+                    {% set normalizedImage = currentImage starts with '/' ? currentImage|slice(1) : currentImage %}
+                    {% set currentImageSrc = asset(normalizedImage starts with 'uploads/' ? normalizedImage : 'uploads/parcours/' ~ normalizedImage) %}
+                {% endif %}
+                <div class="mb-2">
+                    <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Current image:</p>
+                    <img src="{{ currentImageSrc }}" alt="Current publication image" class="object-cover w-32 h-32 border border-gray-200 rounded-lg dark:border-gray-600">
+                </div>
+            {% endif %}
+
+            {{ form_label(form.imageFile, 'Parcours Image (JPG or PNG)', {'label_attr': {'class': 'block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
+            <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-info-circle"></i> Max 10MB, 100x100px minimum, JPG or PNG format
+            </p>
+            {{ form_widget(form.imageFile, {'attr': {'class': 'w-full px-4 py-2.5 border rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent' ~ (form.imageFile.vars.errors|length > 0 ? ' border-red-500' : ' border-gray-200'), 'accept': 'image/jpeg,image/png'}}) }}
+            {% if form.imageFile.vars.errors|length > 0 %}
+                <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                    {{ form_errors(form.imageFile) }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <button type="submit" class="px-4 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+            {{ button_label|default('Save') }}
+        </button>
+        <a href="{{ path('app_publication_parcours_index', cancel_parcours_id is defined and cancel_parcours_id ? {'parcoursId': cancel_parcours_id} : {}) }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+            Cancel
+        </a>
+    </div>
+{{ form_end(form) }}

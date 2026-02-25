@@ -1,0 +1,132 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Compare Journals{% endblock %}
+
+{% block body %}
+<div class="page-content">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-6">
+            <a href="{{ path('app_healthjournal_index') }}" class="text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400 font-medium">
+                <svg class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                {{ 'Back to Journals'|trans }}
+            </a>
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">{{ 'Compare Health Journals'|trans }}</h1>
+
+        <!-- Selection Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <form method="GET" class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-200">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'Journal 1'|trans }}</label>
+                    <select name="journal1" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">{{ 'Select a journal'|trans }}</option>
+                        {% for journal in journals %}
+                            <option value="{{ journal.id }}" {{ selectedJournal1 == journal.id ? 'selected' }}>
+                                {{ journal.name }} ({{ journal.datedebut|date('d/m/Y') }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1 min-w-200">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'Journal 2'|trans }}</label>
+                    <select name="journal2" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">{{ 'Select a journal'|trans }}</option>
+                        {% for journal in journals %}
+                            <option value="{{ journal.id }}" {{ selectedJournal2 == journal.id ? 'selected' }}>
+                                {{ journal.name }} ({{ journal.datedebut|date('d/m/Y') }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-wellcare-600 text-white px-6 py-2 rounded-lg hover:bg-wellcare-700 transition-colors font-medium">
+                    {{ 'Compare'|trans }}
+                </button>
+            </form>
+        </div>
+
+        {% if comparison and comparison.journal1 is defined and comparison.journal2 is defined %}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Journal 1 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400 mb-2">{{ comparison.journal1.name }}</h2>
+                    <p class="text-gray-500 dark:text-gray-400 mb-4">{{ comparison.journal1.period }}</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Total Entries'|trans }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ comparison.journal1.stats.count }}</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Average Weight'|trans }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ comparison.journal1.stats.avgWeight }} kg</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Average Blood Sugar'|trans }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ comparison.journal1.stats.avgGlycemie }} g/l</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Weight Change'|trans }}</span>
+                            <span class="font-bold {{ comparison.journal1.stats.weightChange >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ comparison.journal1.stats.weightChange > 0 ? '+' }}{{ comparison.journal1.stats.weightChange }} kg
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Journal 2 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-purple-600 dark:text-purple-400 mb-2">{{ comparison.journal2.name }}</h2>
+                    <p class="text-gray-500 dark:text-gray-400 mb-4">{{ comparison.journal2.period }}</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Total Entries'|trans }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ comparison.journal2.stats.count }}</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Average Weight'|trans }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ comparison.journal2.stats.avgWeight }} kg</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Average Blood Sugar'|trans }}</span>
+                            <span class="font-bold text-gray-900 dark:text-white">{{ comparison.journal2.stats.avgGlycemie }} g/l</span>
+                        </div>
+                        <div class="flex justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                            <span class="text-gray-600 dark:text-gray-300">{{ 'Weight Change'|trans }}</span>
+                            <span class="font-bold {{ comparison.journal2.stats.weightChange >= 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ comparison.journal2.stats.weightChange > 0 ? '+' }}{{ comparison.journal2.stats.weightChange }} kg
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Differences Summary -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">{{ 'Comparison Summary'|trans }}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 rounded-lg {{ comparison.differences.weight > 0 ? 'bg-red-50 dark:bg-red-900/20' : (comparison.differences.weight < 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700') }}">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Weight Difference'|trans }}</p>
+                        <p class="text-2xl font-bold {{ comparison.differences.weight > 0 ? 'text-red-600 dark:text-red-400' : (comparison.differences.weight < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400') }}">
+                            {{ comparison.differences.weight > 0 ? '+' }}{{ comparison.differences.weight }} kg
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {{ comparison.differences.weight > 0 ? 'Journal 2 has higher average weight' : (comparison.differences.weight < 0 ? 'Journal 2 has lower average weight' : 'Same average weight') }}
+                        </p>
+                    </div>
+                    <div class="p-4 rounded-lg {{ comparison.differences.glycemie > 0.1 ? 'bg-red-50 dark:bg-red-900/20' : (comparison.differences.glycemie < -0.1 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700') }}">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Blood Sugar Difference'|trans }}</p>
+                        <p class="text-2xl font-bold {{ comparison.differences.glycemie > 0.1 ? 'text-red-600 dark:text-red-400' : (comparison.differences.glycemie < -0.1 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400') }}">
+                            {{ comparison.differences.glycemie > 0 ? '+' }}{{ comparison.differences.glycemie }} g/l
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {{ comparison.differences.glycemie > 0.1 ? 'Journal 2 has higher average blood sugar' : (comparison.differences.glycemie < -0.1 ? 'Journal 2 has lower average blood sugar' : 'Similar blood sugar levels') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

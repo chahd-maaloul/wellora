@@ -131,8 +131,8 @@
             </div>
 
             {# Resend Email Form #}
-            <form action="{{ path('app_verify_email') }}" method="POST" class="space-y-4" x-data="{ email: '', isSubmitting: false, success: false, message: '' }" @submit.prevent="isSubmitting = true; 
-                fetch('/api/forgot-password', {
+            <form action="{{ path('app_resend_verification_email_public') }}" method="POST" class="space-y-4" x-data="{ email: '{{ prefillEmail|default('')|e('js') }}', isSubmitting: false, success: false, message: '' }" @submit.prevent="isSubmitting = true; 
+                fetch('{{ path('app_resend_verification_email_public') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'email=' + encodeURIComponent(email)

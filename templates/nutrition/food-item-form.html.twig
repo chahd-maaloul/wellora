@@ -1,0 +1,292 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ action == 'edit' ? 'Modifier' : 'Ajouter' }} un aliment - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('nutrition-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    {# Page Header #}
+    <div class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="text-3xl fas fa-utensils text-wellcare-500"></i>
+                        {% if action == 'edit' %}Modifier{% else %}Ajouter{% endif %} un aliment
+                    </h1>
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">
+                        {% if action == 'edit' %}
+                            Modifiez les informations de l'aliment
+                        {% elseif mealType is defined %}
+                            {% set mealLabels = {
+                                'breakfast': 'Petit-déjeuner',
+                                'lunch': 'Déjeuner',
+                                'dinner': 'Dîner',
+                                'snacks': 'Colations'
+                            } %}
+                            Repas: <span class="font-medium text-wellcare-600 dark:text-wellcare-400">{{ mealLabels[mealType]|default(mealType) }}</span>
+                        {% else %}
+                            Ajoutez un nouvel aliment à votre journal
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ path('nutrition_dashboard') }}" 
+                       class="inline-flex items-center px-4 py-2 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="mr-2 fas fa-arrow-left"></i>
+                        Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+            {# Meal Type Badge (only for add action) #}
+            {% if action == 'add' and mealType is defined %}
+                <div class="mb-6">
+                    {% set mealColors = {
+                        'breakfast': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                        'lunch': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                        'dinner': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+                        'snacks': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400'
+                    } %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ mealColors[mealType]|default('bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300') }}">
+                        {% set mealIcons = {
+                            'breakfast': 'fa-mug-hot',
+                            'lunch': 'fa-utensils',
+                            'dinner': 'fa-moon',
+                            'snacks': 'fa-cookie'
+                        } %}
+                        <i class="mr-2 fas {{ mealIcons[mealType]|default('fa-utensils') }}"></i>
+                        {% set mealLabels = {
+                            'breakfast': 'Petit-déjeuner',
+                            'lunch': 'Déjeuner',
+                            'dinner': 'Dîner',
+                            'snacks': 'Colations'
+                        } %}
+                        {{ mealLabels[mealType]|default(mealType)|capitalize }}
+                    </span>
+                </div>
+            {% endif %}
+
+            {# Food Form #}
+            <div class="bg-white border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700 rounded-xl">
+                <div class="p-6">
+                    {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+                    
+                    {# Basic Info Section #}
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        {# Food Name #}
+                        <div class="md:col-span-2">
+                            {{ form_label(form.name, 'Nom de l\'aliment', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                            {{ form_widget(form.name, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                            {{ form_errors(form.name, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                        </div>
+
+                        {# Quantity #}
+                        <div>
+                            {{ form_label(form.quantity, 'Quantité', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                            {{ form_widget(form.quantity, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                            {{ form_errors(form.quantity, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                        </div>
+
+                        {# Unit #}
+                        <div>
+                            {{ form_label(form.unit, 'Unité', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                            {{ form_widget(form.unit, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500', 'placeholder': 'ex: portion, gramme, pièce'}}) }}
+                            {{ form_errors(form.unit, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                        </div>
+
+                        {# Category #}
+                        <div>
+                            {{ form_label(form.category, 'Catégorie', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                            {{ form_widget(form.category, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                            {{ form_errors(form.category, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                        </div>
+
+                        {# Is Recipe #}
+                        <div>
+                            {{ form_label(form.isRecipe, 'Type d\'entrée', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                            {{ form_widget(form.isRecipe, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                            {{ form_errors(form.isRecipe, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                        </div>
+                    </div>
+
+                    {# Calories Section #}
+                    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                            <i class="mr-2 text-wellcare-500 fas fa-fire"></i>
+                            Informations nutritionnelles
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {# Calories #}
+                            <div>
+                                {{ form_label(form.calories, 'Calories (kcal)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                <div class="relative">
+                                    {{ form_widget(form.calories, {'attr': {'class': 'w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <i class="fas fa-fire"></i>
+                                    </span>
+                                </div>
+                                {{ form_errors(form.calories, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+
+                            {# Protein #}
+                            <div>
+                                {{ form_label(form.protein, 'Protéines (g)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                <div class="relative">
+                                    {{ form_widget(form.protein, {'attr': {'class': 'w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500">
+                                        <i class="fas fa-drumstick-bite"></i>
+                                    </span>
+                                </div>
+                                {{ form_errors(form.protein, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+
+                            {# Carbs #}
+                            <div>
+                                {{ form_label(form.carbs, 'Glucides (g)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                <div class="relative">
+                                    {{ form_widget(form.carbs, {'attr': {'class': 'w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">
+                                        <i class="fas fa-bread-slice"></i>
+                                    </span>
+                                </div>
+                                {{ form_errors(form.carbs, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+
+                            {# Fats #}
+                            <div>
+                                {{ form_label(form.fats, 'Lipides (g)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                <div class="relative">
+                                    {{ form_widget(form.fats, {'attr': {'class': 'w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-500">
+                                        <i class="fas fa-cheese"></i>
+                                    </span>
+                                </div>
+                                {{ form_errors(form.fats, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+
+                            {# Fiber #}
+                            <div>
+                                {{ form_label(form.fiber, 'Fibres (g)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                {{ form_widget(form.fiber, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                {{ form_errors(form.fiber, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+
+                            {# Sugar #}
+                            <div>
+                                {{ form_label(form.sugar, 'Sucres (g)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                {{ form_widget(form.sugar, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                {{ form_errors(form.sugar, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+
+                            {# Sodium #}
+                            <div>
+                                {{ form_label(form.sodium, 'Sodium (mg)', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
+                                {{ form_widget(form.sodium, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500'}}) }}
+                                {{ form_errors(form.sodium, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Notes Section #}
+                    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                            <i class="mr-2 text-wellcare-500 fas fa-sticky-note"></i>
+                            Notes (optionnel)
+                        </h3>
+                        {{ form_widget(form.notes, {'attr': {'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-wellcare-500 dark:focus:border-wellcare-500', 'placeholder': 'Ajoutez des notes sur cet aliment...', 'rows': 3}}) }}
+                        {{ form_errors(form.notes, {'attr': {'class': 'mt-1 text-sm text-red-600 dark:text-red-400'}}) }}
+                    </div>
+
+                    {# Submit Button #}
+                    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex gap-3">
+                                <a href="{{ path('nutrition_dashboard') }}" 
+                                   class="px-6 py-3 text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    Annuler
+                                </a>
+                                {% if action == 'edit' and foodItem is defined %}
+                                <a href="{{ path('nutrition_food_delete', { id: foodItem.id }) }}" 
+                                   class="px-6 py-3 text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600"
+                                   onclick="showDeleteModal(event, '{{ path('nutrition_food_delete', { id: foodItem.id }) }}', '{{ foodItem.name|escape('js') }}')">
+                                    <i class="fas fa-trash mr-2"></i>Supprimer
+                                </a>
+                                {% endif %}
+                            </div>
+                            {{ form_widget(form.save, {'attr': {'class': 'px-6 py-3 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600 focus:ring-4 focus:ring-wellcare-300 dark:focus:ring-wellcare-800'}}) }}
+                        </div>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{# Delete Confirmation Modal #}
+<div id="delete-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideDeleteModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <div class="text-center">
+                <div class="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600 dark:text-red-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Confirmer la suppression</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6" id="delete-modal-message">
+                    Êtes-vous sûr de vouloir supprimer cet élément? Cette action est irréversible.
+                </p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="hideDeleteModal()" 
+                        class="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
+                        Annuler
+                    </button>
+                    <a href="#" id="delete-modal-confirm" 
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
+                        Supprimer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showDeleteModal(event, url, itemName) {
+    event.preventDefault();
+    const modal = document.getElementById('delete-modal');
+    const message = document.getElementById('delete-modal-message');
+    const confirmBtn = document.getElementById('delete-modal-confirm');
+    
+    if (itemName) {
+        message.textContent = 'Êtes-vous sûr de vouloir supprimer "' + itemName + '"? Cette action est irréversible.';
+    }
+    
+    confirmBtn.href = url;
+    modal.classList.remove('hidden');
+}
+
+function hideDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    modal.classList.add('hidden');
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideDeleteModal();
+    }
+});
+</script>
+{% endblock %}

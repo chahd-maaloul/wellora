@@ -1,0 +1,377 @@
+{#
+    Health Entry Edit Form - Same design as journal-entry.html.twig
+#}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Modifier l\'Entrée'|trans }} - {{ healthentry.date|date('d/m/Y') }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/healthentry/{{ healthentry.id }}" class="breadcrumb-link">{{ healthentry.date|date('d/m/Y') }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Modifier'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full" x-data="journalEntryEdit()" x-init="init()">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fa-solid fa-pen-to-square text-wellcare-600 dark:text-wellcare-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Modifier l\'Entrée du'|trans }} {{ healthentry.date|date('d/m/Y') }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Mettez à jour vos données de santé'|trans }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <a href="/healthentry/{{ healthentry.id }}" class="btn-secondary">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>
+                    {{ 'Retour'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Form #}
+    {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+    
+    {# Quick Stats Row #}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {# Weight #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-weight-scale text-wellcare-500"></i>
+                {{ 'Poids'|trans }} (kg)
+            </label>
+            <div class="space-y-3">
+                {{ form_widget(form.poids, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'x-model': 'poids',
+                        'min': '30',
+                        'max': '200',
+                        'step': '0.1',
+                        'aria-label': 'Poids en kilogrammes'
+                    }
+                }) }}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">30kg</span>
+                    <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400" x-text="poids ? poids + ' kg' : '-'"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">200kg</span>
+                </div>
+            </div>
+            {{ form_errors(form.poids) }}
+        </div>
+
+        {# Blood Sugar (Glycemie) #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-droplet text-wellcare-500"></i>
+                {{ 'Glycémie'|trans }} (g/l)
+            </label>
+            <div class="space-y-3">
+                {{ form_widget(form.glycemie, {
+                    'attr': {
+                        'class': 'input w-full text-center text-lg',
+                        'x-model': 'glycemie',
+                        'min': '0.5',
+                        'max': '3',
+                        'step': '0.1',
+                        'aria-label': 'Glycémie en grammes par litre'
+                    }
+                }) }}
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">0.5</span>
+                    <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400" x-text="glycemie ? glycemie + ' g/l' : '-'"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">3.0</span>
+                </div>
+            </div>
+            {{ form_errors(form.glycemie) }}
+        </div>
+
+        {# Blood Pressure (Tension) #}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+            <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-heart-pulse text-wellcare-500"></i>
+                {{ 'Tension'|trans }} (mmHg)
+            </label>
+            <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1">
+                        <input type="number" 
+                               x-model="tensionSys" 
+                               class="input w-full text-center text-lg"
+                               placeholder="120"
+                               min="60"
+                               max="200"
+                               aria-label="Tension systolique">
+                        <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-1">{{ 'Systolique'|trans }}</p>
+                    </div>
+                    <span class="text-gray-400">/</span>
+                    <div class="flex-1">
+                        <input type="number" 
+                               x-model="tensionDia" 
+                               class="input w-full text-center text-lg"
+                               placeholder="80"
+                               min="40"
+                               max="130"
+                               aria-label="Tension diastolique">
+                        <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-1">{{ 'Diastolique'|trans }}</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400" 
+                          x-text="(tensionSys && tensionDia) ? tensionSys + '/' + tensionDia + ' mmHg' : '-'"></span>
+                </div>
+            </div>
+            {# Hidden field for form submission #}
+            {{ form_widget(form.tension, {'attr': {'x-model': 'tensionValue', 'style': 'display:none;'}}) }}
+        </div>
+    </div>
+
+    {# Sleep Duration #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+        <label class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-900 dark:text-white">
+            <i class="fa-solid fa-bed text-wellcare-500"></i>
+            {{ 'Heures de sommeil'|trans }}
+        </label>
+        <div class="space-y-3">
+            <input type="range" 
+                   x-model="sleep" 
+                   min="0" 
+                   max="12" 
+                   step="0.5"
+                   class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-wellcare-500"
+                   aria-label="Heures de sommeil">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-gray-500 dark:text-gray-400">0h</span>
+                <span class="text-sm font-medium text-wellcare-600 dark:text-wellcare-400" x-text="sleep + 'h'"></span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">12h</span>
+            </div>
+        </div>
+        {# Hidden field for form submission #}
+        {{ form_widget(form.sommeil, {'attr': {'x-model': 'sleep', 'style': 'display:none;'}}) }}
+    </div>
+
+    {# Symptoms Section #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
+        <div class="flex items-center justify-between mb-4">
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                <i class="fa-solid fa-notes-medical text-wellcare-500"></i>
+                {{ 'Symptômes'|trans }}
+            </label>
+            <button type="button" @click="addSymptom()" class="text-xs text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400 hover:underline">
+                <i class="fa-solid fa-plus mr-1"></i>
+                {{ 'Ajouter un symptôme'|trans }}
+            </button>
+        </div>
+        
+        {# Symptoms Collection #}
+        <div id="symptoms-collection" class="space-y-4">
+            {# Existing symptoms will be rendered by Symfony form collection #}
+            {{ form_errors(form.symptoms) }}
+        </div>
+        
+        <template x-if="symptoms.length === 0">
+            <p class="text-sm text-gray-500 dark:text-gray-400 py-2">
+                {{ 'Aucun symptôme ajouté. Cliquez sur "Ajouter un symptôme" pour en ajouter.'|trans }}
+            </p>
+        </template>
+        
+        <template x-for="(symptom, index) in symptoms" :key="index">
+            <div class="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl" x-show="symptom._destroy !== '1'">
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ 'Type de symptôme'|trans }}
+                        </label>
+                        <select x-model="symptom.type" class="input text-sm">
+                            <option value="">{{ '-- Sélectionner --'|trans }}</option>
+                            <option value="headache">{{ 'Céphalée'|trans }}</option>
+                            <option value="nausea">{{ 'Nausée'|trans }}</option>
+                            <option value="fatigue">{{ 'Fatigue'|trans }}</option>
+                            <option value="pain">{{ 'Douleur'|trans }}</option>
+                            <option value="fever">{{ 'Fièvre'|trans }}</option>
+                            <option value="cough">{{ 'Toux'|trans }}</option>
+                            <option value="other">{{ 'Autre'|trans }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ 'Intensité'|trans }} (1-10)
+                        </label>
+                        <input type="range" 
+                               x-model="symptom.intensite" 
+                               min="1" 
+                               max="10" 
+                               class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg accent-wellcare-500">
+                        <div class="text-center">
+                            <span class="text-sm font-medium text-wellcare-600" x-text="symptom.intensite"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {{ 'Zone du corps'|trans }}
+                        </label>
+                        <select x-model="symptom.zone" class="input text-sm">
+                            <option value="">{{ '-- Sélectionner --'|trans }}</option>
+                            <option value="head">{{ 'Tête'|trans }}</option>
+                            <option value="neck">{{ 'Cou'|trans }}</option>
+                            <option value="torso">{{ 'Torse'|trans }}</option>
+                            <option value="left-arm">{{ 'Bras gauche'|trans }}</option>
+                            <option value="right-arm">{{ 'Bras droit'|trans }}</option>
+                            <option value="left-hand">{{ 'Main gauche'|trans }}</option>
+                            <option value="right-hand">{{ 'Main droite'|trans }}</option>
+                            <option value="left-leg">{{ 'Jambe gauche'|trans }}</option>
+                            <option value="right-leg">{{ 'Jambe droite'|trans }}</option>
+                            <option value="left-foot">{{ 'Pied gauche'|trans }}</option>
+                            <option value="right-foot">{{ 'Pied droit'|trans }}</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" @click="removeSymptom(index)" class="p-2 text-red-500 hover:text-red-700 dark:hover:text-red-400">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+                {# Hidden fields for form submission #}
+                <input type="hidden" :name="'symptoms[' + index + '][type]'" :value="symptom.type">
+                <input type="hidden" :name="'symptoms[' + index + '][intensite]'" :value="symptom.intensite">
+                <input type="hidden" :name="'symptoms[' + index + '][zone]'" :value="symptom.zone">
+                <input type="hidden" :name="'symptoms[' + index + '][_destroy]'" x-model="symptom._destroy">
+            </div>
+        </template>
+    </div>
+
+    {# Submit Actions #}
+    <div class="flex items-center justify-between pt-4">
+        <a href="/healthentry/{{ healthentry.id }}" class="btn-secondary">
+            <i class="fa-solid fa-times mr-2"></i>
+            {{ 'Annuler'|trans }}
+        </a>
+        <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-save mr-2"></i>
+            {{ 'Enregistrer les modifications'|trans }}
+        </button>
+    </div>
+
+    {# Link to Health Entries #}
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 mt-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fa-solid fa-clipboard-list text-wellcare-600 dark:text-wellcare-400"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-900 dark:text-white">
+                        {{ 'Voir toutes mes entrées'|trans }}
+                    </h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Accéder à la liste complète de vos entrées de santé'|trans }}
+                    </p>
+                </div>
+            </div>
+            <a href="/healthentry" class="btn-secondary">
+                <i class="fa-solid fa-arrow-right mr-2"></i>
+                {{ 'Voir la liste'|trans }}
+            </a>
+        </div>
+    </div>
+
+    {{ form_end(form) }}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+{% set tension_value = healthentry.tension|default('') %}
+{% if tension_value and '/' in tension_value %}
+{% set tension_parts = tension_value|split('/') %}
+{% else %}
+{% set tension_parts = [120, 80] %}
+{% endif %}
+
+document.addEventListener('alpine:init', () => {
+    Alpine.data('journalEntryEdit', () => ({
+        poids: {{ form.poids.vars.value|default(70) }},
+        glycemie: {{ form.glycemie.vars.value|default(1) }},
+        tensionSys: {{ tension_parts[0] }},
+        tensionDia: {{ tension_parts[1] }},
+        sleep: {{ form.sommeil.vars.value|default(7) }},
+        symptoms: [],
+
+        get tensionValue() {
+            return this.tensionSys && this.tensionDia ? this.tensionSys + '/' + this.tensionDia : null;
+        },
+
+        init() {
+            // Initialize symptoms from existing data
+            {% for symptom in healthentry.symptoms %}
+                this.symptoms.push({
+                    type: '{{ symptom.type }}',
+                    intensite: {{ symptom.intensite|default(5) }},
+                    zone: '{{ symptom.zone }}',
+                    _destroy: '0'
+                });
+            {% endfor %}
+            
+            // Update hidden tension field
+            this.$watch('tensionSys', () => this.updateTension());
+            this.$watch('tensionDia', () => this.updateTension());
+        },
+
+        updateTension() {
+            const hiddenField = document.querySelector('[name*="tension"]');
+            if (hiddenField && this.tensionSys && this.tensionDia) {
+                hiddenField.value = this.tensionSys + '/' + this.tensionDia;
+            }
+        },
+
+        addSymptom() {
+            this.symptoms.push({
+                type: '',
+                intensite: 5,
+                zone: '',
+                _destroy: '0'
+            });
+        },
+
+        removeSymptom(index) {
+            if (this.symptoms[index].type || this.symptoms[index].intensite) {
+                this.symptoms[index]._destroy = '1';
+            } else {
+                this.symptoms.splice(index, 1);
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}

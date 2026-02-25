@@ -79,11 +79,8 @@ class SessionSecuritySubscriber implements EventSubscriberInterface
         // Set session timeout on login
         $session->set(self::SESSION_TIMEOUT_KEY, time());
 
-        // Update last login info in database
-        $user->setLastLoginAt(new \DateTime());
-        $user->resetLoginAttempts(); // Reset failed login attempts on successful login
-
-        // Store session ID for concurrent session detection
+        // Note: lastLoginAt and loginAttempts are already updated in Authenticator::onAuthenticationSuccess
+        // We only update the session ID here for concurrent session detection
         $sessionId = $session->getId();
         $user->setLastSessionId($sessionId);
 

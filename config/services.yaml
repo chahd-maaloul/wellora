@@ -1,5 +1,12 @@
 # config/services.yaml
 parameters:
+    health_analytics.default_bmi: 23.2
+    app.comment_bad_words:
+        - 'stupid'
+        - 'bhim'
+        - 'msatek'
+        - 'idiot'
+        - 'dumb'
     ai_model_doctor_api_url: '%env(default:default_ai_api_url:AI_MODEL_DOCTOR_API_URL)%'
     default_ai_api_url: 'http://localhost:5000'
     ai_model_doctor_enabled: '%env(bool:default:default_ai_enabled:AI_MODEL_DOCTOR_ENABLED)%'
@@ -38,6 +45,10 @@ services:
         tags: ['controller.service_arguments']
 
     # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+    App\Service\CommentSanitizer:
+        arguments:
+            $badWords: '%app.comment_bad_words%'
     # please note that last definitions always *replace* previous 
     App\EventSubscriber\CorsSubscriber:
         tags:

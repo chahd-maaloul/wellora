@@ -15,166 +15,244 @@
                 <h1 class="mb-1 text-xl font-bold text-white font-display">
                     <i class="mr-2 fa-solid fa-images"></i>Content Management
                 </h1>
-                <p class="text-sm text-white/80">Manage trail photos, publications, and user content</p>
+                {% if selectedParcours %}
+                    <p class="text-sm text-white/80">
+                        Showing publications for <span class="font-semibold">{{ selectedParcours.nomParcours }}</span>
+                    </p>
+                {% else %}
+                    <p class="text-sm text-white/80">Manage trail publications and related media across all trails</p>
+                {% endif %}
             </div>
-            <div class="mt-4 md:mt-0">
-                <button class="px-4 py-2 text-sm font-medium text-white border rounded-lg bg-white/20 border-white/30 hover:bg-white/30 backdrop-blur-sm">
-                    <i class="mr-2 fa-solid fa-sync"></i>Sync Content
-                </button>
+            <div class="flex items-center gap-2 mt-4 md:mt-0">
+                <a href="{{ path('admin_trail_safety') }}" class="px-4 py-2 text-sm font-medium text-white border rounded-lg bg-white/20 border-white/30 hover:bg-white/30 backdrop-blur-sm">
+                    <i class="mr-2 fa-solid fa-layer-group"></i>All Trails
+                </a>
+                <a href="{{ path('admin_trail_user_behavior') }}" class="px-4 py-2 text-sm font-medium text-white border rounded-lg bg-white/20 border-white/30 hover:bg-white/30 backdrop-blur-sm">
+                    <i class="mr-2 fa-solid fa-arrow-up-right-from-square"></i>Open Feed
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <div class="px-4 mx-auto">
-    <!-- Content Overview -->
     <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
         <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Photos</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">45,892</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Publications</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.totalPublications }}</p>
                 </div>
                 <div class="p-3 bg-blue-100 rounded-lg dark:bg-blue-900/30">
-                    <i class="text-xl text-blue-600 fa-solid fa-camera"></i>
+                    <i class="text-xl text-blue-600 fa-solid fa-newspaper"></i>
                 </div>
             </div>
-            <div class="mt-2 text-sm text-green-600">
-                <i class="fa-solid fa-arrow-up"></i> +1,234 this week
+            <div class="mt-2 text-sm text-gray-500">
+                {{ selectedParcours ? selectedParcours.nomParcours : 'All trails combined' }}
             </div>
         </div>
 
         <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Publications</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">8,456</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Event Posts</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.eventPublications }}</p>
                 </div>
                 <div class="p-3 bg-green-100 rounded-lg dark:bg-green-900/30">
-                    <i class="text-xl text-green-600 fa-solid fa-newspaper"></i>
+                    <i class="text-xl text-green-600 fa-solid fa-calendar-day"></i>
                 </div>
             </div>
-            <div class="mt-2 text-sm text-green-600">
-                <i class="fa-solid fa-arrow-up"></i> +342 this week
+            <div class="mt-2 text-sm text-gray-500">
+                Opinion posts: {{ stats.opinionPublications }}
             </div>
         </div>
 
         <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">127</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Ambiance</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.averageAmbiance|number_format(1, '.', '') }}/5</p>
                 </div>
                 <div class="p-3 bg-yellow-100 rounded-lg dark:bg-yellow-900/30">
-                    <i class="text-xl text-yellow-600 fa-solid fa-clock"></i>
+                    <i class="text-xl text-yellow-600 fa-solid fa-star"></i>
                 </div>
             </div>
-            <div class="mt-2 text-sm text-yellow-600">
-                <i class="fa-solid fa-exclamation"></i> Requires attention
+            <div class="mt-2 text-sm text-gray-500">
+                Based on all listed publications
             </div>
         </div>
 
         <div class="p-4 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Reported Content</p>
-                    <p class="text-2xl font-bold text-gray-900 dark:text-white">23</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Safety</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.averageSecurity|number_format(1, '.', '') }}/5</p>
                 </div>
                 <div class="p-3 bg-red-100 rounded-lg dark:bg-red-900/30">
-                    <i class="text-xl text-red-600 fa-solid fa-flag"></i>
+                    <i class="text-xl text-red-600 fa-solid fa-shield-halved"></i>
                 </div>
             </div>
-            <div class="mt-2 text-sm text-red-600">
-                <i class="fa-solid fa-exclamation-triangle"></i> Needs moderation
+            <div class="mt-2 text-sm text-gray-500">
+                Total comments: {{ stats.totalComments }}
             </div>
         </div>
     </div>
 
-    <!-- Content Grid -->
+    <div class="p-4 mb-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+        <form method="get" action="{{ path('admin_trail_content') }}" class="flex flex-col gap-3 md:flex-row md:items-center">
+            <div class="md:w-96">
+                <label for="parcoursId" class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Trail filter</label>
+                <select id="parcoursId" name="parcoursId" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    <option value="">All trails</option>
+                    {% for parcours in availableParcours %}
+                        <option value="{{ parcours.id }}" {{ selectedParcours and selectedParcours.id == parcours.id ? 'selected' : '' }}>
+                            #PRC-{{ parcours.id }} - {{ parcours.nomParcours }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-lg bg-wellcare-600 hover:bg-wellcare-700">
+                    <i class="mr-2 fa-solid fa-filter"></i>Apply
+                </button>
+                {% if selectedParcours %}
+                    <a href="{{ path('admin_trail_content') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700">
+                        <i class="mr-2 fa-solid fa-rotate-right"></i>Reset
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <!-- Recent Photos -->
         <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    <i class="mr-2 fa-solid fa-images"></i>Recent Photos
+                    <i class="mr-2 fa-solid fa-images"></i>Recent Publication Photos
                 </h2>
-                <a href="#" class="text-sm text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400">View All</a>
+                <span class="text-sm text-gray-500 dark:text-gray-400">{{ publicationImages|length }} shown</span>
             </div>
             <div class="grid grid-cols-3 gap-2">
-                {% for i in 1..6 %}
-                <div class="relative overflow-hidden bg-gray-200 rounded-lg aspect-square dark:bg-gray-700 group">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <i class="text-2xl text-gray-400 fa-solid fa-image"></i>
+                {% for image in publicationImages %}
+                    {% if image starts with 'http://' or image starts with 'https://' %}
+                        {% set imageSrc = image %}
+                    {% else %}
+                        {% set imageSrc = asset(image starts with 'uploads/' ? image : 'uploads/parcours/' ~ image) %}
+                    {% endif %}
+                    <div class="relative overflow-hidden rounded-lg aspect-square bg-gray-200 dark:bg-gray-700">
+                        <img src="{{ imageSrc }}" alt="Publication image" class="object-cover w-full h-full">
                     </div>
-                    <div class="absolute inset-0 flex items-center justify-center transition-opacity opacity-0 bg-black/50 group-hover:opacity-100">
-                        <button class="p-1 text-white hover:text-red-400">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
+                {% else %}
+                    {% for i in 1..6 %}
+                        <div class="relative overflow-hidden bg-gray-200 rounded-lg aspect-square dark:bg-gray-700">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <i class="text-2xl text-gray-400 fa-solid fa-image"></i>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <p class="col-span-3 text-sm text-center text-gray-500 dark:text-gray-400">
+                        No publication images found for the selected trail.
+                    </p>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- Recent Publications -->
         <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                     <i class="mr-2 fa-solid fa-pen-to-square"></i>Recent Publications
                 </h2>
-                <a href="#" class="text-sm text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400">View All</a>
+                <a href="{{ path('app_publication_parcours_index', selectedParcours ? {'parcoursId': selectedParcours.id} : {}) }}" class="text-sm text-wellcare-600 hover:text-wellcare-800 dark:text-wellcare-400">View All</a>
             </div>
             <div class="space-y-3">
-                {% for i in 1..4 %}
-                <div class="flex items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100">
-                        <i class="text-wellcare-600 fa-solid fa-user"></i>
-                    </div>
-                    <div class="flex-1 ml-3">
-                        <p class="text-sm font-medium text-gray-900 dark:text-white">User {{ i }} shared a publication</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Trail experience review</p>
-                        <div class="flex items-center mt-1">
-                            <div class="flex text-yellow-400">
-                                {% for star in 1..5 %}
-                                    <i class="text-xs fa-solid fa-star{% if star > i %}-empty{% endif %}"></i>
-                                {% endfor %}
+                {% for publication in publications|slice(0, 5) %}
+                    {% set typeLabel = publication.typePublication == 'event' ? 'Event' : 'Opinion' %}
+                    <div class="flex items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full bg-wellcare-100">
+                            <i class="text-wellcare-600 fa-solid fa-newspaper"></i>
+                        </div>
+                        <div class="flex-1 ml-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ publication.ownerPatient ? publication.ownerPatient.fullName : (publication.parcoursDeSante ? publication.parcoursDeSante.nomParcours : 'Unknown user') }}</p>
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200">{{ typeLabel }}</span>
                             </div>
-                            <span class="ml-2 text-xs text-gray-400">Dec {{ 15+i }}, 2024</span>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ publication.textPublication|slice(0, 90) }}{% if publication.textPublication|length > 90 %}...{% endif %}</p>
+                            <div class="flex items-center mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="mr-3"><i class="mr-1 text-amber-500 fa-solid fa-star"></i>{{ publication.ambiance }}/5</span>
+                                <span class="mr-3"><i class="mr-1 text-blue-600 fa-solid fa-shield-halved"></i>{{ publication.securite }}/5</span>
+                                <span>{{ publication.datePublication ? publication.datePublication|date('M d, Y') : 'No date' }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                {% else %}
+                    <div class="p-4 text-sm text-gray-500 rounded-lg bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
+                        No publications available for this trail.
+                    </div>
                 {% endfor %}
             </div>
         </div>
     </div>
 
-    <!-- Reported Content -->
     <div class="p-6 mt-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                <i class="mr-2 fa-solid fa-flag"></i>Reported Content
+                <i class="mr-2 fa-solid fa-list"></i>
+                {{ selectedParcours ? 'Trail Publications' : 'All Publications' }}
             </h2>
-            <span class="px-2 py-1 text-xs font-medium text-red-800 bg-red-100 rounded-full dark:bg-red-900/30 dark:text-red-400">23 Reports</span>
+            <span class="px-2 py-1 text-xs font-medium text-indigo-800 bg-indigo-100 rounded-full dark:bg-indigo-900/30 dark:text-indigo-400">{{ stats.totalPublications }} records</span>
         </div>
-        <div class="space-y-3">
-            {% for i in 1..3 %}
-            <div class="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/20 dark:border-red-800">
-                <div class="flex items-center">
-                    <div class="p-2 bg-red-100 rounded-lg dark:bg-red-900/30">
-                        <i class="text-red-600 fa-solid fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="font-medium text-gray-900 dark:text-white">Inappropriate content in photo</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Reported by User {{ i }} - Dec {{ 20+i }}, 2024</p>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Remove</button>
-                    <button class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300">Dismiss</button>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <th class="px-4 py-3 text-left">ID</th>
+                        <th class="px-4 py-3 text-left">Owner</th>
+                        <th class="px-4 py-3 text-left">Type</th>
+                        <th class="px-4 py-3 text-left">Experience</th>
+                        <th class="px-4 py-3 text-left">Ratings</th>
+                        <th class="px-4 py-3 text-left">Published</th>
+                        <th class="px-4 py-3 text-left">Comments</th>
+                        <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for publication in publications %}
+                        <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">#PUB-{{ publication.id }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ publication.ownerPatient ? publication.ownerPatient.fullName : (publication.parcoursDeSante ? publication.parcoursDeSante.nomParcours : 'Unknown user') }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full {{ publication.typePublication == 'event' ? 'text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-200' }}">
+                                    {{ publication.typePublication == 'event' ? 'Event' : 'Opinion' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{{ publication.experience|default('N/A') }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                <span class="mr-3"><i class="mr-1 text-amber-500 fa-solid fa-star"></i>{{ publication.ambiance }}/5</span>
+                                <span><i class="mr-1 text-blue-600 fa-solid fa-shield-halved"></i>{{ publication.securite }}/5</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ publication.datePublication ? publication.datePublication|date('M d, Y') : 'N/A' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ publication.commentairePublications|length }}</td>
+                            <td class="px-4 py-3 text-sm whitespace-nowrap">
+                                <form method="post" action="{{ path('app_publication_parcours_delete', {'id': publication.id}) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this publication?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ publication.id) }}">
+                                    <button type="submit" class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700">
+                                        <i class="mr-1 fa-solid fa-trash"></i>Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="px-4 py-8 text-sm text-center text-gray-500 dark:text-gray-400">
+                                No publications found for the selected criteria.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 {% endblock %}
+
+

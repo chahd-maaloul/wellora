@@ -1,0 +1,37 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Create Publication - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('trail-css') }}
+{% endblock %}
+
+{% block body %}
+<div class="py-4 mb-4 -mx-4 -mt-4 bg-gradient-to-r from-wellcare-500 to-wellcare-light-500">
+    <div class="px-4 mx-auto">
+        <h1 class="mb-1 text-xl font-bold text-white font-display">
+            <i class="mr-2 fa-solid fa-plus-circle"></i>Create New Publication
+        </h1>
+        <p class="text-sm text-white/80">Share your parcours experience with the community</p>
+    </div>
+</div>
+
+<div class="px-4 mx-auto">
+    <div class="max-w-3xl p-6 mx-auto bg-white border border-gray-100 shadow-sm dark:bg-gray-800 rounded-xl dark:border-gray-700">
+        {% if form.vars.submitted and not form.vars.valid %}
+            <div class="p-4 mb-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+                <p class="text-sm font-medium text-red-800 dark:text-red-200">Please fix the following errors:</p>
+                <div class="text-sm text-red-600 dark:text-red-400">
+                    {{ form_errors(form) }}
+                </div>
+            </div>
+        {% endif %}
+        {{ include('publication_parcours/_form.html.twig') }}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

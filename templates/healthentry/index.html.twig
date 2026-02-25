@@ -1,0 +1,212 @@
+{#
+    Health Entry Index - Lists all health entries with edit/delete options and AJAX search/filter/sort
+#}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ 'Mes Entrées de Santé'|trans }} - WellCare Connect{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <a href="/dashboard" class="breadcrumb-link">{{ 'Tableau de bord'|trans }}</a>
+    </li>
+    <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="breadcrumb-current">{{ 'Mes Entrées'|trans }}</span>
+    </li>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-full">
+    {# Page Header #}
+    <div class="mb-6">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-100 dark:bg-wellcare-900/30">
+                    <i class="fa-solid fa-clipboard-list text-wellcare-600 dark:text-wellcare-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ 'Mes Entrées de Santé'|trans }}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ 'Gérez vos données de santé'|trans }}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <a href="{{ path('app_health_journal_accessible') }}" class="btn-primary">
+                    <i class="fa-solid fa-plus mr-2"></i>
+                    {{ 'Nouvelle Entrée'|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Filter & Sort Section #}
+    <div class="mb-6 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+        <form id="searchForm" class="flex flex-wrap gap-3 items-center">
+            {# Search #}
+            <div class="relative flex-1 min-w-[200px]">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" name="search" id="search" value="{{ search|default('') }}" 
+                       placeholder="{{ 'Rechercher par poids...'|trans }}"
+                       class="w-full pl-10 pr-4 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+            </div>
+            
+            {# Filter by Date #}
+            <div class="flex items-center gap-2">
+                <i class="fa-regular fa-calendar text-gray-400"></i>
+                <input type="date" name="filterDate" id="filterDate" value="{{ filterDate|default('') }}" 
+                       class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+            </div>
+            
+            {# Sort #}
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-sort text-gray-400"></i>
+                <select name="sortBy" id="sortBy" 
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="date" {% if sortBy|default('date') == 'date' %}selected{% endif %}>{{ 'Date'|trans }}</option>
+                    <option value="poids" {% if sortBy|default('date') == 'poids' %}selected{% endif %}>{{ 'Poids'|trans }}</option>
+                    <option value="glycemie" {% if sortBy|default('date') == 'glycemie' %}selected{% endif %}>{{ 'Glycémie'|trans }}</option>
+                </select>
+                <select name="sortOrder" id="sortOrder" 
+                        class="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-wellcare-500 focus:border-wellcare-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    <option value="ASC" {% if sortOrder|default('ASC') == 'ASC' %}selected{% endif %}>↑</option>
+                    <option value="DESC" {% if sortOrder|default('ASC') == 'DESC' %}selected{% endif %}>↓</option>
+                </select>
+            </div>
+            
+            {# Apply Button #}
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-wellcare-600 rounded-lg hover:bg-wellcare-700 transition-colors">
+                <i class="fa-solid fa-check mr-1"></i>{{ 'Appliquer'|trans }}
+            </button>
+            
+            {# Reset Button #}
+            <a href="{{ path('app_healthentry_index') }}" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 transition-colors">
+                <i class="fa-solid fa-rotate-left mr-1"></i>{{ 'Reset'|trans }}
+            </a>
+        </form>
+    </div>
+
+    {# Loading Indicator #}
+    <div id="loadingIndicator" class="hidden flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-wellcare-600"></div>
+        <span class="ml-3 text-gray-500">{{ 'Recherche en cours...'|trans }}</span>
+    </div>
+
+    {# Results Summary #}
+    <div id="resultsSummary" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+        {% if healthentries|length > 0 %}
+            <span class="results-count">{{ healthentries|length }}</span> résultat(s) trouvé(s)
+        {% else %}
+            <span class="results-count">0</span> résultat(s)
+        {% endif %}
+    </div>
+
+    {# Entries Container (updated via AJAX) #}
+    <div id="entriesContainer" class="fade-in">
+        {{ include('healthentry/_entries_list.html.twig') }}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<style>
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('searchForm');
+    const entriesContainer = document.getElementById('entriesContainer');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultsSummary = document.getElementById('resultsSummary');
+    
+    // Debounce function
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Update results summary
+    function updateResultsSummary(count) {
+        const countSpan = resultsSummary.querySelector('.results-count');
+        if (countSpan) {
+            countSpan.textContent = count;
+        }
+    }
+    
+    // Perform AJAX search
+    function performSearch(event) {
+        if (event) {
+            event.preventDefault();
+        }
+        
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams(formData);
+        
+        loadingIndicator.classList.remove('hidden');
+        entriesContainer.classList.add('opacity-50');
+        
+        fetch('{{ path('app_healthentry_search') }}?' + params.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            entriesContainer.innerHTML = data.html;
+            entriesContainer.classList.remove('fade-in');
+            void entriesContainer.offsetWidth;
+            entriesContainer.classList.add('fade-in');
+            
+            updateResultsSummary(data.total);
+            
+            entriesContainer.classList.remove('opacity-50');
+            loadingIndicator.classList.add('hidden');
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            loadingIndicator.classList.add('hidden');
+            entriesContainer.classList.remove('opacity-50');
+        });
+    }
+    
+    // Form submit handler
+    searchForm.addEventListener('submit', performSearch);
+    
+    // Debounced live search for text input
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', debounce(performSearch, 300));
+    
+    // Live filter for date and sort changes
+    const filterDate = document.getElementById('filterDate');
+    const sortBy = document.getElementById('sortBy');
+    const sortOrder = document.getElementById('sortOrder');
+    
+    filterDate.addEventListener('change', debounce(performSearch, 300));
+    sortBy.addEventListener('change', performSearch);
+    sortOrder.addEventListener('change', performSearch);
+});
+</script>
+{% endblock %}

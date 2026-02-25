@@ -1,3 +1,8 @@
+{#
+    Messages Page
+    Communication with nutritionist - works without JavaScript
+#}
+
 {% extends 'layouts/app.html.twig' %}
 
 {% block title %}Messages avec votre Nutritionniste - WellCare Connect{% endblock %}
@@ -8,7 +13,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900" x-data="nutritionMessages()">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     {# Page Header #}
     <div class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -35,12 +40,12 @@
                     <span class="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full dark:border-gray-800"></span>
                 </div>
                 <div class="flex-1">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ nutritionist.name }}</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ nutritionist.specialty }}</p>
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Dr. Marie Laurent</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Spécialiste en nutrition sportive</p>
                 </div>
                 <span class="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-400">
                     <i class="mr-1 text-xs fas fa-circle"></i>
-                    {{ nutritionist.status }}
+                    En ligne
                 </span>
             </div>
         </div>
@@ -52,27 +57,91 @@
             </div>
             
             <div class="p-6 space-y-4 overflow-y-auto max-h-96">
-                {% for message in messages %}
-                <div class="flex {{ message.sender == 'nutritionist' ? 'justify-start' : 'justify-end' }}">
-                    <div class="max-w-md {{ message.sender == 'nutritionist' ? 'bg-gray-100 dark:bg-gray-700' : 'bg-wellcare-500 text-white' }} rounded-2xl px-4 py-3">
-                        <p class="text-sm">{{ message.content }}</p>
-                        <p class="mt-1 text-xs {{ message.sender == 'nutritionist' ? 'text-gray-500 dark:text-gray-400' : 'text-white/80' }}">
-                            {{ message.timestamp|date('d/m/Y H:i') }}
+                {# Static sample messages #}
+                <div class="flex justify-start">
+                    <div class="max-w-md bg-gray-100 dark:bg-gray-700 rounded-2xl px-4 py-3">
+                        <p class="text-sm text-gray-900 dark:text-white">Bonjour! Comment se passe votre semaine nutritionnelle? N'hésitez pas à me faire part de vos questions ou préoccupations.</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            20/02/2026 09:30
                         </p>
                     </div>
                 </div>
-                {% endfor %}
+
+                <div class="flex justify-end">
+                    <div class="max-w-md bg-wellcare-500 text-white rounded-2xl px-4 py-3">
+                        <p class="text-sm">Bonjour Dr. Laurent! Ça va très bien. J'ai réussi à suivre mon plan alimentaire toute la semaine, même si j'ai eu un petit écart ce week-end.</p>
+                        <p class="mt-1 text-xs text-white/80">
+                            20/02/2026 10:15
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-start">
+                    <div class="max-w-md bg-gray-100 dark:bg-gray-700 rounded-2xl px-4 py-3">
+                        <p class="text-sm text-gray-900 dark:text-white">C'est excellent! Un petit écart de temps en temps fait partie d'un mode de vie sain. L'important est de ne pas se culpabiliser et de reprendre le cours normal demain. Avez-vous des questions sur votre plan?</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            20/02/2026 10:45
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <div class="max-w-md bg-wellcare-500 text-white rounded-2xl px-4 py-3">
+                        <p class="text-sm">Oui, je voulais savoir si je peux remplacer les pâtes par du riz complet? Et aussi, combien de temps avant l'entraînement je devrais manger?</p>
+                        <p class="mt-1 text-xs text-white/80">
+                            20/02/2026 11:20
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex justify-start">
+                    <div class="max-w-md bg-gray-100 dark:bg-gray-700 rounded-2xl px-4 py-3">
+                        <p class="text-sm text-gray-900 dark:text-white">Oui, vous pouvez remplacer les pâtes par du riz complet, c'est même recommandé pour les fibres! Pour l'entraînement, mangez 2-3 heures avant pour un repas complet, ou 30-60 minutes avant une petite collation légère.</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            20/02/2026 11:35
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {# Message Input #}
-            <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+            <form method="post" action="#" class="p-4 border-t border-gray-100 dark:border-gray-700">
                 <div class="flex gap-3">
-                    <input type="text" placeholder="Écrivez votre message..."
+                    <input type="text" name="message" placeholder="Écrivez votre message..."
                            class="flex-1 px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-wellcare-500 focus:border-transparent">
-                    <button class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <button type="submit" class="px-6 py-2 text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
+            </form>
+        </div>
+
+        {# Quick Reply Options #}
+        <div class="mt-4">
+            <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">Réponses rapides:</p>
+            <div class="flex flex-wrap gap-2">
+                <a href="#" class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-full hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30 transition-colors">
+                    Merci pour vos conseils!
+                </a>
+                <a href="#" class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-full hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30 transition-colors">
+                    J'ai une question sur les protéines
+                </a>
+                <a href="#" class="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-full hover:bg-wellcare-100 dark:hover:bg-wellcare-900/30 transition-colors">
+                    Rendez-vous la semaine prochaine
+                </a>
+            </div>
+        </div>
+
+        {# Link to Nutritionist Messages (Two-way communication) #}
+        <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+            <div class="flex items-center gap-3">
+                <i class="text-blue-500 fas fa-link"></i>
+                <p class="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Communication bidirectionnelle:</strong> Votre nutritionist peut voir et répondre à vos messages via son tableau de bord. 
+                    <a href="{{ path('nutrisioniste_messages') }}" class="underline hover:text-blue-900 font-medium" target="_blank">
+                        Voir les messages du nutritionist <i class="ml-1 fas fa-external-link-alt"></i>
+                    </a>
+                </p>
             </div>
         </div>
     </main>

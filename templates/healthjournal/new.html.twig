@@ -1,0 +1,90 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Create New Health Journal{% endblock %}
+
+{% block body %}
+<div class="page-content">
+    <div class="container mx-auto px-4 py-8">
+        {# Flash Messages #}
+        {% for flash_success in app.flashes('success') %}
+            <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                <span class="font-medium">Succès!</span> {{ flash_success }}
+            </div>
+        {% endfor %}
+        {% for flash_error in app.flashes('error') %}
+            <div class="mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                <span class="font-medium">Erreur!</span> {{ flash_error }}
+            </div>
+        {% endfor %}
+
+        {# Header Section #}
+        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-3 fa-solid fa-plus-circle text-wellcare-500"></i>
+                    Create New Health Journal
+                </h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Start tracking your health by creating a new journal
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('app_healthjournal_index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        {# Create Form Card #}
+        <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="fa-solid fa-journal-whills"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">New Journal</p>
+                        <p class="font-semibold text-gray-900 dark:text-white">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-wellcare-100 text-wellcare-800 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                                Draft
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                {% include 'healthjournal/_form.html.twig' with {'button_label': 'Create Journal'} %}
+            </div>
+        </div>
+
+        {# Tips Section #}
+        <div class="mt-8 p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                <i class="mr-2 fa-regular fa-lightbulb text-amber-500"></i>
+                Tips for Your Health Journal
+            </h3>
+            <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
+                    <span>Give your journal a meaningful name to easily identify it</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
+                    <span>Set a realistic start and end date for your journal period</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
+                    <span>Leave the end date empty for an open-ended journal</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-wellcare-500 mt-0.5"></i>
+                    <span>You can add entries and symptoms to your journal after creating it</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

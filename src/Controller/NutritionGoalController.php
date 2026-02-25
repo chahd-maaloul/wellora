@@ -2,7 +2,18 @@
 
 namespace App\Controller;
 
+use App\Entity\NutritionGoal;
+use App\Entity\NutritionGoalProgress;
+use App\Entity\NutritionGoalMilestone;
+use App\Entity\NutritionGoalAchievement;
+use App\Entity\NutritionGoalAdjustment;
+use App\Repository\NutritionGoalRepository;
+use App\Repository\NutritionGoalProgressRepository;
+use App\Repository\NutritionGoalMilestoneRepository;
+use App\Repository\NutritionGoalAchievementRepository;
+use App\Repository\NutritionGoalAdjustmentRepository;
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -76,7 +87,7 @@ class NutritionGoalController extends AbstractController
         $goal->setName($data['name'] ?? 'Nouvel objectif');
         $goal->setGoalType($data['goalType']);
         $goal->setCurrentWeight($data['currentWeight'] ?? 0);
-        $goal->setTargetWeight($data['targetWeight'] ?? 0);
+        $goal->setWeightTarget($data['targetWeight'] ?? 0);
         $goal->setCurrentCalories($data['currentCalories'] ?? 2000);
         $goal->setTargetCalories($data['targetCalories'] ?? 1800);
         $goal->setBmr($data['bmr'] ?? 0);
@@ -584,12 +595,12 @@ class NutritionGoalController extends AbstractController
 
     private function createDefaultMilestones(EntityManagerInterface $entityManager, NutritionGoal $goal): void
     {
-        if (!$goal->getTargetWeight()) {
+        if (!$goal->getWeightTarget()) {
             return;
         }
 
         $startWeight = $goal->getCurrentWeight();
-        $targetWeight = $goal->getTargetWeight();
+        $targetWeight = $goal->getWeightTarget();
         $totalChange = $targetWeight - $startWeight;
         $milestonesCount = 4;
 
@@ -616,8 +627,11 @@ class NutritionGoalController extends AbstractController
             $targetDate = $goal->getTargetDate();
             if ($startDate && $targetDate) {
                 $totalDays = $startDate->diff($targetDate)->days;
-                $milestoneDate = clone $startDate;
-                $milestoneDate->modify('+' . ($totalDays * $i / $milestonesCount) . ' days');
+                $daysToAdd = (int) ($totalDays * $i / $milestonesCount);
+                // Create a mutable DateTime to use add() method
+                $mutableStartDate = DateTime::createFromInterface($startDate);
+                $interval = new \DateInterval('P' . $daysToAdd . 'D');
+                $milestoneDate = $mutableStartDate->add($interval);
                 $milestone->setTargetDate($milestoneDate);
             }
 

@@ -1,0 +1,87 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Edit Health Journal{% endblock %}
+
+{% block body %}
+<div class="page-content">
+    <div class="px-4 mx-auto max-w-4xl sm:px-6 lg:px-8">
+        {# Flash Messages #}
+        {% for flash_success in app.flashes('success') %}
+            <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                <span class="font-medium">Succès!</span> {{ flash_success }}
+            </div>
+        {% endfor %}
+        {% for flash_error in app.flashes('error') %}
+            <div class="mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                <span class="font-medium">Erreur!</span> {{ flash_error }}
+            </div>
+        {% endfor %}
+
+        {# Header Section #}
+        <div class="flex flex-col gap-4 mb-8 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                    <i class="mr-3 fa-solid fa-pen-to-square text-wellcare-500"></i>
+                    Edit Health Journal
+                </h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Update your health journal details
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ path('app_healthjournal_index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        {# Edit Form Card #}
+        <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-800">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-wellcare-50 text-wellcare-600 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                        <i class="fa-solid fa-journal-whills"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {% if healthjournal.name %}{{ healthjournal.name }}{% else %}Journal #{{ healthjournal.id }}{% endif %}
+                        </p>
+                        <p class="font-semibold text-gray-900 dark:text-white">
+                            {% if healthjournal.datefin and healthjournal.datefin|date('Y-m-d') < 'now'|date('Y-m-d') %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                                    Completed
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-wellcare-100 text-wellcare-800 dark:bg-wellcare-900/30 dark:text-wellcare-400">
+                                    Active
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                {% include 'healthjournal/_form.html.twig' with {'button_label': 'Update Journal'} %}
+            </div>
+        </div>
+
+        {# Delete Section #}
+        <div class="mt-8 p-6 bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Delete Journal</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        Once you delete a journal, there is no going back. Please be certain.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-4">
+                {% include 'healthjournal/_delete_form.html.twig' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

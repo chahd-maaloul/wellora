@@ -10,8 +10,19 @@
         "doctrine/doctrine-bundle": "^2.18",
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "doctrine/orm": "^3.6",
-
+        "knplabs/knp-paginator-bundle": "^6.10",
+        "knplabs/knp-time-bundle": "^2.5",
+        "liip/imagine-bundle": "^2.17",
+        "endroid/qr-code-bundle": "*",
+        "knpuniversity/oauth2-client-bundle": "^2.20",
+        "league/oauth2-google": "^4.1",
+        "scheb/2fa-backup-code": "*",
+        "scheb/2fa-bundle": "*",
+        "scheb/2fa-totp": "*",
         "dompdf/dompdf": "^3.1",
+        "php-ai/php-ml": "^0.10.0",
+
+     
         "google-gemini-php/symfony": "^2.0",
 
         "nyholm/psr7": "^1.8",
@@ -41,8 +52,14 @@
         "symfony/sendgrid-mailer": "6.4.*",
         "symfony/serializer": "6.4.*",
         "symfony/translation": "6.4.*",
-        "symfony/twilio-notifier": "6.4.*",
+        "symfony/yaml": "6.4.*",
+        "twig/extra-bundle": "^3.10",
+        "tecnickcom/tcpdf": "^6.7",
         "symfony/uid": "6.4.*",
+        "symfony/rate-limiter": "6.4.*",
+        "symfony/http-client": "6.4.*"
+        "symfony/twilio-notifier": "6.4.*",
+       
         "symfony/ux-notify": "^2.32",
         "symfony/yaml": "6.4.*",
         "vich/uploader-bundle": "*"
@@ -65,7 +82,8 @@
         "allow-plugins": {
             "php-http/discovery": true,
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "endroid/installer": true
         },
         "sort-packages": true
     },
