@@ -1,0 +1,275 @@
+{% extends 'base_front.html.twig' %}
+
+{% block body %}
+<style>
+  #map-container {
+ width: 100%;
+ max-width: 300px; /* Adjust as needed */
+ height: 300px;
+ overflow: hidden;
+ border: 1px solid #ccc;
+}
+
+#map {
+ width: 100%;
+ height: 100%; /* Ensure the map is visible */
+}
+#search-container { margin-bottom: 10px; }
+   #search-input { width: 300px; padding: 10px; font-size: 16px; }
+   #search-button { padding: 10px; font-size: 16px; }
+   #location-details { margin-top: 10px; font-family: Arial, sans-serif; }
+ </style>
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Form on the Left Side -->
+            <div class="col-md-6">
+                <div class="card shadow-sm p-4">
+                    <h2 class="form-title mb-4">Please give us your farm coordinates</h2>
+                    {{ form_start(form, {'attr': {'class': 'row g-3', 'novalidate': 'novalidate'}}) }}
+
+                    <div class="col-md-6 wow fadeInLeft" data-wow-delay="0.3s">
+                      <div class="form-floating">
+                          {{ form_widget(form.name, {'attr': {'class': 'form-control', 'placeholder': 'Farm Name'}}) }}
+                          {{ form_label(form.name, 'Farm Name', {'label_attr': {'class': 'form-label'}}) }}
+                          {{ form_errors(form.name) }}
+                      </div>
+                  </div>                   
+
+              
+                <div class="col-12 wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="form-floating">
+                        {{ form_widget(form.surface, {'attr': {'class': 'form-control', 'placeholder': 'Surface Area '}}) }} {# Added unit hint #}
+                        {{ form_label(form.surface, 'Surface Area', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.surface) }}
+                    </div>
+                </div>
+
+                <div class="col-12 wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="form-floating">
+                        {{ form_widget(form.adress, {'attr': {'class': 'form-control', 'placeholder': 'Address'}}) }}
+                        {{ form_label(form.adress, 'Address', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.adress) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInLeft" data-wow-delay="0.5s">
+                    <div class="form-floating">
+                        {{ form_widget(form.budget, {'attr': {'class': 'form-control', 'placeholder': 'Budget'}}) }}
+                        {{ form_label(form.budget, 'Budget', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.budget) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInRight" data-wow-delay="0.5s">
+                    <div class="form-floating">
+                        {{ form_widget(form.weather, {'attr': {'class': 'form-control', 'placeholder': 'Weather Info'}}) }}
+                        {{ form_label(form.weather, 'Weather Info', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.weather) }}
+                    </div>
+                </div>
+                <div class="col-md-12">
+                  <div class="form-floating">
+                      {{ form_widget(form.location, {'attr': {'class': 'form-control', 'placeholder': 'Farm Location'}}) }}
+                      {{ form_label(form.location, 'Farm Location', {'label_attr': {'class': 'form-label'}}) }}
+                      {{ form_errors(form.location) }}
+                  </div>
+              </div>
+              
+              <div class="col-md-6">
+                  <div class="form-floating">
+                      {{ form_widget(form.lon, {'attr': {'class': 'form-control', 'placeholder': 'Farm Longitude'}}) }}
+                      {{ form_label(form.lon, 'Farm Longitude', {'label_attr': {'class': 'form-label'}}) }}
+                      {{ form_errors(form.lon) }}
+                  </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-floating">
+                    {{ form_widget(form.lat, {'attr': {'class': 'form-control', 'placeholder': 'Farm Latitude' }}) }}
+                    {{ form_label(form.lat, 'Farm Latitude', {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_errors(form.lat) }}
+                </div>
+            </div>
+              
+                <div class="col-12 wow fadeInUp" data-wow-delay="0.6s">
+                    <div class="form-floating">
+                        {{ form_widget(form.description, {'attr': {'class': 'form-control', 'placeholder': 'Description'}}) }}
+                        {{ form_label(form.description, 'Description', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.description) }}
+                    </div>
+                </div>
+
+                <div class="col-md-4 wow fadeInLeft" data-wow-delay="0.7s">
+                    <div class="form-check"> {# Use form-check for checkboxes #}
+                        {{ form_widget(form.bir, {'attr': {'class': 'form-check-input'}}) }}
+                        {{ form_label(form.bir, 'BIR Compliance', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_errors(form.bir) }}
+                    </div>
+                </div>
+
+                <div class="col-md-4 wow fadeInUp" data-wow-delay="0.7s">
+                    <div class="form-check">
+                        {{ form_widget(form.photovoltaic, {'attr': {'class': 'form-check-input'}}) }}
+                        {{ form_label(form.photovoltaic, 'Photovoltaic System', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_errors(form.photovoltaic) }}
+                    </div>
+                </div>
+
+                <div class="col-md-4 wow fadeInRight" data-wow-delay="0.7s">
+                    <div class="form-check">
+                        {{ form_widget(form.fence, {'attr': {'class': 'form-check-input'}}) }}
+                        {{ form_label(form.fence, 'Fence', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_errors(form.fence) }}
+                    </div>
+                </div>
+
+                <div class="col-md-4 wow fadeInLeft" data-wow-delay="0.8s">
+                    <div class="form-check">
+                        {{ form_widget(form.irrigation, {'attr': {'class': 'form-check-input'}}) }}
+                        {{ form_label(form.irrigation, 'Irrigation System', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_errors(form.irrigation) }}
+                    </div>
+                </div>
+
+                <div class="col-md-4 wow fadeInUp" data-wow-delay="0.8s">
+                    <div class="form-check">
+                        {{ form_widget(form.cabin, {'attr': {'class': 'form-check-input'}}) }}
+                        {{ form_label(form.cabin, 'Cabin', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_errors(form.cabin) }}
+                    </div>
+                </div>
+                  
+                    <!-- Other Form Fields Omitted for Brevity -->
+
+                    <div class="col-12 text-center">
+                        {{ form_widget(form.create, {'attr': {'class': 'btn btn-primary rounded-pill py-3 px-5', 'value': 'Create farm'}}) }}
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm p-4">
+                    <h2 class="form-title mb-4">Farm Location Map</h2>
+                    <div id="search-container" class="mb-3">
+                        <input type="text" id="search-input" class="form-control" placeholder="Enter a place or address">
+                        <button id="search-button" class="btn btn-primary mt-2">Search</button>
+                    </div>
+                    <div id="map" style="height: 500px;"></div>
+                    <div id="location-details">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+ 
+
+</script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    // Initialize the map
+const map = L.map('map').setView([51.505, -0.09], 13);
+
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// Add a marker for the searched/selected location
+let marker;
+
+function extractZoneName(displayName) {
+    // The display_name typically includes city, state, country, etc.
+    // Example: "London, Greater London, England, United Kingdom"
+    const parts = displayName.split(',').map(part => part.trim());
+    return parts[0]; // Return only the city name
+}
+
+// Function to search for a place using Nominatim API
+function searchLocation(query) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const { lat, lon, display_name } = data[0]; // Get the first result
+                const coords = [parseFloat(lat), parseFloat(lon)];
+
+                // Remove the previous marker (if any)
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+
+                // Add a new marker at the searched location
+                marker = L.marker(coords).addTo(map)
+                    .bindPopup(`Searched Location:<br>${display_name}`)
+                    .openPopup();
+
+                // Move the map to the searched location
+                map.flyTo(coords, 15); // Smoothly animate to the location
+                document.getElementById("farm_lon").value = lng;
+                document.getElementById("farm_lat").value = lat;
+            } else {
+                alert('Location not found. Please try another search.');
+            }
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+// Event listener for map clicks (selection)
+map.on('click', function(e) {
+    const { lat, lng } = e.latlng; // Get latitude and longitude of the clicked location
+
+    // Reverse geocode to get the place name
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const display_name = data.display_name || 'Unknown Location';
+
+            // Remove the previous marker (if any)
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            // Add a new marker at the clicked location
+            marker = L.marker([lat, lng]).addTo(map)
+                .bindPopup(`Selected Location:<br>${display_name}`)
+                .openPopup();
+                document.getElementById("farm_location").value = extractZoneName(display_name);
+
+                document.getElementById("farm_lon").value = lng;
+                document.getElementById("farm_lat").value = lat;
+            
+        })
+        .catch(error => console.error('Error fetching data:', error));
+});
+
+// Add event listener for the search button
+document.getElementById('search-button').addEventListener('click', function() {
+    const query = document.getElementById('search-input').value;
+    if (query) {
+        searchLocation(query);
+    } else {
+        alert('Please enter a place or address.');
+    }
+});
+
+// Optional: Allow pressing "Enter" to trigger the search
+document.getElementById('search-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const query = document.getElementById('search-input').value;
+        if (query) {
+            searchLocation(query);
+        } else {
+            alert('Please enter a place or address.');
+        }
+    }
+});
+
+
+  </script>
+{% endblock %}

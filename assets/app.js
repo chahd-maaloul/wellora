@@ -1,3 +1,4 @@
+import './bootstrap.js';
 // assets/app.js
 import './app.css';
 import '../assets/styles/accessibility.css';
@@ -8,6 +9,10 @@ import Chart from 'chart.js/auto';
 
 // Import health analytics components
 import './js/health-analytics.js';
+// Import doctor dashboard components (patient chart, etc.)
+import './js/doctor-dashboard.js';
+// Import doctor schedule components (availability settings, etc.)
+import './js/doctor-schedule.js';
 
 // Import accessibility module
 import './js/accessibility.js';

@@ -1,0 +1,845 @@
+{# templates/fitness/goals-plans.html.twig #}
+
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ page_title }} - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .goal-tag {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .goal-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .goal-tag.active {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+        
+        .dark .goal-tag.active {
+            background-color: rgba(16, 185, 129, 0.2);
+        }
+        
+        .plan-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .plan-card.completed {
+            border-left-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+        
+        .plan-card.pending {
+            border-left-color: #f59e0b;
+        }
+        
+        .plan-card.planned {
+            border-left-color: #3b82f6;
+        }
+        
+        .plan-card.rest-day {
+            border-left-color: #f97316;
+        }
+        
+        .exercise-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .exercise-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .dark .exercise-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .exercise-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .exercise-popup.active {
+            display: flex;
+        }
+        
+        .exercise-popup-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .dark .exercise-popup-content {
+            background: #1f2937;
+        }
+        
+        .exercise-details {
+            padding: 2rem;
+        }
+        
+        .exercise-video {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .exercise-video iframe,
+        .exercise-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+        }
+        
+        .dark .empty-state-icon {
+            background-color: #374151;
+        }
+        
+        .stats-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .complete-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .complete-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* NOUVEAUX STYLES POUR LA PROGRESSION */
+        .progress-bar-container {
+            width: 100%;
+            height: 0.75rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #10b981;
+            border-radius: 9999px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-bar-fill.pulse {
+            animation: progressPulse 0.5s ease;
+        }
+        
+        @keyframes progressPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; transform: scaleX(1.02); }
+            100% { opacity: 1; }
+        }
+        
+        /* Notification */
+        .notification-toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-success { background-color: #10b981; color: white; }
+        .notification-error { background-color: #ef4444; color: white; }
+        .notification-warning { background-color: #f59e0b; color: white; }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div x-data="goalsPlans()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Exercise popup -->
+    <div id="exercisePopup" class="exercise-popup">
+        <div class="exercise-popup-content fade-in">
+            <button @click="closeExercisePopup" class="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white w-10 h-10 rounded-full flex items-center justify-center z-10">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="exercisePopupContent" class="exercise-details"></div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('fitness_dashboard') }}" class="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Dashboard</span>
+                    </a>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-bullseye text-wellcare-500"></i>
+                        Goals & Plans
+                    </h1>
+                </div>
+                <a href="{{ path('fitness_goal_new') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="fas fa-plus"></i> New Goal
+                </a>
+            </div>
+        </div>
+    </header>
+
+    {% for message in app.flashes('success') %}
+        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            <i class="fas fa-check-circle mr-2"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% for message in app.flashes('error') %}
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    <main class="p-6">
+        {% if allGoals|length > 0 %}
+            <!-- Étiquettes des goals -->
+            <div class="mb-8">
+                <h2 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    <i class="mr-2 fas fa-tags text-wellcare-500"></i>
+                    Select a Goal
+                </h2>
+                <div class="flex flex-wrap gap-3">
+                    {% for goal in allGoals %}
+                        <a href="{{ path('fitness_goals_plans', {'goal': goal.id}) }}" 
+                           class="goal-tag flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border {{ selectedGoalId == goal.id ? 'active border-wellcare-500' : 'border-gray-200 dark:border-gray-700' }}"
+                           data-goal-id="{{ goal.id }}">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center
+                                {% if goal.category == 'weight_loss' %}bg-blue-100 dark:bg-blue-900/30
+                                {% elseif goal.category == 'strength' %}bg-purple-100 dark:bg-purple-900/30
+                                {% elseif goal.category == 'endurance' %}bg-green-100 dark:bg-green-900/30
+                                {% elseif goal.category == 'flexibility' %}bg-yellow-100 dark:bg-yellow-900/30
+                                {% else %}bg-gray-100 dark:bg-gray-700{% endif %}">
+                                <i class="fas 
+                                    {% if goal.category == 'weight_loss' %}fa-weight-scale text-blue-500
+                                    {% elseif goal.category == 'strength' %}fa-dumbbell text-purple-500
+                                    {% elseif goal.category == 'endurance' %}fa-heart-pulse text-green-500
+                                    {% elseif goal.category == 'flexibility' %}fa-person-walking text-yellow-500
+                                    {% else %}fa-bullseye text-gray-500{% endif %}">
+                                </i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900 dark:text-white">{{ goal.title }}</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="stats-badge
+                                        {% if goal.status == 'completed' %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                                        {% elseif goal.status == 'in progress' %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400
+                                        {% else %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400{% endif %}">
+                                        {{ goal.status|replace({'_': ' '})|title }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ goal.dailyplan|length }} plans
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if selectedGoal %}
+                <!-- ===== CARD DE PROGRESSION AMÉLIORÉE ===== -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ selectedGoal.title }}</h2>
+                            {% if selectedGoal.description %}
+                                <p class="text-gray-600 dark:text-gray-400">{{ selectedGoal.description }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Barre de progression avec IDs pour JavaScript -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Progression</span>
+                            <span id="progress-percentage" class="text-lg font-bold text-wellcare-600 dark:text-wellcare-400">
+                                {{ selectedGoal.progress ?? 0 }}%
+                            </span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="progress-bar" 
+                                 class="progress-bar-fill" 
+                                 style="width: {{ selectedGoal.progress ?? 0 }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistiques avec IDs pour JavaScript -->
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div id="stats-completed" class="text-2xl font-bold text-gray-900 dark:text-white">
+                                {{ stats.completed_plans ?? 0 }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Complétés</div>
+                        </div>
+                        <div>
+                            <div id="stats-total" class="text-2xl font-bold text-gray-900 dark:text-white">
+                                {{ stats.total_plans_created ?? 0 }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                        </div>
+                        <div>
+                            <div id="stats-pending" class="text-2xl font-bold text-gray-900 dark:text-white">
+                                {{ (stats.total_plans_created ?? 0) - (stats.completed_plans ?? 0) }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">En attente</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des plans -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-wellcare-500"></i>
+                        All Plans ({{ plans|length }})
+                    </h3>
+
+                    {% if plans|length > 0 %}
+                        {% for plan in plans %}
+                            <div class="plan-card {% if plan.isCompleted %}completed{% elseif plan.isRestDay %}rest-day{% elseif plan.status == 'pending' %}pending{% else %}planned{% endif %} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden" 
+                                 data-plan-id="{{ plan.id }}"
+                                 data-plan-status="{{ plan.status }}">
+                                
+                                <!-- En-tête du plan -->
+                                <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex items-center justify-center w-12 h-12 rounded-lg 
+                                            {% if plan.isCompleted %}bg-green-100 dark:bg-green-900/30
+                                            {% elseif plan.isRestDay %}bg-orange-100 dark:bg-orange-900/30
+                                            {% else %}bg-blue-100 dark:bg-blue-900/30{% endif %}">
+                                            <i class="text-xl 
+                                                {% if plan.isCompleted %}fas fa-check text-green-500
+                                                {% elseif plan.isRestDay %}fas fa-bed text-orange-500
+                                                {% else %}fas fa-calendar-alt text-blue-500{% endif %}">
+                                            </i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 dark:text-white">
+                                                {{ plan.title }}
+                                                {% if plan.isRestDay %}
+                                                    <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">Rest Day</span>
+                                                {% endif %}
+                                            </h4>
+                                            <div class="flex items-center gap-3 mt-1 text-sm">
+                                                <span class="text-gray-500 dark:text-gray-400">
+                                                    <i class="far fa-calendar mr-1"></i>{{ plan.dateFormatted }}
+                                                </span>
+                                                {% if plan.dayName %}
+                                                    <span class="text-gray-500 dark:text-gray-400">
+                                                        <i class="far fa-clock mr-1"></i>{{ plan.dayName }}
+                                                    </span>
+                                                {% endif %}
+                                                <span class="text-gray-500 dark:text-gray-400">
+                                                    <i class="fas fa-dumbbell mr-1"></i>{{ plan.exerciseCount }} exercises
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <!-- BADGE DE STATUT -->
+                                        <span class="plan-status-badge px-3 py-1 text-xs font-medium rounded-full
+                                            {% if plan.isCompleted %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                                            {% elseif plan.isRestDay %}bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400
+                                            {% elseif plan.status == 'pending' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400
+                                            {% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">
+                                            {% if plan.isRestDay %}Rest Day{% else %}{{ plan.status|replace({'_': ' '})|title }}{% endif %}
+                                        </span>
+                                        
+                                        <!-- ===== BOUTON COMPLETE AMÉLIORÉ AVEC FORMULAIRE ===== -->
+                                        {% if not plan.isRestDay and plan.status != 'completed' %}
+                                            <form class="complete-plan-form" data-plan-id="{{ plan.id }}">
+                                                <button type="submit" 
+                                                        class="complete-plan-btn px-4 py-2 bg-wellcare-500 hover:bg-wellcare-600 text-white rounded-lg transition-colors flex items-center gap-2">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Mark Complete
+                                                </button>
+                                            </form>
+                                        {% elseif plan.status == 'completed' %}
+                                            <button disabled 
+                                                    class="px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed flex items-center gap-2">
+                                                <i class="fas fa-check"></i>
+                                                Completed
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Détails du plan -->
+                                <div class="p-4">
+                                    <!-- Métriques -->
+                                    <div class="flex gap-4 mb-4 text-sm">
+                                        {% if plan.duration > 0 %}
+                                            <span class="text-gray-600 dark:text-gray-400">
+                                                <i class="far fa-clock text-wellcare-500 mr-1"></i>{{ plan.duration }} min
+                                            </span>
+                                        {% endif %}
+                                        {% if plan.calories > 0 %}
+                                            <span class="text-gray-600 dark:text-gray-400">
+                                                <i class="fas fa-fire text-orange-500 mr-1"></i>{{ plan.calories }} kcal
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Notes -->
+                                    {% if plan.notes %}
+                                        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                <i class="fas fa-quote-left text-wellcare-500 mr-2"></i>
+                                                {{ plan.notes }}
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Liste des exercices -->
+                                    {% if plan.exercises|length > 0 %}
+                                        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                                            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                                <i class="fas fa-dumbbell mr-2 text-wellcare-500"></i>
+                                                Exercises
+                                            </h5>
+                                            <div class="space-y-2">
+                                                {% for exercise in plan.exercises %}
+                                                    <div class="exercise-item flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                                         onclick='showExercisePopup({{ exercise|json_encode|raw }})'>
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                                                <i class="fas fa-dumbbell text-wellcare-500"></i>
+                                                            </div>
+                                                            <div>
+                                                                <span class="font-medium text-gray-900 dark:text-white">{{ exercise.name }}</span>
+                                                                <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                                    {% if exercise.category %}
+                                                                        <span class="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700">{{ exercise.category }}</span>
+                                                                    {% endif %}
+                                                                    {% if exercise.sets and exercise.reps %}
+                                                                        <span>{{ exercise.sets }}x{{ exercise.reps }}</span>
+                                                                    {% endif %}
+                                                                    {% if exercise.duration %}
+                                                                        <span>{{ exercise.duration }}min</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% if exercise.videoFileName or exercise.videoUrl %}
+                                                            <span class="text-xs text-wellcare-500">
+                                                                <i class="fas fa-video mr-1"></i>Video
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Message pour rest day -->
+                                    {% if plan.isRestDay %}
+                                        <div class="mt-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-center">
+                                            <i class="fas fa-bed text-orange-500 mr-2"></i>
+                                            <span class="text-orange-700 dark:text-orange-400">This is a rest day. No exercises scheduled.</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state bg-white dark:bg-gray-800 rounded-xl shadow-sm p-12">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-calendar-plus text-3xl text-gray-400"></i>
+                            </div>
+                            <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">No plans for this goal</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-6">Start adding workout plans to track your progress.</p>
+                            <a href="{{ path('fitness_planner') }}?goal={{ selectedGoal.id }}" class="inline-flex items-center gap-2 px-6 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                <i class="fas fa-plus"></i>
+                                Create First Plan
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Aucun goal -->
+            <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 p-12 text-center">
+                <div class="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-700">
+                    <i class="text-3xl text-gray-400 fas fa-bullseye"></i>
+                </div>
+                <h2 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">No Goals Yet</h2>
+                <p class="mb-6 text-gray-500 dark:text-gray-400">Create your first goal to start tracking your fitness journey.</p>
+                <a href="{{ path('fitness_goal_new') }}" class="inline-flex items-center gap-2 px-6 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                    <i class="fas fa-plus"></i> Create Your First Goal
+                </a>
+            </div>
+        {% endif %}
+    </main>
+</div>
+
+<!-- ===== JAVASCRIPT AMÉLIORÉ POUR LA MISE À JOUR ===== -->
+<script>
+// Alpine.js component
+document.addEventListener('alpine:init', () => {
+    Alpine.data('goalsPlans', () => ({
+        init() {
+            // Listen for escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.closeExercisePopup();
+                }
+            });
+        },
+        
+        closeExercisePopup() {
+            const popup = document.getElementById('exercisePopup');
+            if (popup) {
+                popup.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+    }));
+});
+
+// ===== NOUVEAU CODE POUR LA GESTION DES BOUTONS COMPLETE =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Sélectionner tous les formulaires "Complete Plan"
+    const completeForms = document.querySelectorAll('.complete-plan-form');
+    
+    completeForms.forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const planId = this.dataset.planId;
+            const button = this.querySelector('button');
+            const originalButtonHtml = button.innerHTML;
+            
+            // Désactiver le bouton et montrer le chargement
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                // Appel AJAX vers le serveur
+                const response = await fetch(`/fitness/daily-plan/${planId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 1. METTRE À JOUR LA BARRE DE PROGRESSION
+                    const progressBar = document.getElementById('progress-bar');
+                    const progressPercentage = document.getElementById('progress-percentage');
+                    
+                    if (progressBar) {
+                        progressBar.style.width = data.progress + '%';
+                        progressBar.classList.add('pulse');
+                        setTimeout(() => progressBar.classList.remove('pulse'), 500);
+                    }
+                    if (progressPercentage) {
+                        progressPercentage.textContent = data.progress + '%';
+                    }
+                    
+                    // 2. METTRE À JOUR LES STATISTIQUES
+                    if (data.stats) {
+                        document.getElementById('stats-completed').textContent = data.stats.completed || 0;
+                        document.getElementById('stats-total').textContent = data.stats.total || 0;
+                        document.getElementById('stats-pending').textContent = (data.stats.total - data.stats.completed) || 0;
+                    }
+                    
+                    // 3. METTRE À JOUR LE PLAN DANS L'INTERFACE
+                    const planCard = document.querySelector(`.plan-card[data-plan-id="${planId}"]`);
+                    
+                    if (planCard) {
+                        // Mettre à jour le badge de statut
+                        const statusBadge = planCard.querySelector('.plan-status-badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'plan-status-badge px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                            statusBadge.textContent = 'Completed';
+                        }
+                        
+                        // Ajouter la classe completed à la carte
+                        planCard.classList.remove('pending', 'planned');
+                        planCard.classList.add('completed');
+                        
+                        // Remplacer le formulaire par un bouton désactivé
+                        const formContainer = planCard.querySelector('.complete-plan-form');
+                        if (formContainer) {
+                            const parentDiv = formContainer.parentElement;
+                            const disabledButton = document.createElement('button');
+                            disabledButton.disabled = true;
+                            disabledButton.className = 'px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed flex items-center gap-2';
+                            disabledButton.innerHTML = '<i class="fas fa-check"></i> Completed';
+                            parentDiv.replaceChild(disabledButton, formContainer);
+                        }
+                    }
+                    
+                    // 4. AFFICHER UNE NOTIFICATION DE SUCCÈS
+                    showNotification('✅ Plan marked as completed!', 'success');
+                    
+                } else {
+                    // Erreur
+                    button.disabled = false;
+                    button.innerHTML = originalButtonHtml;
+                    showNotification('❌ Error: ' + (data.error || 'Unknown error'), 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+                showNotification('❌ Network error. Please try again.', 'error');
+            }
+        });
+    });
+    
+    // Fonction pour afficher les notifications
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification-toast notification-${type}`;
+        notification.innerHTML = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+});
+
+// Fonction pour afficher les détails d'un exercice (inchangée)
+function showExercisePopup(exerciseData) {
+    try {
+        if (typeof exerciseData === 'string') {
+            exerciseData = JSON.parse(exerciseData);
+        }
+        
+        const popup = document.getElementById('exercisePopup');
+        const content = document.getElementById('exercisePopupContent');
+        
+        if (!popup || !content) return;
+        
+        // Construire le HTML de la vidéo
+        let videoHtml = '';
+        const videoSource = exerciseData.videoUrl || exerciseData.videoFileName;
+        
+        if (videoSource) {
+            if (videoSource.includes('youtube.com') || videoSource.includes('youtu.be')) {
+                let videoId = '';
+                const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                const match = videoSource.match(regExp);
+                
+                if (match && match[7] && match[7].length === 11) {
+                    videoId = match[7];
+                } else if (videoSource.includes('youtu.be/')) {
+                    videoId = videoSource.split('youtu.be/')[1]?.split('?')[0];
+                }
+                
+                if (videoId) {
+                    videoHtml = `
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Exercise Demo</h3>
+                            <div class="exercise-video">
+                                <iframe 
+                                    src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1" 
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (exerciseData.videoFileName) {
+                videoHtml = `
+                    <div class="mb-6">
+                        <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Exercise Demo</h3>
+                        <div class="exercise-video">
+                            <video controls>
+                                <source src="/uploads/exercises/videos/${exerciseData.videoFileName}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            videoHtml = `
+                <div class="mb-6">
+                    <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Exercise Demo</h3>
+                    <div class="exercise-video">
+                        <div class="flex flex-col items-center justify-center h-full p-6 bg-gray-100 dark:bg-gray-800">
+                            <i class="mb-4 text-5xl text-gray-400 fas fa-video-slash"></i>
+                            <p class="text-gray-600 dark:text-gray-400">No video demonstration available</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Construire les informations
+        const infoHtml = `
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                ${exerciseData.category ? `
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Category</p>
+                    <p class="font-medium text-gray-900 dark:text-white">${exerciseData.category}</p>
+                </div>
+                ` : ''}
+                ${exerciseData.difficulty_level ? `
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Difficulty</p>
+                    <p class="font-medium text-gray-900 dark:text-white">${exerciseData.difficulty_level}</p>
+                </div>
+                ` : ''}
+                ${exerciseData.duration ? `
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Duration</p>
+                    <p class="font-medium text-gray-900 dark:text-white">${exerciseData.duration} min</p>
+                </div>
+                ` : ''}
+                ${exerciseData.calories ? `
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Calories</p>
+                    <p class="font-medium text-gray-900 dark:text-white">${exerciseData.calories} kcal</p>
+                </div>
+                ` : ''}
+                ${exerciseData.sets && exerciseData.reps ? `
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Sets & Reps</p>
+                    <p class="font-medium text-gray-900 dark:text-white">${exerciseData.sets} × ${exerciseData.reps}</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        // Description
+        const descriptionHtml = exerciseData.description ? `
+            <div class="mb-6">
+                <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Description</h3>
+                <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p class="text-gray-700 dark:text-gray-300">${escapeHtml(exerciseData.description)}</p>
+                </div>
+            </div>
+        ` : '';
+        
+        // Assembler
+        content.innerHTML = `
+            <h2 class="mb-4 text-2xl font-bold text-gray-900 dark:text-white">${exerciseData.name || 'Exercise Details'}</h2>
+            ${videoHtml}
+            ${infoHtml}
+            ${descriptionHtml}
+            <div class="flex justify-end mt-6">
+                <button onclick="document.getElementById('exercisePopup').classList.remove('active'); document.body.style.overflow = 'auto';" 
+                        class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                    Close
+                </button>
+            </div>
+        `;
+        
+        popup.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Fermer en cliquant en dehors
+        popup.onclick = function(e) {
+            if (e.target === popup) {
+                popup.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        };
+        
+    } catch (error) {
+        console.error('Error showing exercise popup:', error);
+    }
+}
+
+// Helper pour échapper le HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Ignorer les erreurs SVG
+const originalError = console.error;
+console.error = function(...args) {
+    if (args[0] && args[0].includes('attribute d:')) {
+        return;
+    }
+    originalError.apply(console, args);
+};
+</script>
+{% endblock %}

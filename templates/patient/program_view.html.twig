@@ -1,0 +1,116 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Mon programme - {{ goal.title }}{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center gap-4">
+                <a href="{{ path('fitness_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <i class="mr-2 fas fa-calendar-alt text-wellcare-500"></i>
+                        Mon programme personnalisé
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ goal.title }} - {{ goal.durationWeeks }} semaines
+                    </p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <!-- Objectif principal -->
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                <i class="fas fa-bullseye text-wellcare-500 mr-2"></i>
+                Objectif
+            </h2>
+            <p class="text-gray-700 dark:text-gray-300 mb-2">{{ goal.description }}</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-wellcare-600">{{ goal.durationWeeks }}</p>
+                    <p class="text-sm text-gray-500">semaines</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-wellcare-600">{{ goal.sessionsPerWeek }}</p>
+                    <p class="text-sm text-gray-500">séances/semaine</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-wellcare-600">{{ goal.difficultyLevel }}</p>
+                    <p class="text-sm text-gray-500">niveau</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-wellcare-600">{{ goal.progress }}%</p>
+                    <p class="text-sm text-gray-500">progression</p>
+                </div>
+            </div>
+        </div>
+
+      <!-- Liste des séances -->
+<div class="bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 p-6">
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-calendar-week text-wellcare-500 mr-2"></i>
+        Mes séances
+    </h2>
+    
+    <!-- Grouper par semaine en utilisant la date -->
+    {% set weeks = {} %}
+    {% for plan in dailyPlans %}
+        {% set weekKey = plan.date|date('W-Y') %} {# Numéro de semaine-Année #}
+        {% if weeks[weekKey] is not defined %}
+            {% set weeks = weeks|merge({(weekKey): []}) %}
+        {% endif %}
+        {% set weeks = weeks|merge({(weekKey): weeks[weekKey]|merge([plan])}) %}
+    {% endfor %}
+    
+    {% for weekKey, weekPlans in weeks %}
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6 mb-3">
+            Semaine du {{ weekPlans|first.date|date('d/m/Y') }}
+        </h3>
+        
+        {% for plan in weekPlans %}
+            <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-medium text-gray-900 dark:text-white">
+                        {{ plan.titre }}
+                    </h4>
+                    <span class="text-sm text-gray-500">
+                        {{ plan.date|date('d/m/Y') }}
+                    </span>
+                </div>
+                
+                <div class="flex gap-4 mb-3 text-sm">
+                    <span><i class="far fa-clock mr-1"></i> {{ plan.dureeMin }} min</span>
+                    <span><i class="fas fa-fire mr-1 text-orange-500"></i> {{ plan.calories }} cal</span>
+                </div>
+                
+                <div class="space-y-2">
+                    {% for exercice in plan.exercices %}
+                        <div class="p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                            <div class="flex justify-between">
+                                <span class="font-medium">{{ exercice.name }}</span>
+                                <span class="text-sm text-gray-500">{{ exercice.category }}</span>
+                            </div>
+                            <div class="flex gap-3 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {% if exercice.sets and exercice.reps %}
+                                    <span>{{ exercice.sets }} × {{ exercice.reps }} reps</span>
+                                {% endif %}
+                                {% if exercice.duration %}
+                                    <span>{{ exercice.duration }} min</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>
+    </main>
+</div>
+{% endblock %}

@@ -842,7 +842,7 @@ class AuthController extends AbstractController
         }
         
         if (in_array('ROLE_COACH', $roles)) {
-            return $this->redirectToRoute('coach_dashboard');
+            return $this->redirectToRoute('coach_daily_plans');
         }
         
         if (in_array('ROLE_NUTRITIONIST', $roles)) {

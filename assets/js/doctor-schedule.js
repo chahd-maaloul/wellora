@@ -64,9 +64,47 @@ document.addEventListener('alpine:init', () => {
         
         init() {
             this.generateTimeSlots();
-            this.loadAppointments();
+            this.loadAppointmentsFromAPI();
             this.startClock();
             this.initDragAndDrop();
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        date: apt.date,
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+                // Fallback to simulated data
+                this.loadAppointments();
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
         },
         
         startClock() {
@@ -381,7 +419,45 @@ document.addEventListener('alpine:init', () => {
         
         init() {
             this.generateWeekDays();
-            this.loadAppointments();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        date: apt.date,
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+                // Fallback to simulated data
+                this.loadAppointments();
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
         },
         
         getWeekStart(date) {
@@ -413,7 +489,7 @@ document.addEventListener('alpine:init', () => {
         },
         
         loadAppointments() {
-            // Simulated week appointments
+            // Simulated week appointments - used as fallback
             this.appointments = [
                 // Monday
                 { id: 'W001', patientId: 'P001', patientName: 'Marie Dupont', type: 'newPatient', date: this.weekDays[0]?.date, time: '09:00', duration: 45, location: 'clinic', status: 'scheduled' },
@@ -436,6 +512,44 @@ document.addEventListener('alpine:init', () => {
                 { id: 'W010', patientId: 'P010', patientName: 'Thomas Girard', type: 'followUp', date: this.weekDays[4]?.date, time: '09:00', duration: 30, location: 'clinic', status: 'scheduled' },
                 { id: 'W011', patientId: 'P011', patientName: 'Sophie Martin', type: 'newPatient', date: this.weekDays[4]?.date, time: '10:00', duration: 45, location: 'clinic', status: 'scheduled' },
             ];
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        date: apt.date,
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+                // Fallback to simulated data
+                this.loadAppointments();
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
         },
         
         getAppointmentsForDay(day) {
@@ -980,6 +1094,10 @@ document.addEventListener('alpine:init', () => {
         activeTab: 'working-hours',
         showAddSlotModal: false,
         showLeaveModal: false,
+        showLocationModal: false,
+        showToast: false,
+        toastMessage: '',
+        toastType: 'success',
         
         // Working hours
         workingHours: {
@@ -992,53 +1110,133 @@ document.addEventListener('alpine:init', () => {
             sunday: { enabled: false, start: '00:00', end: '00:00', breaks: [] },
         },
         
+        // Weekly schedule for new template
+        weeklySchedule: [
+            { name: 'Lundi', key: 'monday', isActive: true, startTime: '08:00', endTime: '18:00', location: 'clinic', slots: [] },
+            { name: 'Mardi', key: 'tuesday', isActive: true, startTime: '08:00', endTime: '18:00', location: 'clinic', slots: [] },
+            { name: 'Mercredi', key: 'wednesday', isActive: true, startTime: '08:00', endTime: '18:00', location: 'clinic', slots: [] },
+            { name: 'Jeudi', key: 'thursday', isActive: true, startTime: '08:00', endTime: '18:00', location: 'clinic', slots: [] },
+            { name: 'Vendredi', key: 'friday', isActive: true, startTime: '08:00', endTime: '18:00', location: 'clinic', slots: [] },
+            { name: 'Samedi', key: 'saturday', isActive: false, startTime: '09:00', endTime: '13:00', location: 'clinic', slots: [] },
+            { name: 'Dimanche', key: 'sunday', isActive: false, startTime: '09:00', endTime: '13:00', location: 'clinic', slots: [] },
+        ],
+        
+        // Settings
+        settings: {
+            defaultAppointmentDuration: '30',
+            appointmentGap: '5',
+            lunchBreakStart: '12:00',
+            lunchBreakEnd: '13:00',
+            emergencySlotsPerDay: 2,
+            allowDoubleBooking: false,
+            autoConfirmAppointments: false,
+        },
+        
         // Time slots configuration
         slotDuration: 30, // minutes
         bufferTime: 5, // minutes between appointments
         emergencyBuffer: 15, // minutes for emergencies
         
-        // Teleconsultation settings
-        teleconsultation: {
-            enabled: true,
-            preferredPlatform: 'zoom',
-            meetingLink: 'https://zoom.us/j/123456789',
-            waitingRoomEnabled: true,
-            recordingEnabled: false,
-            backupPlatform: 'teams',
-        },
-        
         // Leave and time off
         leaveRequests: [],
+        plannedLeaves: [],
+        
+        // New leave form
+        newLeave: {
+            type: 'vacation',
+            title: '',
+            startDate: '',
+            endDate: '',
+            reason: '',
+        },
         
         // Locations
         locations: [
-            { id: 'clinic', name: 'Cabinet Principal', address: '123 Rue de la Santé, 75001 Paris', phone: '+33 1 23 45 67 89', enabled: true },
-            { id: 'hospital', name: 'Hôpital Central', address: '456 Avenue Hospitalière, 75005 Paris', phone: '+33 1 98 76 54 32', enabled: true },
+            { id: 'loc1', name: 'Cabinet Principal', type: 'clinic', address: '123 Rue de la Santé, Tunis', phone: '+216 71 123 456', isActive: true },
+            { id: 'loc2', name: 'Hôpital Central', type: 'hospital', address: '456 Avenue Hospitalière, Tunis', phone: '+216 71 987 654', isActive: true },
         ],
+        
+        // New location form
+        newLocation: {
+            name: '',
+            type: 'clinic',
+            address: '',
+            phone: '',
+        },
         
         // Special blocks
         specialBlocks: [],
         
+        // Substitution
+        substituteDoctor: null,
+        autoAssignSubstitute: false,
+        availableSubstitutes: [],
+        showSubstituteModal: false,
+        selectedSubstituteUuid: null,
+        
+        // Stats
+        weeklyStats: {
+            appointments: 42,
+            patientsSeen: 38,
+        },
+        
         init() {
             this.loadLeaveRequests();
             this.loadSpecialBlocks();
+            this.loadSettings();
+        },
+        
+        loadSettings() {
+            // Load settings from server
+            fetch('/health/doctor/availability/settings/load')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.settings) {
+                            this.settings = { ...this.settings, ...data.settings };
+                        }
+                        if (data.weeklySchedule) {
+                            this.weeklySchedule = data.weeklySchedule;
+                        }
+                        if (data.locations) {
+                            this.locations = data.locations;
+                        }
+                        if (data.leaves) {
+                            this.plannedLeaves = data.leaves;
+                        }
+                    }
+                })
+                .catch(error => console.log('Could not load settings:', error));
         },
         
         loadLeaveRequests() {
-            this.leaveRequests = [
-                { id: 'LR001', type: 'vacation', startDate: '2026-02-20', endDate: '2026-02-25', reason: 'Congés annuels', status: 'approved' },
-                { id: 'LR002', type: 'conference', startDate: '2026-03-15', endDate: '2026-03-17', reason: 'Conférence cardiologie', status: 'pending' },
-                { id: 'LR003', type: 'training', startDate: '2026-04-10', endDate: '2026-04-10', reason: 'Formation nouveaux protocoles', status: 'pending' },
+            this.plannedLeaves = [
+                { id: 'LR001', type: 'vacation', title: 'Congés d\'été', startDate: '2026-02-20', endDate: '2026-02-25', days: 5, reason: 'Congés annuels', status: 'approved' },
+                { id: 'LR002', type: 'conference', title: 'Conférence Médicale', startDate: '2026-03-15', endDate: '2026-03-17', days: 2, reason: 'Conférence cardiologie', status: 'pending' },
             ];
         },
         
         loadSpecialBlocks() {
-            this.specialBlocks = [
-                { id: 'SB001', type: 'surgery', title: 'Chirurgie programmée', date: '2026-02-10', startTime: '09:00', endTime: '13:00', notes: '3 procédures prévues' },
-                { id: 'SB002', type: 'meeting', title: 'Réunion d\'équipe', date: '2026-02-12', startTime: '12:00', endTime: '13:00', notes: '讨论新的医疗方案' },
-            ];
+            this.specialBlocks = [];
         },
         
+        // Computed properties
+        get totalWeeklyHours() {
+            return this.weeklySchedule
+                .filter(day => day.isActive)
+                .reduce((total, day) => {
+                    const [startH, startM] = day.startTime.split(':').map(Number);
+                    const [endH, endM] = day.endTime.split(':').map(Number);
+                    return total + (endH + endM/60) - (startH + startM/60);
+                }, 0);
+        },
+        
+        get workDaysRatio() {
+            const activeDays = this.weeklySchedule.filter(day => day.isActive).length;
+            return activeDays / 7;
+        },
+        
+        // Methods
         getDayName(day) {
             const names = {
                 monday: 'Lundi',
@@ -1068,36 +1266,203 @@ document.addEventListener('alpine:init', () => {
             this.workingHours[day].breaks.splice(index, 1);
         },
         
-        saveWorkingHours() {
-            // Save to server
-            alert('Horaires de travail enregistrés avec succès');
+        addSlot(day) {
+            day.slots.push({ start: day.startTime, end: day.endTime });
         },
         
-        saveTeleconsultationSettings() {
-            // Save teleconsultation settings
-            alert('Paramètres de téléconsultation enregistrés');
+        removeSlot(day, index) {
+            day.slots.splice(index, 1);
         },
         
-        submitLeaveRequest(leaveData) {
-            const newLeave = {
-                id: `LR${Date.now()}`,
-                ...leaveData,
-                status: 'pending',
-            };
-            this.leaveRequests.push(newLeave);
-            this.showLeaveModal = false;
-            alert('Demande de congés soumise pour approbation');
-        },
-        
-        approveLeave(leaveId) {
-            const leave = this.leaveRequests.find(l => l.id === leaveId);
-            if (leave) {
-                leave.status = 'approved';
+        // Save settings
+        async saveSettings() {
+            try {
+                const response = await fetch('/health/doctor/availability/settings/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        weeklySchedule: this.weeklySchedule,
+                        settings: this.settings,
+                        locations: this.locations,
+                    }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.showToastMessage('Paramètres enregistrés avec succès', 'success');
+                } else {
+                    this.showToastMessage('Erreur lors de l\'enregistrement', 'error');
+                }
+            } catch (error) {
+                this.showToastMessage('Erreur de connexion', 'error');
             }
         },
         
-        cancelLeave(leaveId) {
-            this.leaveRequests = this.leaveRequests.filter(l => l.id !== leaveId);
+        // Location methods
+        addLocation() {
+            this.newLocation = { name: '', type: 'clinic', address: '', phone: '' };
+            this.showLocationModal = true;
+        },
+        
+        confirmAddLocation() {
+            if (!this.newLocation.name || !this.newLocation.address) {
+                this.showToastMessage('Veuillez remplir les champs obligatoires', 'error');
+                return;
+            }
+            
+            const location = {
+                id: 'loc' + Date.now(),
+                name: this.newLocation.name,
+                type: this.newLocation.type,
+                address: this.newLocation.address,
+                phone: this.newLocation.phone,
+                isActive: true,
+            };
+            
+            this.locations.push(location);
+            this.showLocationModal = false;
+            this.showToastMessage('Lieu ajouté avec succès', 'success');
+            
+            // Save to server
+            this.saveLocationToServer(location);
+        },
+        
+        async saveLocationToServer(location) {
+            try {
+                await fetch('/health/doctor/availability/location/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(location),
+                });
+            } catch (error) {
+                console.error('Error saving location:', error);
+            }
+        },
+        
+        // Leave methods
+        openLeaveRequest() {
+            this.newLeave = {
+                type: 'vacation',
+                title: '',
+                startDate: '',
+                endDate: '',
+                reason: '',
+            };
+            this.showLeaveModal = true;
+        },
+        
+        confirmLeaveRequest() {
+            if (!this.newLeave.title || !this.newLeave.startDate || !this.newLeave.endDate) {
+                this.showToastMessage('Veuillez remplir les champs obligatoires', 'error');
+                return;
+            }
+            
+            const start = new Date(this.newLeave.startDate);
+            const end = new Date(this.newLeave.endDate);
+            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const leave = {
+                id: 'LR' + Date.now(),
+                type: this.newLeave.type,
+                title: this.newLeave.title,
+                startDate: this.newLeave.startDate,
+                endDate: this.newLeave.endDate,
+                days: days,
+                reason: this.newLeave.reason,
+                status: 'pending',
+            };
+            
+            this.plannedLeaves.push(leave);
+            this.showLeaveModal = false;
+            this.showToastMessage('Demande de congé soumise', 'success');
+            
+            // Save to server and mark planning as unavailable
+            this.saveLeaveToServer(leave);
+        },
+        
+        async saveLeaveToServer(leave) {
+            try {
+                const response = await fetch('/health/doctor/availability/leave/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(leave),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // The server will mark the planning as unavailable for these dates
+                    console.log('Leave request saved and planning updated');
+                }
+            } catch (error) {
+                console.error('Error saving leave:', error);
+            }
+        },
+        
+        cancelLeave(leave) {
+            if (confirm('Annuler cette demande de congé ?')) {
+                this.plannedLeaves = this.plannedLeaves.filter(l => l.id !== leave.id);
+                this.cancelLeaveOnServer(leave.id);
+            }
+        },
+        
+        async cancelLeaveOnServer(leaveId) {
+            try {
+                await fetch(`/health/doctor/availability/leave/${leaveId}/cancel`, {
+                    method: 'POST',
+                });
+            } catch (error) {
+                console.error('Error cancelling leave:', error);
+            }
+        },
+        
+        // Substitution
+        selectSubstitute() {
+            // Load available doctors from database and open modal
+            fetch('/health/doctor/availability/substitutes')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.substitutes) {
+                        this.availableSubstitutes = data.substitutes;
+                        this.showSubstituteModal = true;
+                    } else {
+                        this.showToastMessage('Erreur lors du chargement des médecins', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading substitutes:', error);
+                    this.showToastMessage('Erreur de connexion', 'error');
+                });
+        },
+        
+        confirmSubstitute() {
+            if (!this.selectedSubstituteUuid) {
+                this.showToastMessage('Veuillez sélectionner un médecin', 'error');
+                return;
+            }
+            
+            const selected = this.availableSubstitutes.find(s => s.uuid === this.selectedSubstituteUuid);
+            if (selected) {
+                this.substituteDoctor = {
+                    uuid: selected.uuid,
+                    name: 'Dr. ' + selected.firstName + ' ' + selected.lastName,
+                    specialty: selected.specialite || 'Médecine Générale'
+                };
+                this.showSubstituteModal = false;
+                this.selectedSubstituteUuid = null;
+                this.showToastMessage('Médecin remplaçant sélectionné');
+            }
+        },
+        
+        removeSubstitute() {
+            this.substituteDoctor = null;
+        },
+        
+        // Toast notification
+        showToastMessage(message, type = 'success') {
+            this.toastMessage = message;
+            this.toastType = type;
+            this.showToast = true;
+            setTimeout(() => {
+                this.showToast = false;
+            }, 3000);
         },
         
         getLeaveTypeLabel(type) {
@@ -1107,6 +1472,7 @@ document.addEventListener('alpine:init', () => {
                 training: 'Formation',
                 sick: 'Maladie',
                 emergency: 'Urgence personnelle',
+                personal: 'Personnel',
                 other: 'Autre',
             };
             return labels[type] || type;
@@ -1155,7 +1521,16 @@ document.addEventListener('alpine:init', () => {
         
         resetToDefaults() {
             if (confirm('Réinitialiser tous les paramètres par défaut ?')) {
-                alert('Paramètres réinitialisés');
+                this.settings = {
+                    defaultAppointmentDuration: '30',
+                    appointmentGap: '5',
+                    lunchBreakStart: '12:00',
+                    lunchBreakEnd: '13:00',
+                    emergencySlotsPerDay: 2,
+                    allowDoubleBooking: false,
+                    autoConfirmAppointments: false,
+                };
+                this.showToastMessage('Paramètres réinitialisés', 'success');
             }
         },
         
@@ -1358,3 +1733,149 @@ document.addEventListener('keydown', (e) => {
         // Close any open modals
     }
 });
+
+// Global doctorSchedule function for templates that use x-data="doctorSchedule"
+function doctorSchedule() {
+    return {
+        // State
+        currentWeekStart: getWeekStart(new Date()),
+        selectedDate: null,
+        selectedAppointment: null,
+        showAppointmentModal: false,
+        viewMode: 'week',
+        pendingCount: 0,
+        
+        // Locations
+        locations: [
+            { id: 'clinic', name: 'Cabinet Principal', color: '#00A790' },
+            { id: 'hospital', name: 'Hôpital Central', color: '#6366f1' },
+            { id: 'telehealth', name: 'Téléconsultation', color: '#10b981' },
+        ],
+        selectedLocation: 'all',
+        
+        // Week days
+        weekDays: [],
+        hours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+        
+        // Appointments data
+        appointments: [],
+        
+        init() {
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+            this.loadPendingCount();
+        },
+        
+        generateWeekDays() {
+            this.weekDays = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(this.currentWeekStart);
+                date.setDate(date.getDate() + i);
+                this.weekDays.push({
+                    date: date.toISOString().split('T')[0],
+                    dateObj: date,
+                    dayName: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+                    dayNumber: date.getDate(),
+                    month: date.toLocaleDateString('fr-FR', { month: 'short' }),
+                    isToday: date.toDateString() === new Date().toDateString(),
+                    isWeekend: date.getDay() === 0 || date.getDay() === 6,
+                });
+            }
+        },
+        
+        getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+        },
+        
+        async loadAppointmentsFromAPI() {
+            try {
+                const response = await fetch('/appointment/api/doctor/accepted');
+                const data = await response.json();
+                
+                if (data.success && data.appointments) {
+                    this.appointments = data.appointments.map(apt => ({
+                        id: apt.id,
+                        patientId: apt.patientId || 'P001',
+                        patientName: apt.patientName || 'Patient',
+                        type: this.mapAppointmentType(apt.consultationType),
+                        date: apt.date,
+                        time: apt.time || '09:00',
+                        duration: apt.duration || 30,
+                        status: apt.status || 'scheduled',
+                        reason: apt.reason || '',
+                        location: apt.mode === 'in-person' ? 'clinic' : 'telehealth',
+                        notes: apt.notes || ''
+                    }));
+                    console.log('Loaded appointments from API:', this.appointments.length);
+                }
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+            }
+        },
+        
+        async loadPendingCount() {
+            try {
+                const response = await fetch('/appointment/api/doctor/pending');
+                const data = await response.json();
+                if (data.success) {
+                    this.pendingCount = data.count;
+                }
+            } catch (error) {
+                console.error('Failed to load pending count:', error);
+            }
+        },
+        
+        mapAppointmentType(type) {
+            const typeMap = {
+                'first-visit': 'newPatient',
+                'follow-up': 'followUp',
+                'emergency': 'emergency',
+                'procedure': 'procedure'
+            };
+            return typeMap[type] || 'consultation';
+        },
+        
+        getAppointmentsForDay(date) {
+            if (!date) return [];
+            return this.appointments.filter(apt => apt.date === date);
+        },
+        
+        get weekRange() {
+            if (this.weekDays.length === 0) return '';
+            const start = this.weekDays[0];
+            const end = this.weekDays[6];
+            const startStr = start.dayNumber + ' ' + start.month;
+            const endStr = end.dayNumber + ' ' + end.month;
+            return `${startStr} - ${endStr}`;
+        },
+        
+        previousWeek() {
+            this.currentWeekStart.setDate(this.currentWeekStart.getDate() - 7);
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        nextWeek() {
+            this.currentWeekStart.setDate(this.currentWeekStart.getDate() + 7);
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        goToCurrentWeek() {
+            this.currentWeekStart = this.getWeekStart(new Date());
+            this.generateWeekDays();
+            this.loadAppointmentsFromAPI();
+        },
+        
+        openAppointmentDetails(appointment) {
+            this.selectedAppointment = appointment;
+            this.showAppointmentModal = true;
+        },
+    };
+}
+
+// Make doctorSchedule available globally
+window.doctorSchedule = doctorSchedule;

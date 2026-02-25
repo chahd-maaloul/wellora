@@ -1,0 +1,115 @@
+{# templates/emails/rappel_rdv.html.twig #}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rappel de rendez-vous</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .header { 
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white; 
+            padding: 25px; 
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content { 
+            padding: 30px; 
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+        }
+        .rdv-info { 
+            background: white; 
+            padding: 20px; 
+            border-left: 4px solid #ff9800;
+            border-radius: 5px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .rdv-info p {
+            margin: 10px 0;
+        }
+        .rdv-info strong {
+            color: #ff9800;
+            min-width: 100px;
+            display: inline-block;
+        }
+        .button { 
+            display: inline-block; 
+            padding: 12px 25px; 
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white; 
+            text-decoration: none; 
+            border-radius: 25px; 
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>🔔 RAPPEL DE RENDEZ-VOUS</h2>
+            <p>Vous avez un rendez-vous demain</p>
+        </div>
+        <div class="content">
+            <p>Bonjour <strong>{{ consultation.patient.firstName }}</strong>,</p>
+            <p>Nous vous rappelons que vous avez rendez-vous <strong>DEMAIN</strong> :</p>
+            
+            <div class="rdv-info">
+                <p><strong>Médecin :</strong> Dr {{ consultation.medecin.firstName }} {{ consultation.medecin.lastName }}</p>
+                <p><strong>Date :</strong> {{ consultation.dateConsultation|date('d/m/Y') }}</p>
+                <p><strong>Heure :</strong> {{ consultation.timeConsultation|date('H:i') }}</p>
+                <p><strong>Motif :</strong> {{ consultation.reasonForVisit }}</p>
+                <p><strong>Lieu :</strong> {{ consultation.location }}</p>
+            </div>
+            
+            <div class="warning-box">
+                <strong>⚠️ Rappel :</strong> Merci de vous présenter <strong>10 minutes avant</strong> l'heure de votre rendez-vous.
+            </div>
+            
+            <p style="text-align: center;">
+                Si vous ne pouvez pas vous présenter, merci de nous prévenir au plus vite.
+            </p>
+            
+            <div class="footer">
+                <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+                <p>WellCare - Prenez soin de votre santé</p>
+                <p>© {{ 'now'|date('Y') }} WellCare. Tous droits réservés.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

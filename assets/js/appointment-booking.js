@@ -176,6 +176,29 @@ function doctorSearch() {
         // Initialize
         init() {
             console.log('Doctor search initialized');
+            
+            // Load doctors from server-rendered data
+            const mainElement = document.querySelector('[data-doctors]');
+            if (mainElement && mainElement.dataset.doctors) {
+                try {
+                    const serverDoctors = JSON.parse(mainElement.dataset.doctors);
+                    if (Array.isArray(serverDoctors) && serverDoctors.length > 0) {
+                        console.log('Replacing hardcoded doctors with ' + serverDoctors.length + ' doctors from server');
+                        // Clear hardcoded doctors and add server doctors
+                        this.doctors = [];
+                        serverDoctors.forEach(doc => {
+                            this.doctors.push(doc);
+                        });
+                        console.log('Doctors loaded successfully');
+                    } else {
+                        console.log('No doctors from server, keeping hardcoded data');
+                    }
+                } catch (e) {
+                    console.error('Error parsing doctors data:', e);
+                }
+            } else {
+                console.log('No data-doctors attribute found');
+            }
         },
         
         // Computed: filtered doctors
@@ -294,9 +317,11 @@ function doctorSearch() {
     };
 }
 
-// Register with Alpine
+// Register with Alpine (only if not already defined inline)
 import Alpine from 'alpinejs';
-Alpine.data('doctorSearch', doctorSearch);
+if (typeof window.doctorSearch !== 'function') {
+    Alpine.data('doctorSearch', doctorSearch);
+}
 
 // Appointment Booking Module
 const AppointmentBooking = {
@@ -781,3 +806,264 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for use in Alpine.js
 window.AppointmentBooking = AppointmentBooking;
+
+// Patient Dashboard Alpine.js Component
+function patientDashboard() {
+    return {
+        // State
+        activeTab: 'upcoming',
+        appointments: [],
+        upcomingAppointments: [],
+        pendingAppointments: [],
+        completedAppointments: [],
+        pastAppointments: [],
+        cancelledAppointments: [],
+        
+        // Counts
+        upcomingCount: 0,
+        pendingCount: 0,
+        completedCount: 0,
+        cancelledCount: 0,
+        
+        // Modal states
+        showCancelModal: false,
+        showReviewModal: false,
+        showRescheduleModal: false,
+        
+        // Form data
+        selectedAppointment: null,
+        cancellationReason: '',
+        reviewRating: 5,
+        reviewComment: '',
+        reviewDoctorName: '',
+        reviewText: '',
+        
+        // Loading state
+        loading: false,
+        
+        // Initialize
+        async init() {
+            await this.loadAppointments();
+        },
+        
+        // Load appointments from API
+        async loadAppointments() {
+            this.loading = true;
+            try {
+                const response = await fetch('/appointment/api/appointments');
+                const data = await response.json();
+                
+                console.log('API response:', data);
+                
+                // The API returns { upcoming: [], past: [], cancelled: [] }
+                // We need to merge them and categorize
+                this.appointments = [
+                    ...(data.upcoming || []),
+                    ...(data.past || []),
+                    ...(data.cancelled || [])
+                ];
+                
+                // The API already categorizes, so use directly
+                this.upcomingAppointments = data.upcoming || [];
+                this.pendingAppointments = data.pending || [];
+                this.completedAppointments = data.past || [];
+                this.pastAppointments = data.past || [];
+                this.cancelledAppointments = data.cancelled || [];
+                
+                // Update counts
+                this.upcomingCount = this.upcomingAppointments.length;
+                this.pendingCount = this.pendingAppointments.length;
+                this.completedCount = this.completedAppointments.length;
+                this.cancelledCount = this.cancelledAppointments.length;
+                
+            } catch (error) {
+                console.error('Failed to load appointments:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        // Categorize appointments by status
+        categorizeAppointments() {
+            const now = new Date();
+            
+            this.upcomingAppointments = this.appointments.filter(apt => {
+                const aptDate = new Date(apt.date + ' ' + apt.time);
+                return (apt.status === 'confirmed' || apt.status === 'scheduled') && aptDate >= now;
+            }).map(apt => this.formatAppointment(apt));
+            
+            this.pendingAppointments = this.appointments.filter(apt => {
+                return apt.status === 'pending';
+            }).map(apt => this.formatAppointment(apt));
+            
+            this.completedAppointments = this.appointments.filter(apt => {
+                return apt.status === 'completed';
+            }).map(apt => this.formatAppointment(apt));
+            
+            this.cancelledAppointments = this.appointments.filter(apt => {
+                return apt.status === 'cancelled' || apt.status === 'canceled';
+            }).map(apt => this.formatAppointment(apt));
+            
+            // Update counts
+            this.upcomingCount = this.upcomingAppointments.length;
+            this.pendingCount = this.pendingAppointments.length;
+            this.completedCount = this.completedAppointments.length;
+            this.cancelledCount = this.cancelledAppointments.length;
+        },
+        
+        // Format appointment for display
+        formatAppointment(apt) {
+            const date = new Date(apt.date);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            return {
+                ...apt,
+                month: months[date.getMonth()],
+                day: date.getDate(),
+                weekday: days[date.getDay()],
+                isSoon: this.isWithin24Hours(apt.date, apt.time)
+            };
+        },
+        
+        // Check if appointment is within 24 hours
+        isWithin24Hours(dateStr, timeStr) {
+            const aptDate = new Date(dateStr + ' ' + timeStr);
+            const now = new Date();
+            const diff = aptDate - now;
+            return diff > 0 && diff < 24 * 60 * 60 * 1000;
+        },
+        
+        // Get status class for badge
+        getStatusClass(status) {
+            const classes = {
+                'confirmed': 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+                'scheduled': 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+                'pending': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+                'completed': 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+                'cancelled': 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+                'canceled': 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300';
+        },
+        
+        // Get type icon
+        getTypeIcon(type) {
+            const icons = {
+                'video': 'fa-video',
+                'phone': 'fa-phone',
+                'in-person': 'fa-hospital',
+                'clinic': 'fa-hospital',
+                'home': 'fa-home'
+            };
+            return icons[type] || 'fa-stethoscope';
+        },
+        
+        // View appointment details
+        viewDetails(appointment) {
+            window.location.href = `/appointment/details/${appointment.id}`;
+        },
+        
+        // Reschedule appointment
+        rescheduleAppointment(appointment) {
+            this.selectedAppointment = appointment;
+            this.showRescheduleModal = true;
+        },
+        
+        // Cancel appointment
+        cancelAppointment(appointment) {
+            this.selectedAppointment = appointment;
+            this.showCancelModal = true;
+        },
+        
+        // Confirm cancellation
+        async confirmCancel() {
+            if (!this.selectedAppointment) return;
+            
+            try {
+                const response = await fetch(`/appointment/${this.selectedAppointment.id}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        reason: this.cancellationReason
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showCancelModal = false;
+                    this.cancellationReason = '';
+                    await this.loadAppointments();
+                } else {
+                    alert(result.message || 'Failed to cancel appointment');
+                }
+            } catch (error) {
+                console.error('Cancel failed:', error);
+                alert('Failed to cancel appointment. Please try again.');
+            }
+        },
+        
+        // Delete appointment
+        async deleteAppointment(appointment) {
+            if (!confirm('Are you sure you want to delete this appointment?')) return;
+            
+            try {
+                const response = await fetch(`/appointment/${appointment.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    await this.loadAppointments();
+                } else {
+                    alert(result.message || 'Failed to delete appointment');
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                alert('Failed to delete appointment. Please try again.');
+            }
+        },
+        
+        // Submit review
+        async submitReview() {
+            if (!this.selectedAppointment) return;
+            
+            try {
+                const response = await fetch(`/appointment/${this.selectedAppointment.id}/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rating: this.reviewRating,
+                        comment: this.reviewComment
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showReviewModal = false;
+                    this.reviewRating = 5;
+                    this.reviewComment = '';
+                    await this.loadAppointments();
+                } else {
+                    alert(result.message || 'Failed to submit review');
+                }
+            } catch (error) {
+                console.error('Review failed:', error);
+                alert('Failed to submit review. Please try again.');
+            }
+        }
+    };
+}
+
+// Register patientDashboard with Alpine
+Alpine.data('patientDashboard', patientDashboard);

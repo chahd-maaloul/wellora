@@ -1,0 +1,217 @@
+<script>
+function doctorSearch() {
+    return {
+        searchQuery: '',
+        loading: false,
+        viewMode: 'list',
+        sortBy: 'recommended',
+        currentPage: 1,
+        itemsPerPage: 10,
+        favorites: [],
+        
+        filters: {
+            location: '',
+            availability: '',
+            specialties: [],
+            consultationTypes: [],
+            maxPrice: 500,
+            languages: [],
+            gender: '',
+            minRating: ''
+        },
+        
+        popularSpecialties: [
+            'Cardiology', 'Dermatology', 'Pediatrics', 'General Medicine', 
+            'Orthopedics', 'Neurology', 'Gynecology', 'Psychiatry'
+        ],
+        
+        allSpecialties: [
+            'Cardiology', 'Dermatology', 'Pediatrics', 'General Medicine',
+            'Orthopedics', 'Neurology', 'Gynecology', 'Psychiatry',
+            'Ophthalmology', 'ENT', 'Urology', 'Gastroenterology',
+            'Endocrinology', 'Oncology', 'Radiology', 'Pathology'
+        ],
+        
+        languages: [
+            { code: 'ar', name: 'Arabic' },
+            { code: 'fr', name: 'French' },
+            { code: 'en', name: 'English' },
+            { code: 'it', name: 'Italian' }
+        ],
+        
+        doctors: [],
+        filteredDoctors: [],
+        
+        init() {
+            // Load doctors from the data attribute set by the controller
+            this.doctors = JSON.parse(this.$el.dataset.doctors || '[]');
+            this.filteredDoctors = [...this.doctors];
+            
+            // Load favorites from localStorage
+            const saved = localStorage.getItem('favoriteDoctors');
+            if (saved) {
+                this.favorites = JSON.parse(saved);
+            }
+            
+            // Load filters from URL params if present
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('q')) {
+                this.searchQuery = urlParams.get('q');
+            }
+            if (urlParams.has('specialty')) {
+                this.filters.specialties = [urlParams.get('specialty')];
+            }
+            if (urlParams.has('location')) {
+                this.filters.location = urlParams.get('location');
+            }
+            if (urlParams.has('sort')) {
+                this.sortBy = urlParams.get('sort');
+            }
+        },
+        
+        get paginatedDoctors() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredDoctors.slice(start, end);
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.filteredDoctors.length / this.itemsPerPage);
+        },
+        
+        // Apply filters via API call to controller
+        async applyFilters() {
+            this.loading = true;
+            this.currentPage = 1;
+            
+            try {
+                const params = new URLSearchParams();
+                if (this.searchQuery) params.append('q', this.searchQuery);
+                if (this.filters.location) params.append('location', this.filters.location);
+                if (this.filters.specialties.length > 0) params.append('specialty', this.filters.specialties[0]);
+                if (this.filters.gender) params.append('gender', this.filters.gender);
+                if (this.filters.minRating) params.append('minRating', this.filters.minRating);
+                if (this.filters.maxPrice < 500) params.append('maxPrice', this.filters.maxPrice);
+                if (this.sortBy !== 'recommended') params.append('sort', this.sortBy);
+                
+                const response = await fetch(`/appointment/api/doctors/search?${params.toString()}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.filteredDoctors = data.doctors;
+                    // Update URL without reload
+                    const newUrl = `${window.location.pathname}?${params.toString()}`;
+                    window.history.replaceState({}, '', newUrl);
+                }
+            } catch (error) {
+                console.error('Error fetching doctors:', error);
+                // Fallback to client-side filtering
+                this.clientSideFilter();
+            }
+            
+            this.loading = false;
+        },
+        
+        // Client-side fallback for filtering
+        clientSideFilter() {
+            let results = [...this.doctors];
+            
+            if (this.searchQuery) {
+                const query = this.searchQuery.toLowerCase();
+                results = results.filter(d => 
+                    d.name && d.name.toLowerCase().includes(query) ||
+                    d.specialty && d.specialty.toLowerCase().includes(query)
+                );
+            }
+            
+            if (this.filters.location) {
+                results = results.filter(d => d.location && d.location.toLowerCase() === this.filters.location.toLowerCase());
+            }
+            
+            if (this.filters.specialties.length > 0) {
+                results = results.filter(d => d.specialty && this.filters.specialties.includes(d.specialty));
+            }
+            
+            if (this.filters.gender) {
+                results = results.filter(d => d.gender === this.filters.gender);
+            }
+            
+            if (this.filters.minRating) {
+                results = results.filter(d => parseFloat(d.rating) >= parseFloat(this.filters.minRating));
+            }
+            
+            results = results.filter(d => d.price <= this.filters.maxPrice);
+            
+            this.filteredDoctors = this.sortResults(results);
+        },
+        
+        sortResults(results) {
+            switch(this.sortBy) {
+                case 'rating':
+                    return results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                case 'experience':
+                    return results.sort((a, b) => (b.experience || 0) - (a.experience || 0));
+                case 'price-low':
+                    return results.sort((a, b) => (a.price || 0) - (b.price || 0));
+                case 'price-high':
+                    return results.sort((a, b) => (b.price || 0) - (a.price || 0));
+                default:
+                    return results;
+            }
+        },
+        
+        debouncedSearch() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => this.applyFilters(), 300);
+        },
+        
+        sortDoctors() {
+            this.filteredDoctors = this.sortResults(this.filteredDoctors);
+        },
+        
+        selectSpecialty(specialty) {
+            this.searchQuery = specialty;
+            this.filters.specialties = [specialty];
+            this.applyFilters();
+        },
+        
+        resetFilters() {
+            this.searchQuery = '';
+            this.filters = {
+                location: '',
+                availability: '',
+                specialties: [],
+                consultationTypes: [],
+                maxPrice: 500,
+                languages: [],
+                gender: '',
+                minRating: ''
+            };
+            window.history.replaceState({}, '', window.location.pathname);
+            this.applyFilters();
+        },
+        
+        searchDoctors() {
+            this.applyFilters();
+        },
+        
+        bookSlot(doctor, slot) {
+            window.location.href = `/appointment/booking-flow?doctorId=${doctor.id}`;
+        },
+        
+        toggleFavorite(doctorId) {
+            const index = this.favorites.indexOf(doctorId);
+            if (index > -1) {
+                this.favorites.splice(index, 1);
+            } else {
+                this.favorites.push(doctorId);
+            }
+            localStorage.setItem('favoriteDoctors', JSON.stringify(this.favorites));
+        },
+        
+        isFavorite(doctorId) {
+            return this.favorites.includes(doctorId);
+        }
+    }
+}
+</script>

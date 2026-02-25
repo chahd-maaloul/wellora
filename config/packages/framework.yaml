@@ -19,6 +19,10 @@ framework:
         # Session cookie lifetime: 30 minutes (matches gc_maxlifetime for consistency)
         cookie_lifetime: 1800
 
+    # Router configuration for subdirectory deployment
+    router:
+        default_uri: '%env(APP_URL)%'
+
     #esi: true
     #fragments: true
     php_errors:
@@ -29,3 +33,10 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+        csrf_protection: true
+        form: true
+        validation:
+            enable_attributes: true   # (ou enable_annotations selon ta version)
+        
+
+

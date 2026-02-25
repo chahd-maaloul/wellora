@@ -1,0 +1,537 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('coach') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('coach') }}
+{% endblock %}
+
+{% block body %}
+<div x-data="dailyPlanEditor()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('coach_daily_plans') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-edit text-wellcare-500"></i>
+                            Edit Daily Plan
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Modify workout plan details and exercises
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('exercises_show') }}" target="_blank" class="flex items-center gap-2 px-4 py-2 font-medium text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <i class="fas fa-dumbbell"></i>
+                        Exercise Library
+                    </a>
+                    <button type="button" @click="submitForm()" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <!-- Formulaire d'édition -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-edit text-wellcare-500"></i>
+                                Edit Plan Details
+                            </h2>
+                        </div>
+                        
+                        {{ form_start(form, {'attr': {'id': 'daily-plan-form', 'class': 'p-4 space-y-4'}}) }}
+                            
+                            <!-- Plan Title -->
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="mr-1 fas fa-heading"></i>Plan Title *
+                                </label>
+                                {{ form_widget(form.titre, {'attr': {
+                                    'x-model': 'plan.title',
+                                    'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500',
+                                    'required': 'required',
+                                    'placeholder': 'E.g., Monday Morning Cardio'
+                                }}) }}
+                            </div>
+
+                            <!-- Date & Status -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="mr-1 fas fa-calendar"></i>Date *
+                                    </label>
+                                    {{ form_widget(form.date, {'attr': {
+                                        'x-model': 'plan.date',
+                                        'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500',
+                                        'required': 'required'
+                                    }}) }}
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="mr-1 fas fa-flag"></i>Status
+                                    </label>
+                                    {{ form_widget(form.status, {'attr': {
+                                        'x-model': 'plan.status',
+                                        'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500'
+                                    }}) }}
+                                </div>
+                            </div>
+
+                            <!-- Associated Goal -->
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="mr-1 fas fa-bullseye"></i>Associated Goal (Optional)
+                                </label>
+                                {{ form_widget(form.goal, {'attr': {
+                                    'x-model': 'plan.goalId',
+                                    'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500'
+                                }}) }}
+                            </div>
+
+                            <!-- Notes -->
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="mr-1 fas fa-sticky-note"></i>Notes & Instructions
+                                </label>
+                                {{ form_widget(form.notes, {'attr': {
+                                    'x-model': 'plan.notes',
+                                    'rows': '4',
+                                    'class': 'w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500',
+                                    'placeholder': 'Special instructions for the client...'
+                                }}) }}
+                            </div>
+
+                            <!-- Exercises Section -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <i class="mr-2 fas fa-dumbbell text-wellcare-500"></i>
+                                        Exercises
+                                    </h3>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ path('exercises_show') }}" target="_blank" class="text-sm font-medium text-wellcare-500 hover:text-wellcare-600">
+                                            <i class="mr-1 fas fa-external-link-alt"></i>Browse Library
+                                        </a>
+                                        <button type="button" @click="addEmptyExercise()" class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                            <i class="fas fa-plus"></i>
+                                            Add Exercise
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <!-- Champ caché pour les exercices (sera mis à jour par JS) -->
+                                    <div style="display: none;">
+                                        {{ form_widget(form.exercices, {'attr': {'id': 'exercises-select'}}) }}
+                                    </div>
+                                    
+                                    <template x-for="(exercise, index) in plan.exercises" :key="index">
+                                        <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h4 class="font-medium text-gray-900 dark:text-white">
+                                                    Exercise <span x-text="index + 1"></span>
+                                                </h4>
+                                                <button type="button" @click="removeExercise(index)" class="p-1 text-gray-400 hover:text-red-500">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                                <!-- Exercise Selection -->
+                                                <div>
+                                                    <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Exercise *
+                                                    </label>
+                                                    <select x-model="exercise.id" required
+                                                            class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-wellcare-500 focus:border-wellcare-500">
+                                                        <option value="">Select exercise</option>
+                                                        <template x-for="ex in availableExercises" :key="ex.id">
+                                                            <option :value="ex.id" x-text="ex.name + ' (' + ex.category + ')'"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                                
+                                                <!-- Sets & Reps -->
+                                                <div class="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                            Sets
+                                                        </label>
+                                                        <input type="number" x-model="exercise.sets" placeholder="e.g., 3"
+                                                               class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                            Reps
+                                                        </label>
+                                                        <input type="number" x-model="exercise.reps" placeholder="e.g., 12"
+                                                               class="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Exercise Info Preview -->
+                                            <template x-if="getExerciseInfo(exercise.id)">
+                                                <div class="mt-3 p-3 text-sm rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <span class="text-gray-600 dark:text-gray-400">Duration:</span>
+                                                            <span class="ml-2 font-medium text-gray-900 dark:text-white" x-text="getExerciseInfo(exercise.id).duration + ' min'"></span>
+                                                        </div>
+                                                        <div>
+                                                            <span class="text-gray-600 dark:text-gray-400">Calories/min:</span>
+                                                            <span class="ml-2 font-medium text-gray-900 dark:text-white" x-text="getExerciseInfo(exercise.id).calories"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    
+                                    <template x-if="plan.exercises.length === 0">
+                                        <div class="p-8 text-center border-2 border-dashed border-gray-300 rounded-lg dark:border-gray-600">
+                                            <i class="text-3xl text-gray-300 fas fa-dumbbell dark:text-gray-600"></i>
+                                            <p class="mt-2 text-gray-500 dark:text-gray-400">No exercises added yet</p>
+                                            <button type="button" @click="addEmptyExercise()" class="inline-flex items-center gap-2 px-4 py-2 mt-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                                <i class="fas fa-plus"></i>
+                                                Add First Exercise
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Totals -->
+                            <div class="p-4 rounded-lg bg-wellcare-50 dark:bg-wellcare-900/20">
+                                <h4 class="mb-3 font-semibold text-gray-900 dark:text-white">
+                                    <i class="mr-1 fas fa-calculator"></i>
+                                    Plan Totals
+                                </h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Total Duration (minutes)</label>
+                                        <div class="flex items-center gap-2">
+                                            {{ form_widget(form.duree_min, {'attr': {
+                                                'x-model': 'plan.duration',
+                                                'class': 'w-32 px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white',
+                                                'readonly': 'readonly'
+                                            }}) }}
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">min</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">Total Calories</label>
+                                        <div class="flex items-center gap-2">
+                                            {{ form_widget(form.calories, {'attr': {
+                                                'x-model': 'plan.calories',
+                                                'class': 'w-32 px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white',
+                                                'readonly': 'readonly'
+                                            }}) }}
+                                            <span class="text-sm text-gray-600 dark:text-gray-400">cal</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="mr-1 fas fa-info-circle"></i>
+                                    Totals are automatically calculated based on selected exercises
+                                </p>
+                            </div>
+
+                            <!-- Champ caché pour selected_goal -->
+                            <input type="hidden" name="selected_goal" id="selected-goal" x-model="plan.goalId">
+
+                            <!-- Actions -->
+                            <div class="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <a href="{{ path('coach_daily_plans') }}" class="flex-1 px-4 py-3 font-medium text-center text-gray-700 transition-colors border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="flex-1 px-4 py-3 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                                    <i class="mr-2 fas fa-save"></i>
+                                    Save Changes
+                                </button>
+                            </div>
+                        {{ form_end(form) }}
+                    </div>
+                </div>
+
+                <!-- Sidebar - Preview & Actions -->
+                <div class="space-y-6">
+                    <!-- Plan Preview -->
+                    <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-eye text-wellcare-500"></i>
+                                Plan Preview
+                            </h2>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div>
+                                <h3 class="mb-2 font-semibold text-gray-900 dark:text-white" x-text="plan.title || 'Untitled Plan'"></h3>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">Date</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="formatDate(plan.date)"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">Status</span>
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full" :class="getStatusColor(plan.status)" x-text="getStatusText(plan.status)"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">Exercises</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="plan.exercises.length"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">Total Duration</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="plan.duration + ' min'"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">Total Calories</span>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="plan.calories + ' cal'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Exercises Preview -->
+                            <template x-if="plan.exercises.length > 0">
+                                <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+                                    <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Exercises Preview</h4>
+                                    <div class="space-y-2">
+                                        <template x-for="(exercise, index) in plan.exercises.slice(0, 5)" :key="index">
+                                            <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                                <div>
+                                                    <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="getExerciseName(exercise.id)"></span>
+                                                    <template x-if="exercise.sets && exercise.reps">
+                                                        <span class="ml-2 text-xs text-gray-500" x-text="'(' + exercise.sets + 'x' + exercise.reps + ')'"></span>
+                                                    </template>
+                                                </div>
+                                                <span class="text-xs text-gray-500" x-text="getExerciseDuration(exercise.id) + ' min'"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="plan.exercises.length > 5">
+                                            <div class="text-center">
+                                                <span class="text-xs text-gray-500">+<span x-text="plan.exercises.length - 5"></span> more exercises</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                        <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                <i class="mr-2 fas fa-bolt text-wellcare-500"></i>
+                                Quick Actions
+                            </h2>
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <button type="button" @click="calculateTotals()" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                                    <i class="fas fa-calculator text-blue-500"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">Calculate Totals</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Auto-calculate duration & calories</p>
+                                </div>
+                            </button>
+                            <button type="button" @click="duplicatePlan()" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30">
+                                    <i class="fas fa-copy text-green-500"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">Duplicate Plan</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Create a copy of this plan</p>
+                                </div>
+                            </button>
+                            <a href="{{ path('coach_daily_plans') }}" class="flex items-center w-full gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700/50">
+                                    <i class="fas fa-list text-gray-500"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900 dark:text-white">View All Plans</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Return to plans list</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function dailyPlanEditor() {
+    return {
+        // Data from Symfony
+        plan: {{ planData|json_encode|raw }},
+        clients: {{ clients|json_encode|raw }},
+        goals: {{ coachGoals|json_encode|raw }},
+        availableExercises: {{ exercises|json_encode|raw }},
+        
+        init() {
+            // Initialiser les données
+            console.log('Plan data loaded:', this.plan);
+            console.log('Exercises available:', this.availableExercises.length);
+        },
+        
+        // Helper methods
+        getClientName(clientId) {
+            const client = this.clients.find(c => c.id == clientId);
+            return client ? client.name : '';
+        },
+        
+        getExerciseInfo(exerciseId) {
+            return this.availableExercises.find(e => e.id == exerciseId);
+        },
+        
+        getExerciseName(exerciseId) {
+            const exercise = this.getExerciseInfo(exerciseId);
+            return exercise ? exercise.name : 'Unknown Exercise';
+        },
+        
+        getExerciseDuration(exerciseId) {
+            const exercise = this.getExerciseInfo(exerciseId);
+            return exercise ? exercise.duration : 0;
+        },
+        
+        getStatusColor(status) {
+            const colors = {
+                planned: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                in_progress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                rest: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                draft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
+        },
+        
+        getStatusText(status) {
+            const texts = {
+                planned: 'Planned',
+                in_progress: 'In Progress',
+                completed: 'Completed',
+                cancelled: 'Cancelled',
+                active: 'Active',
+                rest: 'Rest Day',
+                draft: 'Draft'
+            };
+            return texts[status] || status;
+        },
+        
+        formatDate(dateStr) {
+            if (!dateStr) return 'No date';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } catch (e) {
+                return dateStr;
+            }
+        },
+        
+        // Actions
+        addEmptyExercise() {
+            this.plan.exercises.push({ id: '', sets: '', reps: '' });
+        },
+        
+        removeExercise(index) {
+            this.plan.exercises.splice(index, 1);
+            this.calculateTotals();
+            this.updateExercisesSelect();
+        },
+        
+        calculateTotals() {
+            let totalDuration = 0;
+            let totalCalories = 0;
+            
+            this.plan.exercises.forEach(exercise => {
+                const exInfo = this.getExerciseInfo(exercise.id);
+                if (exInfo) {
+                    // Durée
+                    totalDuration += exInfo.duration || 0;
+                    
+                    // Calories
+                    const caloriesPerMinute = exInfo.calories || 0;
+                    if (exercise.sets && exercise.reps) {
+                        // Pour exercices avec sets/reps
+                        const timePerSet = 2; // 2 minutes par set
+                        totalCalories += (exercise.sets * timePerSet) * caloriesPerMinute;
+                    } else {
+                        // Pour exercices cardio
+                        totalCalories += (exInfo.duration || 0) * caloriesPerMinute;
+                    }
+                }
+            });
+            
+            this.plan.duration = totalDuration;
+            this.plan.calories = Math.round(totalCalories);
+            
+            this.updateExercisesSelect();
+        },
+        
+        updateExercisesSelect() {
+            // Mettre à jour le select Symfony avec les exercices sélectionnés
+            const select = document.getElementById('exercises-select');
+            if (select) {
+                Array.from(select.options).forEach(option => {
+                    option.selected = this.plan.exercises.some(e => e.id == option.value);
+                });
+            }
+        },
+        
+        duplicatePlan() {
+            if (confirm('Create a copy of this plan?')) {
+                // Rediriger vers la page de création avec les données
+                const params = new URLSearchParams();
+                params.append('title', this.plan.title + ' (Copy)');
+                params.append('date', this.plan.date);
+                params.append('status', this.plan.status);
+                params.append('notes', this.plan.notes);
+                
+                window.location.href = '/coach/daily-plan/new?' + params.toString();
+            }
+        },
+        
+        submitForm() {
+            // Mettre à jour le select des exercices avant soumission
+            this.updateExercisesSelect();
+            
+            // Mettre à jour le champ selected_goal
+            document.getElementById('selected-goal').value = this.plan.goalId || '';
+            
+            // Soumettre le formulaire
+            document.getElementById('daily-plan-form').submit();
+        }
+    };
+}
+</script>
+{% endblock %}

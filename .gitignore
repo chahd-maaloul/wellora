@@ -1,15 +1,26 @@
 
 ###> symfony/framework-bundle ###
+# Environment files
 /.env.local
 /.env.local.php
 /.env.*.local
+/.env.test
+/.env.test.local
+
+# Symfony secrets
+/config/secrets/*/decrypt.private.php
 /config/secrets/prod/prod.decrypt.private.php
-/public/bundles/
+
+# Cache, logs, vendor
 /var/
 /vendor/
+
+# Public bundles (Symfony assets)
+/public/bundles/
 ###< symfony/framework-bundle ###
 
 ###> symfony/webpack-encore-bundle ###
+# Node modules and build outputs
 /node_modules/
 /public/build/
 npm-debug.log
@@ -17,6 +28,26 @@ yarn-error.log
 ###< symfony/webpack-encore-bundle ###
 
 ###> phpunit/phpunit ###
-/phpunit.xml
+# PHPUnit cache and config
 /.phpunit.cache/
+/phpunit.xml
 ###< phpunit/phpunit ###
+
+###> IDE and OS files ###
+.idea/
+.vscode/
+*.sublime*
+*.swp
+*~
+.DS_Store
+Thumbs.db
+###< IDE and OS files ###
+
+###> Composer ###
+/composer.lock
+###< Composer ###
+
+###> Miscellaneous ###
+/.docker/
+/.env
+###< Miscellaneous ###

@@ -1,0 +1,38 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% set pageTitle = 'Doctor Dashboard - WellCare Connect' %}
+
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="doctor-dashboard">
+    <div class="dashboard-header">
+        <h1>Doctor Dashboard</h1>
+        <p>Welcome back, Dr. {{ app.user.firstName }} {{ app.user.lastName }}</p>
+    </div>
+    
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>Today's Appointments</h3>
+            <p class="stat-value">{{ patientCount|default(0) }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Patients</h3>
+            <p class="stat-value">{{ patientCount|default(0) }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Consultations</h3>
+            <p class="stat-value">{{ consultationsCount|default(0) }}</p>
+        </div>
+    </div>
+    
+    <div class="dashboard-content">
+        <div class="quick-actions">
+            <h2>Quick Actions</h2>
+            <a href="{{ path('doctor_patient_list') }}" class="btn btn-primary">View Patients</a>
+            <a href="{{ path('doctor_schedule') }}" class="btn btn-secondary">Manage Schedule</a>
+            <a href="{{ path('doctor_communication') }}" class="btn btn-secondary">Communications</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

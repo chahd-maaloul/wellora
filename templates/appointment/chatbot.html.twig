@@ -1,0 +1,324 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}Assistant Pre-Consultation - WellCare Connect{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('appointment') }}
+    <style>
+        .chat-shell {
+            background: linear-gradient(140deg, rgba(30,64,175,0.08) 0%, rgba(16,185,129,0.08) 100%);
+            border: 1px solid rgba(148,163,184,0.35);
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #1d4ed8 0%, #0f766e 100%);
+        }
+        .chat-messages {
+            height: 520px;
+            overflow-y: auto;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 18px;
+            animation: fadeIn 0.25s ease;
+        }
+        .message.user { justify-content: flex-end; }
+        .message.bot { justify-content: flex-start; }
+        .message-content {
+            max-width: 78%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            line-height: 1.55;
+            font-size: 0.95rem;
+        }
+        .user .message-content {
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+        .bot .message-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+            border-bottom-left-radius: 6px;
+        }
+        .dark .bot .message-content {
+            background: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+        .message-content.niveau-rouge {
+            background: #fee2e2;
+            border-left: 6px solid #ef4444;
+            color: #b91c1c;
+            font-weight: 600;
+        }
+        .message-content.niveau-orange {
+            background: #ffedd5;
+            border-left: 6px solid #f97316;
+            color: #c2410c;
+        }
+        .message-content.niveau-vert {
+            background: #dcfce7;
+            border-left: 6px solid #22c55e;
+            color: #166534;
+        }
+        .message-content.niveau-info {
+            background: #dbeafe;
+            border-left: 6px solid #3b82f6;
+            color: #1e3a8a;
+        }
+        .message-content a {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 999px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .message-content a:hover {
+            transform: translateY(-1px);
+            background: #059669;
+        }
+        .typing-indicator {
+            display: flex;
+            padding: 10px 14px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+        }
+        .dark .typing-indicator {
+            background: #111827;
+            border-color: #374151;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            margin: 0 3px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.2s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="container-wellcare py-10">
+        <div class="mb-8 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-wide uppercase rounded-full bg-wellcare-50 text-wellcare-700 dark:bg-wellcare-900/40 dark:text-wellcare-300">
+                Orientation rapide
+            </div>
+            <h1 class="mt-4 text-3xl font-bold text-gray-900 dark:text-white">Assistant Pre-Consultation</h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-300">
+                Analyse des symptomes, classement de gravite, et conseils simples en attendant.
+            </p>
+        </div>
+
+        <div class="chat-shell card overflow-hidden">
+            <div class="chat-header px-6 py-5 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold">Assistant WellCare</h2>
+                        <p class="text-sm text-white/80">Posez une question, nous orientons vers le bon specialiste.</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="reinitialiserConversation()" class="rounded-lg bg-white/20 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-white/30">
+                            Reinitialiser
+                        </button>
+                        <div class="hidden text-xs font-semibold uppercase lg:block">
+                            Confidentialite respectee
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-messages bg-white/70 dark:bg-gray-900/40 px-6 py-6" id="messages">
+                <div class="message bot">
+                    <div class="message-content niveau-info">
+                        <strong>Bienvenue sur l'assistant pre-consultation WellCare.</strong><br><br>
+                        Je vais vous aider a :<br>
+                        - Analyser vos symptomes<br>
+                        - Classer votre etat (vert/orange/rouge)<br>
+                        - Vous orienter vers le bon specialiste<br>
+                        - Vous donner des conseils simples en attendant<br><br>
+                        <strong>Decrivez vos symptomes en quelques mots :</strong><br>
+                        - "J'ai mal a la poitrine"<br>
+                        - "Je tousse depuis 3 jours"<br>
+                        - "J'ai mal au ventre"<br>
+                        - "Je suis tres fatigue"<br>
+                        - "J'ai de la fievre"
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900/40" id="suggestions">
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('J\\'ai mal a la poitrine')">Douleur poitrine</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('J\\'ai du mal a respirer')">Essoufflement</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('J\\'ai de la fievre depuis hier')">Forte fievre</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('Je tousse depuis une semaine')">Toux persistante</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('J\\'ai mal au ventre')">Mal de ventre</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('Je suis tres fatigue')">Fatigue intense</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('J\\'ai la tete qui tourne')">Vertiges</button>
+                <button class="px-3 py-1.5 text-sm rounded-full border border-gray-200 text-gray-700 hover:bg-wellcare-50 hover:text-wellcare-700 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-wellcare-900/30" onclick="utiliserSuggestion('J\\'ai des nausees')">Nausees</button>
+            </div>
+
+            <div class="flex flex-col gap-3 border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900/40 sm:flex-row">
+                <input type="text" id="userInput" placeholder="Decrivez vos symptomes..." autocomplete="off" class="input flex-1">
+                <button onclick="envoyerMessage()" id="sendButton" class="btn-primary">Envoyer</button>
+            </div>
+        </div>
+
+        <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-100">
+            <strong>Information importante :</strong> Cet assistant aide a l'orientation, pas au diagnostic. En cas d'urgence vitale, appelez le 15 (SAMU).
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    const messagesDiv = document.getElementById('messages');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const chatbotMessageUrl = '{{ path('app_chatbot_ia_message') }}';
+    const chatbotResetUrl = '{{ path('app_chatbot_ia_reset') }}';
+    
+    function ajouterMessage(texte, type, niveau = 'info') {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = `message-content niveau-${niveau}`;
+        
+        // Remplacer les retours a la ligne par <br>
+        contentDiv.innerHTML = texte.replace(/\n/g, '<br>');
+        
+        // Convertir les liens markdown [texte](url) en liens HTML
+        contentDiv.innerHTML = contentDiv.innerHTML.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+        
+        // Remplacer les **gras** par du <strong>
+        contentDiv.innerHTML = contentDiv.innerHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        messageDiv.appendChild(contentDiv);
+        messagesDiv.appendChild(messageDiv);
+        
+        // Scroll vers le bas
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    function ajouterTypingIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'message bot';
+        indicator.id = 'typingIndicator';
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.innerHTML = '<span></span><span></span><span></span>';
+        
+        indicator.appendChild(typingDiv);
+        messagesDiv.appendChild(indicator);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    function supprimerTypingIndicator() {
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+    
+    async function envoyerMessage() {
+        const message = userInput.value.trim();
+        if (message === '') return;
+        
+        // Afficher le message de l'utilisateur
+        ajouterMessage(message, 'user');
+        
+        // Vider l'input
+        userInput.value = '';
+        
+        // Desactiver l'input pendant l'attente
+        userInput.disabled = true;
+        sendButton.disabled = true;
+        
+        // Afficher l'indicateur de frappe
+        ajouterTypingIndicator();
+        
+        try {
+            const response = await fetch(chatbotMessageUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            const data = await response.json();
+            
+            // Supprimer l'indicateur de frappe
+            supprimerTypingIndicator();
+            
+            // Afficher la reponse avec le niveau approprie
+            ajouterMessage(data.message, 'bot', data.level || 'info');
+            
+        } catch (error) {
+            console.error('Erreur:', error);
+            supprimerTypingIndicator();
+            ajouterMessage('Desole, une erreur technique est survenue. Veuillez reessayer.', 'bot', 'info');
+        } finally {
+            // Reactiver l'input
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            userInput.focus();
+        }
+    }
+    
+    async function reinitialiserConversation() {
+        try {
+            const response = await fetch(chatbotResetUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            // Vider les messages
+            messagesDiv.innerHTML = '';
+            
+            // Afficher le message de bienvenue
+            ajouterMessage(data.message, 'bot', 'info');
+            
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    }
+    
+    function utiliserSuggestion(suggestion) {
+        userInput.value = suggestion;
+        envoyerMessage();
+    }
+    
+    // Envoyer avec la touche Entree
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            envoyerMessage();
+        }
+    });
+    
+    // Focus automatique
+    userInput.focus();
+</script>
+{% endblock %}

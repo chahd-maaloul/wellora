@@ -1,0 +1,171 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un objectif{% endblock %}
+
+{% block body %}
+  <div class="container mt-4">
+        <div class="row">
+            <!-- Form on the Left Side -->
+            <div class="col-md-6">
+                <div class="card shadow-sm p-4">
+                    <h2 class="form-title mb-4">Créer un objectif SMART</h2>
+                    {{ form_start(form, {'attr': {'class': 'row g-3', 'novalidate': 'novalidate'}}) }}
+
+                    <!-- Basic Goal Fields -->
+                    <div class="col-md-12 wow fadeInLeft" data-wow-delay="0.3s">
+                      <div class="form-floating">
+                          {{ form_widget(form.title, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Perdre 4 kg en 30 jours'}}) }}
+                          {{ form_label(form.title, 'Titre de l\'objectif', {'label_attr': {'class': 'form-label'}}) }}
+                          {{ form_errors(form.title) }}
+                      </div>
+                  </div>
+
+                <div class="col-12 wow fadeInUp" data-wow-delay="0.4s">
+                    <div class="form-floating">
+                        {{ form_widget(form.description, {'attr': {'class': 'form-control', 'placeholder': 'Description', 'rows': 4}}) }}
+                        {{ form_label(form.description, 'Description', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.description) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInLeft" data-wow-delay="0.5s">
+                    <div class="form-floating">
+                        {{ form_widget(form.startDate, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.startDate, 'Date de début', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.startDate) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInRight" data-wow-delay="0.5s">
+                    <div class="form-floating">
+                        {{ form_widget(form.endDate, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.endDate, 'Date de fin', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.endDate) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInLeft" data-wow-delay="0.6s">
+                    <div class="form-floating">
+                        {{ form_widget(form.date, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.date, 'Date (création)', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.date) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInRight" data-wow-delay="0.6s">
+                    <div class="form-floating">
+                        {{ form_widget(form.status, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.status, 'Statut', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.status) }}
+                    </div>
+                </div>
+
+                <div class="col-12 wow fadeInUp" data-wow-delay="0.7s">
+                    <div class="form-floating">
+                        {{ form_widget(form.category, {'attr': {'class': 'form-control', 'placeholder': 'Ex: Perte de poids, Prise de muscle, etc.'}}) }}
+                        {{ form_label(form.category, 'Catégorie', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.category) }}
+                    </div>
+                </div>
+
+                <!-- SMART Fields -->
+                <div class="col-12 wow fadeInUp" data-wow-delay="0.8s">
+                    <div class="form-floating">
+                        {{ form_widget(form.specific, {'attr': {'class': 'form-control', 'rows': 3, 'placeholder': 'Spécifique'}}) }}
+                        {{ form_label(form.specific, 'Spécifique', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.specific) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInLeft" data-wow-delay="0.9s">
+                    <div class="form-floating">
+                        {{ form_widget(form.measurable, {'attr': {'class': 'form-control', 'placeholder': 'Mesurable'}}) }}
+                        {{ form_label(form.measurable, 'Mesurable', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.measurable) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInRight" data-wow-delay="0.9s">
+                    <div class="form-floating">
+                        {{ form_widget(form.achievable, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.achievable, 'Atteignable', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.achievable) }}
+                    </div>
+                </div>
+
+                <div class="col-12 wow fadeInUp" data-wow-delay="1.0s">
+                    <div class="form-floating">
+                        {{ form_widget(form.relevant, {'attr': {'class': 'form-control', 'rows': 2, 'placeholder': 'Pertinent'}}) }}
+                        {{ form_label(form.relevant, 'Pertinent', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.relevant) }}
+                    </div>
+                </div>
+
+                <!-- Medical Fields -->
+                <div class="col-12 wow fadeInUp" data-wow-delay="1.1s">
+                    <div class="form-floating">
+                        {{ form_widget(form.medicalConditions, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.medicalConditions, 'Conditions médicales', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.medicalConditions) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInLeft" data-wow-delay="1.2s">
+                    <div class="form-floating">
+                        {{ form_widget(form.maxHeartRate, {'attr': {'class': 'form-control', 'placeholder': 'Max Heart Rate'}}) }}
+                        {{ form_label(form.maxHeartRate, 'Max Heart Rate', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.maxHeartRate) }}
+                    </div>
+                </div>
+
+                <div class="col-md-6 wow fadeInRight" data-wow-delay="1.2s">
+                    <div class="form-floating">
+                        {{ form_widget(form.preferredHeartRateZone, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.preferredHeartRateZone, 'Preferred Zone', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.preferredHeartRateZone) }}
+                    </div>
+                </div>
+
+                <div class="col-12 wow fadeInUp" data-wow-delay="1.3s">
+                    <div class="form-floating">
+                        {{ form_widget(form.doctorApproval, {'attr': {'class': 'form-control'}}) }}
+                        {{ form_label(form.doctorApproval, 'Doctor Approval', {'label_attr': {'class': 'form-label'}}) }}
+                        {{ form_errors(form.doctorApproval) }}
+                    </div>
+                </div>
+
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary rounded-pill py-3 px-5">Créer l'objectif</button>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+            
+            <!-- Right side - Since your form doesn't have map-related fields, you can either:
+                 1. Remove this section entirely
+                 2. Keep it but remove the map functionality
+                 3. Add appropriate content for goal creation -->
+            <div class="col-md-6">
+                <div class="card shadow-sm p-4">
+                    <h2 class="form-title mb-4">À propos des objectifs SMART</h2>
+                    <div class="mb-3">
+                        <h5>Qu'est-ce qu'un objectif SMART ?</h5>
+                        <p>SMART est un acronyme qui signifie :</p>
+                        <ul>
+                            <li><strong>Spécifique</strong> - L'objectif doit être clair et précis</li>
+                            <li><strong>Mesurable</strong> - Vous devez pouvoir suivre vos progrès</li>
+                            <li><strong>Atteignable</strong> - L'objectif doit être réaliste</li>
+                            <li><strong>Pertinent</strong> - Il doit s'aligner avec vos valeurs</li>
+                            <li><strong>Temporellement défini</strong> - Avec une date de fin précise</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>Conseil :</h6>
+                        <p>Décomposez vos grands objectifs en étapes plus petites et plus faciles à atteindre.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,130 @@
+{# templates/emails/confirmation_rdv.html.twig #}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de rendez-vous</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+        }
+        .rdv-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .rdv-detail {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .rdv-detail strong {
+            color: #667eea;
+            min-width: 120px;
+            display: inline-block;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 14px;
+            color: #666;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WellCare</h1>
+            <p>Votre santé, notre priorité</p>
+        </div>
+        
+        <div class="content">
+            <h2>Confirmation de votre rendez-vous</h2>
+            
+            <p>Bonjour <strong>{{ consultation.patient.firstName }} {{ consultation.patient.lastName }}</strong>,</p>
+            
+            <p>Nous vous confirmons votre rendez-vous avec :</p>
+            
+            <div class="rdv-card">
+                <div class="rdv-detail">
+                    <strong>Médecin :</strong> Dr {{ consultation.medecin.firstName }} {{ consultation.medecin.lastName }}
+                </div>
+                <div class="rdv-detail">
+                    <strong>Date :</strong> {{ consultation.dateConsultation|date('d/m/Y') }}
+                </div>
+                <div class="rdv-detail">
+                    <strong>Heure :</strong> {{ consultation.timeConsultation|date('H:i') }}
+                </div>
+                <div class="rdv-detail">
+                    <strong>Motif :</strong> {{ consultation.reasonForVisit }}
+                </div>
+                <div class="rdv-detail">
+                    <strong>Lieu :</strong> {{ consultation.location }}
+                </div>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Important :</strong> Merci de vous présenter <strong>10 minutes avant</strong> l'heure du rendez-vous.
+                {% if consultation.appointmentMode == 'teleconsultation' %}
+                Vous recevrez un lien de visioconférence 15 minutes avant le rendez-vous.
+                {% endif %}
+            </div>
+            
+            <div class="footer">
+                <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+                <p>WellCare - Prenez soin de votre santé</p>
+                <p>© {{ 'now'|date('Y') }} WellCare. Tous droits réservés.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

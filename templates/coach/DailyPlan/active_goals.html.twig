@@ -1,0 +1,304 @@
+{% extends 'layouts/app.html.twig' %}
+
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('coach') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('coach') }}
+{% endblock %}
+
+{% block body %}
+<div x-data="activeGoalsManager()" class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('coach_dashboard') }}" class="p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <i class="text-gray-600 fas fa-arrow-left dark:text-gray-400"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-bullseye text-wellcare-500"></i>
+                            {{ 'Active Goals' }}
+                        </h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ 'Monitor and manage active client goals' }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                        <a href="{{ path('coach_daily_plans') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-wellcare-500 hover:bg-wellcare-600">
+                        <i class="fas fa-calendar"></i>
+                        {{ 'Daily Plans' }}
+                    </a>
+                    <a href="{{ path('coach_rest_day_new') }}" class="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-orange-500 hover:bg-orange-600">
+                        <i class="fas fa-bed"></i>
+                        {{ 'New Rest Day' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="p-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <!-- Goals List -->
+            <div class="lg:col-span-2 space-y-6">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-list text-wellcare-500"></i>
+                            {{ 'Active Goals' }}
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <select x-model="filterStatus" class="px-3 py-1 text-sm text-gray-900 border border-gray-300 rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                <option value="">{{ 'All Status' }}</option>
+                                <option value="PENDING">{{ 'Pending' }}</option>
+                                <option value="in progress">{{ 'In Progress' }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <template x-if="filteredGoals.length === 0">
+                            <div class="p-8 text-center bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                                <i class="text-4xl text-gray-300 fas fa-bullseye dark:text-gray-600"></i>
+                                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">{{ 'No active goals found' }}</h3>
+                                <p class="mt-2 text-gray-500 dark:text-gray-400">{{ 'Active goals will appear here' }}</p>
+                            </div>
+                        </template>
+
+                        <template x-for="goal in filteredGoals" :key="goal.id">
+                            <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h3 class="font-semibold text-gray-900 dark:text-white" x-text="goal.title"></h3>
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                                      :class="getStatusColor(goal.status)"
+                                                      x-text="getStatusText(goal.status)"></span>
+                                            </div>
+
+                                            <!-- User Info -->
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-8 h-8 rounded-full bg-wellcare-100 flex items-center justify-center">
+                                                        <span class="text-sm font-medium text-wellcare-600" x-text="goal.user.avatar"></span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="goal.user.name"></p>
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400" x-text="goal.user.email"></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Goal Details -->
+                                            <div class="grid grid-cols-2 gap-4 mb-3">
+                                                <div>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">Progress</p>
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="flex-1 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                                                            <div class="bg-wellcare-500 h-2 rounded-full"
+                                                                 :style="`width: ${goal.progress}%`"></div>
+                                                        </div>
+                                                        <span class="text-xs font-medium text-gray-900 dark:text-white" x-text="goal.progress + '%'"></span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400">Target</p>
+                                                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                        <span x-text="goal.targetValue"></span>
+                                                        <span x-text="goal.unit"></span>
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Dates and Category -->
+                                            <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                                <span>
+                                                    <i class="mr-1 fas fa-tag"></i>
+                                                    <span x-text="goal.category"></span>
+                                                </span>
+                                                <span>
+                                                    <i class="mr-1 fas fa-calendar"></i>
+                                                    <span x-text="formatDate(goal.startDate)"></span>
+                                                </span>
+                                                <template x-if="goal.daysRemaining !== null">
+                                                    <span>
+                                                        <i class="mr-1 fas fa-clock"></i>
+                                                        <span x-text="goal.daysRemaining + ' days left'"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2 ml-4">
+                                            <button @click="viewGoalDetails(goal.id)"
+                                                    class="p-2 text-gray-400 transition-colors rounded-lg hover:text-wellcare-500 hover:bg-wellcare-50 dark:hover:bg-wellcare-900/20">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button @click="editGoal(goal.id)"
+                                                    class="p-2 text-gray-400 transition-colors rounded-lg hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Goal Description -->
+                                    <template x-if="goal.description">
+                                        <div class="mt-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                            <p class="text-sm text-gray-600 dark:text-gray-400" x-text="truncateText(goal.description, 150)"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Stats -->
+                <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-chart-pie text-wellcare-500"></i>
+                            {{ 'Goals Stats' }}
+                        </h2>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Total Active Goals' }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-white" x-text="activeGoals.length"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Pending' }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-white" x-text="getGoalsByStatus('PENDING').length"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'In Progress' }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-white" x-text="getGoalsByStatus('in progress').length"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Avg Progress' }}</span>
+                            <span class="font-semibold text-gray-900 dark:text-white" x-text="getAverageProgress() + '%'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white border border-gray-100 shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            <i class="mr-2 fas fa-bolt text-wellcare-500"></i>
+                            {{ 'Quick Actions' }}
+                        </h2>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <a href="{{ path('fitness_goal_new') }}" class="flex items-center gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-wellcare-100 dark:bg-wellcare-900/30">
+                                <i class="text-wellcare-600 fas fa-plus"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ 'Create New Goal' }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Add a goal for a client' }}</p>
+                            </div>
+                        </a>
+
+                        <a href="{{ path('coach_rest_day_new') }}" class="flex items-center gap-3 p-3 text-left transition-colors rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                                <i class="text-orange-600 fas fa-bed"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-white">{{ 'Schedule Rest Day' }}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Plan recovery time' }}</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function activeGoalsManager() {
+    return {
+        // Data from Symfony
+        activeGoals: {{ activeGoals|default([])|json_encode|raw }},
+
+        // UI State
+        filterStatus: '',
+
+        // Computed
+        get filteredGoals() {
+            if (!this.filterStatus) return this.activeGoals;
+            return this.activeGoals.filter(goal => goal.status === this.filterStatus);
+        },
+
+        // Helper methods
+        getStatusColor(status) {
+            const colors = {
+                'PENDING': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                'in progress': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                'completed': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400';
+        },
+
+        getStatusText(status) {
+            const texts = {
+                'PENDING': 'Pending',
+                'in progress': 'In Progress',
+                'completed': 'Completed'
+            };
+            return texts[status] || status;
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return 'No date';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        },
+
+        truncateText(text, maxLength) {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        },
+
+        getGoalsByStatus(status) {
+            return this.activeGoals.filter(goal => goal.status === status);
+        },
+
+        getAverageProgress() {
+            if (this.activeGoals.length === 0) return 0;
+            const total = this.activeGoals.reduce((sum, goal) => sum + (goal.progress || 0), 0);
+            return Math.round(total / this.activeGoals.length);
+        },
+
+        viewGoalDetails(goalId) {
+            // Navigate to goal details page
+            window.location.href = `/goal/show/${goalId}`;
+        },
+
+        editGoal(goalId) {
+            // Navigate to goal edit page
+            window.location.href = `/goal/update/${goalId}`;
+        }
+    };
+}
+</script>
+{% endblock %}

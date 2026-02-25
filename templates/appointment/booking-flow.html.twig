@@ -10,6 +10,10 @@
 {% block scripts %}
     {{ parent() }}
     {{ encore_entry_script_tags('appointment-booking') }}
+    <script>
+        window.rescheduleId = {{ rescheduleId|default(null)|json_encode|raw }};
+        window.rescheduleData = {{ rescheduleData|default(null)|json_encode|raw }};
+    </script>
 {% endblock %}
 
 {% block body %}
@@ -72,14 +76,14 @@
                 <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
                     <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">Select Service</h2>
                     
-                    {# Doctor Summary #}
+                    {# Doctor Summary - MODIFIÉ : Information dynamique du docteur #}
                     <div class="flex items-center gap-4 p-4 mb-6 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
                         <div class="flex items-center justify-center w-16 h-16 rounded-xl bg-wellcare-100 dark:bg-wellcare-800">
                             <i class="text-3xl fas fa-user-md text-wellcare-600"></i>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-900 dark:text-white">Dr. Ahmed Ben Ali</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Cardiologist • Tunis</p>
+                            <h3 class="font-semibold text-gray-900 dark:text-white" x-text="'Dr. ' + doctorName"></h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400" x-text="doctorSpecialty + ' • Tunis'"></p>
                         </div>
                     </div>
                     
@@ -117,10 +121,10 @@
                         </div>
                     </div>
                     
-                    {# Appointment Mode #}
+                    {# Appointment Mode - MODIFIÉ : Supprimé Video Call #}
                     <div class="mb-6">
                         <label class="form-label">Appointment Mode <span class="text-red-500">*</span></label>
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <button 
                                 @click="formData.appointmentMode = 'in-person'"
                                 :class="formData.appointmentMode === 'in-person' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
@@ -133,18 +137,7 @@
                                 <h4 class="font-medium text-gray-900 dark:text-white">In-Person</h4>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">At clinic • 45 min</p>
                             </button>
-                            <button 
-                                @click="formData.appointmentMode = 'video'"
-                                :class="formData.appointmentMode === 'video' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
-                                class="p-4 text-left transition-all border-2 rounded-xl hover:border-wellcare-300"
-                            >
-                                <div class="flex items-center justify-between mb-2">
-                                    <i class="text-2xl fas fa-video text-wellcare-500"></i>
-                                    <span class="font-bold text-wellcare-600">90 TND</span>
-                                </div>
-                                <h4 class="font-medium text-gray-900 dark:text-white">Video Call</h4>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Online • 30 min</p>
-                            </button>
+                            
                             <button 
                                 @click="formData.appointmentMode = 'phone'"
                                 :class="formData.appointmentMode === 'phone' ? 'border-wellcare-500 bg-wellcare-50 dark:bg-wellcare-900/30' : 'border-gray-200 dark:border-gray-700'"
@@ -424,18 +417,18 @@
                 <div x-show="currentStep === 4" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
                     <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">Confirm & Pay</h2>
                     
-                    {# Appointment Summary #}
+                    {# Appointment Summary - MODIFIÉ : Information dynamique du docteur #}
                     <div class="p-6 mb-6 bg-wellcare-50 dark:bg-wellcare-900/20 rounded-xl">
                         <h3 class="mb-4 font-semibold text-gray-900 dark:text-white">Appointment Summary</h3>
                         
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-400">Doctor</span>
-                                <span class="font-medium text-gray-900 dark:text-white">Dr. Ahmed Ben Ali</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="'Dr. ' + doctorName"></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-400">Specialty</span>
-                                <span class="font-medium text-gray-900 dark:text-white">Cardiologist</span>
+                                <span class="font-medium text-gray-900 dark:text-white" x-text="doctorSpecialty"></span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600 dark:text-gray-400">Type</span>
@@ -575,13 +568,19 @@
                         Continue<i class="ml-2 fas fa-arrow-right"></i>
                     </button>
                     
-                    <a 
+                    <button 
                         x-show="currentStep === 4"
-                        href="/appointment/confirmation"
+                        @click="submitBooking()"
+                        :disabled="!formData.agreeTerms || isLoading"
                         class="btn-primary"
                     >
-                        <i class="mr-2 fas fa-check"></i>Confirm Booking
-                    </a>
+                        <template x-if="!isLoading">
+                            <span><i class="mr-2 fas fa-check"></i>Confirm Booking</span>
+                        </template>
+                        <template x-if="isLoading">
+                            <span><i class="mr-2 fas fa-spinner fa-spin"></i>Processing...</span>
+                        </template>
+                    </button>
                 </div>
             </div>
         </div>
@@ -592,6 +591,7 @@
 function bookingFlow() {
     return {
         currentStep: 1,
+        isLoading: false,
         steps: [
             { label: 'Service', number: 1 },
             { label: 'Date & Time', number: 2 },
@@ -599,19 +599,24 @@ function bookingFlow() {
             { label: 'Confirm', number: 4 }
         ],
         
+        // NOUVEAU : Propriétés pour les informations du docteur
+        doctorId: null,
+        doctorName: '{{ doctor.fullName|default('Select a Doctor') }}',
+        doctorSpecialty: '{{ doctor.specialite|default('General Medicine') }}',
+        
         formData: {
             consultationType: 'first-visit',
-            appointmentMode: 'in-person',
+            appointmentMode: 'in-person', // Par défaut In-Person
             reason: '',
             symptoms: [],
             duration: 30,
             selectedDate: null,
             selectedTime: null,
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john.doe@example.com',
-            phone: '+216 12 345 678',
-            dateOfBirth: '1985-05-15',
+            firstName: '{{ app.user ? app.user.firstName : '' }}',
+            lastName: '{{ app.user ? app.user.lastName : '' }}',
+            email: '{{ app.user ? app.user.email : '' }}',
+            phone: '{{ app.user ? app.user.phone : '' }}',
+            dateOfBirth: '{{ app.user and app.user.birthdate ? app.user.birthdate|date('Y-m-d') : '' }}',
             gender: 'male',
             emergencyName: '',
             emergencyPhone: '',
@@ -622,7 +627,8 @@ function bookingFlow() {
             interpreterNeeded: false,
             interpreterLanguage: '',
             paymentMethod: 'card',
-            agreeTerms: false
+            agreeTerms: false,
+            notes: ''
         },
         
         commonSymptoms: ['Chest Pain', 'Shortness of Breath', 'Fatigue', 'Palpitations', 'Dizziness', 'High BP', 'Diabetes', 'Headache'],
@@ -639,9 +645,39 @@ function bookingFlow() {
         userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         
         init() {
+            // Récupérer l'ID du docteur depuis l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            this.doctorId = urlParams.get('doctorId') || '{{ doctor.id|default('') }}';
+            
+            // Les informations du docteur sont déjà définies depuis le serveur
+            // Si pas de docteur sélectionné, utiliser les valeurs par défaut
+            if (!this.doctorId) {
+                this.doctorName = 'Select a Doctor';
+                this.doctorSpecialty = 'General Medicine';
+            }
+            
             this.generateCalendar();
             this.generateTimeSlots();
+
+            if (window.rescheduleId && window.rescheduleData) {
+                this.formData.selectedDate = window.rescheduleData.date || null;
+                this.formData.selectedTime = window.rescheduleData.time || null;
+                if (window.rescheduleData.consultationType) {
+                    this.formData.consultationType = window.rescheduleData.consultationType;
+                }
+                if (window.rescheduleData.appointmentMode) {
+                    this.formData.appointmentMode = window.rescheduleData.appointmentMode;
+                }
+                if (window.rescheduleData.duration) {
+                    this.formData.duration = window.rescheduleData.duration;
+                }
+                if (window.rescheduleData.reason) {
+                    this.formData.reason = window.rescheduleData.reason;
+                }
+            }
         },
+        
+        // Les informations du docteur sont définies depuis le serveur via Twig
         
         get currentMonthYear() {
             return this.currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -662,10 +698,12 @@ function bookingFlow() {
             
             // Days of the month
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
             for (let i = 1; i <= daysInMonth; i++) {
                 const date = new Date(year, month, i);
-                const isPast = date < new Date(today.setHours(0, 0, 0, 0));
-                const isAvailable = !isPast && Math.random() > 0.3; // Mock availability
+                const isPast = date < today;
+                const isAvailable = !isPast && Math.random() > 0.3;
                 
                 this.calendarDays.push({
                     day: i,
@@ -681,7 +719,7 @@ function bookingFlow() {
             
             this.availableSlots = times.map(time => ({
                 time: time,
-                available: Math.random() > 0.4 // Mock availability
+                available: Math.random() > 0.4
             }));
         },
         
@@ -761,10 +799,91 @@ function bookingFlow() {
         getConsultationPrice() {
             const prices = {
                 'in-person': 120,
-                'video': 90,
                 'phone': 70
             };
             return prices[this.formData.appointmentMode] || 120;
+        },
+        
+        async submitBooking() {
+            if (!this.formData.agreeTerms) {
+                alert('Please agree to the terms and conditions');
+                return;
+            }
+            
+            this.isLoading = true;
+            
+            try {
+                // Préparer les données à envoyer
+                const bookingData = {
+                    doctorId: this.doctorId,
+                    doctorName: this.doctorName,
+                    doctorSpecialty: this.doctorSpecialty,
+                    consultationType: this.formData.consultationType,
+                    appointmentMode: this.formData.appointmentMode,
+                    reason: this.formData.reason,
+                    symptoms: this.formData.symptoms,
+                    duration: this.formData.duration,
+                    selectedDate: this.formData.selectedDate,
+                    selectedTime: this.formData.selectedTime,
+                    firstName: this.formData.firstName,
+                    lastName: this.formData.lastName,
+                    email: this.formData.email,
+                    phone: this.formData.phone,
+                    dateOfBirth: this.formData.dateOfBirth,
+                    gender: this.formData.gender,
+                    notes: 'Notes: ' + JSON.stringify({
+                        emergencyContact: {
+                            name: this.formData.emergencyName,
+                            phone: this.formData.emergencyPhone,
+                            relation: this.formData.emergencyRelation
+                        },
+                        insurance: {
+                            provider: this.formData.insuranceProvider,
+                            policyNumber: this.formData.policyNumber
+                        },
+                        specialRequirements: {
+                            wheelchairAccess: this.formData.wheelchairAccess,
+                            interpreterNeeded: this.formData.interpreterNeeded,
+                            interpreterLanguage: this.formData.interpreterLanguage
+                        },
+                        paymentMethod: this.formData.paymentMethod
+                    })
+                };
+                
+                console.log('Sending booking data:', bookingData);
+                
+                // Envoyer les données au serveur
+                const isReschedule = !!window.rescheduleId;
+                const endpoint = isReschedule ? `/appointment/reschedule/${window.rescheduleId}` : '/appointment/create';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('Booking successful, ID:', result.appointmentId);
+                    // Rediriger vers la page de confirmation
+                    if (isReschedule) {
+                        window.location.href = '/appointment/patient-dashboard';
+                    } else {
+                        window.location.href = `/appointment/confirmation/${result.appointmentId}`;
+                    }
+                } else {
+                    alert('Error: ' + (result.message || 'Unknown error occurred'));
+                    console.error('Booking error:', result);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                alert('Network error. Please check your connection and try again.');
+            } finally {
+                this.isLoading = false;
+            }
         }
     }
 }

@@ -42,9 +42,11 @@ security:
             pattern: ^/2fa/
             provider: app_user_provider
     
+            
     # Access Control - Role-Based Authorization
     # Note: Only the *first* access control that matches will be used
     access_control:
+
         # Public routes (no authentication required)
         - { path: ^/auth/, roles: PUBLIC_ACCESS }
         - { path: ^/verify-email, roles: PUBLIC_ACCESS }
@@ -58,6 +60,12 @@ security:
         - { path: ^/2fa/, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/health/accessible, roles: PUBLIC_ACCESS }
+        
+        # Appointment API requires authentication (must be before general /api/ rule)
+        - { path: ^/appointment/api/, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        
+        # Public API routes (for AI model, etc.)
+        - { path: ^/api/, roles: PUBLIC_ACCESS }
         
         # Admin only routes
         - { path: ^/admin, roles: ROLE_ADMIN }
@@ -73,6 +81,7 @@ security:
         - { path: ^/profile, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST, ROLE_ADMIN] }
         - { path: ^/profile/2fa, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST, ROLE_ADMIN] }
         - { path: ^/appointments, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
+        - { path: ^/appointment, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
         - { path: ^/health, roles: [ROLE_PATIENT, ROLE_MEDECIN, ROLE_COACH, ROLE_NUTRITIONIST] }
         - { path: ^/nutrition, roles: [ROLE_PATIENT, ROLE_NUTRITIONIST] }
         - { path: ^/teleconsultation, roles: [ROLE_PATIENT, ROLE_MEDECIN] }

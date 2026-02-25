@@ -1,0 +1,59 @@
+{
+  "Strength": {
+    "Beginner": [
+      {"name": "Squats", "description": "Squats poids du corps", "defaultUnit": "reps", "sets": 3, "reps": 12, "duration": 15, "calories": 5, "category": "Strength", "difficulty_level": "Beginner"},
+      {"name": "Pompes sur genoux", "description": "Pompes adaptées débutants", "defaultUnit": "reps", "sets": 3, "reps": 8, "duration": 10, "calories": 4, "category": "Strength", "difficulty_level": "Beginner"},
+      {"name": "Fentes", "description": "Fentes avant alternées", "defaultUnit": "reps", "sets": 3, "reps": 10, "duration": 12, "calories": 5, "category": "Strength", "difficulty_level": "Beginner"},
+      {"name": "Gainage", "description": "Planche ventrale", "defaultUnit": "seconds", "duration": 30, "calories": 3, "category": "Core", "difficulty_level": "Beginner"}
+    ],
+    "Intermediate": [
+      {"name": "Squats avec haltères", "description": "Squats avec haltères", "defaultUnit": "reps", "sets": 4, "reps": 10, "duration": 20, "calories": 7, "category": "Strength", "difficulty_level": "Intermediate"},
+      {"name": "Pompes", "description": "Pompes classiques", "defaultUnit": "reps", "sets": 4, "reps": 12, "duration": 15, "calories": 6, "category": "Strength", "difficulty_level": "Intermediate"},
+      {"name": "Tractions assistées", "description": "Tractions avec élastique", "defaultUnit": "reps", "sets": 3, "reps": 8, "duration": 15, "calories": 6, "category": "Strength", "difficulty_level": "Intermediate"},
+      {"name": "Développé haltères", "description": "Développé couché haltères", "defaultUnit": "reps", "sets": 4, "reps": 10, "duration": 20, "calories": 7, "category": "Strength", "difficulty_level": "Intermediate"}
+    ],
+    "Advanced": [
+      {"name": "Squats barre", "description": "Squats avec barre", "defaultUnit": "reps", "sets": 5, "reps": 8, "duration": 25, "calories": 9, "category": "Strength", "difficulty_level": "Advanced"},
+      {"name": "Développé couché", "description": "Développé couché barre", "defaultUnit": "reps", "sets": 5, "reps": 8, "duration": 25, "calories": 9, "category": "Strength", "difficulty_level": "Advanced"},
+      {"name": "Soulevé de terre", "description": "Soulevé de terre roumain", "defaultUnit": "reps", "sets": 4, "reps": 6, "duration": 20, "calories": 8, "category": "Strength", "difficulty_level": "Advanced"},
+      {"name": "Tractions lestées", "description": "Tractions avec poids", "defaultUnit": "reps", "sets": 4, "reps": 8, "duration": 20, "calories": 8, "category": "Strength", "difficulty_level": "Advanced"}
+    ]
+  },
+  "Cardio": {
+    "Beginner": [
+      {"name": "Marche rapide", "description": "Marche à bonne allure", "defaultUnit": "minutes", "duration": 20, "calories": 5, "category": "Cardio", "difficulty_level": "Beginner"},
+      {"name": "Vélo tranquille", "description": "Vélo à rythme modéré", "defaultUnit": "minutes", "duration": 30, "calories": 5, "category": "Cardio", "difficulty_level": "Beginner"},
+      {"name": "Natation", "description": "Nage en crawl ou brasse", "defaultUnit": "minutes", "duration": 20, "calories": 7, "category": "Cardio", "difficulty_level": "Beginner"}
+    ],
+    "Intermediate": [
+      {"name": "Course à pied", "description": "Course à 10 km/h", "defaultUnit": "minutes", "duration": 25, "calories": 10, "category": "Cardio", "difficulty_level": "Intermediate"},
+      {"name": "Corde à sauter", "description": "Sauts réguliers", "defaultUnit": "minutes", "duration": 15, "calories": 12, "category": "Cardio", "difficulty_level": "Intermediate"},
+      {"name": "Vélo spinning", "description": "Vélo en salle intensif", "defaultUnit": "minutes", "duration": 30, "calories": 9, "category": "Cardio", "difficulty_level": "Intermediate"}
+    ],
+    "Advanced": [
+      {"name": "HIIT", "description": "30s effort / 30s repos", "defaultUnit": "minutes", "duration": 20, "calories": 15, "category": "Cardio", "difficulty_level": "Advanced"},
+      {"name": "Course fractionnée", "description": "Alternance sprint/repos", "defaultUnit": "minutes", "duration": 30, "calories": 14, "category": "Cardio", "difficulty_level": "Advanced"},
+      {"name": "Rameur", "description": "Rameur intensif", "defaultUnit": "minutes", "duration": 25, "calories": 13, "category": "Cardio", "difficulty_level": "Advanced"}
+    ]
+  },
+  "Flexibility": {
+    "Beginner": [
+      {"name": "Yoga doux", "description": "Séance de yoga pour débutants", "defaultUnit": "minutes", "duration": 30, "calories": 3, "category": "Flexibility", "difficulty_level": "Beginner"},
+      {"name": "Étirements", "description": "Étirements complets", "defaultUnit": "minutes", "duration": 20, "calories": 2, "category": "Flexibility", "difficulty_level": "Beginner"}
+    ],
+    "Intermediate": [
+      {"name": "Yoga flow", "description": "Enchaînements dynamiques", "defaultUnit": "minutes", "duration": 45, "calories": 4, "category": "Flexibility", "difficulty_level": "Intermediate"},
+      {"name": "Mobilité articulaire", "description": "Exercices de mobilité", "defaultUnit": "minutes", "duration": 25, "calories": 3, "category": "Flexibility", "difficulty_level": "Intermediate"}
+    ]
+  },
+  "Core": {
+    "Beginner": [
+      {"name": "Crunchs", "description": "Crunchs au sol", "defaultUnit": "reps", "sets": 3, "reps": 15, "duration": 10, "calories": 4, "category": "Core", "difficulty_level": "Beginner"},
+      {"name": "Relevés de jambes", "description": "Relevés de jambes au sol", "defaultUnit": "reps", "sets": 3, "reps": 10, "duration": 10, "calories": 4, "category": "Core", "difficulty_level": "Beginner"}
+    ],
+    "Intermediate": [
+      {"name": "Gainage latéral", "description": "Planche latérale", "defaultUnit": "seconds", "sets": 3, "duration": 45, "calories": 3, "category": "Core", "difficulty_level": "Intermediate"},
+      {"name": "Russian twist", "description": "Torsions russes", "defaultUnit": "reps", "sets": 3, "reps": 20, "duration": 12, "calories": 5, "category": "Core", "difficulty_level": "Intermediate"}
+    ]
+  }
+}
