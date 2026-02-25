@@ -103,7 +103,7 @@ class Authenticator extends AbstractLoginFormAuthenticator
             return new RedirectResponse($this->urlGenerator->generate('admin_trail_analytics'));
         }
         if (in_array('ROLE_MEDECIN', $roles)) {
-            return new RedirectResponse($this->urlGenerator->generate('doctor_patient_queue'));
+            return new RedirectResponse($this->urlGenerator->generate('doctor_patient_queue_page'));
         }
         if (in_array('ROLE_COACH', $roles)) {
             return new RedirectResponse($this->urlGenerator->generate('coach_dashboard'));

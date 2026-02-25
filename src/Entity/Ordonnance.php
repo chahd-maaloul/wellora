@@ -48,10 +48,15 @@ class Ordonnance
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $diagnosis_code = null; // Code diagnostic associé
 
-    // RELATION EXISTANTE
-    #[ORM\ManyToOne(inversedBy: 'genere')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Consultation $id_consultation = null;
+    // RELATIONSHIP WITH CONSULTATION
+    #[ORM\ManyToOne(targetEntity: Consultation::class, inversedBy: 'ordonnances')]
+    #[ORM\JoinColumn(name: 'consultation_id', referencedColumnName: 'id', nullable: true)]
+    private ?Consultation $consultation = null;
+
+    // RELATIONSHIP WITH USER (Doctor who prescribed)
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'ordonnances')]
+    #[ORM\JoinColumn(name: 'medecin_id', referencedColumnName: 'uuid', nullable: true)]
+    private ?User $prescribedBy = null;
 
     public function __construct()
     {
@@ -130,18 +135,6 @@ class Ordonnance
         return $this;
     }
 
-    public function getIdConsultation(): ?Consultation
-    {
-        return $this->id_consultation;
-    }
-
-    public function setIdConsultation(?Consultation $id_consultation): static
-    {
-        $this->id_consultation = $id_consultation;
-        return $this;
-    }
-
-    // NOUVEAUX GETTERS ET SETTERS
     public function getFrequency(): ?string
     {
         return $this->frequency;
@@ -161,6 +154,47 @@ class Ordonnance
     public function setDiagnosisCode(?string $diagnosis_code): static
     {
         $this->diagnosis_code = $diagnosis_code;
+        return $this;
+    }
+
+    // CONSULTATION RELATIONSHIP
+    public function getConsultation(): ?Consultation
+    {
+        return $this->consultation;
+    }
+
+    public function setConsultation(?Consultation $consultation): static
+    {
+        $this->consultation = $consultation;
+        return $this;
+    }
+
+    // BACKWARD COMPATIBILITY ALIAS
+    /**
+     * @deprecated Use getConsultation() instead
+     */
+    public function getIdConsultation(): ?Consultation
+    {
+        return $this->consultation;
+    }
+
+    /**
+     * @deprecated Use setConsultation() instead
+     */
+    public function setIdConsultation(?Consultation $consultation): static
+    {
+        return $this->setConsultation($consultation);
+    }
+
+    // USER RELATIONSHIP (Doctor who prescribed)
+    public function getPrescribedBy(): ?User
+    {
+        return $this->prescribedBy;
+    }
+
+    public function setPrescribedBy(?User $user): static
+    {
+        $this->prescribedBy = $user;
         return $this;
     }
 }

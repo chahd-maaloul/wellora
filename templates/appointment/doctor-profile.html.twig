@@ -1,6 +1,6 @@
 {% extends 'layouts/app.html.twig' %}
 
-{% block title %}Dr. {{ doctor.name|default('Doctor Name') }} - WellCare Connect{% endblock %}
+{% block title %}Dr. {{ doctor.fullName }} - WellCare Connect{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -33,31 +33,30 @@
                 <div class="flex-1 text-white">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                            <h1 class="text-2xl font-bold lg:text-3xl">Dr. Ahmed Ben Ali</h1>
-                            <p class="mt-1 text-lg text-wellcare-100">Cardiologist</p>
+                            <h1 class="text-2xl font-bold lg:text-3xl">Dr. {{ doctor.fullName }}</h1>
+                            <p class="mt-1 text-lg text-wellcare-100">{{ doctor.specialite|default('General Medicine') }}</p>
                             
                             <div class="flex flex-wrap items-center gap-4 mt-3">
                                 <div class="flex items-center gap-1">
                                     <i class="text-yellow-400 fas fa-star"></i>
-                                    <span class="font-semibold">4.8</span>
-                                    <span class="text-wellcare-200">(127 reviews)</span>
+                                    <span class="font-semibold">4.5</span>
+                                    <span class="text-wellcare-200">(10 reviews)</span>
                                 </div>
                                 <span class="text-wellcare-200">|</span>
-                                <span><i class="mr-1 fas fa-briefcase"></i> 15 years experience</span>
+                                <span><i class="mr-1 fas fa-briefcase"></i> {{ doctor.yearsOfExperience|default(0) }} years experience</span>
                                 <span class="text-wellcare-200">|</span>
-                                <span><i class="mr-1 fas fa-map-marker-alt"></i> Tunis</span>
+                                <span><i class="mr-1 fas fa-map-marker-alt"></i> {{ doctor.address|default('Tunis') }}</span>
                             </div>
                             
                             <div class="flex flex-wrap gap-2 mt-3">
                                 <span class="px-3 py-1 text-sm rounded-full bg-white/20">Arabic</span>
                                 <span class="px-3 py-1 text-sm rounded-full bg-white/20">French</span>
-                                <span class="px-3 py-1 text-sm rounded-full bg-white/20">English</span>
                             </div>
                         </div>
                         
                         {# Quick Actions #}
                         <div class="flex flex-col gap-3 lg:text-right">
-                            <div class="text-3xl font-bold">120 TND</div>
+                            <div class="text-3xl font-bold">{{ doctor.consultationPrice|default(120) }} TND</div>
                             <p class="text-sm text-wellcare-200">per consultation</p>
                             <div class="flex gap-2 lg:justify-end">
                                 <button @click="toggleFavorite()" class="p-3 transition-colors bg-white/20 rounded-xl hover:bg-white/30" :class="isFavorite ? 'text-red-400' : 'text-white'">
@@ -88,7 +87,7 @@
                             <i class="mr-2 fas fa-info-circle text-wellcare-500"></i>About
                         </h2>
                         <p class="leading-relaxed text-gray-600 dark:text-gray-300">
-                            Dr. Ahmed Ben Ali is a board-certified cardiologist with over 15 years of experience in diagnosing and treating cardiovascular conditions. He specializes in interventional cardiology, heart failure management, and preventive cardiology. Dr. Ben Ali is committed to providing personalized care and utilizing the latest medical advancements to ensure optimal patient outcomes.
+                            {{ doctor.about|default('Dr. ' ~ doctor.fullName ~ ' is a dedicated healthcare professional with ' ~ doctor.yearsOfExperience ~ ' years of experience in ' ~ doctor.specialite|default('General Medicine') ~ '. Committed to providing personalized care and utilizing the latest medical advancements to ensure optimal patient outcomes.') }}
                         </p>
                         
                         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
@@ -98,7 +97,7 @@
                                 </div>
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-white">Education</h4>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">MD, Cardiology - University of Tunis</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ doctor.education|default('Medical Degree - University of Tunis') }}</p>
                                 </div>
                             </div>
                             <div class="flex items-start gap-3">
@@ -107,7 +106,7 @@
                                 </div>
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-white">Certifications</h4>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Board Certified in Cardiology</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ doctor.certifications|default('Board Certified in ' ~ doctor.specialite|default('Medicine')) }}</p>
                                 </div>
                             </div>
                             <div class="flex items-start gap-3">
@@ -116,7 +115,7 @@
                                 </div>
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-white">Hospital Affiliations</h4>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Charles Nicolle Hospital, La Rabta Hospital</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ doctor.hospitalAffiliations|default('Local Hospital') }}</p>
                                 </div>
                             </div>
                             <div class="flex items-start gap-3">
@@ -125,7 +124,7 @@
                                 </div>
                                 <div>
                                     <h4 class="font-medium text-gray-900 dark:text-white">Awards</h4>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Excellence in Cardiology 2022</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ doctor.awards|default('Excellence in Healthcare') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -139,12 +138,13 @@
                             <i class="mr-2 fas fa-stethoscope text-wellcare-500"></i>Specializations
                         </h2>
                         <div class="flex flex-wrap gap-2">
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Interventional Cardiology</span>
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Heart Failure Management</span>
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Preventive Cardiology</span>
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Echocardiography</span>
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Cardiac Catheterization</span>
-                            <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">Hypertension Management</span>
+                            {% if doctor.specializations %}
+                                {% for spec in doctor.specializations %}
+                                    <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">{{ spec }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="px-4 py-2 text-sm font-medium rounded-lg bg-wellcare-50 dark:bg-wellcare-900/30 text-wellcare-700 dark:text-wellcare-300">{{ doctor.specialite|default('General Medicine') }}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -166,7 +166,7 @@
                                         <p class="text-sm text-gray-500 dark:text-gray-400">45 minutes at clinic</p>
                                     </div>
                                 </div>
-                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">120 TND</span>
+                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">{{ doctor.consultationPrice|default(120) }} TND</span>
                             </div>
                             
                             <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
@@ -179,7 +179,7 @@
                                         <p class="text-sm text-gray-500 dark:text-gray-400">20 minutes call</p>
                                     </div>
                                 </div>
-                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">70 TND</span>
+                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">{{ (doctor.consultationPrice * 0.6)|round|default(70) }} TND</span>
                             </div>
                             
                             <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
@@ -192,7 +192,7 @@
                                         <p class="text-sm text-gray-500 dark:text-gray-400">20 minutes</p>
                                     </div>
                                 </div>
-                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">80 TND</span>
+                                <span class="text-xl font-bold text-wellcare-600 dark:text-wellcare-400">{{ (doctor.consultationPrice * 0.7)|round|default(80) }} TND</span>
                             </div>
                         </div>
                     </div>
@@ -280,7 +280,7 @@
                             </div>
                             
                             {# CORRIGÉ : Lien vers booking-flow #}
-                            <a href="{{ path('appointment_booking_flow') }}?doctorId=1" class="block w-full text-center btn-primary">
+                            <a href="{{ path('appointment_booking_flow') }}?doctorId={{ doctor.id }}" class="block w-full text-center btn-primary">
                                 <i class="mr-2 fas fa-calendar-check"></i>Book Now
                             </a>
                             
@@ -302,7 +302,7 @@
                                     </div>
                                     <div>
                                         <h4 class="font-medium text-gray-900 dark:text-white">Address</h4>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">123 Avenue Habib Bourguiba, Tunis 1000</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ doctor.address|default('Tunis, Tunisia') }}</p>
                                         <a href="#" class="inline-block mt-1 text-sm text-wellcare-600 hover:text-wellcare-700 dark:text-wellcare-400">Get Directions</a>
                                     </div>
                                 </div>
@@ -324,7 +324,7 @@
                                     </div>
                                     <div>
                                         <h4 class="font-medium text-gray-900 dark:text-white">Contact</h4>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">+216 71 123 456</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ doctor.phone|default('+216 71 123 456') }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -353,6 +353,7 @@
 <script>
 function doctorProfile() {
     return {
+        doctorId: '{{ doctor.id }}',
         isFavorite: false,
         selectedType: 'in-person',
         selectedDate: null,
@@ -374,7 +375,7 @@ function doctorProfile() {
             this.selectedDate = this.availableDates[0];
             this.selectedTime = this.availableTimes[0];
             
-            const saved = localStorage.getItem('favoriteDoctor_1');
+            const saved = localStorage.getItem('favoriteDoctor_' + this.doctorId);
             if (saved) {
                 this.isFavorite = JSON.parse(saved);
             }
@@ -382,15 +383,16 @@ function doctorProfile() {
         
         toggleFavorite() {
             this.isFavorite = !this.isFavorite;
-            localStorage.setItem('favoriteDoctor_1', JSON.stringify(this.isFavorite));
+            localStorage.setItem('favoriteDoctor_' + this.doctorId, JSON.stringify(this.isFavorite));
         },
         
         getPrice() {
+            const basePrice = {{ doctor.consultationPrice|default(120) }};
             const prices = {
-                'in-person': 120,
-                'phone': 70
+                'in-person': basePrice,
+                'phone': Math.round(basePrice * 0.6)
             };
-            return prices[this.selectedType] || 120;
+            return prices[this.selectedType] || basePrice;
         }
     }
 }

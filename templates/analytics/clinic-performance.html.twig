@@ -62,7 +62,7 @@
         <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div class="flex items-center gap-4">
-                    <a href="/doctor/patients" class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
+                    <a href="/health/doctor/patients" class="p-2 text-gray-600 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
                         <i class="fa-solid fa-arrow-left"></i>
                     </a>
                     <div>
@@ -682,7 +682,7 @@ function clinicalNotes() {
         // Charger les notes depuis l'API
         async loadNotesFromAPI() {
             try {
-                const response = await fetch('/doctor/api/notes/list');
+                const response = await fetch('/health/doctor/api/clinical-notes/list');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -801,7 +801,7 @@ function clinicalNotes() {
                     return;
                 }
                 
-                const response = await fetch(`/doctor/api/notes/${note.id}`);
+                const response = await fetch(`/health/doctor/api/clinical-notes/${note.id}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -862,8 +862,8 @@ function clinicalNotes() {
                 };
                 
                 const url = this.currentNote.id 
-                    ? `/doctor/api/notes/${this.currentNote.id}` 
-                    : '/doctor/api/notes';
+                    ? `/health/doctor/api/clinical-notes/${this.currentNote.id}` 
+                    : '/health/doctor/api/clinical-notes';
                     
                 const method = this.currentNote.id ? 'PUT' : 'POST';
                 
@@ -913,7 +913,7 @@ function clinicalNotes() {
             }
             
             try {
-                const response = await fetch(`/doctor/api/notes/${this.selectedNote.id}`, {
+                const response = await fetch(`/health/doctor/api/clinical-notes/${this.selectedNote.id}`, {
                     method: 'DELETE'
                 });
                 

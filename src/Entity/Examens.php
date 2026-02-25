@@ -43,10 +43,21 @@ class Examens
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $result_file = null; // Nom du fichier PDF/image
 
-    // RELATION EXISTANTE
-    #[ORM\ManyToOne(inversedBy: 'prescrit')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Consultation $id_consultation = null;
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $doctor_analysis = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $doctor_treatment = null;
+
+    // RELATIONSHIP WITH CONSULTATION
+    #[ORM\ManyToOne(targetEntity: Consultation::class, inversedBy: 'examens')]
+    #[ORM\JoinColumn(name: 'consultation_id', referencedColumnName: 'id', nullable: true)]
+    private ?Consultation $consultation = null;
+
+    // RELATIONSHIP WITH USER (Doctor who prescribed)
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'examens')]
+    #[ORM\JoinColumn(name: 'medecin_id', referencedColumnName: 'uuid', nullable: true)]
+    private ?User $prescribedBy = null;
 
     public function __construct()
     {
@@ -130,18 +141,6 @@ class Examens
         return $this;
     }
 
-    public function getIdConsultation(): ?Consultation
-    {
-        return $this->id_consultation;
-    }
-
-    public function setIdConsultation(?Consultation $id_consultation): static
-    {
-        $this->id_consultation = $id_consultation;
-        return $this;
-    }
-
-    // NOUVEAUX GETTERS ET SETTERS
     public function getNomExamen(): ?string
     {
         return $this->nom_examen;
@@ -172,6 +171,69 @@ class Examens
     public function setResultFile(?string $result_file): static
     {
         $this->result_file = $result_file;
+        return $this;
+    }
+
+    public function getDoctorAnalysis(): ?string
+    {
+        return $this->doctor_analysis;
+    }
+
+    public function setDoctorAnalysis(?string $doctor_analysis): static
+    {
+        $this->doctor_analysis = $doctor_analysis === null ? null : trim($doctor_analysis);
+        return $this;
+    }
+
+    public function getDoctorTreatment(): ?string
+    {
+        return $this->doctor_treatment;
+    }
+
+    public function setDoctorTreatment(?string $doctor_treatment): static
+    {
+        $this->doctor_treatment = $doctor_treatment === null ? null : trim($doctor_treatment);
+        return $this;
+    }
+
+    // CONSULTATION RELATIONSHIP
+    public function getConsultation(): ?Consultation
+    {
+        return $this->consultation;
+    }
+
+    public function setConsultation(?Consultation $consultation): static
+    {
+        $this->consultation = $consultation;
+        return $this;
+    }
+
+    // BACKWARD COMPATIBILITY ALIAS
+    /**
+     * @deprecated Use getConsultation() instead
+     */
+    public function getIdConsultation(): ?Consultation
+    {
+        return $this->consultation;
+    }
+
+    /**
+     * @deprecated Use setConsultation() instead
+     */
+    public function setIdConsultation(?Consultation $consultation): static
+    {
+        return $this->setConsultation($consultation);
+    }
+
+    // USER RELATIONSHIP (Doctor who prescribed)
+    public function getPrescribedBy(): ?User
+    {
+        return $this->prescribedBy;
+    }
+
+    public function setPrescribedBy(?User $user): static
+    {
+        $this->prescribedBy = $user;
         return $this;
     }
 }
