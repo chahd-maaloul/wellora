@@ -2,6 +2,7 @@
 framework:
     notifier:
         texter_transports:
+            sendgrid: '%env(MAILER_DSN)%'
             twilio: '%env(TWILIO_DSN)%'
         chatter_transports:
             mercure: '%env(MERCURE_DSN)%'

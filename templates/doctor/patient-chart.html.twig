@@ -172,6 +172,8 @@
         allConsultations = window.__patientChartData.allConsultations;
         symptoms = window.__patientChartData.symptoms;
         treatment = window.__patientChartData.treatment;
+        vitalsCards = formatVitalsCards();
+        initCharts();
      "
      x-cloak>
     {# Patient Header #}
@@ -251,22 +253,18 @@
                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Date de naissance'|trans }}</span>
                             <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.birthDate"></span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Groupe sanguin'|trans }}</span>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.bloodType"></span>
-                        </div>
+                        {% if patient_data.height > 0 %}
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Taille'|trans }}</span>
                             <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.height + ' cm'"></span>
                         </div>
+                        {% endif %}
+                        {% if patient_data.weight > 0 %}
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'Poids'|trans }}</span>
                             <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.weight + ' kg'"></span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'IMC'|trans }}</span>
-                            <span class="text-sm font-medium" :class="getBMIColor(patient.bmi)" x-text="patient.bmi"></span>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -292,39 +290,9 @@
                     </div>
                 </div>
 
-                {# Emergency Contact #}
-                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 fa-solid fa-truck-medical text-rose-500"></i>
-                        {{ 'Contact d\'urgence'|trans }}
-                    </h3>
-                    <div class="space-y-3">
-                        <div>
-                            <span class="text-sm font-medium text-gray-900 dark:text-white" x-text="patient.emergencyContact.name"></span>
-                            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="patient.emergencyContact.relation"></p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <i class="text-gray-400 fa-solid fa-phone"></i>
-                            <span class="text-sm text-gray-900 dark:text-white" x-text="patient.emergencyContact.phone"></span>
-                        </div>
-                    </div>
-                </div>
 
-                {# Allergies #}
-                <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
-                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                        <i class="mr-2 fa-solid fa-triangle-exclamation text-amber-500"></i>
-                        {{ 'Allergies'|trans }}
-                    </h3>
-                    <div class="flex flex-wrap gap-2">
-                        <template x-for="allergy in patient.allergies" :key="allergy">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300">
-                                <i class="mr-1.5 fa-solid fa-xmark-circle"></i>
-                                <span x-text="allergy"></span>
-                            </span>
-                        </template>
-                    </div>
-                </div>
+
+
 
                 {# Current Medications #}
                 <div class="p-6 bg-white border border-gray-200 shadow-sm rounded-xl dark:bg-gray-900 dark:border-gray-800">
@@ -407,22 +375,7 @@
                                 <i class="mr-2 fa-solid fa-timeline"></i>
                                 {{ 'Chronologie'|trans }}
                             </button>
-                            <button 
-                                @click="activeTab = 'vitals'"
-                                :class="activeTab === 'vitals' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
-                                class="px-6 py-4 text-sm font-medium transition-colors border-b-2"
-                            >
-                                <i class="mr-2 fa-solid fa-heart-pulse"></i>
-                                {{ 'Signes vitaux'|trans }}
-                            </button>
-                            <button 
-                                @click="activeTab = 'symptoms'"
-                                :class="activeTab === 'symptoms' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
-                                class="px-6 py-4 text-sm font-medium transition-colors border-b-2"
-                            >
-                                <i class="mr-2 fa-solid fa-notes-medical"></i>
-                                {{ 'Symptômes'|trans }}
-                            </button>
+
                             <button 
                                 @click="activeTab = 'treatment'"
                                 :class="activeTab === 'treatment' ? 'border-wellcare-500 text-wellcare-600 dark:text-wellcare-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'"
@@ -586,7 +539,7 @@
                                                             {{ exam.name|default(exam.type|default('Examen')) }}
                                                         </p>
                                                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                            {{ exam.date|default('N/A') }} â€¢ {{ exam.status|default('prescrit')|capitalize }}
+                                                            {{ exam.date|default('N/A') }} • {{ exam.status|default('prescrit')|capitalize }}
                                                         </p>
                                                     </div>
                                                     {% if exam.resultFile %}
@@ -598,7 +551,7 @@
                                                     {% endif %}
                                                 </div>
                                                 <div class="mt-3 text-sm text-gray-700 dark:text-gray-300">
-                                                    <span class="font-medium">{{ 'RÃ©sultat'|trans }}:</span>
+                                                    <span class="font-medium">{{ 'Résultat'|trans }}:</span>
                                                     {{ exam.result|default('En attente') }}
                                                 </div>
                                                 <form method="post" action="{{ path('doctor_examens_analysis', { id: exam.id }) }}" class="mt-4 space-y-3">
@@ -717,87 +670,7 @@
                             </div>
                         </div>
 
-                        {# Vitals Tab #}
-                        <div x-show="activeTab === 'vitals'" x-transition style="display: none;">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Signes vitaux'|trans }}</h3>
-                                <select x-model="vitalsPeriod" @change="updateVitalsChart()" class="text-sm border border-gray-300 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-                                    <option value="7d">{{ '7 derniers jours'|trans }}</option>
-                                    <option value="30d">{{ '30 derniers jours'|trans }}</option>
-                                    <option value="3m">{{ '3 derniers mois'|trans }}</option>
-                                </select>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-                                <template x-for="vital in vitalsCards" :key="vital.type">
-                                    <div class="p-4 border border-gray-200 rounded-lg dark:border-gray-700" :class="vital.alert ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800' : 'bg-white dark:bg-gray-800'">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-sm text-gray-500 dark:text-gray-400" x-text="vital.label"></span>
-                                            <i :class="vital.icon + ' ' + (vital.alert ? 'text-rose-500' : 'text-wellcare-500')"></i>
-                                        </div>
-                                        <div class="flex items-baseline gap-2">
-                                            <span class="text-2xl font-bold" :class="vital.alert ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'" x-text="vital.value"></span>
-                                            <span class="text-sm text-gray-500 dark:text-gray-400" x-text="vital.unit"></span>
-                                        </div>
-                                        <div class="mt-1 text-xs" :class="vital.trend === 'up' ? 'text-emerald-600 dark:text-emerald-400' : vital.trend === 'down' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-500 dark:text-gray-400'">
-                                            <i :class="vital.trend === 'up' ? 'fa-solid fa-arrow-trend-up' : vital.trend === 'down' ? 'fa-solid fa-arrow-trend-down' : 'fa-solid fa-minus'"></i>
-                                            <span x-text="vital.change"></span>
-                                        </div>
-                                        <div class="mt-2 text-xs text-gray-400 dark:text-gray-500" x-text="'Normal: ' + vital.normalRange"></div>
-                                    </div>
-                                </template>
-                            </div>
 
-                            <div class="h-80">
-                                <canvas id="vitalsChart"></canvas>
-                            </div>
-                        </div>
-
-                        {# Symptoms Tab #}
-                        <div x-show="activeTab === 'symptoms'" x-transition style="display: none;">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Suivi des symptômes'|trans }}</h3>
-                                {# bouton supprimé #}
-                            </div>
-                            <div class="mb-6 h-80">
-                                <canvas id="symptomsChart"></canvas>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left">
-                                    <thead class="bg-gray-50 dark:bg-gray-800">
-                                        <tr>
-                                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">{{ 'Date'|trans }}</th>
-                                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">{{ 'Symptôme'|trans }}</th>
-                                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">{{ 'Intensité'|trans }}</th>
-                                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">{{ 'Durée'|trans }}</th>
-                                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400">{{ 'Statut'|trans }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                        <template x-for="symptom in symptoms" :key="symptom.id">
-                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white" x-text="symptom.date"></td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white" x-text="symptom.name"></td>
-                                                <td class="px-4 py-3">
-                                                    <div class="flex gap-1">
-                                                        <template x-for="i in 10" :key="i">
-                                                            <div 
-                                                                class="w-2 h-4 rounded-sm"
-                                                                :class="i <= symptom.intensity ? getIntensityColor(symptom.intensity) : 'bg-gray-200 dark:bg-gray-700'"
-                                                            ></div>
-                                                        </template>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400" x-text="symptom.duration"></td>
-                                                <td class="px-4 py-3">
-                                                    <span class="px-2 py-1 text-xs rounded-full" :class="symptom.status === 'active' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'" x-text="symptom.status === 'active' ? 'Actif' : 'Résolu'"></span>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
 
                         {# Treatment Tab #}
                         <div x-show="activeTab === 'treatment'" x-transition style="display: none;">

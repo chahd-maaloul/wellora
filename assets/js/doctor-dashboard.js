@@ -367,7 +367,7 @@ document.addEventListener('alpine:init', () => {
         // All Consultations - for patient chart view
         allConsultations: [],
         
-        init() {
+         init() {
             // Get consultation ID from URL - check if we're on patient-chart route
             const urlParts = window.location.pathname.split('/');
             const lastPart = urlParts[urlParts.length - 1];
@@ -381,12 +381,6 @@ document.addEventListener('alpine:init', () => {
             // OR if we're on the /doctor/patient/{id}/chart route (data also provided via Twig now)
             if (secondLastPart === 'patient-chart' || lastPart === 'chart') {
                 console.log('Patient chart route detected, skipping API call. Data provided via Twig.');
-                // Initialize vitals cards AFTER all Twig data is set via x-init
-                this.$nextTick(() => {
-                    console.log('After $nextTick, patient:', this.patient);
-                    this.vitalsCards = this.formatVitalsCards();
-                    this.initCharts();
-                });
                 return;
             }
             

@@ -16,15 +16,15 @@
      x-data="doctorAnalytics"
      x-init="init()"
      data-doctor-analytics
-     data-api-available="{{ api_available ? '1' : '0' }}"
-     data-ai-predictions="{{ ai_data.predictions ? (ai_data.predictions.predictions | json_encode | e('html_attr')) : '[]' }}"
-     data-ai-confidence="{{ ai_data.predictions ? (ai_data.predictions.confidence * 100) : 85 }}"
-     data-ai-recommendations="{{ ai_data.recommendations ? (ai_data.recommendations.recommendations | json_encode | e('html_attr')) : '[]' }}"
-     data-ai-profit-predictions="{{ ai_data.profit_predictions ? (ai_data.profit_predictions | json_encode | e('html_attr')) : '' }}"
-     data-ai-revenue-weekly="{{ ai_data.revenue_weekly ? (ai_data.revenue_weekly | json_encode | e('html_attr')) : '' }}"
-     data-ai-revenue-monthly="{{ ai_data.revenue_monthly ? (ai_data.revenue_monthly | json_encode | e('html_attr')) : '' }}"
-     data-ai-profit-alerts="{{ ai_data.profit_alerts ? (ai_data.profit_alerts | json_encode | e('html_attr')) : '[]' }}"
-     data-treatment-effectiveness="{{ ai_data.treatment_effectiveness ? (ai_data.treatment_effectiveness | json_encode | e('html_attr')) : '' }}"
+    data-api-available="{{ api_available ? '1' : '0' }}"
+    data-ai-predictions="{{ ai_data.predictions ? (ai_data.predictions.predictions | json_encode | e('html_attr')) : '[]' }}"
+    data-ai-confidence="{{ ai_data.predictions ? (ai_data.predictions.confidence * 100) : 85 }}"
+    data-ai-recommendations="{{ ai_data.recommendations ? (ai_data.recommendations.recommendations | json_encode | e('html_attr')) : '[]' }}"
+    data-ai-profit-predictions="{{ ai_data.profit_predictions ? (ai_data.profit_predictions | json_encode | e('html_attr')) : 'null' }}"
+    data-ai-revenue-weekly="{{ ai_data.revenue_weekly ? (ai_data.revenue_weekly | json_encode | e('html_attr')) : 'null' }}"
+    data-ai-revenue-monthly="{{ ai_data.revenue_monthly ? (ai_data.revenue_monthly | json_encode | e('html_attr')) : 'null' }}"
+    data-ai-profit-alerts="{{ ai_data.profit_alerts ? (ai_data.profit_alerts | json_encode | e('html_attr')) : '[]' }}"
+    data-treatment-effectiveness="{{ ai_data.treatment_effectiveness ? (ai_data.treatment_effectiveness | json_encode | e('html_attr')) : 'null' }}"
      data-doctor-id="{{ doctor_id ? doctor_id : '' }}"
      data-patients="{{ patients | json_encode | e('html_attr') }}"
      data-last-update="{{ 'now'|date('H:i') }}"
@@ -321,49 +321,7 @@
                     </div>
                 </div>
 
-                {# Weekly Revenue Chart #}
-                <div class="p-6 mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                <i class="text-lg fa-solid fa-chart-column"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Revenus hebdomadaires'|trans }}</h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ '12 dernières semaines'|trans }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="relative h-72" x-show="revenueWeekly && revenueWeekly.labels && revenueWeekly.labels.length">
-                        <canvas id="weeklyRevenueChart"></canvas>
-                    </div>
-                    <div class="p-4 text-center text-gray-500 dark:text-gray-400" x-show="!revenueWeekly || !revenueWeekly.labels || revenueWeekly.labels.length === 0">
-                        <i class="mb-2 text-2xl fa-solid fa-chart-line"></i>
-                        <p class="text-sm">{{ 'Données insuffisantes'|trans }}</p>
-                    </div>
-                </div>
 
-                {# Monthly Revenue Chart #}
-                <div class="p-6 mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl dark:bg-gray-900 dark:border-gray-800">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                <i class="text-lg fa-solid fa-chart-area"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ 'Revenus mensuels'|trans }}</h3>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ '12 derniers mois'|trans }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="relative h-72" x-show="revenueMonthly && revenueMonthly.labels && revenueMonthly.labels.length">
-                        <canvas id="monthlyRevenueChart"></canvas>
-                    </div>
-                    <div class="p-4 text-center text-gray-500 dark:text-gray-400" x-show="!revenueMonthly || !revenueMonthly.labels || revenueMonthly.labels.length === 0">
-                        <i class="mb-2 text-2xl fa-solid fa-chart-line"></i>
-                        <p class="text-sm">{{ 'Données insuffisantes'|trans }}</p>
-                    </div>
-                </div>
             </div>
 
             {# Sidebar #}

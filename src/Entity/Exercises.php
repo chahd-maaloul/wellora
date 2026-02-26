@@ -9,6 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Validator\Constraints as Assert;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use App\Entity\User;
+use App\Entity\DailyPlan;
+
 
 #[ORM\Entity(repositoryClass: ExercisesRepository::class)]
 #[Vich\Uploadable]

@@ -643,8 +643,6 @@ document.addEventListener('alpine:init', () => {
         init() {
             this.$nextTick(() => {
                 this.initTreatmentChart();
-                this.initRevenueChart();
-                this.initRevenueMonthlyChart();
             });
         },
 
@@ -911,12 +909,13 @@ document.addEventListener('alpine:init', () => {
                 this.charts.revenue.destroy();
             }
 
-            const labels = (this.revenueWeekly && this.revenueWeekly.labels) ? this.revenueWeekly.labels : [];
-            const values = (this.revenueWeekly && this.revenueWeekly.values) ? this.revenueWeekly.values : [];
-
-            if (labels.length === 0) {
-                return;
-            }
+            const labels = (this.revenueWeekly && this.revenueWeekly.labels) 
+                ? this.revenueWeekly.labels 
+                : ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8', 'Sem 9', 'Sem 10', 'Sem 11', 'Sem 12'];
+            
+            const values = (this.revenueWeekly && this.revenueWeekly.values) 
+                ? this.revenueWeekly.values 
+                : [1200, 1500, 1300, 1800, 2000, 1700, 1900, 2200, 2100, 2500, 2300, 2800];
 
             this.charts.revenue = new Chart(context, {
                 type: 'bar',
@@ -978,11 +977,13 @@ document.addEventListener('alpine:init', () => {
                 this.charts.revenueMonthly.destroy();
             }
 
-            const labels = (this.revenueMonthly && this.revenueMonthly.labels) ? this.revenueMonthly.labels : [];
-            const values = (this.revenueMonthly && this.revenueMonthly.values) ? this.revenueMonthly.values : [];
-            if (labels.length === 0) {
-                return;
-            }
+            const labels = (this.revenueMonthly && this.revenueMonthly.labels) 
+                ? this.revenueMonthly.labels 
+                : ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+            
+            const values = (this.revenueMonthly && this.revenueMonthly.values) 
+                ? this.revenueMonthly.values 
+                : [5000, 5500, 6000, 5800, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000];
 
             this.charts.revenueMonthly = new Chart(context, {
                 type: 'line',

@@ -152,7 +152,7 @@ class GoogleAuthenticator extends OAuth2Authenticator
         } elseif (in_array('ROLE_MEDECIN', $roles)) {
             $targetUrl = $this->router->generate('doctor_patient_queue');
         } elseif (in_array('ROLE_COACH', $roles)) {
-            $targetUrl = $this->router->generate('coach_dashboard');
+            $targetUrl = $this->router->generate('coach_clients');
         } elseif (in_array('ROLE_NUTRITIONIST', $roles)) {
             $targetUrl = $this->router->generate('nutrition_nutritionniste_dashboard');
         } else {

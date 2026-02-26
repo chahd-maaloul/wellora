@@ -894,6 +894,7 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @return Collection<int, Consultation>
      */
+    }
     public function getConsultations(): Collection
     {
         return $this->consultations;

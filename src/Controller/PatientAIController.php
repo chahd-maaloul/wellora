@@ -96,8 +96,7 @@ public function generateForm(): Response
         }
         
         // Ajouter les infos de débogage à la session
-        $this->addFlash('debug', $debug);
-    }
+$this->addFlash('debug', implode('<br>', $debug));    }
     
     return $this->render('patient/ai_generate_form.html.twig', [
         'isHealthy' => $isHealthy
