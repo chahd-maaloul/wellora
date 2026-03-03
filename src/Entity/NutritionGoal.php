@@ -47,7 +47,7 @@ class NutritionGoal
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid')]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'uuid')]
     private ?User $user = null;
 
     #[ORM\Column]

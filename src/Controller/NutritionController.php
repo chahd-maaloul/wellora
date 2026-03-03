@@ -190,6 +190,7 @@ class NutritionController extends AbstractController
         ]);
     }
 
+
     // ============ FOOD ITEM ROUTES ============
 
     #[Route('/food/add', name: 'food_add', methods: ['GET', 'POST'])]
@@ -1902,11 +1903,15 @@ return $this->render('nutrition/nutrition-analysis.html.twig', [
         }
         
         // Get water intake
-        $waterIntakes = $waterIntakeRepository->findByUserIdAndDate($userId, $today);
-        $water = 0;
-        foreach ($waterIntakes as $intake) {
-            $water += $intake->getGlasses() ?? 0;
-        }
+       $waterIntakes = $waterIntakeRepository->findByUserIdAndDate($userId, $today);
+$water = 0;
+
+// Check if $waterIntakes is iterable
+if (is_array($waterIntakes) || $waterIntakes instanceof Traversable) {
+    foreach ($waterIntakes as $intake) {
+        $water += $intake->getGlasses() ?? 0;
+    }
+}
         
         $stats = [
             'calories' => $calories,

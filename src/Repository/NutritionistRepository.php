@@ -65,4 +65,5 @@ class NutritionistRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+    
 }
