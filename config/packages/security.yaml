@@ -57,7 +57,7 @@ security:
         - { path: ^/access-denied, roles: PUBLIC_ACCESS }
         - { path: ^/api/, roles: PUBLIC_ACCESS }
         - { path: ^/connect/google, roles: PUBLIC_ACCESS }
-        - { path: ^/2fa/, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/2fa/, roles: IS_AUTHENTICATED_PARTIALLY }
         - { path: ^/$, roles: PUBLIC_ACCESS }
         - { path: ^/health/accessible, roles: PUBLIC_ACCESS }
         

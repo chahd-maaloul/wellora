@@ -891,10 +891,13 @@ abstract class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setGoogleId(?string $googleId): self
     {
         $this->googleId = $googleId;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Consultation>
      */
-    }
     public function getConsultations(): Collection
     {
         return $this->consultations;
