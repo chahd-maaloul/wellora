@@ -249,7 +249,7 @@ class NutritionConsultation
             'confirmed' => 'Confirmée',
             'completed' => 'Terminée',
             'cancelled' => 'Annulée',
-            default => $this->status
+            default => $this->status ?? 'Inconnu'
         };
     }
 

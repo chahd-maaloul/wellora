@@ -34,6 +34,10 @@ class FoodLog
     private ?string $name = null;
 
     #[ORM\OneToMany(mappedBy: 'foodLog', targetEntity: FoodItem::class, cascade: ['persist', 'remove'])]
+    /**
+     * @var Collection<int, FoodItem>
+     * @phpstan-var Collection<int, FoodItem>
+     */
     private Collection $foodItems;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]

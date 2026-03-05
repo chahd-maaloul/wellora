@@ -32,7 +32,7 @@ class Notificationrdv
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    private ?consultation $consultation = null;
+    private ?\App\Entity\Consultation $consultation = null;
 
     public function getId(): ?int
     {
@@ -99,12 +99,12 @@ class Notificationrdv
         return $this;
     }
 
-    public function getConsultation(): ?consultation
+    public function getConsultation(): ?\App\Entity\Consultation
     {
         return $this->consultation;
     }
 
-    public function setConsultation(?consultation $consultation): static
+    public function setConsultation(?\App\Entity\Consultation $consultation): static
     {
         $this->consultation = $consultation;
 
